@@ -1,0 +1,1 @@
+{\n  "name": "homekey-backend",\n  "version": "1.0.0",\n  "description": "Backend for HomeKey using Node.js and Express",\n  "main": "server.js",\n  "scripts": {\n    "start": "node server.js",\n    "test": "echo 'Error: no test specified' && exit 1"\n  },\n  "author": "aaronjackmiller-hash",\n  "license": "ISC",\n  "dependencies": {\n    "express": "^4.17.1"\n  }\n}
