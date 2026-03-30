@@ -1,1 +1,38 @@
-import React, { useState, useEffect } from 'react';\n\nconst App = () => {\n  const [listings, setListings] = useState([]);\n  const [newListing, setNewListing] = useState('');\n\n  useEffect(() => {\n    // Fetch listings from an API or some source\n    setListings([\n      { id: 1, name: 'Listing 1' },\n      { id: 2, name: 'Listing 2' },\n      { id: 3, name: 'Listing 3' }\n    ]);\n  }, []);\n\n  const handleAddListing = () => {\n    const listing = { id: listings.length + 1, name: newListing };\n    setListings([...listings, listing]);\n    setNewListing('');\n  };\n\n  const handleDeleteListing = (id) => {\n    setListings(listings.filter((listing) => listing.id !== id));\n  };\n\n  const handleUpdateListing = (id) => {\n    const updatedListings = listings.map((listing) => {\n      if (listing.id === id) {\n        return { ...listing, name: newListing };\n      }\n      return listing;\n    });\n    setListings(updatedListings);\n    setNewListing('');\n  };\n\n  return (\n    <div>\n      <h1>HomeKey Listings</h1>\n      <input\n        type='text'\n        value={newListing}\n        onChange={(e) => setNewListing(e.target.value)}\n        placeholder='Add new listing'\n      />\n      <button onClick={handleAddListing}>Add Listing</button>\n      <ul>\n        {listings.map((listing) => (\n          <li key={listing.id}>\n            {listing.name} \n            <button onClick={() => handleUpdateListing(listing.id)}>Update</button>\n            <button onClick={() => handleDeleteListing(listing.id)}>Delete</button>\n          </li>\n        ))} \n      </ul>\n    </div>\n  );\n};\n\nexport default App;
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import PropertyList from './components/PropertyList';
+import PropertyDetail from './components/PropertyDetail';
+import AddListing from './components/AddListing';
+import './App.css';
+
+const App = () => {
+  return (
+    <Router>
+      <div className="app">
+        <header className="app-header">
+          <Link to="/" className="logo">
+            🏠 HomeKey
+          </Link>
+          <nav>
+            <Link to="/">Browse Listings</Link>
+            <Link to="/add" className="btn-add">+ Add Listing</Link>
+          </nav>
+        </header>
+
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={<PropertyList />} />
+            <Route path="/properties/:id" element={<PropertyDetail />} />
+            <Route path="/add" element={<AddListing />} />
+          </Routes>
+        </main>
+
+        <footer className="app-footer">
+          <p>HomeKey MLS &mdash; Israeli Real Estate Platform &copy; {new Date().getFullYear()}</p>
+        </footer>
+      </div>
+    </Router>
+  );
+};
+
+export default App;
