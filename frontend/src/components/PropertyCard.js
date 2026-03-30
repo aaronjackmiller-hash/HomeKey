@@ -24,7 +24,7 @@ const PropertyCard = ({ property, onClick }) => {
           <span className="property-card__dot">·</span>
           <span>{bathrooms} ba</span>
           <span className="property-card__dot">·</span>
-          <span>{sqft.toLocaleString()} sqft</span>
+          <span>{sqft ? sqft.toLocaleString() : 'N/A'} sqft</span>
         </div>
       </div>
     </div>

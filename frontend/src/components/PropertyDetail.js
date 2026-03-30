@@ -76,10 +76,10 @@ const PropertyDetail = ({ propertyId, onBack }) => {
             <span className="property-detail__stat-label">Bathrooms</span>
           </div>
           <div className="property-detail__stat">
-            <span className="property-detail__stat-value">{sqft.toLocaleString()}</span>
+            <span className="property-detail__stat-value">{sqft ? sqft.toLocaleString() : 'N/A'}</span>
             <span className="property-detail__stat-label">Sq Ft</span>
           </div>
-          {garage > 0 && (
+          {garage != null && garage > 0 && (
             <div className="property-detail__stat">
               <span className="property-detail__stat-value">{garage}</span>
               <span className="property-detail__stat-label">Garage</span>

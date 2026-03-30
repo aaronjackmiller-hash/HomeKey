@@ -11,7 +11,7 @@ const AgentCard = ({ agent, onClick }) => {
       <div className="agent-card__body">
         <h3 className="agent-card__name">{name}</h3>
         {agency && <p className="agent-card__agency">{agency}</p>}
-        {bio && <p className="agent-card__bio">{bio.substring(0, 100)}{bio.length > 100 ? '...' : ''}</p>}
+        {bio && typeof bio === 'string' && <p className="agent-card__bio">{bio.substring(0, 100)}{bio.length > 100 ? '...' : ''}</p>}
         <div className="agent-card__contact">
           <a href={`tel:${phone}`}>{phone}</a>
           <a href={`mailto:${email}`}>{email}</a>

@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     if (req.query.status) filter.status = req.query.status;
     if (req.query.minPrice) filter.price = { $gte: Number(req.query.minPrice) };
     if (req.query.maxPrice) {
-      filter.price = { ...filter.price, $lte: Number(req.query.maxPrice) };
+      filter.price = Object.assign({}, filter.price, { $lte: Number(req.query.maxPrice) });
     }
     if (req.query.bedrooms) filter.bedrooms = { $gte: Number(req.query.bedrooms) };
     if (req.query.city) {
