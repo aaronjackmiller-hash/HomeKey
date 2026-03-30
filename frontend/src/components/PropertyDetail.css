@@ -1,0 +1,54 @@
+.property-detail {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #1a1a2e;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.detail-img {
+  width: 100%;
+  max-height: 450px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.detail-body {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-body h2 {
+  font-size: 1.4rem;
+  margin: 0.5rem 0;
+}
+
+.detail-body .price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.4rem;
+}
+
+.detail-body .meta {
+  color: #555;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.detail-body .description {
+  color: #444;
+  line-height: 1.6;
+}

@@ -7,9 +7,11 @@ services:
     ports:
       - '5000:5000'
     environment:
-      DATABASE_URL: postgres://user:password@db:5432/homekey
+      MONGO_URI: mongodb://mongo:27017/homekey
+      PORT: 5000
     depends_on:
-      - db
+      - mongo
+
   frontend:
     build:
       context: ./frontend
@@ -17,20 +19,13 @@ services:
       - '3000:3000'
     depends_on:
       - backend
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: homekey
-    volumes:
-      - db_data:/var/lib/postgresql/data
-  nginx:
-    image: nginx:latest
+
+  mongo:
+    image: mongo:5
     ports:
-      - '80:80'
+      - '27017:27017'
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - mongo_data:/data/db
 
 volumes:
-  db_data:
+  mongo_data:

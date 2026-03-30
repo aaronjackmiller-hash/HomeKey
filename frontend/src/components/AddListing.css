@@ -1,0 +1,80 @@
+.add-listing {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.add-listing h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.listing-form {
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.listing-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+  gap: 0.4rem;
+}
+
+.listing-form input,
+.listing-form select,
+.listing-form textarea {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.listing-form input:focus,
+.listing-form select:focus,
+.listing-form textarea:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.listing-form button[type='submit'] {
+  padding: 0.75rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.listing-form button[type='submit']:hover:not(:disabled) {
+  background: #2d2d5e;
+}
+
+.listing-form button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #e74c3c;
+  background: #fdecea;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
