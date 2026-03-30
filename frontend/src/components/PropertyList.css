@@ -1,0 +1,45 @@
+.property-list__status {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+.property-list__status--error {
+  color: #e74c3c;
+}
+
+.property-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.property-list__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+.property-list__pagination button {
+  padding: 8px 20px;
+  background: #2c3e50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.property-list__pagination button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.property-list__pagination span {
+  font-size: 14px;
+  color: #555;
+}

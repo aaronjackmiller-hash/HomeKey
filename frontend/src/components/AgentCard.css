@@ -1,0 +1,72 @@
+.agent-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.agent-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.agent-card__photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.agent-card__body {
+  flex: 1;
+}
+
+.agent-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 4px;
+}
+
+.agent-card__agency {
+  font-size: 13px;
+  color: #888;
+  margin: 0 0 8px;
+}
+
+.agent-card__bio {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.agent-card__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.agent-card__contact a {
+  font-size: 13px;
+  color: #2980b9;
+  text-decoration: none;
+}
+
+.agent-card__contact a:hover {
+  text-decoration: underline;
+}
+
+.agent-card__listings {
+  font-size: 13px;
+  color: #27ae60;
+  font-weight: 600;
+  margin: 0;
+}

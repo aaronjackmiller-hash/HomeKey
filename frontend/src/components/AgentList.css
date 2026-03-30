@@ -1,0 +1,22 @@
+.agent-list__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.agent-list__status {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.agent-list__status--error {
+  color: #e74c3c;
+}
+
+.agent-list__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

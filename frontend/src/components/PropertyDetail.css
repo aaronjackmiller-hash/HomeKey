@@ -1,0 +1,182 @@
+.property-detail__status {
+  text-align: center;
+  padding: 60px;
+  color: #666;
+}
+
+.property-detail__status--error {
+  color: #e74c3c;
+}
+
+.property-detail__back {
+  background: none;
+  border: none;
+  color: #2980b9;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.property-detail__back:hover {
+  text-decoration: underline;
+}
+
+.property-detail__gallery {
+  margin-bottom: 24px;
+}
+
+.property-detail__main-image {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.property-detail__thumbnails {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.property-detail__thumb {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.property-detail__thumb--active,
+.property-detail__thumb:hover {
+  opacity: 1;
+  outline: 2px solid #2980b9;
+}
+
+.property-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.property-detail__price {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 6px;
+}
+
+.property-detail__address {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.property-detail__badge {
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #fff;
+}
+
+.property-detail__badge--active { background: #27ae60; }
+.property-detail__badge--pending { background: #f39c12; }
+.property-detail__badge--sold { background: #e74c3c; }
+
+.property-detail__stats {
+  display: flex;
+  gap: 32px;
+  padding: 20px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.property-detail__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.property-detail__stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.property-detail__stat-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.property-detail__meta {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  color: #555;
+  font-size: 14px;
+}
+
+.property-detail__description {
+  margin-bottom: 24px;
+}
+
+.property-detail__description h2 {
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.property-detail__description p {
+  color: #555;
+  line-height: 1.7;
+}
+
+.property-detail__agent {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.property-detail__agent h2 {
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.property-detail__agent-info {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.property-detail__agent-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.property-detail__agent-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 4px;
+}
+
+.property-detail__agent-agency {
+  font-size: 13px;
+  color: #888;
+  margin: 0 0 4px;
+}
