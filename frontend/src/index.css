@@ -1,0 +1,72 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+header, footer {
+  background-color: #f8f8f8;
+  padding: 20px;
+  text-align: center;
+}
+
+nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background-color: #4CAF50;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 14px 20px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: #45a049;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  margin: auto;
+}
+
+.input-field {
+  margin-bottom: 15px;
+}
+
+.input-field label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.input-field input, .input-field textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.property-card {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 20px;
+  background-color: white;
+  transition: transform 0.2s;
+}
+
+.property-card:hover {
+  transform: scale(1.05);
+  border-color: #4CAF50;
+}
+
+@media (max-width: 600px) {
+  nav {
+    flex-direction: column;
+  }
+}
