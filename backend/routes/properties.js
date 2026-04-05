@@ -3,6 +3,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const {
     getAllProperties,
     getPropertyById,
@@ -56,12 +57,12 @@ router.get('/', getAllProperties);
 router.get('/:id', getPropertyById);
 
 // POST /api/properties
-router.post('/', validatePropertyInput, validateInput, createProperty);
+router.post('/', protect, validatePropertyInput, validateInput, createProperty);
 
 // PUT /api/properties/:id
-router.put('/:id', validatePropertyInput, validateInput, updateProperty);
+router.put('/:id', protect, validatePropertyInput, validateInput, updateProperty);
 
 // DELETE /api/properties/:id
-router.delete('/:id', deleteProperty);
+router.delete('/:id', protect, deleteProperty);
 
 module.exports = router;

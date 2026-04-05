@@ -35,6 +35,12 @@ const UserSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        password: {
+            type: String,
+            required: [true, 'Password is required'],
+            minlength: [6, 'Password must be at least 6 characters long'],
+            select: false,
+        },
         listings: [
             {
                 type: mongoose.Schema.Types.ObjectId,

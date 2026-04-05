@@ -1,63 +1,60 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://your-api-url.com', // replace with your API URL
-  timeout: 1000,
+  baseURL: (process.env.REACT_APP_API_URL || 'http://localhost:5000') + '/api',
+  timeout: 10000,
 });
 
-// Error handling middleware
-const handleError = (error) => {
-  // Log the error or handle it as appropriate for your application
-  console.error('API Error:', error);
-  throw error;
-};
-
-// Method to get all properties
-export const getProperties = async () => {
-  try {
-    const response = await api.get('/properties');
-    return response.data;
-  } catch (error) {
-    handleError(error);
+// Attach JWT token to every request if present
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
+
+// Auth
+export const registerUser = async (data) => {
+  const response = await api.post('/auth/register', data);
+  return response.data;
 };
 
-// Method to get a specific property by ID
+export const loginUser = async (data) => {
+  const response = await api.post('/auth/login', data);
+  return response.data;
+};
+
+// Properties
+export const getProperties = async (params) => {
+  const response = await api.get('/properties', { params });
+  return response.data;
+};
+
 export const getProperty = async (id) => {
-  try {
-    const response = await api.get(`/properties/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error);
-  }
+  const response = await api.get(`/properties/${id}`);
+  return response.data;
 };
 
-// Method to create a new property
 export const createProperty = async (property) => {
-  try {
-    const response = await api.post('/properties', property);
-    return response.data;
-  } catch (error) {
-    handleError(error);
-  }
+  const response = await api.post('/properties', property);
+  return response.data;
 };
 
-// Method to get all agents
-export const getAgents = async () => {
-  try {
-    const response = await api.get('/agents');
-    return response.data;
-  } catch (error) {
-    handleError(error);
-  }
-};
-
-// Method to update a property
 export const updateProperty = async (id, property) => {
-  try {
-    const response = await api.put(`/properties/${id}`, property);
-    return response.data;
-  } catch (error) {
-    handleError(error);
-  }
+  const response = await api.put(`/properties/${id}`, property);
+  return response.data;
 };
+
+export const deleteProperty = async (id) => {
+  const response = await api.delete(`/properties/${id}`);
+  return response.data;
+};
+
+// Agents
+export const getAgents = async () => {
+  const response = await api.get('/agents');
+  return response.data;
+};
+
+export default api;
