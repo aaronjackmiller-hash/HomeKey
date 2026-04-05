@@ -43,14 +43,19 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// In production, serve the built React app for all non-API routes
+// API 404 handler — fires for any /api/* route not matched above
+app.use('/api', (req, res) => {
+    res.status(404).json({ success: false, message: 'Route not found' });
+});
+
+// In production, serve the built React app for all remaining (non-API) routes
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../frontend/build')));
-    app.get('*', (req, res) => {
+    app.get('*', apiLimiter, (req, res) => {
         res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
     });
 } else {
-    // 404 handler (development only)
+    // Development: 404 for everything else
     app.use((req, res) => {
         res.status(404).json({ success: false, message: 'Route not found' });
     });
