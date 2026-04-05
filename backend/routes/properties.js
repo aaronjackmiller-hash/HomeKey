@@ -1,26 +1,43 @@
+'use strict';
+
+const express = require('express');
 const { body, validationResult } = require('express-validator');
+const router = express.Router();
+const {
+    getAllProperties,
+    getPropertyById,
+    createProperty,
+    updateProperty,
+    deleteProperty,
+} = require('../controllers/propertyController');
 
 // Input validation for properties
 const validatePropertyInput = [
+    body('title').notEmpty().withMessage('Title is required').trim(),
+    body('type').isIn(['sale', 'rental']).withMessage('Type must be "sale" or "rental"'),
     body('price')
-        .isFloat({ gt: 0 }).withMessage('Price must be greater than 0.').notEmpty().withMessage('Price is required.'),
+        .isFloat({ gt: 0 }).withMessage('Price must be greater than 0')
+        .notEmpty().withMessage('Price is required'),
     body('bedrooms')
-        .isInt({ gt: 0 }).withMessage('Bedrooms must be greater than 0.').notEmpty().withMessage('Bedrooms are required.'),
+        .isInt({ min: 0 }).withMessage('Bedrooms must be 0 or more')
+        .notEmpty().withMessage('Bedrooms are required'),
     body('bathrooms')
-        .isInt({ gt: 0 }).withMessage('Bathrooms must be greater than 0.').notEmpty().withMessage('Bathrooms are required.'),
+        .isInt({ min: 0 }).withMessage('Bathrooms must be 0 or more')
+        .notEmpty().withMessage('Bathrooms are required'),
     body('size')
-        .isFloat({ gt: 0 }).withMessage('Size must be greater than 0.').notEmpty().withMessage('Size is required.'),
-    body('floorNumber')
-        .isInt({ gt: 0 }).withMessage('Floor number must be greater than 0.').notEmpty().withMessage('Floor number is required.'),
-    body('totalMonthlyPayment')
-        .isFloat({ gt: 0 }).withMessage('Total monthly payment must be greater than 0.').notEmpty().withMessage('Total monthly payment is required.'),
-    body('vaadAmount')
-        .isFloat({ gt: 0 }).withMessage('Vaad amount must be greater than 0.').notEmpty().withMessage('Vaad amount is required.'),
-    body('cityTaxes')
-        .isFloat({ gt: 0 }).withMessage('City taxes must be greater than 0.').notEmpty().withMessage('City taxes are required.'),
-    body('agent')
+        .isFloat({ gt: 0 }).withMessage('Size must be greater than 0')
+        .notEmpty().withMessage('Size is required'),
+    body('floorNumber').optional().isInt({ min: 0 }).withMessage('Floor number must be 0 or more'),
+    body('financialDetails.totalMonthlyPayment')
         .optional()
-        .isMongoId().withMessage('Agent ID must be a valid ObjectId.')
+        .isFloat({ min: 0 }).withMessage('Total monthly payment must be >= 0'),
+    body('financialDetails.vaadAmount')
+        .optional()
+        .isFloat({ min: 0 }).withMessage('Vaad amount must be >= 0'),
+    body('financialDetails.cityTaxes')
+        .optional()
+        .isFloat({ min: 0 }).withMessage('City taxes must be >= 0'),
+    body('agent').optional().isMongoId().withMessage('Agent ID must be a valid ObjectId'),
 ];
 
 // Middleware to validate input
@@ -32,4 +49,19 @@ const validateInput = (req, res, next) => {
     next();
 };
 
-module.exports = { validatePropertyInput, validateInput };
+// GET /api/properties
+router.get('/', getAllProperties);
+
+// GET /api/properties/:id
+router.get('/:id', getPropertyById);
+
+// POST /api/properties
+router.post('/', validatePropertyInput, validateInput, createProperty);
+
+// PUT /api/properties/:id
+router.put('/:id', validatePropertyInput, validateInput, updateProperty);
+
+// DELETE /api/properties/:id
+router.delete('/:id', deleteProperty);
+
+module.exports = router;
