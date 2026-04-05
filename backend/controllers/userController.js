@@ -1,5 +1,6 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 const ALLOWED_ROLES = ['buyer', 'seller', 'agent', 'admin'];
@@ -60,6 +61,9 @@ const USER_UPDATE_FIELDS = ['name', 'email', 'phone', 'role', 'agency', 'bio', '
 
 // PUT /api/users/:id
 const updateUser = async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
     try {
         const updateData = {};
         USER_UPDATE_FIELDS.forEach((field) => {

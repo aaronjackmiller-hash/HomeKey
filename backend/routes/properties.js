@@ -19,15 +19,15 @@ const validatePropertyInput = [
         .isFloat({ gt: 0 }).withMessage('Price must be greater than 0')
         .notEmpty().withMessage('Price is required'),
     body('bedrooms')
-        .isInt({ min: 0 }).withMessage('Bedrooms must be 0 or more')
+        .isInt({ min: 0 }).withMessage('Bedrooms must be greater than or equal to 0')
         .notEmpty().withMessage('Bedrooms are required'),
     body('bathrooms')
-        .isInt({ min: 0 }).withMessage('Bathrooms must be 0 or more')
+        .isInt({ min: 0 }).withMessage('Bathrooms must be greater than or equal to 0')
         .notEmpty().withMessage('Bathrooms are required'),
     body('size')
         .isFloat({ gt: 0 }).withMessage('Size must be greater than 0')
         .notEmpty().withMessage('Size is required'),
-    body('floorNumber').optional().isInt({ min: 0 }).withMessage('Floor number must be 0 or more'),
+    body('floorNumber').optional().isInt({ min: 0 }).withMessage('Floor number must be greater than or equal to 0'),
     body('financialDetails.totalMonthlyPayment')
         .optional()
         .isFloat({ min: 0 }).withMessage('Total monthly payment must be >= 0'),

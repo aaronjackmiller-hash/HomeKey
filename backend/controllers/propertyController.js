@@ -1,5 +1,6 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const Property = require('../models/Property');
 
 const ALLOWED_TYPES = ['sale', 'rental'];
@@ -70,6 +71,9 @@ const PROPERTY_UPDATE_FIELDS = [
 
 // PUT /api/properties/:id
 const updateProperty = async (req, res) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ success: false, message: 'Invalid property ID' });
+    }
     try {
         const updateData = {};
         PROPERTY_UPDATE_FIELDS.forEach((field) => {
