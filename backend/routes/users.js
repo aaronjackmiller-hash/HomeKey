@@ -3,6 +3,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const {
     getAllUsers,
     getUserById,
@@ -43,12 +44,12 @@ router.get('/', getAllUsers);
 router.get('/:id', getUserById);
 
 // POST /api/users
-router.post('/', validateUserInput, validateInput, createUser);
+router.post('/', protect, validateUserInput, validateInput, createUser);
 
 // PUT /api/users/:id
-router.put('/:id', validateUserInput, validateInput, updateUser);
+router.put('/:id', protect, validateUserInput, validateInput, updateUser);
 
 // DELETE /api/users/:id
-router.delete('/:id', deleteUser);
+router.delete('/:id', protect, deleteUser);
 
 module.exports = router;
