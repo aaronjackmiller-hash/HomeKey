@@ -13,12 +13,12 @@ const generateToken = (id) =>
 const register = async (req, res) => {
     const { name, email, password, phone, role, agency, bio } = req.body;
     try {
-        const existing = await User.findOne({ email });
+        const existing = await User.findOne({ email: String(email) });
         if (existing) {
             return res.status(400).json({ success: false, message: 'Email already in use' });
         }
 
-        const hashed = await bcrypt.hash(password, 10);
+        const hashed = await bcrypt.hash(password, 12);
         const user = await User.create({ name, email, password: hashed, phone, role, agency, bio });
 
         const token = generateToken(user._id);
@@ -48,7 +48,7 @@ const login = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
     try {
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email: String(email) }).select('+password');
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
