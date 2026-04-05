@@ -25,10 +25,14 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // MongoDB connection
+const seedDatabase = require('./seed');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 mongoose
     .connect(MONGODB_URI)
-    .then(() => console.log('MongoDB connected'))
+    .then(async () => {
+        console.log('MongoDB connected');
+        await seedDatabase();
+    })
     .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
