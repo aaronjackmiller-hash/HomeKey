@@ -1,0 +1,36 @@
+# render.yaml — Render.com Blueprint
+# One free web service hosts both the React frontend and the Express/MongoDB backend.
+#
+# SETUP STEPS (one time):
+#   1. Create a free MongoDB Atlas cluster at https://cloud.mongodb.com
+#      and copy the connection string (mongodb+srv://...).
+#   2. Push this repo to GitHub (or it is already there).
+#   3. Go to https://render.com → New → Blueprint → connect this repo.
+#   4. Render will detect this file and create the "homekey" service automatically.
+#   5. In the Render dashboard, set the MONGODB_URI environment variable to
+#      your Atlas connection string.
+#   6. Done — your beta site will be live at the URL Render assigns.
+
+services:
+  - type: web
+    name: homekey
+    env: node
+    plan: free
+    # Build: install all deps, then build the React frontend
+    buildCommand: >-
+      npm ci --prefix frontend &&
+      NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build --prefix frontend &&
+      npm ci --prefix backend
+    # Start: Express serves both the API and the built React app
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Paste your MongoDB Atlas connection string in the Render dashboard
+      - key: MONGODB_URI
+        sync: false
+      # Render auto-generates a secure random value for JWT_SECRET
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d

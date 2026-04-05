@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const app = express();
 
@@ -42,10 +43,18 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
-});
+// In production, serve the built React app for all non-API routes
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../frontend/build')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+    });
+} else {
+    // 404 handler (development only)
+    app.use((req, res) => {
+        res.status(404).json({ success: false, message: 'Route not found' });
+    });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {
