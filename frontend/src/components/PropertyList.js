@@ -37,7 +37,10 @@ const PropertyList = () => {
         setProperties(result.data || []);
       } catch (err) {
         const status = err.response && err.response.status;
-        // 503 = DB not ready, 502 = Render proxy warming up, no response = network/cold-start drop
+        // 503 = DB not ready, 502 = Render proxy warming up.
+        // !err.response means axios got no HTTP response at all (connection refused/reset
+        // during cold-start). DNS failures can't happen here because the API uses a
+        // relative URL (/api/...) resolved against the same origin.
         const isTransient = status === 503 || status === 502 || !err.response;
         const isTimeout = err.code === 'ECONNABORTED';
 
@@ -85,7 +88,7 @@ const PropertyList = () => {
       <div>
         <p>⏳ Database is starting up… retrying in {autoRetrySecondsLeft}s</p>
         <p style={{ color: '#888', fontSize: '0.9em' }}>
-          Render free-tier servers wake from sleep and reconnect to MongoDB — this takes up to 30 seconds.
+          Render free-tier servers wake from sleep and reconnect to MongoDB — this takes up to 60 seconds.
         </p>
         <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
           Retry Now
