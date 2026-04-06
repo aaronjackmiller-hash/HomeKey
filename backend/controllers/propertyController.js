@@ -28,7 +28,7 @@ const getAllProperties = async (req, res) => {
 
         res.json({ success: true, count: properties.length, data: properties });
     } catch (err) {
-        if (err.name === 'MongoServerSelectionError' || err.name === 'MongoNetworkError') {
+        if (err.name === 'MongoServerSelectionError' || err.name === 'MongoNetworkError' || err.name === 'MongooseError') {
             return res.status(503).json({ success: false, message: 'Database unavailable' });
         }
         res.status(500).json({ success: false, message: 'Server error', error: err.message });

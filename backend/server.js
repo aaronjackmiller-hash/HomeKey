@@ -30,13 +30,25 @@ if (!process.env.MONGODB_URI) {
     console.warn('WARNING: MONGODB_URI is not set. Using local fallback. Set this env var in Render.');
 }
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
+const PORT = process.env.PORT || 5000;
+
+// Start the HTTP server only after the DB connection is established so that
+// Render (and any other host) never routes traffic to the app before MongoDB
+// is ready.  This prevents the race condition where Express starts accepting
+// requests while mongoose.connect() is still pending.
 mongoose
     .connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 30000,
         bufferCommands: false,
     })
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.error('MongoDB connection error:', err));
+    .then(() => {
+        console.log('MongoDB connected');
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch((err) => {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);
+    });
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -72,6 +84,3 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
 });
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
