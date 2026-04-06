@@ -2,5 +2,14 @@
   "name": "homekey-root",
   "version": "1.0.0",
   "description": "HomeKey monorepo root",
-  "private": true
+  "private": true,
+  "scripts": {
+    "install:all": "npm ci --prefix backend && npm ci --prefix frontend",
+    "build:frontend": "NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build --prefix frontend",
+    "build": "npm run build:frontend",
+    "render-build": "npm ci --prefix frontend && NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build --prefix frontend && npm ci --prefix backend",
+    "start": "node backend/server.js",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm start --prefix frontend"
+  }
 }
