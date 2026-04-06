@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties } from '../services/api';
+
+const MAX_AUTO_RETRIES = 12; // 12 × 5s = 60s of auto-retry
+const RETRY_INTERVAL_MS = 5000;
 
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
@@ -9,22 +12,48 @@ const PropertyList = () => {
   const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
+  const autoRetryTimerRef = useRef(null);
+  const countdownTimerRef = useRef(null);
   const history = useHistory();
 
+  // Clear any pending auto-retry timers
+  const clearTimers = () => {
+    if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
+    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+  };
+
   useEffect(() => {
+    clearTimers();
     const fetchProperties = async () => {
       setLoading(true);
       setSlowLoad(false);
       setError('');
+      setAutoRetrySecondsLeft(0);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
         const params = filter !== 'all' ? { type: filter } : {};
         const result = await getProperties(params);
         setProperties(result.data || []);
       } catch (err) {
-        if (err.response && err.response.status === 503) {
-          setError('Database is unavailable. Please check your MongoDB connection configuration.');
-        } else if (err.code === 'ECONNABORTED') {
+        const is503 = err.response && err.response.status === 503;
+        const isTimeout = err.code === 'ECONNABORTED';
+
+        if (is503 && retryCount < MAX_AUTO_RETRIES) {
+          // DB still connecting — auto-retry after RETRY_INTERVAL_MS
+          const secs = RETRY_INTERVAL_MS / 1000;
+          setAutoRetrySecondsLeft(secs);
+          countdownTimerRef.current = setInterval(() => {
+            setAutoRetrySecondsLeft((s) => (s > 1 ? s - 1 : 0));
+          }, 1000);
+          autoRetryTimerRef.current = setTimeout(() => {
+            clearInterval(countdownTimerRef.current);
+            setRetryCount((c) => c + 1);
+          }, RETRY_INTERVAL_MS);
+          setError('__starting_up__');
+        } else if (is503) {
+          setError('Database is unavailable. Please check your MongoDB connection configuration in the Render dashboard (MONGODB_URI env var).');
+        } else if (isTimeout) {
           setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
           setError('Failed to load properties. Please try again.');
@@ -36,6 +65,7 @@ const PropertyList = () => {
       }
     };
     fetchProperties();
+    return clearTimers;
   }, [filter, retryCount]);
 
   if (loading) {
@@ -48,11 +78,25 @@ const PropertyList = () => {
     );
   }
 
+  if (error === '__starting_up__') {
+    return (
+      <div>
+        <p>⏳ Database is starting up… retrying in {autoRetrySecondsLeft}s</p>
+        <p style={{ color: '#888', fontSize: '0.9em' }}>
+          Render free-tier servers wake from sleep and reconnect to MongoDB — this takes up to 30 seconds.
+        </p>
+        <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
+          Retry Now
+        </button>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div>
         <p style={{ color: 'red' }}>{error}</p>
-        <button onClick={() => setRetryCount((c) => c + 1)}>Try Again</button>
+        <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>Try Again</button>
       </div>
     );
   }
