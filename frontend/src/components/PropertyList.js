@@ -18,7 +18,11 @@ const PropertyList = () => {
         const result = await getProperties(params);
         setProperties(result.data || []);
       } catch (err) {
-        setError('Failed to load properties. Please try again.');
+        if (err.response && err.response.status === 503) {
+          setError('Database is unavailable. Please check your MongoDB connection configuration.');
+        } else {
+          setError('Failed to load properties. Please try again.');
+        }
       } finally {
         setLoading(false);
       }

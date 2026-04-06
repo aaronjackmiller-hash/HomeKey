@@ -26,9 +26,15 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // MongoDB connection
+if (!process.env.MONGODB_URI) {
+    console.warn('WARNING: MONGODB_URI is not set. Using local fallback. Set this env var in Render.');
+}
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 mongoose
-    .connect(MONGODB_URI)
+    .connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 5000,
+        bufferCommands: false,
+    })
     .then(() => console.log('MongoDB connected'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
