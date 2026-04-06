@@ -36,11 +36,13 @@ const PropertyList = () => {
         const result = await getProperties(params);
         setProperties(result.data || []);
       } catch (err) {
-        const is503 = err.response && err.response.status === 503;
+        const status = err.response && err.response.status;
+        // 503 = DB not ready, 502 = Render proxy warming up, no response = network/cold-start drop
+        const isTransient = status === 503 || status === 502 || !err.response;
         const isTimeout = err.code === 'ECONNABORTED';
 
-        if (is503 && retryCount < MAX_AUTO_RETRIES) {
-          // DB still connecting — auto-retry after RETRY_INTERVAL_MS
+        if (isTransient && retryCount < MAX_AUTO_RETRIES) {
+          // Server/DB still starting — auto-retry after RETRY_INTERVAL_MS
           const secs = RETRY_INTERVAL_MS / 1000;
           setAutoRetrySecondsLeft(secs);
           countdownTimerRef.current = setInterval(() => {
@@ -51,12 +53,12 @@ const PropertyList = () => {
             setRetryCount((c) => c + 1);
           }, RETRY_INTERVAL_MS);
           setError('__starting_up__');
-        } else if (is503) {
+        } else if (isTransient) {
           setError('Database is unavailable. Please check your MongoDB connection configuration in the Render dashboard (MONGODB_URI env var).');
         } else if (isTimeout) {
           setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
-          setError('Failed to load properties. Please try again.');
+          setError(`Failed to load properties (HTTP ${status || 'unknown'}). Please try again.`);
         }
       } finally {
         clearTimeout(slowTimer);
