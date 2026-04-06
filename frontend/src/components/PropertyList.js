@@ -6,13 +6,17 @@ const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const history = useHistory();
 
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
+      setSlowLoad(false);
       setError('');
+      const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
         const params = filter !== 'all' ? { type: filter } : {};
         const result = await getProperties(params);
@@ -20,18 +24,38 @@ const PropertyList = () => {
       } catch (err) {
         if (err.response && err.response.status === 503) {
           setError('Database is unavailable. Please check your MongoDB connection configuration.');
+        } else if (err.code === 'ECONNABORTED') {
+          setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
           setError('Failed to load properties. Please try again.');
         }
       } finally {
+        clearTimeout(slowTimer);
+        setSlowLoad(false);
         setLoading(false);
       }
     };
     fetchProperties();
-  }, [filter]);
+  }, [filter, retryCount]);
 
-  if (loading) return <p>Loading properties…</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
+  if (loading) {
+    return (
+      <p>
+        {slowLoad
+          ? 'Server is waking up… this can take up to 60 seconds on the first visit. Please wait.'
+          : 'Loading properties…'}
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <p style={{ color: 'red' }}>{error}</p>
+        <button onClick={() => setRetryCount((c) => c + 1)}>Try Again</button>
+      </div>
+    );
+  }
 
   return (
     <div>
