@@ -8,6 +8,11 @@ const ALLOWED_STATUSES = ['active', 'pending', 'sold', 'rented', 'inactive'];
 
 // GET /api/properties
 const getAllProperties = async (req, res) => {
+    // readyState 1 = connected. Return 503 while connecting so the frontend
+    // can auto-retry rather than showing a permanent error.
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ success: false, message: 'Database is starting up, please try again in a moment.' });
+    }
     try {
         const filter = {};
         if (req.query.type && ALLOWED_TYPES.includes(req.query.type)) {
@@ -28,6 +33,9 @@ const getAllProperties = async (req, res) => {
 
         res.json({ success: true, count: properties.length, data: properties });
     } catch (err) {
+        if (err.name === 'MongoServerSelectionError' || err.name === 'MongoNetworkError' || err.name === 'MongooseError') {
+            return res.status(503).json({ success: false, message: 'Database unavailable' });
+        }
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
 };

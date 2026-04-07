@@ -26,11 +26,23 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // MongoDB connection
+if (!process.env.MONGODB_URI) {
+    console.warn('WARNING: MONGODB_URI is not set. Using local fallback. Set this env var in Render.');
+}
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
+const PORT = process.env.PORT || 5000;
+
+// Connect to MongoDB. bufferCommands:false means queries throw immediately
+// when the DB is not yet ready (the controller checks readyState and returns
+// a 503 so the frontend can auto-retry).  We do NOT call process.exit() here
+// — a transient Atlas hiccup should not permanently crash the service.
 mongoose
-    .connect(MONGODB_URI)
+    .connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 30000,
+        bufferCommands: false,
+    })
     .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.error('MongoDB connection error:', err));
+    .catch((err) => console.error('MongoDB initial connection error:', err.message));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -67,5 +79,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
 });
 
-const PORT = process.env.PORT || 5000;
+// Bind the port immediately so Render (and other hosts) see the process as
+// healthy right away.  The DB connection is established in parallel above;
+// the routes check readyState and return 503 while it is still pending.
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
