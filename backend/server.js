@@ -52,7 +52,14 @@ app.use('/api/agents', require('./routes/agents'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
+    const dbState = mongoose.connection.readyState;
+    // readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+    const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
+    const dbReady = dbState === 1;
+    if (!dbReady) {
+        return res.status(503).json({ status: 'degraded', db: dbStatus });
+    }
+    res.json({ status: 'ok', db: dbStatus });
 });
 
 // API 404 handler — fires for any /api/* route not matched above
