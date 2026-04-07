@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties } from '../services/api';
 
-const MAX_AUTO_RETRIES = 12; // 12 × 5s = 60s of auto-retry
+const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
 
 const PropertyList = () => {
@@ -57,7 +57,7 @@ const PropertyList = () => {
           }, RETRY_INTERVAL_MS);
           setError('__starting_up__');
         } else if (isTransient) {
-          setError('Database is unavailable. Please check your MongoDB connection configuration in the Render dashboard (MONGODB_URI env var).');
+          setError('Database is unavailable. Please verify your MongoDB connection string (MONGODB_URI) is set correctly in your hosting environment.');
         } else if (isTimeout) {
           setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
@@ -77,7 +77,7 @@ const PropertyList = () => {
     return (
       <p>
         {slowLoad
-          ? 'Server is waking up… this can take up to 60 seconds on the first visit. Please wait.'
+          ? 'Server is taking a moment to respond… please wait.'
           : 'Loading properties…'}
       </p>
     );
@@ -86,9 +86,9 @@ const PropertyList = () => {
   if (error === '__starting_up__') {
     return (
       <div>
-        <p>⏳ Database is starting up… retrying in {autoRetrySecondsLeft}s</p>
+        <p>⏳ Connecting to database… retrying in {autoRetrySecondsLeft}s</p>
         <p style={{ color: '#888', fontSize: '0.9em' }}>
-          Render free-tier servers wake from sleep and reconnect to MongoDB — this takes up to 60 seconds.
+          The server is having trouble reaching the database. Retrying automatically.
         </p>
         <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
           Retry Now
