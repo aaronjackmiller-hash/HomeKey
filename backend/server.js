@@ -69,10 +69,6 @@ app.use('/api', (req, res) => {
 
 // In production, serve the built React app for all remaining (non-API) routes
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../frontend/build')));
-    app.get('*', apiLimiter, (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-    });
 } else {
     // Development: 404 for everything else
     app.use((req, res) => {
