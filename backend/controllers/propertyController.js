@@ -1,14 +1,8 @@
-'use strict';
-
-const mongoose = require('mongoose');
-const Property = require('../models/Property');
-
-const ALLOWED_TYPES = ['sale', 'rental'];
-const ALLOWED_STATUSES = ['active', 'pending', 'sold', 'rented', 'inactive'];
-
 // GET /api/properties
 const getAllProperties = async (req, res) => {
     try {
+        // If the database is still in 'connecting' mode, we'll try to 
+        // proceed anyway—Mongoose will queue the request until ready.
         const filter = {};
         if (req.query.type && ALLOWED_TYPES.includes(req.query.type)) {
             filter.type = req.query.type;
@@ -28,98 +22,12 @@ const getAllProperties = async (req, res) => {
 
         res.json({ success: true, count: properties.length, data: properties });
     } catch (err) {
-        if (err.name === 'MongoServerSelectionError' || err.name === 'MongoNetworkError' || err.name === 'MongooseError') {
-            return res.status(503).json({ success: false, message: 'Database unavailable' });
-        }
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
-    }
-};
-
-// GET /api/properties/:id
-const getPropertyById = async (req, res) => {
-    try {
-        const property = await Property.findById(req.params.id).populate('agent', 'name email phone');
-        if (!property) {
-            return res.status(404).json({ success: false, message: 'Property not found' });
-        }
-        res.json({ success: true, data: property });
-    } catch (err) {
-        if (err.name === 'CastError') {
-            return res.status(400).json({ success: false, message: 'Invalid property ID' });
-        }
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
-    }
-};
-
-// POST /api/properties
-const createProperty = async (req, res) => {
-    try {
-        const property = await Property.create(req.body);
-        res.status(201).json({ success: true, data: property });
-    } catch (err) {
-        if (err.name === 'ValidationError') {
-            const messages = Object.values(err.errors).map((e) => e.message);
-            return res.status(400).json({ success: false, message: messages.join(', ') });
-        }
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
-    }
-};
-
-// Allowed fields for property updates
-const PROPERTY_UPDATE_FIELDS = [
-    'title', 'description', 'type', 'price', 'address', 'bedrooms', 'bathrooms',
-    'size', 'floorNumber', 'buildingDetails', 'financialDetails', 'dates',
-    'images', 'agent', 'status',
-];
-
-// PUT /api/properties/:id
-const updateProperty = async (req, res) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ success: false, message: 'Invalid property ID' });
-    }
-    try {
-        const updateData = {};
-        PROPERTY_UPDATE_FIELDS.forEach((field) => {
-            if (Object.prototype.hasOwnProperty.call(req.body, field)) {
-                updateData[field] = req.body[field];
-            }
+        // This is the only place it will show 'Database unavailable' now
+        console.error('Property Fetch Error:', err);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Database unavailable', 
+            error: err.message 
         });
-
-        const property = await Property.findByIdAndUpdate(req.params.id, updateData, {
-            new: true,
-            runValidators: true,
-        }).populate('agent', 'name email phone');
-
-        if (!property) {
-            return res.status(404).json({ success: false, message: 'Property not found' });
-        }
-        res.json({ success: true, data: property });
-    } catch (err) {
-        if (err.name === 'CastError') {
-            return res.status(400).json({ success: false, message: 'Invalid property ID' });
-        }
-        if (err.name === 'ValidationError') {
-            const messages = Object.values(err.errors).map((e) => e.message);
-            return res.status(400).json({ success: false, message: messages.join(', ') });
-        }
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
-};
-
-// DELETE /api/properties/:id
-const deleteProperty = async (req, res) => {
-    try {
-        const property = await Property.findByIdAndDelete(req.params.id);
-        if (!property) {
-            return res.status(404).json({ success: false, message: 'Property not found' });
-        }
-        res.json({ success: true, message: 'Property deleted successfully' });
-    } catch (err) {
-        if (err.name === 'CastError') {
-            return res.status(400).json({ success: false, message: 'Invalid property ID' });
-        }
-        res.status(500).json({ success: false, message: 'Server error', error: err.message });
-    }
-};
-
-module.exports = { getAllProperties, getPropertyById, createProperty, updateProperty, deleteProperty };
+}; 
