@@ -25,6 +25,13 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 const PORT = process.env.PORT || 5000;
@@ -59,10 +66,19 @@ app.use('/api', (req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Universal 404 handler for non-API routes
-app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
-});
+// Serve React frontend in production
+if (process.env.NODE_ENV === 'production') {
+    const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+    app.use(generalLimiter);
+    app.use(express.static(frontendBuild));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendBuild, 'index.html'));
+    });
+} else {
+    app.use((req, res) => {
+        res.status(404).json({ success: false, message: 'Route not found' });
+    });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {
