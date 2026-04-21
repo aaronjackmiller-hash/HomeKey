@@ -6,6 +6,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
@@ -69,6 +70,14 @@ app.use('/api', (req, res) => {
 // Serve React frontend in production
 if (process.env.NODE_ENV === 'production') {
     const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+    if (!fs.existsSync(path.join(frontendBuild, 'index.html'))) {
+        console.error(
+            'ERROR: frontend/build/index.html not found. ' +
+            'The React app was not built before starting the server. ' +
+            'Ensure the build command ran successfully during deployment.'
+        );
+        process.exit(1);
+    }
     app.use(generalLimiter);
     app.use(express.static(frontendBuild));
     app.get('*', (req, res) => {

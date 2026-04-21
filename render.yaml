@@ -16,8 +16,13 @@ services:
     name: homekey
     env: node
     plan: free
-    # Build: install all deps and build the React frontend via root script
-    buildCommand: npm run render-build
+    # Build: install deps, build React frontend (with memory cap for free-tier),
+    # then verify the build output exists before continuing.
+    buildCommand: >-
+      npm ci --prefix frontend &&
+      NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=512" CI=false npm run build --prefix frontend &&
+      test -f frontend/build/index.html &&
+      npm ci --prefix backend
     # Start: Express serves both the API and the built React app
     startCommand: node backend/server.js
     envVars:
