@@ -59,10 +59,18 @@ app.use('/api', (req, res) => {
     res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// Universal 404 handler for non-API routes
-app.use((req, res) => {
-    res.status(404).json({ success: false, message: 'Route not found' });
-});
+// Serve React frontend in production
+if (process.env.NODE_ENV === 'production') {
+    const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+    app.use(express.static(frontendBuild));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendBuild, 'index.html'));
+    });
+} else {
+    app.use((req, res) => {
+        res.status(404).json({ success: false, message: 'Route not found' });
+    });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {
