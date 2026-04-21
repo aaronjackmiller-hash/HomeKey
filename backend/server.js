@@ -25,6 +25,13 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 const PORT = process.env.PORT || 5000;
@@ -62,8 +69,12 @@ app.use('/api', (req, res) => {
 // Serve React frontend in production
 if (process.env.NODE_ENV === 'production') {
     const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+    app.use(generalLimiter);
     app.use(express.static(frontendBuild));
     app.get('*', (req, res) => {
+        if (req.path.startsWith('/api')) {
+            return res.status(404).json({ success: false, message: 'Route not found' });
+        }
         res.sendFile(path.join(frontendBuild, 'index.html'));
     });
 } else {
