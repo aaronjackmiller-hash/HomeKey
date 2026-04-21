@@ -33,6 +33,8 @@ const generalLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const { runSeed } = require('./seed');
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 const PORT = process.env.PORT || 5000;
@@ -42,7 +44,11 @@ mongoose
         serverSelectionTimeoutMS: 30000,
         bufferCommands: false,
     })
-    .then(() => console.log('MongoDB connected'))
+    .then(() => {
+        console.log('MongoDB connected');
+        // Auto-seed if the database is empty (no-op if data already exists)
+        return runSeed(false);
+    })
     .catch((err) => console.error('MongoDB initial connection error:', err.message));
 
 // Routes

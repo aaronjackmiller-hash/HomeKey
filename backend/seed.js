@@ -3,9 +3,9 @@
 /**
  * Seed script — populate the database with an agent user and sample Israeli properties.
  *
- * Usage:
- *   node seed.js            # creates records only if the DB is empty
- *   node seed.js --force    # drops existing properties/agents and re-seeds
+ * Can be imported by server.js for automatic startup seeding, or run directly:
+ *   node seed.js            # seeds only if the DB is empty
+ *   node seed.js --force    # drops existing seed data and re-seeds
  *
  * Requires MONGODB_URI (and optionally JWT_SECRET) from .env or the environment.
  */
@@ -156,22 +156,22 @@ const buildProperties = (agentId) => [
     },
 ];
 
-async function seed() {
-    const force = process.argv.includes('--force');
-    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
-
-    await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 30000 });
-    console.log('Connected to MongoDB');
-
+/**
+ * Core seeding logic — assumes an active Mongoose connection already exists.
+ * Safe to call multiple times: skips if data is already present (unless force=true).
+ *
+ * @param {boolean} force - Drop existing seed data and re-seed.
+ * @returns {Promise<void>}
+ */
+async function runSeed(force = false) {
     if (force) {
         await Property.deleteMany({});
         await User.deleteMany({ role: 'agent', email: SEED_AGENT.email });
-        console.log('Cleared existing seed data');
+        console.log('[seed] Cleared existing seed data');
     } else {
         const count = await Property.countDocuments();
         if (count > 0) {
-            console.log(`Database already has ${count} properties. Run with --force to re-seed.`);
-            await mongoose.disconnect();
+            console.log(`[seed] Database already has ${count} properties — skipping.`);
             return;
         }
     }
@@ -181,28 +181,41 @@ async function seed() {
     if (!agent) {
         const hashed = await bcrypt.hash(SEED_AGENT.password, 12);
         agent = await User.create({ ...SEED_AGENT, password: hashed });
-        console.log(`Created agent: ${agent.name} <${agent.email}>`);
+        console.log(`[seed] Created agent: ${agent.name} <${agent.email}>`);
     } else {
-        console.log(`Reusing existing agent: ${agent.name} <${agent.email}>`);
+        console.log(`[seed] Reusing existing agent: ${agent.name} <${agent.email}>`);
     }
 
     // Insert properties
     const properties = buildProperties(agent._id);
     const created = await Property.insertMany(properties);
-    console.log(`Inserted ${created.length} properties.`);
+    console.log(`[seed] Inserted ${created.length} properties.`);
 
     // Link listings back to agent
     await User.findByIdAndUpdate(agent._id, {
         $set: { listings: created.map((p) => p._id) },
     });
 
-    console.log('\n✅ Seed complete.');
-    console.log(`   Agent login: ${SEED_AGENT.email}  /  password: ${SEED_AGENT.password}`);
-
-    await mongoose.disconnect();
+    console.log('[seed] ✅ Seed complete.');
+    console.log(`[seed]    Agent login: ${SEED_AGENT.email}  /  password: ${SEED_AGENT.password}`);
 }
 
-seed().catch((err) => {
-    console.error('Seed failed:', err.message);
-    process.exit(1);
-});
+// Allow this file to be run directly: node seed.js [--force]
+if (require.main === module) {
+    const force = process.argv.includes('--force');
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
+
+    mongoose
+        .connect(MONGODB_URI, { serverSelectionTimeoutMS: 30000 })
+        .then(() => {
+            console.log('[seed] Connected to MongoDB');
+            return runSeed(force);
+        })
+        .then(() => mongoose.disconnect())
+        .catch((err) => {
+            console.error('[seed] Failed:', err.message);
+            process.exit(1);
+        });
+}
+
+module.exports = { runSeed };
