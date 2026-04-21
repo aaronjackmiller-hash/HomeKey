@@ -1,13 +1,17 @@
-// GET /api/properties
+const Property = require('../models/Property');
+
+// @desc    Get all properties
+// @route   GET /api/properties
+// @access  Public
 const getAllProperties = async (req, res) => {
     try {
-        // If the database is still in 'connecting' mode, we'll try to 
-        // proceed anyway—Mongoose will queue the request until ready.
         const filter = {};
-        if (req.query.type && ALLOWED_TYPES.includes(req.query.type)) {
+        
+        // Basic filtering logic
+        if (req.query.type) {
             filter.type = req.query.type;
         }
-        if (req.query.status && ALLOWED_STATUSES.includes(req.query.status)) {
+        if (req.query.status) {
             filter.status = req.query.status;
         }
         if (req.query.minPrice || req.query.maxPrice) {
@@ -16,18 +20,26 @@ const getAllProperties = async (req, res) => {
             if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
         }
 
+        // We use .find() - Mongoose will wait for the connection automatically
         const properties = await Property.find(filter)
-            .populate('agent', 'name email phone')
             .sort({ createdAt: -1 });
 
-        res.json({ success: true, count: properties.length, data: properties });
+        res.json({ 
+            success: true, 
+            count: properties.length, 
+            data: properties 
+        });
     } catch (err) {
-        // This is the only place it will show 'Database unavailable' now
         console.error('Property Fetch Error:', err);
         res.status(500).json({ 
             success: false, 
-            message: 'Database unavailable', 
+            message: 'Server Error', 
             error: err.message 
         });
     }
-}; 
+};
+
+// This is the part that was likely missing or broken:
+module.exports = {
+    getAllProperties
+};
