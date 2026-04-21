@@ -62,18 +62,18 @@ const PropertyDetail = () => {
 
             <div className="financials">
                 <h2>Financials</h2>
-                <p>Price: <strong>${property.price?.toLocaleString()}</strong></p>
+                <p>Price: <strong>₪{property.price?.toLocaleString()}</strong></p>
                 {property.financialDetails?.totalMonthlyPayment != null && (
-                    <p>Total Monthly Payment: ${property.financialDetails.totalMonthlyPayment?.toLocaleString()}</p>
+                    <p>Total Monthly Payment: ₪{property.financialDetails.totalMonthlyPayment?.toLocaleString()}</p>
                 )}
                 {property.financialDetails?.vaadAmount != null && (
-                    <p>Vaad (HOA): ${property.financialDetails.vaadAmount?.toLocaleString()}</p>
+                    <p>Vaad (HOA): ₪{property.financialDetails.vaadAmount?.toLocaleString()}</p>
                 )}
                 {property.financialDetails?.cityTaxes != null && (
-                    <p>City Taxes: ${property.financialDetails.cityTaxes?.toLocaleString()}</p>
+                    <p>City Taxes: ₪{property.financialDetails.cityTaxes?.toLocaleString()}</p>
                 )}
                 {property.financialDetails?.maintenanceFees != null && (
-                    <p>Maintenance Fees: ${property.financialDetails.maintenanceFees?.toLocaleString()}</p>
+                    <p>Maintenance Fees: ₪{property.financialDetails.maintenanceFees?.toLocaleString()}</p>
                 )}
             </div>
 

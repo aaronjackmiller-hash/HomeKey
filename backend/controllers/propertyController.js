@@ -24,6 +24,9 @@ const getAllProperties = async (req, res) => {
         if (req.query.status) {
             filter.status = req.query.status;
         }
+        if (req.query.city) {
+            filter['address.city'] = new RegExp(req.query.city.trim(), 'i');
+        }
         if (req.query.minPrice || req.query.maxPrice) {
             filter.price = {};
             if (req.query.minPrice) filter.price.$gte = Number(req.query.minPrice);
