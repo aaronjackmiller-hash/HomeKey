@@ -8,6 +8,9 @@ const RETRY_INTERVAL_MS = 5000;
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [citySearch, setCitySearch] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
   const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +35,11 @@ const PropertyList = () => {
       setAutoRetrySecondsLeft(0);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
-        const params = filter !== 'all' ? { type: filter } : {};
+        const params = {};
+        if (filter !== 'all') params.type = filter;
+        if (citySearch.trim()) params.city = citySearch.trim();
+        if (minPrice !== '') params.minPrice = minPrice;
+        if (maxPrice !== '') params.maxPrice = maxPrice;
         const result = await getProperties(params);
         setProperties(result.data || []);
       } catch (err) {
@@ -71,7 +78,13 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, retryCount]);
+  }, [filter, citySearch, minPrice, maxPrice, retryCount]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // Filter state changes from onChange handlers already trigger the useEffect.
+    // This handler just prevents the default form submission (page reload).
+  };
 
   if (loading) {
     return (
@@ -108,6 +121,45 @@ const PropertyList = () => {
 
   return (
     <div>
+      <form onSubmit={handleSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '16px 20px', background: '#f8f8f8', alignItems: 'flex-end' }}>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+          <label>City</label>
+          <input
+            type="text"
+            placeholder="e.g. Tel Aviv"
+            value={citySearch}
+            onChange={(e) => setCitySearch(e.target.value)}
+          />
+        </div>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
+          <label>Min Price (₪)</label>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+          />
+        </div>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
+          <label>Max Price (₪)</label>
+          <input
+            type="number"
+            placeholder="Any"
+            min="0"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+          />
+        </div>
+        <button type="submit" style={{ alignSelf: 'flex-end', padding: '10px 20px' }}>Search</button>
+        <button
+          type="button"
+          onClick={() => { setCitySearch(''); setMinPrice(''); setMaxPrice(''); setFilter('all'); }}
+          style={{ alignSelf: 'flex-end', padding: '10px 20px' }}
+        >
+          Clear
+        </button>
+      </form>
       <div className='tabs'>
         <button onClick={() => setFilter('all')}>All</button>
         <button onClick={() => setFilter('rental')}>Rental</button>
@@ -127,7 +179,7 @@ const PropertyList = () => {
             )}
             <h3>{property.title}</h3>
             <p>{property.address?.city}{property.address?.city && property.address?.state ? ', ' : ''}{property.address?.state}</p>
-            <p><strong>${property.price?.toLocaleString()}</strong> &bull; {property.type === 'rental' ? 'Rental' : 'For Sale'}</p>
+            <p><strong>₪{property.price?.toLocaleString()}</strong> &bull; {property.type === 'rental' ? 'Rental' : 'For Sale'}</p>
             <p>{property.bedrooms} bed &bull; {property.bathrooms} bath &bull; {property.size} sqm</p>
           </div>
         ))}
@@ -137,3 +189,4 @@ const PropertyList = () => {
 };
 
 export default PropertyList;
+

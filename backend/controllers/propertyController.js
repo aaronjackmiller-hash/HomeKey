@@ -24,6 +24,11 @@ const getAllProperties = async (req, res) => {
         if (req.query.status) {
             filter.status = req.query.status;
         }
+        if (req.query.city) {
+            // Escape special regex characters to prevent regex injection
+            const escapedCity = req.query.city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter['address.city'] = new RegExp(escapedCity, 'i');
+        }
         if (req.query.minPrice || req.query.maxPrice) {
             filter.price = {};
             if (req.query.minPrice) filter.price.$gte = Number(req.query.minPrice);

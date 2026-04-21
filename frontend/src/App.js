@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import PropertyList from './components/PropertyList';
 import PropertyDetail from './components/PropertyDetail';
 import AddListing from './components/AddListing';
+import EditListing from './components/EditListing';
 import Login from './components/Login';
 import Register from './components/Register';
 import './index.css';
@@ -32,6 +33,9 @@ const App = () => {
             <Route path="/register" component={Register} />
             <PrivateRoute path="/add-listing">
               <AddListing />
+            </PrivateRoute>
+            <PrivateRoute path="/edit-listing/:id">
+              <EditListing />
             </PrivateRoute>
             <Redirect to="/" />
           </Switch>
