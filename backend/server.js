@@ -72,9 +72,6 @@ if (process.env.NODE_ENV === 'production') {
     app.use(generalLimiter);
     app.use(express.static(frontendBuild));
     app.get('*', (req, res) => {
-        if (req.path.startsWith('/api')) {
-            return res.status(404).json({ success: false, message: 'Route not found' });
-        }
         res.sendFile(path.join(frontendBuild, 'index.html'));
     });
 } else {
