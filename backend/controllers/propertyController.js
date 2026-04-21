@@ -20,7 +20,7 @@ const getAllProperties = async (req, res) => {
             if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
         }
 
-        // We use .find() - Mongoose will wait for the connection automatically
+        // Mongoose will handle the connection queue automatically
         const properties = await Property.find(filter)
             .sort({ createdAt: -1 });
 
@@ -39,7 +39,7 @@ const getAllProperties = async (req, res) => {
     }
 };
 
-// This is the part that was likely missing or broken:
+// CRITICAL: This allows the Routes file to find the function
 module.exports = {
     getAllProperties
 };
