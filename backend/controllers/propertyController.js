@@ -25,7 +25,9 @@ const getAllProperties = async (req, res) => {
             filter.status = req.query.status;
         }
         if (req.query.city) {
-            filter['address.city'] = new RegExp(req.query.city.trim(), 'i');
+            // Escape special regex characters to prevent regex injection
+            const escapedCity = req.query.city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter['address.city'] = new RegExp(escapedCity, 'i');
         }
         if (req.query.minPrice || req.query.maxPrice) {
             filter.price = {};

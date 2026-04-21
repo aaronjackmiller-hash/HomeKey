@@ -82,9 +82,8 @@ const PropertyList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Trigger a re-fetch by resetting retryCount if already 0, otherwise the
-    // useEffect dependency on the input states already handles it.
-    setRetryCount(0);
+    // Filter state changes from onChange handlers already trigger the useEffect.
+    // This handler just prevents the default form submission (page reload).
   };
 
   if (loading) {
