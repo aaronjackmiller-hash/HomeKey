@@ -193,6 +193,14 @@ const PropertyList = () => {
         // relative URL (/api/...) resolved against the same origin.
         const isTransient = status === 503 || status === 502 || !err.response;
         const isTimeout = err.code === 'ECONNABORTED';
+        const canFallbackToDemo = isTransient || isTimeout || (status >= 500 && status < 600);
+
+        // Keep the beta site usable even when backend/API is temporarily unavailable.
+        // We render the built-in sample listings until the API recovers.
+        if (canFallbackToDemo) {
+          setDbIsEmpty(true);
+          setProperties([]);
+        }
 
         if (isTransient && retryCount < MAX_AUTO_RETRIES) {
           // Server/DB still starting — auto-retry after RETRY_INTERVAL_MS
@@ -206,8 +214,8 @@ const PropertyList = () => {
             setRetryCount((c) => c + 1);
           }, RETRY_INTERVAL_MS);
           setError('__starting_up__');
-        } else if (isTransient) {
-          setError('Database is unavailable. Please verify your MongoDB connection string (MONGODB_URI) is set correctly in your hosting environment.');
+        } else if (canFallbackToDemo) {
+          setError('Using demo listings while the database is unavailable.');
         } else if (isTimeout) {
           setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
@@ -244,21 +252,7 @@ const PropertyList = () => {
       );
     }
 
-    if (error === '__starting_up__') {
-      return (
-        <div style={{ padding: '16px 20px' }}>
-          <p>⏳ Connecting to database… retrying in {autoRetrySecondsLeft}s</p>
-          <p style={{ color: '#888', fontSize: '0.9em' }}>
-            The server is having trouble reaching the database. Retrying automatically.
-          </p>
-          <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
-            Retry Now
-          </button>
-        </div>
-      );
-    }
-
-    if (error) {
+    if (error && !dbIsEmpty) {
       return (
         <div style={{ padding: '16px 20px' }}>
           <p style={{ color: 'red' }}>{error}</p>
@@ -287,9 +281,22 @@ const PropertyList = () => {
     return (
       <div className='container'>
         {dbIsEmpty && (
-          <p style={{ width: '100%', margin: '0 0 12px', color: '#888', fontSize: '0.9em' }}>
-            ⚡ Showing demo listings — connect your database to see real properties.
-          </p>
+          <div style={{ width: '100%', margin: '0 0 12px' }}>
+            <p style={{ margin: '0 0 8px', color: '#888', fontSize: '0.9em' }}>
+              {error === '__starting_up__'
+                ? `⏳ Connecting to database… retrying in ${autoRetrySecondsLeft}s. Showing demo listings in the meantime.`
+                : '⚡ Showing demo listings — connect your database to see real properties.'}
+            </p>
+            {error && error !== '__starting_up__' && (
+              <p style={{ margin: 0, color: '#b45309', fontSize: '0.9em' }}>{error}</p>
+            )}
+            <button
+              onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}
+              style={{ marginTop: '8px' }}
+            >
+              Retry Connection
+            </button>
+          </div>
         )}
         {!dbIsEmpty && displayProperties.length === 0 && <p>No properties found.</p>}
         {displayProperties.map((property) => (
