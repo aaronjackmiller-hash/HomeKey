@@ -16,7 +16,8 @@ services:
     name: homekey
     env: node
     plan: free
-    # Build: install all deps and build the React frontend via root script
+    # Build: install deps, build React frontend, verify output, install backend deps.
+    # Uses the root render-build script which includes memory flags and a build guard.
     buildCommand: npm run render-build
     # Start: Express serves both the API and the built React app
     startCommand: node backend/server.js

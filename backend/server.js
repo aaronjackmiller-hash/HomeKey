@@ -6,6 +6,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
@@ -32,6 +33,8 @@ const generalLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const { runSeed } = require('./seed');
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 const PORT = process.env.PORT || 5000;
@@ -41,7 +44,11 @@ mongoose
         serverSelectionTimeoutMS: 30000,
         bufferCommands: false,
     })
-    .then(() => console.log('MongoDB connected'))
+    .then(() => {
+        console.log('MongoDB connected');
+        // Auto-seed if the database is empty (no-op if data already exists)
+        return runSeed(false);
+    })
     .catch((err) => console.error('MongoDB initial connection error:', err.message));
 
 // Routes
@@ -69,6 +76,14 @@ app.use('/api', (req, res) => {
 // Serve React frontend in production
 if (process.env.NODE_ENV === 'production') {
     const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
+    if (!fs.existsSync(path.join(frontendBuild, 'index.html'))) {
+        console.error(
+            'ERROR: frontend/build/index.html not found. ' +
+            'The React app was not built before starting the server. ' +
+            'Ensure the build command ran successfully during deployment.'
+        );
+        process.exit(1);
+    }
     app.use(generalLimiter);
     app.use(express.static(frontendBuild));
     app.get('*', (req, res) => {

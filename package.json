@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "install:all": "npm ci --prefix backend && npm ci --prefix frontend",
-    "build:frontend": "NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build --prefix frontend",
+    "build:frontend": "NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=384\" CI=false npm run build --prefix frontend",
     "build": "npm run build:frontend",
-    "render-build": "npm ci --prefix frontend && NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build --prefix frontend && npm ci --prefix backend",
+    "render-build": "npm ci --prefix frontend && NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=384\" CI=false npm run build --prefix frontend && test -f frontend/build/index.html && npm ci --prefix backend",
     "start": "node backend/server.js",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm start --prefix frontend"

@@ -7,6 +7,21 @@
 
 ---
 
+## 0. Render service settings (Build & Start commands)
+
+**If you created the service via the render.yaml Blueprint**, these are already set for you. Skip to step 1.
+
+**If you created the service manually** in the Render dashboard, set:
+
+| Field | Value |
+|---|---|
+| **Build Command** | `npm run render-build` |
+| **Start Command** | `node backend/server.js` |
+
+> The `render-build` script (in the root `package.json`) installs dependencies, builds the React frontend with the correct memory flags, verifies the build output exists, and then installs backend dependencies. Using any other build command will leave the frontend unbuilt and cause a startup error.
+
+---
+
 ## 1. Get the correct MongoDB connection string
 
 Atlas's **Connect** dialog gives you a string that looks like this:
@@ -82,6 +97,8 @@ Open your Render service → **Logs** tab and look for:
 
 | Log message | Cause | Fix |
 |---|---|---|
+| `ERROR: frontend/build/index.html not found` | Build Command was wrong or build was OOM-killed | Set Build Command to `npm run render-build` (see step 0) and redeploy |
+| `ENOENT: no such file or directory, stat '.../frontend/build/index.html'` | Same as above — old server code without the startup check | Set Build Command to `npm run render-build` and redeploy from the latest commit |
 | `WARNING: MONGODB_URI is not set` | Env var missing in Render | Add `MONGODB_URI` in the Environment tab |
 | `MongoServerError: bad auth` | Wrong username or password | Re-check Atlas database user credentials |
 | `MongooseServerSelectionError: connection timed out` | IP not whitelisted | Add `0.0.0.0/0` in Atlas Network Access |
