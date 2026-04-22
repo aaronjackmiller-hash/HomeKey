@@ -4,10 +4,100 @@ import { getProperties } from '../services/api';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
+const SEARCH_DEBOUNCE_MS = 400;
+
+// Fallback sample properties shown when the database returns no results
+const SAMPLE_PROPERTIES = [
+  {
+    _id: 'sample-1',
+    title: 'Spacious 4-Room Apartment in Tel Aviv Center',
+    type: 'sale',
+    price: 4200000,
+    address: { city: 'Tel Aviv', state: 'Tel Aviv District' },
+    bedrooms: 3,
+    bathrooms: 2,
+    size: 110,
+  },
+  {
+    _id: 'sample-2',
+    title: 'Modern Studio in Florentin',
+    type: 'rental',
+    price: 5500,
+    address: { city: 'Tel Aviv', state: 'Tel Aviv District' },
+    bedrooms: 1,
+    bathrooms: 1,
+    size: 42,
+  },
+  {
+    _id: 'sample-3',
+    title: 'Penthouse with Sea View — Haifa Carmel',
+    type: 'sale',
+    price: 3800000,
+    address: { city: 'Haifa', state: 'Haifa District' },
+    bedrooms: 4,
+    bathrooms: 3,
+    size: 195,
+  },
+  {
+    _id: 'sample-4',
+    title: '3-Room Garden Apartment in Jerusalem — Rechavia',
+    type: 'sale',
+    price: 3200000,
+    address: { city: 'Jerusalem', state: 'Jerusalem District' },
+    bedrooms: 2,
+    bathrooms: 1,
+    size: 85,
+  },
+  {
+    _id: 'sample-5',
+    title: 'Luxury Rental — Herzliya Pituah Villa',
+    type: 'rental',
+    price: 35000,
+    address: { city: 'Herzliya', state: 'Center District' },
+    bedrooms: 6,
+    bathrooms: 4,
+    size: 420,
+  },
+  {
+    _id: 'sample-6',
+    title: "Investor Special — 2-Room in Be'er Sheva",
+    type: 'sale',
+    price: 750000,
+    address: { city: "Be'er Sheva", state: 'South District' },
+    bedrooms: 2,
+    bathrooms: 1,
+    size: 55,
+  },
+  {
+    _id: 'sample-7',
+    title: "New-Build 5-Room in Ra'anana",
+    type: 'sale',
+    price: 3600000,
+    address: { city: "Ra'anana", state: 'Center District' },
+    bedrooms: 4,
+    bathrooms: 2,
+    size: 148,
+  },
+  {
+    _id: 'sample-8',
+    title: 'Charming Old City Apartment — Jaffa Port',
+    type: 'rental',
+    price: 9500,
+    address: { city: 'Jaffa', state: 'Tel Aviv District' },
+    bedrooms: 2,
+    bathrooms: 1,
+    size: 78,
+  },
+];
 
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
+  // Local input values update instantly so typing is never interrupted
+  const [cityInput, setCityInput] = useState('');
+  const [minPriceInput, setMinPriceInput] = useState('');
+  const [maxPriceInput, setMaxPriceInput] = useState('');
+  // Debounced search values that actually trigger the API call
   const [citySearch, setCitySearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -18,12 +108,46 @@ const PropertyList = () => {
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
+  const debounceRef = useRef(null);
   const history = useHistory();
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
     if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
+  };
+
+  // Debounce input changes so the API is not called on every keystroke
+  const handleCityChange = (e) => {
+    const val = e.target.value;
+    setCityInput(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setCitySearch(val), SEARCH_DEBOUNCE_MS);
+  };
+
+  const handleMinPriceChange = (e) => {
+    const val = e.target.value;
+    setMinPriceInput(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setMinPrice(val), SEARCH_DEBOUNCE_MS);
+  };
+
+  const handleMaxPriceChange = (e) => {
+    const val = e.target.value;
+    setMaxPriceInput(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setMaxPrice(val), SEARCH_DEBOUNCE_MS);
+  };
+
+  const handleClear = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setCityInput('');
+    setMinPriceInput('');
+    setMaxPriceInput('');
+    setCitySearch('');
+    setMinPrice('');
+    setMaxPrice('');
+    setFilter('all');
   };
 
   useEffect(() => {
@@ -82,97 +206,69 @@ const PropertyList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Filter state changes from onChange handlers already trigger the useEffect.
-    // This handler just prevents the default form submission (page reload).
+    // Flush any pending debounce immediately on explicit Search button click
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setCitySearch(cityInput);
+    setMinPrice(minPriceInput);
+    setMaxPrice(maxPriceInput);
   };
 
-  if (loading) {
-    return (
-      <p>
-        {slowLoad
-          ? 'Server is taking a moment to respond… please wait.'
-          : 'Loading properties…'}
-      </p>
-    );
-  }
+  // True when no search filters are active
+  const noFiltersActive = filter === 'all' && !citySearch.trim() && minPrice === '' && maxPrice === '';
 
-  if (error === '__starting_up__') {
-    return (
-      <div>
-        <p>⏳ Connecting to database… retrying in {autoRetrySecondsLeft}s</p>
-        <p style={{ color: '#888', fontSize: '0.9em' }}>
-          The server is having trouble reaching the database. Retrying automatically.
+  // Decide what to render in the results area
+  const renderResults = () => {
+    if (loading) {
+      return (
+        <p style={{ padding: '16px 20px' }}>
+          {slowLoad
+            ? 'Server is taking a moment to respond… please wait.'
+            : 'Loading properties…'}
         </p>
-        <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
-          Retry Now
-        </button>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error) {
+    if (error === '__starting_up__') {
+      return (
+        <div style={{ padding: '16px 20px' }}>
+          <p>⏳ Connecting to database… retrying in {autoRetrySecondsLeft}s</p>
+          <p style={{ color: '#888', fontSize: '0.9em' }}>
+            The server is having trouble reaching the database. Retrying automatically.
+          </p>
+          <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
+            Retry Now
+          </button>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div style={{ padding: '16px 20px' }}>
+          <p style={{ color: 'red' }}>{error}</p>
+          <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>Try Again</button>
+        </div>
+      );
+    }
+
+    // Use real properties when available; fall back to sample data when the DB is empty and no filters are active
+    const isSampleData = properties.length === 0 && noFiltersActive;
+    const displayProperties = isSampleData ? SAMPLE_PROPERTIES : properties;
+
     return (
-      <div>
-        <p style={{ color: 'red' }}>{error}</p>
-        <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>Try Again</button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <form onSubmit={handleSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '16px 20px', background: '#f8f8f8', alignItems: 'flex-end' }}>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-          <label>City</label>
-          <input
-            type="text"
-            placeholder="e.g. Tel Aviv"
-            value={citySearch}
-            onChange={(e) => setCitySearch(e.target.value)}
-          />
-        </div>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
-          <label>Min Price (₪)</label>
-          <input
-            type="number"
-            placeholder="0"
-            min="0"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-          />
-        </div>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
-          <label>Max Price (₪)</label>
-          <input
-            type="number"
-            placeholder="Any"
-            min="0"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-          />
-        </div>
-        <button type="submit" style={{ alignSelf: 'flex-end', padding: '10px 20px' }}>Search</button>
-        <button
-          type="button"
-          onClick={() => { setCitySearch(''); setMinPrice(''); setMaxPrice(''); setFilter('all'); }}
-          style={{ alignSelf: 'flex-end', padding: '10px 20px' }}
-        >
-          Clear
-        </button>
-      </form>
-      <div className='tabs'>
-        <button onClick={() => setFilter('all')}>All</button>
-        <button onClick={() => setFilter('rental')}>Rental</button>
-        <button onClick={() => setFilter('sale')}>For Sale</button>
-      </div>
       <div className='container'>
-        {properties.length === 0 && <p>No properties found.</p>}
-        {properties.map((property) => (
+        {isSampleData && (
+          <p style={{ width: '100%', margin: '0 0 12px', color: '#888', fontSize: '0.9em' }}>
+            ⚡ Showing demo listings — connect your database to see real properties.
+          </p>
+        )}
+        {!isSampleData && displayProperties.length === 0 && <p>No properties found.</p>}
+        {displayProperties.map((property) => (
           <div
             key={property._id}
             className='property-card'
-            onClick={() => history.push(`/properties/${property._id}`)}
-            style={{ cursor: 'pointer' }}
+            onClick={() => !property._id.startsWith('sample-') && history.push(`/properties/${property._id}`)}
+            style={{ cursor: property._id.startsWith('sample-') ? 'default' : 'pointer' }}
           >
             {property.images && property.images[0] && (
               <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '4px' }} />
@@ -184,6 +280,56 @@ const PropertyList = () => {
           </div>
         ))}
       </div>
+    );
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '16px 20px', background: '#f8f8f8', alignItems: 'flex-end' }}>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+          <label>City</label>
+          <input
+            type="text"
+            placeholder="e.g. Tel Aviv"
+            value={cityInput}
+            onChange={handleCityChange}
+          />
+        </div>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
+          <label>Min Price (₪)</label>
+          <input
+            type="number"
+            placeholder="0"
+            min="0"
+            value={minPriceInput}
+            onChange={handleMinPriceChange}
+          />
+        </div>
+        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
+          <label>Max Price (₪)</label>
+          <input
+            type="number"
+            placeholder="Any"
+            min="0"
+            value={maxPriceInput}
+            onChange={handleMaxPriceChange}
+          />
+        </div>
+        <button type="submit" style={{ alignSelf: 'flex-end', padding: '10px 20px' }}>Search</button>
+        <button
+          type="button"
+          onClick={handleClear}
+          style={{ alignSelf: 'flex-end', padding: '10px 20px' }}
+        >
+          Clear
+        </button>
+      </form>
+      <div className='tabs'>
+        <button onClick={() => setFilter('all')}>All</button>
+        <button onClick={() => setFilter('rental')}>Rental</button>
+        <button onClick={() => setFilter('sale')}>For Sale</button>
+      </div>
+      {renderResults()}
     </div>
   );
 };
