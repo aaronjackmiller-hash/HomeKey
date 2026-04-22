@@ -17,6 +17,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 3,
     bathrooms: 2,
     size: 110,
+    images: ['https://picsum.photos/seed/homekey1/800/600'],
   },
   {
     _id: 'sample-2',
@@ -27,6 +28,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 1,
     bathrooms: 1,
     size: 42,
+    images: ['https://picsum.photos/seed/homekey2/800/600'],
   },
   {
     _id: 'sample-3',
@@ -37,6 +39,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 4,
     bathrooms: 3,
     size: 195,
+    images: ['https://picsum.photos/seed/homekey3/800/600'],
   },
   {
     _id: 'sample-4',
@@ -47,6 +50,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 2,
     bathrooms: 1,
     size: 85,
+    images: ['https://picsum.photos/seed/homekey4/800/600'],
   },
   {
     _id: 'sample-5',
@@ -57,6 +61,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 6,
     bathrooms: 4,
     size: 420,
+    images: ['https://picsum.photos/seed/homekey5/800/600'],
   },
   {
     _id: 'sample-6',
@@ -67,6 +72,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 2,
     bathrooms: 1,
     size: 55,
+    images: ['https://picsum.photos/seed/homekey6/800/600'],
   },
   {
     _id: 'sample-7',
@@ -77,6 +83,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 4,
     bathrooms: 2,
     size: 148,
+    images: ['https://picsum.photos/seed/homekey7/800/600'],
   },
   {
     _id: 'sample-8',
@@ -87,6 +94,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 2,
     bathrooms: 1,
     size: 78,
+    images: ['https://picsum.photos/seed/homekey8/800/600'],
   },
 ];
 
@@ -104,6 +112,7 @@ const PropertyList = () => {
   const [loading, setLoading] = useState(true);
   const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState('');
+  const [dbIsEmpty, setDbIsEmpty] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const autoRetryTimerRef = useRef(null);
@@ -164,8 +173,18 @@ const PropertyList = () => {
         if (citySearch.trim()) params.city = citySearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
         if (maxPrice !== '') params.maxPrice = maxPrice;
+        const hasFilters = Object.keys(params).length > 0;
         const result = await getProperties(params);
-        setProperties(result.data || []);
+        const data = result.data || [];
+        setProperties(data);
+        // If the API returns 0 results with no filters, the database itself is empty.
+        // Keep the flag set until real data actually arrives so filtered searches
+        // continue to show (locally filtered) demo listings.
+        if (data.length > 0) {
+          setDbIsEmpty(false);
+        } else if (!hasFilters) {
+          setDbIsEmpty(true);
+        }
       } catch (err) {
         const status = err.response && err.response.status;
         // 503 = DB not ready, 502 = Render proxy warming up.
@@ -213,9 +232,6 @@ const PropertyList = () => {
     setMaxPrice(maxPriceInput);
   };
 
-  // True when no search filters are active
-  const noFiltersActive = filter === 'all' && !citySearch.trim() && minPrice === '' && maxPrice === '';
-
   // Decide what to render in the results area
   const renderResults = () => {
     if (loading) {
@@ -251,18 +267,31 @@ const PropertyList = () => {
       );
     }
 
-    // Use real properties when available; fall back to sample data when the DB is empty and no filters are active
-    const isSampleData = properties.length === 0 && noFiltersActive;
-    const displayProperties = isSampleData ? SAMPLE_PROPERTIES : properties;
+    // When the database is empty, filter the local SAMPLE_PROPERTIES to match
+    // whatever type/city/price filters the user has active so searches still work.
+    let displayProperties;
+    if (dbIsEmpty) {
+      let samples = [...SAMPLE_PROPERTIES];
+      if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
+      if (citySearch.trim()) {
+        const q = citySearch.trim().toLowerCase();
+        samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
+      }
+      if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
+      if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
+      displayProperties = samples;
+    } else {
+      displayProperties = properties;
+    }
 
     return (
       <div className='container'>
-        {isSampleData && (
+        {dbIsEmpty && (
           <p style={{ width: '100%', margin: '0 0 12px', color: '#888', fontSize: '0.9em' }}>
             ⚡ Showing demo listings — connect your database to see real properties.
           </p>
         )}
-        {!isSampleData && displayProperties.length === 0 && <p>No properties found.</p>}
+        {!dbIsEmpty && displayProperties.length === 0 && <p>No properties found.</p>}
         {displayProperties.map((property) => (
           <div
             key={property._id}
