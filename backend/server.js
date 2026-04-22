@@ -41,22 +41,32 @@ const { runSeed } = require('./seed');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.MONGODB_URI) {
+    console.warn('WARNING: MONGODB_URI is not set. Falling back to mongodb://localhost:27017/homekey');
+}
+
 mongoose
     .connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 30000,
         bufferCommands: false,
     })
-    .then(() => {
+    .then(async () => {
         console.log('MongoDB connected');
         // Auto-seed if the database is empty (no-op if data already exists)
-        return runSeed(false);
-    })
-    .then(() => {
-        console.log('[startup] Seed check complete.');
+        try {
+            await runSeed(false);
+            console.log('[startup] Seed check complete.');
+        } catch (seedErr) {
+            console.error('[startup] Seed failed (server will start without seed data):', seedErr.message);
+        }
+        // Start accepting connections only after DB is ready and seed has run.
+        // This prevents requests from arriving while the database is still empty.
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     })
     .catch((err) => {
-        console.error('MongoDB startup error:', err.message);
+        console.error('MongoDB connection failed — server will not start:', err.message);
         console.error('[startup] Full error:', err);
+        process.exit(1);
     });
 
 // Routes
@@ -140,5 +150,3 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
 });
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
