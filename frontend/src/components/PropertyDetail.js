@@ -17,7 +17,11 @@ const PropertyDetail = () => {
                 const result = await getProperty(id);
                 setProperty(result.data);
             } catch (err) {
-                setError('Property not found.');
+                if (err.response?.status === 404) {
+                    setError('Property not found.');
+                } else {
+                    setError(err.response?.data?.message || 'Failed to load property. Please try again.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -43,7 +47,7 @@ const PropertyDetail = () => {
         <div className="property-detail" style={{ maxWidth: '800px', margin: '20px auto', padding: '0 20px' }}>
             <button onClick={() => history.push('/')} style={{ marginBottom: '16px' }}>&larr; Back to listings</button>
             <h1>{property.title}</h1>
-            <p>{property.address?.street}{property.address?.city ? `, ${property.address.city}` : ''}{property.address?.state ? `, ${property.address.state}` : ''}</p>
+            <p>{property.address?.street}{property.address?.city ? `, ${property.address.city}` : ''}{property.address?.state ? `, ${property.address.state}` : ''}{property.address?.zip ? ` ${property.address.zip}` : ''}</p>
 
             {property.images && property.images.length > 0 && (
                 <div className="image-gallery" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -75,7 +79,19 @@ const PropertyDetail = () => {
                 {property.financialDetails?.maintenanceFees != null && (
                     <p>Maintenance Fees: ₪{property.financialDetails.maintenanceFees?.toLocaleString()}</p>
                 )}
+                {property.financialDetails?.propertyTax != null && (
+                    <p>Property Tax: ₪{property.financialDetails.propertyTax?.toLocaleString()}</p>
+                )}
             </div>
+
+            {(property.buildingDetails?.name || property.buildingDetails?.floorCount != null || property.buildingDetails?.apartmentCount != null) && (
+                <div className="building-details">
+                    <h2>Building Details</h2>
+                    {property.buildingDetails?.name && <p>Building: {property.buildingDetails.name}</p>}
+                    {property.buildingDetails?.floorCount != null && <p>Total Floors: {property.buildingDetails.floorCount}</p>}
+                    {property.buildingDetails?.apartmentCount != null && <p>Total Apartments: {property.buildingDetails.apartmentCount}</p>}
+                </div>
+            )}
 
             {property.dates?.availableFrom && (
                 <div className="availability">
