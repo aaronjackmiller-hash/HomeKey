@@ -57,14 +57,14 @@ mongoose
             await runSeed(false);
             console.log('[startup] Seed check complete.');
         } catch (seedErr) {
-            console.error('[startup] Seed failed (server will start without seed data):', seedErr.message);
+            console.error('[startup] Seed failed - demo data not loaded. Use POST /api/admin/seed to retry:', seedErr.message);
         }
         // Start accepting connections only after DB is ready and seed has run.
         // This prevents requests from arriving while the database is still empty.
         app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     })
     .catch((err) => {
-        console.error('MongoDB connection failed — server will not start:', err.message);
+        console.error('MongoDB connection failed - server will not start:', err.message);
         console.error('[startup] Full error:', err);
         process.exit(1);
     });
