@@ -103,3 +103,37 @@ Open your Render service → **Logs** tab and look for:
 | `MongoServerError: bad auth` | Wrong username or password | Re-check Atlas database user credentials |
 | `MongooseServerSelectionError: connection timed out` | IP not whitelisted | Add `0.0.0.0/0` in Atlas Network Access |
 | `MongoDB connected` | ✅ No action needed | — |
+
+---
+
+## 6. Manually trigger the seed (if properties are missing)
+
+On first start the server auto-seeds the database when it is empty. If the database is still
+empty after the service is running (e.g. seeding failed silently during a cold-start), you can
+trigger it manually without redeploying:
+
+1. In the Render dashboard, go to your service → **Environment** tab and copy the value of `ADMIN_SECRET`.
+2. Run:
+
+```bash
+curl -X POST https://YOUR-RENDER-URL.onrender.com/api/admin/seed \
+  -H "X-Admin-Secret: <ADMIN_SECRET value>"
+```
+
+Expected success response:
+
+```json
+{ "success": true, "message": "Seed completed (force=false)." }
+```
+
+To **drop existing seed data and re-seed** from scratch, add `{"force":true}` to the body:
+
+```bash
+curl -X POST https://YOUR-RENDER-URL.onrender.com/api/admin/seed \
+  -H "X-Admin-Secret: <ADMIN_SECRET value>" \
+  -H "Content-Type: application/json" \
+  -d '{"force":true}'
+```
+
+> **Note:** `force=true` deletes all properties and the seed agent before re-inserting them.
+> Do not use this if you have real listings you want to keep.

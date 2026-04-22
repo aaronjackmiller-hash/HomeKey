@@ -32,3 +32,6 @@ services:
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      # Admin secret for the POST /api/admin/seed endpoint
+      - key: ADMIN_SECRET
+        generateValue: true

@@ -2,13 +2,15 @@
 
 require('dotenv').config();
 
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 
 const app = express();
 
@@ -49,13 +51,51 @@ mongoose
         // Auto-seed if the database is empty (no-op if data already exists)
         return runSeed(false);
     })
-    .catch((err) => console.error('MongoDB initial connection error:', err.message));
+    .then(() => {
+        console.log('[startup] Seed check complete.');
+    })
+    .catch((err) => {
+        console.error('MongoDB startup error:', err.message);
+        console.error('[startup] Full error:', err);
+    });
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/properties', require('./routes/properties'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/agents', require('./routes/agents'));
+
+// Admin seed endpoint — manually trigger seeding when auto-seed fails or is skipped.
+// Protected by ADMIN_SECRET env var. If ADMIN_SECRET is not set, the endpoint is disabled.
+// Usage: POST /api/admin/seed
+//   Header: X-Admin-Secret: <value of ADMIN_SECRET>
+//   Optional body: { "force": true }  — drops existing seed data and re-seeds
+app.post('/api/admin/seed', async (req, res) => {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+        return res.status(403).json({ success: false, message: 'Admin seed endpoint is disabled (ADMIN_SECRET not configured).' });
+    }
+    const provided = req.headers['x-admin-secret'];
+    const secretBuf = Buffer.from(adminSecret);
+    // Use a zero-filled dummy buffer so timingSafeEqual always runs,
+    // preventing timing leaks regardless of whether `provided` is missing or wrong length.
+    const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
+    const dummy = Buffer.alloc(secretBuf.length);
+    const cmpBuf = providedBuf.length === secretBuf.length ? providedBuf : dummy;
+    const match = crypto.timingSafeEqual(secretBuf, cmpBuf);
+    if (!provided || !match) {
+        return res.status(403).json({ success: false, message: 'Invalid or missing X-Admin-Secret header.' });
+    }
+    try {
+        const force = req.body && req.body.force === true;
+        console.log(`[admin/seed] Triggered via API (force=${force})`);
+        await runSeed(force);
+        res.json({ success: true, message: `Seed completed (force=${force}).` });
+    } catch (err) {
+        console.error('[admin/seed] Seed failed:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
