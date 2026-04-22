@@ -45,6 +45,11 @@ if (!process.env.MONGODB_URI) {
     console.warn('WARNING: MONGODB_URI is not set. Falling back to mongodb://localhost:27017/homekey');
 }
 
+// Start accepting HTTP connections immediately so the React frontend is always
+// reachable — even during cold starts or while MongoDB is still connecting.
+// API routes that need the database will return 503 until the connection is ready.
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 mongoose
     .connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 30000,
@@ -59,15 +64,24 @@ mongoose
         } catch (seedErr) {
             console.error('[startup] Seed failed - demo data not loaded. Use POST /api/admin/seed to retry:', seedErr.message);
         }
-        // Start accepting connections only after DB is ready and seed has run.
-        // This prevents requests from arriving while the database is still empty.
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     })
     .catch((err) => {
-        console.error('MongoDB connection failed - server will not start:', err.message);
+        console.error('MongoDB connection failed:', err.message);
         console.error('[startup] Full error:', err);
-        process.exit(1);
+        // Do not exit — keep the server running so the frontend remains accessible.
+        // The /api/health endpoint will report the degraded state.
     });
+
+// Readiness guard — return 503 for all API routes that need the database until
+// MongoDB is connected. The /api/health endpoint is exempt so monitoring can
+// always check the server state.
+app.use('/api', (req, res, next) => {
+    if (req.path === '/health') return next();
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ success: false, message: 'Database not ready. Please try again shortly.' });
+    }
+    next();
+});
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
