@@ -299,22 +299,30 @@ const PropertyList = () => {
           </div>
         )}
         {!dbIsEmpty && displayProperties.length === 0 && <p>No properties found.</p>}
-        {displayProperties.map((property) => (
-          <div
-            key={property._id}
-            className='property-card'
-            onClick={() => !property._id.startsWith('sample-') && history.push(`/properties/${property._id}`)}
-            style={{ cursor: property._id.startsWith('sample-') ? 'default' : 'pointer' }}
-          >
-            {property.images && property.images[0] && (
-              <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '4px' }} />
-            )}
-            <h3>{property.title}</h3>
-            <p>{property.address?.city}{property.address?.city && property.address?.state ? ', ' : ''}{property.address?.state}</p>
-            <p><strong>₪{property.price?.toLocaleString()}</strong> &bull; {property.type === 'rental' ? 'Rental' : 'For Sale'}</p>
-            <p>{property.bedrooms} bed &bull; {property.bathrooms} bath &bull; {property.size} sqm</p>
-          </div>
-        ))}
+        {displayProperties.map((property, index) => {
+          if (!property || typeof property !== 'object') return null;
+          const propertyId = property._id || property.id;
+          const isSample = typeof propertyId === 'string' && propertyId.startsWith('sample-');
+          const canOpenDetail = Boolean(propertyId) && !isSample;
+          const key = propertyId || `property-${index}`;
+
+          return (
+            <div
+              key={key}
+              className='property-card'
+              onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
+              style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
+            >
+              {property.images && property.images[0] && (
+                <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '4px' }} />
+              )}
+              <h3>{property.title}</h3>
+              <p>{property.address?.city}{property.address?.city && property.address?.state ? ', ' : ''}{property.address?.state}</p>
+              <p><strong>₪{property.price?.toLocaleString()}</strong> &bull; {property.type === 'rental' ? 'Rental' : 'For Sale'}</p>
+              <p>{property.bedrooms} bed &bull; {property.bathrooms} bath &bull; {property.size} sqm</p>
+            </div>
+          );
+        })}
       </div>
     );
   };
