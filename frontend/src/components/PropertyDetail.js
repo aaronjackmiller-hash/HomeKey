@@ -3,6 +3,19 @@ import { useParams, useHistory } from 'react-router-dom';
 import { getProperty, deleteProperty } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const formatCurrency = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return `₪${Number(value).toLocaleString()}`;
+};
+
+const formatDate = (value) => {
+    if (!value) return '—';
+    return new Date(value).toLocaleDateString();
+};
+
+const getAddressLine = (address) =>
+    [address?.street, address?.city, address?.state, address?.zip].filter(Boolean).join(', ');
+
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
@@ -39,85 +52,146 @@ const PropertyDetail = () => {
         }
     };
 
-    if (loading) return <p>Loading…</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
+    if (loading) return <p className="status-message">Loading property details…</p>;
+    if (error) return <p className="status-message status-message-error">{error}</p>;
     if (!property) return null;
 
+    const addressLine = getAddressLine(property.address);
+    const heroImage =
+        (Array.isArray(property.images) && property.images[0]) ||
+        'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
+    const additionalImages = Array.isArray(property.images) ? property.images.slice(1) : [];
+    const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
+
+    const profileSections = [
+        {
+            title: 'Specifications',
+            items: [
+                { label: 'Bedrooms', value: property.bedrooms ?? '—' },
+                { label: 'Bathrooms', value: property.bathrooms ?? '—' },
+                { label: 'Size', value: property.size ? `${property.size} sqm` : '—' },
+                { label: 'Floor', value: property.floorNumber ?? '—' },
+                { label: 'Status', value: property.status || '—' },
+                { label: 'Type', value: typeLabel },
+            ],
+        },
+        {
+            title: 'Financial Profile',
+            items: [
+                { label: 'Listing Price', value: formatCurrency(property.price) },
+                { label: 'Total Monthly Payment', value: formatCurrency(property.financialDetails?.totalMonthlyPayment) },
+                { label: 'Vaad (HOA)', value: formatCurrency(property.financialDetails?.vaadAmount) },
+                { label: 'City Taxes', value: formatCurrency(property.financialDetails?.cityTaxes) },
+                { label: 'Maintenance Fees', value: formatCurrency(property.financialDetails?.maintenanceFees) },
+                { label: 'Property Tax', value: formatCurrency(property.financialDetails?.propertyTax) },
+            ],
+        },
+        {
+            title: 'Building Details',
+            items: [
+                { label: 'Building Name', value: property.buildingDetails?.name || '—' },
+                { label: 'Total Floors', value: property.buildingDetails?.floorCount ?? '—' },
+                { label: 'Apartment Count', value: property.buildingDetails?.apartmentCount ?? '—' },
+            ],
+        },
+        {
+            title: 'Availability & Dates',
+            items: [
+                { label: 'Available From', value: formatDate(property.dates?.availableFrom) },
+                { label: 'Listing Date', value: formatDate(property.dates?.listingDate) },
+                { label: 'Created At', value: formatDate(property.createdAt) },
+                { label: 'Updated At', value: formatDate(property.updatedAt) },
+            ],
+        },
+    ];
+
     return (
-        <div className="property-detail" style={{ maxWidth: '800px', margin: '20px auto', padding: '0 20px' }}>
-            <button onClick={() => history.push('/')} style={{ marginBottom: '16px' }}>&larr; Back to listings</button>
-            <h1>{property.title}</h1>
-            <p>{property.address?.street}{property.address?.city ? `, ${property.address.city}` : ''}{property.address?.state ? `, ${property.address.state}` : ''}{property.address?.zip ? ` ${property.address.zip}` : ''}</p>
+        <div className="property-detail-page">
+            <div className="detail-shell">
+                <button className="ghost-button" onClick={() => history.push('/')}>
+                    ← Back to listings
+                </button>
 
-            {property.images && property.images.length > 0 && (
-                <div className="image-gallery" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                    {property.images.map((image, index) => (
-                        <img key={index} src={image} alt={`Property Image ${index + 1}`} style={{ width: '200px', height: '150px', objectFit: 'cover', borderRadius: '4px' }} />
+                <section className="detail-hero-card">
+                    <img className="detail-hero-image" src={heroImage} alt={property.title || 'Property'} />
+                    <div className="detail-hero-content">
+                        <div>
+                            <p className="detail-type-pill">{typeLabel}</p>
+                            <h1>{property.title || 'Untitled property'}</h1>
+                            <p className="detail-address">{addressLine || 'Address not provided'}</p>
+                            <div className="detail-highlight-row">
+                                <span>{property.bedrooms ?? '—'} bed</span>
+                                <span>{property.bathrooms ?? '—'} bath</span>
+                                <span>{property.size ? `${property.size} sqm` : '—'}</span>
+                            </div>
+                        </div>
+                        <div className="detail-price-box">
+                            <p>Price</p>
+                            <strong>{formatCurrency(property.price)}</strong>
+                        </div>
+                    </div>
+                </section>
+
+                {additionalImages.length > 0 && (
+                    <section className="detail-gallery-grid">
+                        {additionalImages.map((image, index) => (
+                            <img key={index} src={image} alt={`Property visual ${index + 2}`} />
+                        ))}
+                    </section>
+                )}
+
+                {property.description && (
+                    <section className="detail-section-card">
+                        <h2>About this property</h2>
+                        <p className="detail-description">{property.description}</p>
+                    </section>
+                )}
+
+                <section className="profile-grid">
+                    {profileSections.map((section) => (
+                        <div className="profile-card" key={section.title}>
+                            <h3>{section.title}</h3>
+                            <dl>
+                                {section.items.map((item) => (
+                                    <div className="profile-row" key={item.label}>
+                                        <dt>{item.label}</dt>
+                                        <dd>{item.value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
                     ))}
-                </div>
-            )}
+                </section>
 
-            <div className="specs">
-                <h2>Specifications</h2>
-                <p>{property.bedrooms} bedrooms &bull; {property.bathrooms} bathrooms &bull; {property.size} sqm &bull; Floor {property.floorNumber ?? '—'}</p>
-                {property.description && <p>{property.description}</p>}
-                <p>Status: <strong>{property.status}</strong> &bull; Type: <strong>{property.type === 'rental' ? 'Rental' : 'For Sale'}</strong></p>
+                {property.agent && (
+                    <section className="detail-section-card">
+                        <h2>Agent Contact</h2>
+                        <div className="agent-grid">
+                            <div>
+                                <p className="agent-name">{property.agent.name}</p>
+                                {property.agent.agency && <p>{property.agent.agency}</p>}
+                            </div>
+                            <div>
+                                {property.agent.phone && <p>Phone: {property.agent.phone}</p>}
+                                {property.agent.email && <p>Email: {property.agent.email}</p>}
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {isAuthenticated && (
+                    <div className="detail-actions">
+                        <button className="primary-button" onClick={() => history.push(`/edit-listing/${property._id}`)}>
+                            Edit Listing
+                        </button>
+                        <button className="danger-button" onClick={handleDelete}>
+                            Delete Listing
+                        </button>
+                    </div>
+                )}
             </div>
-
-            <div className="financials">
-                <h2>Financials</h2>
-                <p>Price: <strong>₪{property.price?.toLocaleString()}</strong></p>
-                {property.financialDetails?.totalMonthlyPayment != null && (
-                    <p>Total Monthly Payment: ₪{property.financialDetails.totalMonthlyPayment?.toLocaleString()}</p>
-                )}
-                {property.financialDetails?.vaadAmount != null && (
-                    <p>Vaad (HOA): ₪{property.financialDetails.vaadAmount?.toLocaleString()}</p>
-                )}
-                {property.financialDetails?.cityTaxes != null && (
-                    <p>City Taxes: ₪{property.financialDetails.cityTaxes?.toLocaleString()}</p>
-                )}
-                {property.financialDetails?.maintenanceFees != null && (
-                    <p>Maintenance Fees: ₪{property.financialDetails.maintenanceFees?.toLocaleString()}</p>
-                )}
-                {property.financialDetails?.propertyTax != null && (
-                    <p>Property Tax: ₪{property.financialDetails.propertyTax?.toLocaleString()}</p>
-                )}
-            </div>
-
-            {(property.buildingDetails?.name || property.buildingDetails?.floorCount != null || property.buildingDetails?.apartmentCount != null) && (
-                <div className="building-details">
-                    <h2>Building Details</h2>
-                    {property.buildingDetails?.name && <p>Building: {property.buildingDetails.name}</p>}
-                    {property.buildingDetails?.floorCount != null && <p>Total Floors: {property.buildingDetails.floorCount}</p>}
-                    {property.buildingDetails?.apartmentCount != null && <p>Total Apartments: {property.buildingDetails.apartmentCount}</p>}
-                </div>
-            )}
-
-            {property.dates?.availableFrom && (
-                <div className="availability">
-                    <h2>Availability</h2>
-                    <p>Available from: {new Date(property.dates.availableFrom).toLocaleDateString()}</p>
-                </div>
-            )}
-
-            {property.agent && (
-                <div className="agent-contact">
-                    <h2>Contact Agent</h2>
-                    <p>{property.agent.name}</p>
-                    {property.agent.phone && <p>{property.agent.phone}</p>}
-                    {property.agent.email && <p>{property.agent.email}</p>}
-                </div>
-            )}
-
-            {isAuthenticated && (
-                <div style={{ marginTop: '24px' }}>
-                    <button onClick={() => history.push(`/edit-listing/${property._id}`)} style={{ marginRight: '12px' }}>Edit Listing</button>
-                    <button onClick={handleDelete} style={{ background: '#e53e3e', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>Delete Listing</button>
-                </div>
-            )}
         </div>
     );
 };
 
 export default PropertyDetail;
-

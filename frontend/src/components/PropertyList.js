@@ -6,6 +6,11 @@ const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
 const SEARCH_DEBOUNCE_MS = 400;
 
+const formatCurrency = (value) => {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  return `₪${Number(value).toLocaleString()}`;
+};
+
 // Fallback sample properties shown when the database returns no results
 const SAMPLE_PROPERTIES = [
   {
@@ -244,7 +249,7 @@ const PropertyList = () => {
   const renderResults = () => {
     if (loading) {
       return (
-        <p style={{ padding: '16px 20px' }}>
+        <p className="status-message">
           {slowLoad
             ? 'Server is taking a moment to respond… please wait.'
             : 'Loading properties…'}
@@ -254,9 +259,11 @@ const PropertyList = () => {
 
     if (error && !dbIsEmpty) {
       return (
-        <div style={{ padding: '16px 20px' }}>
-          <p style={{ color: 'red' }}>{error}</p>
-          <button onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>Try Again</button>
+        <div className="status-panel">
+          <p className="status-message status-message-error">{error}</p>
+          <button className="secondary-btn" onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
+            Try Again
+          </button>
         </div>
       );
     }
@@ -281,30 +288,36 @@ const PropertyList = () => {
     return (
       <div className='container'>
         {dbIsEmpty && (
-          <div style={{ width: '100%', margin: '0 0 12px' }}>
-            <p style={{ margin: '0 0 8px', color: '#888', fontSize: '0.9em' }}>
+          <div className="status-banner">
+            <p>
               {error === '__starting_up__'
                 ? `⏳ Connecting to database… retrying in ${autoRetrySecondsLeft}s. Showing demo listings in the meantime.`
                 : '⚡ Showing demo listings — connect your database to see real properties.'}
             </p>
             {error && error !== '__starting_up__' && (
-              <p style={{ margin: 0, color: '#b45309', fontSize: '0.9em' }}>{error}</p>
+              <p>{error}</p>
             )}
             <button
+              className="secondary-btn"
               onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}
-              style={{ marginTop: '8px' }}
             >
               Retry Connection
             </button>
           </div>
         )}
-        {!dbIsEmpty && displayProperties.length === 0 && <p>No properties found.</p>}
+        {!dbIsEmpty && displayProperties.length === 0 && <p className="status-message">No properties found.</p>}
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
           const propertyId = property._id || property.id;
           const isSample = typeof propertyId === 'string' && propertyId.startsWith('sample-');
           const canOpenDetail = Boolean(propertyId) && !isSample;
           const key = propertyId || `property-${index}`;
+          const imageSrc =
+            (Array.isArray(property.images) && property.images[0]) ||
+            `https://picsum.photos/seed/homekey-card-${key}/800/600`;
+          const cityLine = [property.address?.city, property.address?.state].filter(Boolean).join(', ');
+          const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
+          const monthly = property.financialDetails?.totalMonthlyPayment;
 
           return (
             <div
@@ -313,13 +326,22 @@ const PropertyList = () => {
               onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
-              {property.images && property.images[0] && (
-                <img src={property.images[0]} alt={property.title} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '4px' }} />
-              )}
-              <h3>{property.title}</h3>
-              <p>{property.address?.city}{property.address?.city && property.address?.state ? ', ' : ''}{property.address?.state}</p>
-              <p><strong>₪{property.price?.toLocaleString()}</strong> &bull; {property.type === 'rental' ? 'Rental' : 'For Sale'}</p>
-              <p>{property.bedrooms} bed &bull; {property.bathrooms} bath &bull; {property.size} sqm</p>
+              <img className="property-card-image" src={imageSrc} alt={property.title || 'Property listing'} />
+              <div className="property-card-body">
+                <div className="property-card-meta">
+                  <span className="property-chip">{typeLabel}</span>
+                  <span className="property-chip property-chip-muted">{property.status || 'active'}</span>
+                </div>
+                <h3 className="property-card-title">{property.title || 'Untitled property'}</h3>
+                <p className="property-card-location">{cityLine || 'Location not provided'}</p>
+                <p className="property-card-price">{formatCurrency(property.price)}</p>
+                <p className="property-card-stats">
+                  {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
+                </p>
+                {monthly != null && (
+                  <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
+                )}
+              </div>
             </div>
           );
         })}
@@ -328,50 +350,58 @@ const PropertyList = () => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '16px 20px', background: '#f8f8f8', alignItems: 'flex-end' }}>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-          <label>City</label>
-          <input
-            type="text"
-            placeholder="e.g. Tel Aviv"
-            value={cityInput}
-            onChange={handleCityChange}
-          />
-        </div>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
-          <label>Min Price (₪)</label>
-          <input
-            type="number"
-            placeholder="0"
-            min="0"
-            value={minPriceInput}
-            onChange={handleMinPriceChange}
-          />
-        </div>
-        <div className="input-field" style={{ marginBottom: 0, flex: '1 1 130px' }}>
-          <label>Max Price (₪)</label>
-          <input
-            type="number"
-            placeholder="Any"
-            min="0"
-            value={maxPriceInput}
-            onChange={handleMaxPriceChange}
-          />
-        </div>
-        <button type="submit" style={{ alignSelf: 'flex-end', padding: '10px 20px' }}>Search</button>
-        <button
-          type="button"
-          onClick={handleClear}
-          style={{ alignSelf: 'flex-end', padding: '10px 20px' }}
-        >
-          Clear
-        </button>
-      </form>
-      <div className='tabs'>
-        <button onClick={() => setFilter('all')}>All</button>
-        <button onClick={() => setFilter('rental')}>Rental</button>
-        <button onClick={() => setFilter('sale')}>For Sale</button>
+    <div className="property-list-page">
+      <section className="hero-banner">
+        <p className="hero-kicker">Beta Property Portal</p>
+        <h1>Find your next home in Israel</h1>
+        <p>
+          Browse curated listings with complete property profiles including pricing,
+          building details, taxes, HOA fees, and availability dates.
+        </p>
+      </section>
+
+      <section className="search-panel">
+        <form className="search-form" onSubmit={handleSearch}>
+          <div className="input-field search-input">
+            <label>City</label>
+            <input
+              type="text"
+              placeholder="e.g. Tel Aviv"
+              value={cityInput}
+              onChange={handleCityChange}
+            />
+          </div>
+          <div className="input-field search-input">
+            <label>Min Price (₪)</label>
+            <input
+              type="number"
+              placeholder="0"
+              min="0"
+              value={minPriceInput}
+              onChange={handleMinPriceChange}
+            />
+          </div>
+          <div className="input-field search-input">
+            <label>Max Price (₪)</label>
+            <input
+              type="number"
+              placeholder="Any"
+              min="0"
+              value={maxPriceInput}
+              onChange={handleMaxPriceChange}
+            />
+          </div>
+          <button type="submit" className="primary-btn search-btn">Search</button>
+          <button type="button" onClick={handleClear} className="secondary-btn search-btn">
+            Clear
+          </button>
+        </form>
+      </section>
+
+      <div className='tabs pill-tabs'>
+        <button className={filter === 'all' ? 'active-tab' : ''} onClick={() => setFilter('all')}>All</button>
+        <button className={filter === 'rental' ? 'active-tab' : ''} onClick={() => setFilter('rental')}>Rental</button>
+        <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
       </div>
       {renderResults()}
     </div>
