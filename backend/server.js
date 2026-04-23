@@ -37,8 +37,36 @@ const generalLimiter = rateLimit({
 
 const { runSeed } = require('./seed');
 
+/**
+ * Render environment groups can sometimes strip '+' from values entered manually,
+ * turning "mongodb+srv://" into "mongodb://". Fix only that SRV-shaped case.
+ *
+ * IMPORTANT: Atlas "standard connection string" URIs with multiple hosts/ports
+ * (mongodb://host1:27017,host2:27017,...) are valid and must remain unchanged.
+ *
+ * @param {string} uri
+ * @returns {string}
+ */
+const normalizeMongoUri = (uri) => {
+    if (typeof uri !== 'string' || uri.length === 0) return uri;
+    if (!uri.startsWith('mongodb://') || !uri.includes('.mongodb.net')) return uri;
+
+    const authority = uri.slice('mongodb://'.length).split('/')[0] || '';
+    const hostSegment = authority.includes('@') ? authority.split('@').pop() : authority;
+    const hasMultipleHosts = hostSegment.includes(',');
+    const hasExplicitPort = /:\d+/.test(hostSegment);
+
+    // Standard Atlas URI (multiple hosts and/or :27017) should stay mongodb://
+    if (hasMultipleHosts || hasExplicitPort) return uri;
+
+    // SRV-like Atlas URI accidentally missing '+'
+    const withSrv = uri.replace(/^mongodb:\/\//, 'mongodb+srv://');
+    console.warn('[startup] Normalized Atlas URI from mongodb:// to mongodb+srv:// format.');
+    return withSrv;
+};
+
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey';
+const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey');
 const PORT = process.env.PORT || 5000;
 
 if (!process.env.MONGODB_URI) {
