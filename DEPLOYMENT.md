@@ -43,6 +43,12 @@ Correct result:
 mongodb+srv://myuser:mypassword@cluster0.XXXXX.mongodb.net/homekey?retryWrites=true&w=majority&appName=Cluster0
 ```
 
+If your Atlas user was created in the default admin auth DB, add `authSource=admin`:
+
+```
+mongodb+srv://myuser:mypassword@cluster0.XXXXX.mongodb.net/homekey?retryWrites=true&w=majority&authSource=admin&appName=Cluster0
+```
+
 > **Password contains `@`, `#`, `!`, `%`, or other special characters?**  
 > URL-encode them before pasting: `p@ss` → `p%40ss`, `p#ss` → `p%23ss`
 
@@ -101,6 +107,7 @@ Open your Render service → **Logs** tab and look for:
 | `ENOENT: no such file or directory, stat '.../frontend/build/index.html'` | Same as above — old server code without the startup check | Set Build Command to `npm run render-build` and redeploy from the latest commit |
 | `WARNING: MONGODB_URI is not set` | Env var missing in Render | Add `MONGODB_URI` in the Environment tab |
 | `MongoServerError: bad auth` | Wrong username or password | Re-check Atlas database user credentials |
+| `MongoServerError: Authentication failed` | Atlas auth DB mismatch (`authSource`) or wrong credentials | Add `authSource=admin` to `MONGODB_URI`; if it still fails, reset Atlas DB user password and update Render |
 | `MongooseServerSelectionError: connection timed out` | IP not whitelisted | Add `0.0.0.0/0` in Atlas Network Access |
 | `MongoDB connected` | ✅ No action needed | — |
 
