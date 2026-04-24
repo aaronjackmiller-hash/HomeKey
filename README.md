@@ -121,11 +121,12 @@ HomeKey supports an admin-protected Yad2 bulk import endpoint for your initial b
 
 ### 1) Configure import secret in Render
 
-In your Render service environment variables, set:
+You can authorize Yad2 imports in either of these ways:
 
-- `ADMIN_IMPORT_SECRET` (separate from seed secret)
+- **Preferred:** set `ADMIN_IMPORT_SECRET` and send it via `X-Admin-Import-Secret`
+- **Fallback:** reuse your existing `ADMIN_SECRET` and send it via `X-Admin-Secret`
 
-The Yad2 import endpoint uses this secret via request header `X-Admin-Import-Secret`.
+This fallback is useful when import-secret env updates are delayed but seed auth is already working.
 
 ### 2) Prepare a Yad2 JSON file
 
@@ -154,7 +155,10 @@ Supported field aliases include:
 
 ```powershell
 $headers = @{
-  "X-Admin-Import-Secret" = "YOUR_ADMIN_IMPORT_SECRET"
+  # Preferred header:
+  # "X-Admin-Import-Secret" = "YOUR_ADMIN_IMPORT_SECRET"
+  # Fallback header (if preferred one isn't active yet):
+  "X-Admin-Secret" = "YOUR_ADMIN_SECRET"
   "Content-Type"   = "application/json"
 }
 
