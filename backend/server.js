@@ -213,18 +213,37 @@ app.post('/api/admin/seed', async (req, res) => {
 //       "sourceTag": "yad2"     // optional label
 //     }
 app.post('/api/admin/import/yad2', async (req, res) => {
+    const importSecret = process.env.ADMIN_IMPORT_SECRET;
     const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret) {
-        return res.status(403).json({ success: false, message: 'Admin import endpoint is disabled (ADMIN_SECRET not configured).' });
+    if (!importSecret && !adminSecret) {
+        return res.status(403).json({
+            success: false,
+            message: 'Admin import endpoint is disabled (set ADMIN_IMPORT_SECRET or ADMIN_SECRET).',
+        });
     }
-    const provided = req.headers['x-admin-secret'];
-    const secretBuf = Buffer.from(adminSecret);
-    const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
-    const dummy = Buffer.alloc(secretBuf.length);
-    const cmpBuf = providedBuf.length === secretBuf.length ? providedBuf : dummy;
-    const match = crypto.timingSafeEqual(secretBuf, cmpBuf);
-    if (!provided || !match) {
-        return res.status(403).json({ success: false, message: 'Invalid or missing X-Admin-Import-Secret header.' });
+
+    // Backward-compatible auth:
+    // - Preferred: X-Admin-Import-Secret + ADMIN_IMPORT_SECRET
+    // - Fallback:  X-Admin-Secret + ADMIN_SECRET
+    const providedImport = req.headers['x-admin-import-secret'];
+    const providedAdmin = req.headers['x-admin-secret'];
+
+    const safeMatch = (expected, provided) => {
+        if (typeof expected !== 'string' || expected.length === 0) return false;
+        const expectedBuf = Buffer.from(expected);
+        const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
+        const dummy = Buffer.alloc(expectedBuf.length);
+        const cmpBuf = providedBuf.length === expectedBuf.length ? providedBuf : dummy;
+        return crypto.timingSafeEqual(expectedBuf, cmpBuf);
+    };
+
+    const importAuthOk = safeMatch(importSecret, providedImport);
+    const adminAuthOk = safeMatch(adminSecret, providedAdmin);
+    if (!importAuthOk && !adminAuthOk) {
+        return res.status(403).json({
+            success: false,
+            message: 'Invalid or missing import admin header. Use X-Admin-Import-Secret or X-Admin-Secret.',
+        });
     }
 
     try {
