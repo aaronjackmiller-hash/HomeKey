@@ -80,6 +80,19 @@ const PropertySchema = new mongoose.Schema(
             listingDate: { type: Date, default: Date.now },
         },
         images: [{ type: String }],
+        externalSource: {
+            type: String,
+            trim: true,
+            lowercase: true,
+        },
+        externalId: {
+            type: String,
+            trim: true,
+        },
+        externalUrl: {
+            type: String,
+            trim: true,
+        },
         agent: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -91,6 +104,17 @@ const PropertySchema = new mongoose.Schema(
         },
     },
     { timestamps: true }
+);
+
+PropertySchema.index(
+    { externalSource: 1, externalId: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            externalSource: { $exists: true, $type: 'string' },
+            externalId: { $exists: true, $type: 'string' },
+        },
+    }
 );
 
 module.exports = mongoose.model('Property', PropertySchema);

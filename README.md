@@ -112,3 +112,65 @@ HomeKey/
 | DELETE | /api/properties/:id | Delete a listing (auth required) |
 | GET | /api/agents | List all agents |
 | GET | /api/health | Health check |
+
+---
+
+## 📥 Import initial listings from Yad2 (JSON batch)
+
+HomeKey supports an admin-protected Yad2 bulk import endpoint for your initial beta inventory.
+
+### 1) Configure import secret in Render
+
+In your Render service environment variables, set:
+
+- `ADMIN_IMPORT_SECRET` (separate from seed secret)
+
+The Yad2 import endpoint uses this secret via request header `X-Admin-Import-Secret`.
+
+### 2) Prepare a Yad2 JSON file
+
+Create a local file (for example `yad2-listings.json`) containing an array of listings.
+
+Supported field aliases include:
+
+- ID: `id`, `_id`, `ad_number`, `adNumber`, `listing_id`, `listingId`
+- Title: `title`, `headline`
+- Description: `description`, `details`
+- Type: `type`, `dealType`, `deal_type` (`sale`/`sell`, `rent`/`rental`)
+- Price: `price`, `priceNis`, `amount`
+- Bedrooms: `rooms`, `bedrooms`
+- Bathrooms: `bathrooms`, `bath`
+- Size: `size`, `area`, `sqm`, `squareMeters`
+- Floor: `floor`, `floorNumber`
+- Address: `street`, `city`, `state`, `zip`, `country`
+- Building details: `buildingName`, `buildingFloorCount`, `buildingApartmentCount`
+- Financials: `totalMonthlyPayment`, `vaadAmount`, `cityTaxes`, `maintenanceFees`, `propertyTax`
+- Dates: `availableFrom`, `listingDate`
+- Images: `images` (array) or `image` / `listingImage`
+- Listing URL: `url`, `listingUrl`
+- Agent: `agentName`, `agentEmail`, `agentPhone`, `agency`
+
+### 3) Import with PowerShell
+
+```powershell
+$headers = @{
+  "X-Admin-Import-Secret" = "YOUR_ADMIN_IMPORT_SECRET"
+  "Content-Type"   = "application/json"
+}
+
+$payload = @{
+  source = "yad2-initial-import"
+  upsert = $true
+  items = (Get-Content ".\yad2-listings.json" -Raw | ConvertFrom-Json)
+} | ConvertTo-Json -Depth 20
+
+Invoke-RestMethod -Method Post -Uri "https://YOUR-RENDER-URL.onrender.com/api/admin/import/yad2" -Headers $headers -Body $payload
+```
+
+### 4) Verify import
+
+```powershell
+(Invoke-RestMethod -Method Get -Uri "https://YOUR-RENDER-URL.onrender.com/api/properties").count
+```
+
+The import response includes `created`, `updated`, `skipped`, and row-level `errors` for troubleshooting.
