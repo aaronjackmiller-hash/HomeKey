@@ -65,6 +65,56 @@ const normalizeMongoUri = (uri) => {
     return withSrv;
 };
 
+const isAtlasMongoUri = (uri) => typeof uri === 'string' && uri.includes('.mongodb.net');
+
+const hasQueryParam = (uri, key) => {
+    if (typeof uri !== 'string') return false;
+    const query = uri.includes('?') ? uri.split('?')[1] : '';
+    const params = new URLSearchParams(query);
+    return params.has(key);
+};
+
+const withQueryParam = (uri, key, value) => {
+    if (typeof uri !== 'string') return uri;
+    const [base, query = ''] = uri.split('?');
+    const params = new URLSearchParams(query);
+    params.set(key, value);
+    return `${base}?${params.toString()}`;
+};
+
+const isAuthFailureError = (err) =>
+    Boolean(err) && (
+        err.code === 18 ||
+        err.codeName === 'AuthenticationFailed' ||
+        /authentication failed/i.test(err.message || '')
+    );
+
+const connectMongo = async (initialUri) => {
+    const connectOptions = {
+        serverSelectionTimeoutMS: 30000,
+        bufferCommands: false,
+    };
+    try {
+        await mongoose.connect(initialUri, connectOptions);
+        return { usedAuthSourceFallback: false };
+    } catch (err) {
+        const shouldRetryWithAdminAuthSource =
+            isAtlasMongoUri(initialUri) &&
+            !hasQueryParam(initialUri, 'authSource') &&
+            isAuthFailureError(err);
+
+        if (!shouldRetryWithAdminAuthSource) throw err;
+
+        const retryUri = withQueryParam(initialUri, 'authSource', 'admin');
+        console.warn('[startup] Atlas authentication failed without authSource; retrying with authSource=admin.');
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
+        await mongoose.connect(retryUri, connectOptions);
+        return { usedAuthSourceFallback: true };
+    }
+};
+
 // MongoDB connection
 const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey');
 const PORT = process.env.PORT || 5000;
@@ -78,13 +128,12 @@ if (!process.env.MONGODB_URI) {
 // API routes that need the database will return 503 until the connection is ready.
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-mongoose
-    .connect(MONGODB_URI, {
-        serverSelectionTimeoutMS: 30000,
-        bufferCommands: false,
-    })
-    .then(async () => {
+connectMongo(MONGODB_URI)
+    .then(async ({ usedAuthSourceFallback }) => {
         console.log('MongoDB connected');
+        if (usedAuthSourceFallback) {
+            console.log('[startup] Connected after applying authSource=admin fallback.');
+        }
         // Auto-seed if the database is empty (no-op if data already exists)
         try {
             await runSeed(false);
@@ -95,6 +144,9 @@ mongoose
     })
     .catch((err) => {
         console.error('MongoDB connection failed:', err.message);
+        if (isAuthFailureError(err)) {
+            console.error('[startup] Atlas auth failed. Verify DB username/password and ensure authSource=admin when needed.');
+        }
         console.error('[startup] Full error:', err);
         // Do not exit — keep the server running so the frontend remains accessible.
         // The /api/health endpoint will report the degraded state.
