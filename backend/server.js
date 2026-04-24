@@ -15,7 +15,7 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 
 // Middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
 // Rate limiting
@@ -36,6 +36,7 @@ const generalLimiter = rateLimit({
 });
 
 const { runSeed } = require('./seed');
+const { importYad2Listings } = require('./services/yad2ImportService');
 
 /**
  * Render environment groups can sometimes strip '+' from values entered manually,
@@ -197,6 +198,71 @@ app.post('/api/admin/seed', async (req, res) => {
         res.json({ success: true, message: `Seed completed (force=${force}).` });
     } catch (err) {
         console.error('[admin/seed] Seed failed:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Admin import endpoint — bulk import listings from Yad2-like JSON payloads.
+// Protected by ADMIN_SECRET env var. If not set, endpoint is disabled.
+// Usage: POST /api/admin/import/yad2
+//   Header: X-Admin-Secret: <value of ADMIN_SECRET>
+//   Body:
+//     {
+//       "items": [ ... ],       // or "listings": [ ... ]
+//       "upsert": true,         // optional (default true)
+//       "sourceTag": "yad2"     // optional label
+//     }
+app.post('/api/admin/import/yad2', async (req, res) => {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+        return res.status(403).json({ success: false, message: 'Admin import endpoint is disabled (ADMIN_SECRET not configured).' });
+    }
+    const provided = req.headers['x-admin-secret'];
+    const secretBuf = Buffer.from(adminSecret);
+    const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
+    const dummy = Buffer.alloc(secretBuf.length);
+    const cmpBuf = providedBuf.length === secretBuf.length ? providedBuf : dummy;
+    const match = crypto.timingSafeEqual(secretBuf, cmpBuf);
+    if (!provided || !match) {
+        return res.status(403).json({ success: false, message: 'Invalid or missing X-Admin-Import-Secret header.' });
+    }
+
+    try {
+        const payload = req.body || {};
+        const items = Array.isArray(payload)
+            ? payload
+            : (
+                Array.isArray(payload.items)
+                    ? payload.items
+                    : (Array.isArray(payload.listings) ? payload.listings : null)
+            );
+        if (!items) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payload must be an array or an object with an "items" / "listings" array.',
+            });
+        }
+
+        const result = await importYad2Listings({
+            rows: items,
+            upsert: payload.upsert !== false,
+            sourceTag:
+                typeof payload.sourceTag === 'string' && payload.sourceTag.trim()
+                    ? payload.sourceTag.trim()
+                    : (
+                        typeof payload.source === 'string' && payload.source.trim()
+                            ? payload.source.trim()
+                            : 'yad2'
+                    ),
+        });
+
+        res.json({
+            success: true,
+            message: 'Yad2 import completed.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[admin/import/yad2] Import failed:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
