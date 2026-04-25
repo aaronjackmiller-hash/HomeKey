@@ -122,6 +122,18 @@ const connectMongo = async (initialUri) => {
 const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey');
 const PORT = process.env.PORT || 5000;
 
+const ensureJwtSecret = () => {
+    if (typeof process.env.JWT_SECRET === 'string' && process.env.JWT_SECRET.trim().length > 0) {
+        return;
+    }
+    // Keep auth endpoints operational in misconfigured environments.
+    // Tokens signed with this ephemeral secret are invalidated on process restart.
+    process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
+    console.warn('[startup] JWT_SECRET is missing. Generated an ephemeral fallback secret for this process.');
+};
+
+ensureJwtSecret();
+
 if (!process.env.MONGODB_URI) {
     console.warn('WARNING: MONGODB_URI is not set. Falling back to mongodb://localhost:27017/homekey');
 }
