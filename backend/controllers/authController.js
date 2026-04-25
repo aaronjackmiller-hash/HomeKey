@@ -4,10 +4,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const generateToken = (id) =>
-    jwt.sign({ id }, process.env.JWT_SECRET, {
+const assertJwtSecretConfigured = () => {
+    if (typeof process.env.JWT_SECRET !== 'string' || process.env.JWT_SECRET.trim().length === 0) {
+        const err = new Error('Authentication is temporarily unavailable: server JWT configuration is missing.');
+        err.code = 'JWT_CONFIG_MISSING';
+        throw err;
+    }
+};
+
+const generateToken = (id) => {
+    assertJwtSecretConfigured();
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
+};
 
 // POST /api/auth/register
 const register = async (req, res) => {
@@ -33,6 +43,13 @@ const register = async (req, res) => {
             },
         });
     } catch (err) {
+        if (err.code === 'JWT_CONFIG_MISSING') {
+            return res.status(503).json({
+                success: false,
+                message: err.message,
+                code: err.code,
+            });
+        }
         if (err.name === 'ValidationError') {
             const messages = Object.values(err.errors).map((e) => e.message);
             return res.status(400).json({ success: false, message: messages.join(', ') });
@@ -70,6 +87,13 @@ const login = async (req, res) => {
             },
         });
     } catch (err) {
+        if (err.code === 'JWT_CONFIG_MISSING') {
+            return res.status(503).json({
+                success: false,
+                message: err.message,
+                code: err.code,
+            });
+        }
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
 };
