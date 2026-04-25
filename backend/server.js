@@ -203,6 +203,8 @@ app.post('/api/admin/seed', async (req, res) => {
 });
 
 // Admin import endpoint — bulk import listings from Yad2-like JSON payloads.
+// Designed for additive imports: each batch is inserted, and rows with a known
+// external ID are updated in-place (unless "upsert": false is provided).
 // Protected by ADMIN_SECRET env var. If not set, endpoint is disabled.
 // Usage: POST /api/admin/import/yad2
 //   Header: X-Admin-Secret: <value of ADMIN_SECRET>
@@ -210,7 +212,7 @@ app.post('/api/admin/seed', async (req, res) => {
 //     {
 //       "items": [ ... ],       // or "listings": [ ... ]
 //       "upsert": true,         // optional (default true)
-//       "sourceTag": "yad2"     // optional label
+//       "sourceTag": "yad2"     // optional label (recommended per batch/source)
 //     }
 app.post('/api/admin/import/yad2', async (req, res) => {
     const importSecret = process.env.ADMIN_IMPORT_SECRET;

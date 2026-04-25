@@ -147,16 +147,19 @@ const mapYad2RowToPropertyDoc = (row) => {
     return { payload, externalId };
 };
 
-const importYad2Listings = async ({ rows, upsert = true }) => {
+const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) => {
     if (!Array.isArray(rows) || rows.length === 0) {
         throw new Error('rows must be a non-empty array');
     }
+
+    const normalizedSourceTag = normalizeString(sourceTag).toLowerCase() || 'yad2';
 
     const summary = {
         total: rows.length,
         created: 0,
         updated: 0,
         skipped: 0,
+        sourceTag: normalizedSourceTag,
         errors: [],
     };
 
@@ -171,9 +174,11 @@ const importYad2Listings = async ({ rows, upsert = true }) => {
                 continue;
             }
 
+            payload.externalSource = normalizedSourceTag;
+
             if (upsert && externalId) {
                 const existing = await Property.findOne({
-                    externalSource: 'yad2',
+                    externalSource: normalizedSourceTag,
                     externalId,
                 });
                 if (existing) {

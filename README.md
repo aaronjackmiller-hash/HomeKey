@@ -115,9 +115,9 @@ HomeKey/
 
 ---
 
-## 📥 Import initial listings from Yad2 (JSON batch)
+## 📥 Import Yad2 listings (supports additional batches)
 
-HomeKey supports an admin-protected Yad2 bulk import endpoint for your initial beta inventory.
+HomeKey supports an admin-protected Yad2 bulk import endpoint for both initial inventory and additional batches.
 
 ### 1) Configure import secret in Render
 
@@ -127,6 +127,13 @@ You can authorize Yad2 imports in either of these ways:
 - **Fallback:** reuse your existing `ADMIN_SECRET` and send it via `X-Admin-Secret`
 
 This fallback is useful when import-secret env updates are delayed but seed auth is already working.
+
+### Batch behavior (important)
+
+- Imports are **additive by default**: existing listings are not deleted.
+- With `upsert: true` (default), rows with matching `externalId` + `sourceTag` are updated; non-matches are created.
+- Use a stable `sourceTag` (for example `yad2`) when you want later files to update the same source set.
+- Use a different `sourceTag` only if you intentionally want to track a separate feed namespace.
 
 ### 2) Prepare a Yad2 JSON file
 
@@ -163,7 +170,7 @@ $headers = @{
 }
 
 $payload = @{
-  source = "yad2-initial-import"
+  sourceTag = "yad2"
   upsert = $true
   items = (Get-Content ".\yad2-listings.json" -Raw | ConvertFrom-Json)
 } | ConvertTo-Json -Depth 20
