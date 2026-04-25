@@ -9,6 +9,8 @@ import EditListing from './components/EditListing';
 import AdminYad2Import from './components/AdminYad2Import';
 import Login from './components/Login';
 import Register from './components/Register';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import './index.css';
 
 const PrivateRoute = ({ children, ...rest }) => {
@@ -32,6 +34,8 @@ const App = () => {
             <Route path="/properties/:id" component={PropertyDetail} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
+            <Route path="/forgot-password" component={ForgotPassword} />
+            <Route path="/reset-password" component={ResetPassword} />
             <PrivateRoute path="/add-listing">
               <AddListing />
             </PrivateRoute>

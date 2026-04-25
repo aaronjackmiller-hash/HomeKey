@@ -202,3 +202,16 @@ From that screen you can:
 - submit the import and see `created / updated / skipped` results.
 
 This uses your logged-in bearer token, so you do not need to paste admin secrets into a terminal.
+
+### Password recovery
+
+HomeKey now includes a built-in password reset flow:
+
+- On Sign In, click **Forgot password?**
+- Submit your account email
+- Use the reset link returned by the API response (dev/beta mode) to set a new password
+
+Endpoints:
+
+- `POST /api/auth/forgot-password` with `{ "email": "user@example.com" }`
+- `POST /api/auth/reset-password` with `{ "token": "...", "newPassword": "NewPass123!" }`

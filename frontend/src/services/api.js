@@ -25,6 +25,21 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
+export const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const requestPasswordReset = async ({ email }) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPassword = async ({ token, newPassword }) => {
+  const response = await api.post('/auth/reset-password', { token, newPassword });
+  return response.data;
+};
+
 // Properties
 export const getProperties = async (params) => {
   const response = await api.get('/properties', { params });

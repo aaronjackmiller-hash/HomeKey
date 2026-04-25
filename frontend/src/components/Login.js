@@ -43,6 +43,7 @@ const Login = () => {
         </div>
         <button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign In'}</button>
       </form>
+      <p><Link to="/forgot-password">Forgot password?</Link></p>
       <p>Don't have an account? <Link to="/register">Register</Link></p>
     </div>
   );
