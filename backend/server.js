@@ -43,6 +43,7 @@ const generalLimiter = rateLimit({
 
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
+const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
 
 /**
@@ -160,6 +161,20 @@ connectMongo(MONGODB_URI)
             console.log('[startup] Seed check complete.');
         } catch (seedErr) {
             console.error('[startup] Seed failed - demo data not loaded. Use POST /api/admin/seed to retry:', seedErr.message);
+        }
+        // Keep a curated set of Israeli Yad2 listings (rent + sale) in sync
+        // so the public listings page always has realistic mixed inventory.
+        try {
+            const curatedImport = await importYad2Listings({
+                rows: featuredYad2ListingsIL,
+                upsert: true,
+                sourceTag: 'yad2-featured-il',
+            });
+            console.log(
+                `[startup] Featured Yad2 listings sync complete (created=${curatedImport.created}, updated=${curatedImport.updated}, skipped=${curatedImport.skipped}).`
+            );
+        } catch (curatedErr) {
+            console.error('[startup] Featured Yad2 listings sync failed:', curatedErr.message);
         }
     })
     .catch((err) => {

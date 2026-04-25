@@ -203,6 +203,10 @@ From that screen you can:
 
 This uses your logged-in bearer token, so you do not need to paste admin secrets into a terminal.
 
+### Curated Israeli Yad2 listings shown by default
+
+On startup, HomeKey now upserts a curated Yad2-inspired Israeli listings set (both rentals and for-sale properties) into the listings collection. This keeps the listings page populated with realistic local inventory without manual import steps.
+
 ### Password recovery
 
 HomeKey now includes a built-in password reset flow:
