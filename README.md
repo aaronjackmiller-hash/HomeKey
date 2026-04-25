@@ -39,6 +39,9 @@ A full-stack MLS application for the Israeli real estate market built with React
 > `{"status":"degraded","db":"disconnected"}` when `MONGODB_URI` is wrong.
 
 > **Note:** On the free tier, the service spins down after 15 minutes of inactivity and takes ~30 seconds to wake back up on the next visit. Upgrading to the Starter plan ($7/month) keeps it always-on.
+>
+> **Auth configuration tip:** set `JWT_SECRET` in Render Environment for stable sign-in sessions across restarts.  
+> If omitted, HomeKey now auto-generates a temporary in-memory JWT secret at startup so auth still works, but all sessions are invalidated on each restart/redeploy.
 
 ---
 
