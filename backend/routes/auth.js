@@ -3,7 +3,12 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const { register, login } = require('../controllers/authController');
+const {
+    register,
+    login,
+    forgotPassword,
+    resetPassword,
+} = require('../controllers/authController');
 
 const validateRegister = [
     body('name').isLength({ min: 2 }).withMessage('Name must be at least 2 characters long').notEmpty().withMessage('Name is required'),
@@ -16,6 +21,20 @@ const validateRegister = [
 const validateLogin = [
     body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
     body('password').notEmpty().withMessage('Password is required'),
+];
+
+const validateForgotPassword = [
+    body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
+];
+
+const validateResetPassword = [
+    body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
+    body('token').isString().notEmpty().withMessage('Reset token is required'),
+    body('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('New password must be at least 6 characters long')
+        .notEmpty()
+        .withMessage('New password is required'),
 ];
 
 const validateInput = (req, res, next) => {
@@ -31,5 +50,11 @@ router.post('/register', validateRegister, validateInput, register);
 
 // POST /api/auth/login
 router.post('/login', validateLogin, validateInput, login);
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', validateForgotPassword, validateInput, forgotPassword);
+
+// POST /api/auth/reset-password
+router.post('/reset-password', validateResetPassword, validateInput, resetPassword);
 
 module.exports = router;

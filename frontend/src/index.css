@@ -738,6 +738,13 @@ a {
   font-size: 0.85rem;
 }
 
+.auth-help-text,
+.form-helper-text {
+  margin: 0 0 12px;
+  color: #475569;
+  line-height: 1.45;
+}
+
 .import-summary {
   margin: 0 0 10px;
 }
@@ -754,6 +761,15 @@ a {
 
 .form-container h2 {
   margin-top: 0;
+}
+
+.inline-link-row {
+  margin: 10px 0 0;
+}
+
+.inline-link-row a {
+  color: #0f766e;
+  font-weight: 600;
 }
 
 fieldset {

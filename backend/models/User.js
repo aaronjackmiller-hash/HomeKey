@@ -41,6 +41,14 @@ const UserSchema = new mongoose.Schema(
             minlength: [6, 'Password must be at least 6 characters long'],
             select: false,
         },
+        resetPasswordTokenHash: {
+            type: String,
+            select: false,
+        },
+        resetPasswordExpiresAt: {
+            type: Date,
+            select: false,
+        },
         listings: [
             {
                 type: mongoose.Schema.Types.ObjectId,

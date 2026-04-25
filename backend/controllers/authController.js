@@ -2,6 +2,7 @@
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 
 const assertJwtSecretConfigured = () => {
@@ -17,6 +18,12 @@ const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
+};
+
+const buildPasswordResetToken = () => {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    return { rawToken, tokenHash };
 };
 
 // POST /api/auth/register
@@ -98,4 +105,84 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+// POST /api/auth/forgot-password
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    try {
+        const user = await User.findOne({ email: String(email).toLowerCase().trim() });
+        if (!user) {
+            return res.json({
+                success: true,
+                message: 'If an account with that email exists, a reset token has been generated.',
+            });
+        }
+
+        const { rawToken, tokenHash } = buildPasswordResetToken();
+        const expiresAt = new Date(Date.now() + (Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30) * 60 * 1000));
+
+        user.passwordResetTokenHash = tokenHash;
+        user.passwordResetExpiresAt = expiresAt;
+        await user.save();
+
+        // In production this should be emailed. For now, we return it so users can reset immediately.
+        return res.json({
+            success: true,
+            message: 'Password reset token generated. Use it on the reset password page.',
+            resetToken: rawToken,
+            expiresAt,
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+};
+
+// POST /api/auth/reset-password
+const resetPassword = async (req, res) => {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: 'Email, token, and newPassword are required.',
+        });
+    }
+    if (String(newPassword).length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password must be at least 6 characters long.',
+        });
+    }
+
+    try {
+        const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+        const user = await User.findOne({
+            email: String(email).toLowerCase().trim(),
+            passwordResetTokenHash: tokenHash,
+            passwordResetExpiresAt: { $gt: new Date() },
+        }).select('+password');
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Reset token is invalid or expired.',
+            });
+        }
+
+        user.password = await bcrypt.hash(String(newPassword), 12);
+        user.passwordResetTokenHash = undefined;
+        user.passwordResetExpiresAt = undefined;
+        await user.save();
+
+        return res.json({
+            success: true,
+            message: 'Password reset successful. You can now sign in with the new password.',
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+};
+
+module.exports = { register, login, forgotPassword, resetPassword };
