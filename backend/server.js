@@ -12,12 +12,17 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
 // Middleware
 app.use(bodyParser.json({ limit: '5mb' }));
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({
+    origin: true,
+    credentials: true,
+}));
 
 // Rate limiting
 const apiLimiter = rateLimit({

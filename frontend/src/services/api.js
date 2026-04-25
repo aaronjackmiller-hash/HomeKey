@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || '/api',
   timeout: 60000,
+  withCredentials: true,
 });
 
 // Attach JWT token to every request if present
@@ -25,18 +26,13 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
-export const forgotPassword = async (email) => {
-  const response = await api.post('/auth/forgot-password', { email });
-  return response.data;
-};
-
 export const requestPasswordReset = async ({ email }) => {
   const response = await api.post('/auth/forgot-password', { email });
   return response.data;
 };
 
-export const resetPassword = async ({ token, newPassword }) => {
-  const response = await api.post('/auth/reset-password', { token, newPassword });
+export const resetPassword = async ({ newPassword }) => {
+  const response = await api.post('/auth/reset-password', { newPassword });
   return response.data;
 };
 

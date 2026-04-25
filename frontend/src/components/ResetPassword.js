@@ -1,20 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useHistory, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import { resetPassword } from '../services/api';
-
-const useQuery = () => {
-  const { search } = useLocation();
-  return useMemo(() => new URLSearchParams(search), [search]);
-};
 
 const ResetPassword = () => {
   const history = useHistory();
-  const query = useQuery();
-  const tokenFromQuery = query.get('token') || '';
-  const emailFromQuery = query.get('email') || '';
-
-  const [email, setEmail] = useState(emailFromQuery);
-  const [token, setToken] = useState(tokenFromQuery);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,14 +15,6 @@ const ResetPassword = () => {
     setError('');
     setSuccess('');
 
-    if (!email.trim()) {
-      setError('Email is required.');
-      return;
-    }
-    if (!token.trim()) {
-      setError('Reset token is required.');
-      return;
-    }
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
@@ -46,8 +27,6 @@ const ResetPassword = () => {
     setLoading(true);
     try {
       await resetPassword({
-        email: email.trim(),
-        token: token.trim(),
         newPassword: password,
       });
       setSuccess('Password updated successfully. Redirecting to sign in...');
@@ -62,30 +41,12 @@ const ResetPassword = () => {
   return (
     <div className="form-container">
       <h2>Reset Password</h2>
-      <p className="auth-help-text">Paste your reset token and choose a new password.</p>
+      <p className="auth-help-text">Choose a new password for your account.</p>
 
       {error && <p className="status-message status-message-error">{error}</p>}
       {success && <p className="status-message">{success}</p>}
 
       <form onSubmit={handleSubmit}>
-        <div className="input-field">
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="input-field">
-          <label>Reset Token</label>
-          <input
-            type="text"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            required
-          />
-        </div>
         <div className="input-field">
           <label>New Password</label>
           <input

@@ -26,6 +26,14 @@ const buildPasswordResetToken = () => {
     return { rawToken, tokenHash };
 };
 
+const getResetCookieOptions = (minutes) => ({
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api/auth',
+    maxAge: minutes * 60 * 1000,
+});
+
 // POST /api/auth/register
 const register = async (req, res) => {
     const { name, email, password, phone, role, agency, bio } = req.body;
@@ -113,26 +121,31 @@ const forgotPassword = async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ email: String(email).toLowerCase().trim() });
+        const normalizedEmail = String(email).toLowerCase().trim();
+        const user = await User.findOne({ email: normalizedEmail });
+        const resetMinutes = Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30);
+        const resetCookieOptions = getResetCookieOptions(resetMinutes);
+
         if (!user) {
             return res.json({
                 success: true,
-                message: 'If an account with that email exists, a reset token has been generated.',
+                message: 'If an account with that email exists, password reset is now ready. Continue to Reset Password.',
             });
         }
 
         const { rawToken, tokenHash } = buildPasswordResetToken();
-        const expiresAt = new Date(Date.now() + (Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30) * 60 * 1000));
+        const expiresAt = new Date(Date.now() + (resetMinutes * 60 * 1000));
 
         user.resetPasswordTokenHash = tokenHash;
         user.resetPasswordExpiresAt = expiresAt;
         await user.save();
 
-        // In production this should be emailed. For now, we return it so users can reset immediately.
+        // Keep the reset token out of public UI by storing it in an httpOnly cookie.
+        res.cookie('homekey_reset_token', rawToken, resetCookieOptions);
+        res.cookie('homekey_reset_email', normalizedEmail, resetCookieOptions);
         return res.json({
             success: true,
-            message: 'Password reset token generated. Use it on the reset password page.',
-            resetToken: rawToken,
+            message: 'Password reset is ready. Continue to the Reset Password page within 30 minutes.',
             expiresAt,
         });
     } catch (err) {
@@ -142,14 +155,19 @@ const forgotPassword = async (req, res) => {
 
 // POST /api/auth/reset-password
 const resetPassword = async (req, res) => {
-    const { email, token, newPassword } = req.body;
+    const parsedCookies = req.cookies || {};
+    const email = String(req.body.email || parsedCookies.homekey_reset_email || '').toLowerCase().trim();
+    const token = String(req.body.token || parsedCookies.homekey_reset_token || '').trim();
+    const newPassword = String(req.body.newPassword || req.body.password || '');
+    const resetMinutes = Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30);
+    const resetCookieOptions = getResetCookieOptions(resetMinutes);
     if (!email || !token || !newPassword) {
         return res.status(400).json({
             success: false,
-            message: 'Email, token, and newPassword are required.',
+            message: 'Reset session is missing or expired. Please request a new password reset.',
         });
     }
-    if (String(newPassword).length < 6) {
+    if (newPassword.length < 6) {
         return res.status(400).json({
             success: false,
             message: 'Password must be at least 6 characters long.',
@@ -165,6 +183,8 @@ const resetPassword = async (req, res) => {
         }).select('+password');
 
         if (!user) {
+            res.clearCookie('homekey_reset_token', resetCookieOptions);
+            res.clearCookie('homekey_reset_email', resetCookieOptions);
             return res.status(400).json({
                 success: false,
                 message: 'Reset token is invalid or expired.',
@@ -175,6 +195,8 @@ const resetPassword = async (req, res) => {
         user.resetPasswordTokenHash = undefined;
         user.resetPasswordExpiresAt = undefined;
         await user.save();
+        res.clearCookie('homekey_reset_token', resetCookieOptions);
+        res.clearCookie('homekey_reset_email', resetCookieOptions);
 
         return res.json({
             success: true,
