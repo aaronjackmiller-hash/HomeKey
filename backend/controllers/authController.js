@@ -124,8 +124,8 @@ const forgotPassword = async (req, res) => {
         const { rawToken, tokenHash } = buildPasswordResetToken();
         const expiresAt = new Date(Date.now() + (Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30) * 60 * 1000));
 
-        user.passwordResetTokenHash = tokenHash;
-        user.passwordResetExpiresAt = expiresAt;
+        user.resetPasswordTokenHash = tokenHash;
+        user.resetPasswordExpiresAt = expiresAt;
         await user.save();
 
         // In production this should be emailed. For now, we return it so users can reset immediately.
@@ -160,8 +160,8 @@ const resetPassword = async (req, res) => {
         const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
         const user = await User.findOne({
             email: String(email).toLowerCase().trim(),
-            passwordResetTokenHash: tokenHash,
-            passwordResetExpiresAt: { $gt: new Date() },
+            resetPasswordTokenHash: tokenHash,
+            resetPasswordExpiresAt: { $gt: new Date() },
         }).select('+password');
 
         if (!user) {
@@ -172,8 +172,8 @@ const resetPassword = async (req, res) => {
         }
 
         user.password = await bcrypt.hash(String(newPassword), 12);
-        user.passwordResetTokenHash = undefined;
-        user.passwordResetExpiresAt = undefined;
+        user.resetPasswordTokenHash = undefined;
+        user.resetPasswordExpiresAt = undefined;
         await user.save();
 
         return res.json({
