@@ -185,3 +185,17 @@ Invoke-RestMethod -Method Post -Uri "https://YOUR-RENDER-URL.onrender.com/api/ad
 ```
 
 The import response includes `created`, `updated`, `skipped`, and row-level `errors` for troubleshooting.
+
+### Optional: Import directly from the web app (no PowerShell)
+
+After logging in as an `agent` or `admin`, open:
+
+- `/admin/import-yad2`
+
+From that screen you can:
+
+- upload a JSON file (`items` array or raw array),
+- set `sourceTag` and `upsert`,
+- submit the import and see `created / updated / skipped` results.
+
+This uses your logged-in bearer token, so you do not need to paste admin secrets into a terminal.
