@@ -1,26 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotPassword } from '../services/api';
+import { requestPasswordReset } from '../services/api';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [token, setToken] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
     setMessage('');
-    setToken('');
     setLoading(true);
     try {
-      const response = await forgotPassword(email.trim());
-      setMessage(response.message || 'If that email exists, a reset link has been generated.');
-      if (response.resetToken) {
-        setToken(response.resetToken);
-      }
+      const response = await requestPasswordReset({ email: email.trim() });
+      setMessage(response.message || 'If that email exists, recovery steps are ready.');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to request password reset.');
     } finally {
@@ -48,10 +43,9 @@ const ForgotPassword = () => {
         </div>
         <button type="submit" disabled={loading}>{loading ? 'Generating…' : 'Generate Reset Link'}</button>
       </form>
-      {token && (
+      {message && (
         <p className="auth-help-text">
-          Reset token generated. Continue here:{' '}
-          <Link to={`/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email.trim())}`}>Reset Password</Link>
+          Continue to <Link to="/reset-password">Reset Password</Link>.
         </p>
       )}
       <p>Remembered your password? <Link to="/login">Sign In</Link></p>

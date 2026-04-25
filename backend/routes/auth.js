@@ -28,8 +28,6 @@ const validateForgotPassword = [
 ];
 
 const validateResetPassword = [
-    body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
-    body('token').isString().notEmpty().withMessage('Reset token is required'),
     body('newPassword')
         .isLength({ min: 6 })
         .withMessage('New password must be at least 6 characters long')
