@@ -51,6 +51,29 @@ export const deleteProperty = async (id) => {
   return response.data;
 };
 
+export const importYad2ListingsBatch = async ({
+  items,
+  sourceTag = 'yad2',
+  upsert = true,
+  adminSecret,
+  adminImportSecret,
+}) => {
+  const headers = {};
+  if (typeof adminSecret === 'string' && adminSecret.trim()) {
+    headers['X-Admin-Secret'] = adminSecret.trim();
+  }
+  if (typeof adminImportSecret === 'string' && adminImportSecret.trim()) {
+    headers['X-Admin-Import-Secret'] = adminImportSecret.trim();
+  }
+
+  const response = await api.post(
+    '/admin/import/yad2',
+    { items, sourceTag, upsert },
+    Object.keys(headers).length > 0 ? { headers } : undefined
+  );
+  return response.data;
+};
+
 // Agents
 export const getAgents = async () => {
   const response = await api.get('/agents');

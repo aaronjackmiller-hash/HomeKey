@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -37,6 +38,7 @@ const generalLimiter = rateLimit({
 
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
+const User = require('./models/User');
 
 /**
  * Render environment groups can sometimes strip '+' from values entered manually,
@@ -205,7 +207,10 @@ app.post('/api/admin/seed', async (req, res) => {
 // Admin import endpoint — bulk import listings from Yad2-like JSON payloads.
 // Designed for additive imports: each batch is inserted, and rows with a known
 // external ID are updated in-place (unless "upsert": false is provided).
-// Protected by ADMIN_SECRET env var. If not set, endpoint is disabled.
+// Authorization options:
+// - ADMIN_IMPORT_SECRET via X-Admin-Import-Secret header
+// - ADMIN_SECRET via X-Admin-Secret header
+// - agent/admin JWT bearer token (for in-app imports)
 // Usage: POST /api/admin/import/yad2
 //   Header: X-Admin-Secret: <value of ADMIN_SECRET>
 //   Body:
@@ -217,16 +222,12 @@ app.post('/api/admin/seed', async (req, res) => {
 app.post('/api/admin/import/yad2', async (req, res) => {
     const importSecret = process.env.ADMIN_IMPORT_SECRET;
     const adminSecret = process.env.ADMIN_SECRET;
-    if (!importSecret && !adminSecret) {
-        return res.status(403).json({
-            success: false,
-            message: 'Admin import endpoint is disabled (set ADMIN_IMPORT_SECRET or ADMIN_SECRET).',
-        });
-    }
 
     // Backward-compatible auth:
     // - Preferred: X-Admin-Import-Secret + ADMIN_IMPORT_SECRET
     // - Fallback:  X-Admin-Secret + ADMIN_SECRET
+    // - Optional:  Authorization: Bearer <JWT> for logged-in users with
+    //              role "agent" or "admin" (for in-app imports).
     const providedImport = req.headers['x-admin-import-secret'];
     const providedAdmin = req.headers['x-admin-secret'];
 
@@ -241,10 +242,25 @@ app.post('/api/admin/import/yad2', async (req, res) => {
 
     const importAuthOk = safeMatch(importSecret, providedImport);
     const adminAuthOk = safeMatch(adminSecret, providedAdmin);
+    let jwtAuthOk = false;
     if (!importAuthOk && !adminAuthOk) {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            try {
+                const token = authHeader.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                const user = await User.findById(decoded.id).select('role');
+                jwtAuthOk = Boolean(user && ['agent', 'admin'].includes(user.role));
+            } catch (jwtErr) {
+                jwtAuthOk = false;
+            }
+        }
+    }
+
+    if (!importAuthOk && !adminAuthOk && !jwtAuthOk) {
         return res.status(403).json({
             success: false,
-            message: 'Invalid or missing import admin header. Use X-Admin-Import-Secret or X-Admin-Secret.',
+            message: 'Not authorized for import. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
         });
     }
 

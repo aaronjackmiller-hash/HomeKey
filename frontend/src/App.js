@@ -6,6 +6,7 @@ import PropertyList from './components/PropertyList';
 import PropertyDetail from './components/PropertyDetail';
 import AddListing from './components/AddListing';
 import EditListing from './components/EditListing';
+import AdminYad2Import from './components/AdminYad2Import';
 import Login from './components/Login';
 import Register from './components/Register';
 import './index.css';
@@ -36,6 +37,9 @@ const App = () => {
             </PrivateRoute>
             <PrivateRoute path="/edit-listing/:id">
               <EditListing />
+            </PrivateRoute>
+            <PrivateRoute path="/admin/import-yad2">
+              <AdminYad2Import />
             </PrivateRoute>
             <Redirect to="/" />
           </Switch>

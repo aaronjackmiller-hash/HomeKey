@@ -589,6 +589,159 @@ a {
   border-color: #b91c1c;
 }
 
+.import-page {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.import-card {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.import-note {
+  margin: 0 0 10px;
+  color: #475569;
+}
+
+.import-result {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.import-result h3 {
+  margin: 0 0 8px;
+}
+
+.import-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.import-errors-list {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: #7f1d1d;
+}
+
+.import-help {
+  margin: 0 0 12px;
+  color: #475569;
+}
+
+.import-form {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.import-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.import-file-meta {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+.import-preview,
+.import-result {
+  margin-top: 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.import-preview h3,
+.import-result h3 {
+  margin: 0 0 8px;
+}
+
+.import-preview pre,
+.import-result pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow: auto;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.import-summary {
+  margin: 0;
+  color: #0f172a;
+}
+
+.import-help {
+  color: #475569;
+  margin: 0 0 12px;
+}
+
+.import-form {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.import-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.import-file-meta {
+  margin: 8px 0 0;
+  color: #475569;
+}
+
+.import-preview {
+  margin-top: 14px;
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.import-preview h3,
+.import-result h4 {
+  margin: 0 0 8px;
+}
+
+.import-preview pre,
+.import-result pre {
+  margin: 0;
+  max-height: 280px;
+  overflow: auto;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
+.import-summary {
+  margin: 0 0 10px;
+}
+
 .form-container {
   max-width: 470px;
   margin: 18px auto;
