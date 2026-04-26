@@ -220,6 +220,7 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_INTERVAL_MINUTES=5` (minimum 5, max 180; lower = fresher data)
 - `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
 - `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
+- `YAD2_SYNC_PRUNE_MISSING=true` (optional; when true, removes listings that disappeared from current Yad2 feed for mirror behavior)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
