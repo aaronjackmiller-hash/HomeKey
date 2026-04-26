@@ -44,6 +44,11 @@ const generalLimiter = rateLimit({
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
 const { createYad2Scheduler } = require('./services/yad2SchedulerService');
+const {
+    getYad2FallbackFeedRowsForSegment,
+    upsertYad2FallbackFeedRows,
+    getYad2FallbackFeedSummary,
+} = require('./services/yad2FallbackFeedService');
 const { createPropertyLifecycleRunner } = require('./services/propertyLifecycleRunner');
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
@@ -271,6 +276,13 @@ if (!process.env.MONGODB_URI) {
 }
 
 const yad2Scheduler = createYad2Scheduler(console);
+yad2Scheduler.setCaptchaFallbackFetcher(async ({ segmentKey }) => {
+    const rows = await getYad2FallbackFeedRowsForSegment(segmentKey);
+    return {
+        rows,
+        source: 'internal-store',
+    };
+});
 const propertyLifecycleRunner = createPropertyLifecycleRunner(console);
 
 // Start accepting HTTP connections immediately so the React frontend is always
@@ -504,6 +516,68 @@ app.get('/api/admin/sync/yad2/status', async (req, res) => {
         success: true,
         ...status,
     });
+});
+
+// Admin endpoint — upload/refresh internal captcha fallback listings store.
+// Uses same authorization as Yad2 import/sync admin gates.
+// Usage: POST /api/admin/sync/yad2/fallback
+// Body:
+// {
+//   "items": [ ... ] // or "listings" or raw array
+// }
+app.post('/api/admin/sync/yad2/fallback', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for fallback feed upload. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    try {
+        const payload = req.body || {};
+        const rows = Array.isArray(payload)
+            ? payload
+            : (
+                Array.isArray(payload.items)
+                    ? payload.items
+                    : (Array.isArray(payload.listings) ? payload.listings : null)
+            );
+        if (!rows) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payload must be an array or an object with an "items" / "listings" array.',
+            });
+        }
+        const result = await upsertYad2FallbackFeedRows(rows);
+        return res.json({
+            success: true,
+            message: 'Yad2 fallback feed store updated.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[admin/sync/yad2/fallback] Upload failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Admin endpoint — view fallback feed store summary for diagnostics.
+// Usage: GET /api/admin/sync/yad2/fallback/status
+app.get('/api/admin/sync/yad2/fallback/status', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for fallback feed status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    try {
+        const summary = await getYad2FallbackFeedSummary();
+        return res.json({
+            success: true,
+            ...summary,
+        });
+    } catch (err) {
+        console.error('[admin/sync/yad2/fallback/status] Failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 // Admin endpoint — run listing lifecycle sweep manually.
