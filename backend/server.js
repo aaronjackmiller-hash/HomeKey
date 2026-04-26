@@ -122,6 +122,71 @@ const isYad2ImportAuthorized = async (req) => {
     }
 };
 
+const toOptionalNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const sanitizeSyncMessage = (value) => {
+    if (typeof value !== 'string') return null;
+    return value
+        .replace(/https?:\/\/\S+/gi, '[redacted-url]')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 300);
+};
+
+const summarizeSyncResult = (lastResult) => {
+    if (!lastResult || typeof lastResult !== 'object') return null;
+    return {
+        skipped: Boolean(lastResult.skipped),
+        reason: sanitizeSyncMessage(lastResult.reason),
+        trigger: typeof lastResult.trigger === 'string' ? lastResult.trigger : null,
+        sourceTag: typeof lastResult.sourceTag === 'string' ? lastResult.sourceTag : null,
+        fetched: toOptionalNumber(lastResult.fetched),
+        processed: toOptionalNumber(lastResult.processed),
+        created: toOptionalNumber(lastResult.created),
+        updated: toOptionalNumber(lastResult.updated),
+        failed: toOptionalNumber(lastResult.failed),
+        pruned: toOptionalNumber(lastResult.pruned),
+    };
+};
+
+const deriveUnavailableReason = (status, summarizedResult) => {
+    if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
+    if (!status.feedUrlConfigured) return 'Live feed URL is not configured on the server.';
+    if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
+    if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
+    if (summarizedResult && summarizedResult.skipped) {
+        return `Last sync was skipped: ${summarizedResult.reason || 'Unknown reason'}.`;
+    }
+    if (!status.lastFinishedAt) return 'A live Yad2 sync has not completed yet.';
+    if (summarizedResult && summarizedResult.fetched === 0) {
+        return 'Last sync returned zero listings from the feed.';
+    }
+    return null;
+};
+
+const getPublicYad2SyncStatus = () => {
+    const status = yad2Scheduler.getStatus();
+    const summarizedResult = summarizeSyncResult(status.lastResult);
+    return {
+        enabled: Boolean(status.enabled),
+        sourceTag: status.sourceTag,
+        syncMinutes: status.syncMinutes,
+        feedUrlConfigured: Boolean(status.feedUrlConfigured),
+        mirrorDeletesEnabled: Boolean(status.mirrorDeletesEnabled),
+        timerActive: Boolean(status.timerActive),
+        inFlight: Boolean(status.inFlight),
+        lastStartedAt: status.lastStartedAt || null,
+        lastFinishedAt: status.lastFinishedAt || null,
+        lastTrigger: status.lastTrigger || null,
+        lastError: sanitizeSyncMessage(status.lastError),
+        lastResult: summarizedResult,
+        unavailableReason: deriveUnavailableReason(status, summarizedResult),
+    };
+};
+
 const isAuthFailureError = (err) =>
     Boolean(err) && (
         err.code === 18 ||
@@ -394,6 +459,15 @@ app.get('/api/admin/sync/yad2/status', async (req, res) => {
     return res.json({
         success: true,
         ...status,
+    });
+});
+
+// Public endpoint — read-only live Yad2 sync status for frontend diagnostics.
+// Usage: GET /api/sync/yad2/status
+app.get('/api/sync/yad2/status', (req, res) => {
+    res.json({
+        success: true,
+        status: getPublicYad2SyncStatus(),
     });
 });
 

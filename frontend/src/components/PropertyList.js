@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { getProperties } from '../services/api';
+import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -9,6 +9,13 @@ const SEARCH_DEBOUNCE_MS = 400;
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
   return `₪${Number(value).toLocaleString()}`;
+};
+
+const formatTimestamp = (isoValue) => {
+  if (!isoValue) return null;
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleString();
 };
 
 // Fallback sample properties shown when the database returns no results
@@ -118,6 +125,7 @@ const PropertyList = () => {
   const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState('');
   const [dbIsEmpty, setDbIsEmpty] = useState(false);
+  const [liveSyncStatus, setLiveSyncStatus] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const autoRetryTimerRef = useRef(null);
@@ -164,12 +172,60 @@ const PropertyList = () => {
     setFilter('all');
   };
 
+  const loadLiveSyncStatus = async () => {
+    try {
+      const response = await getPublicYad2SyncStatus();
+      setLiveSyncStatus(response?.status || null);
+    } catch (statusErr) {
+      setLiveSyncStatus({
+        unavailableReason:
+          statusErr.response?.data?.message ||
+          statusErr.message ||
+          'Unable to load live Yad2 sync diagnostics.',
+      });
+    }
+  };
+
+  const getLiveUnavailableReason = () => {
+    if (liveSyncStatus && typeof liveSyncStatus.unavailableReason === 'string' && liveSyncStatus.unavailableReason.trim()) {
+      return liveSyncStatus.unavailableReason.trim();
+    }
+    if (liveSyncStatus && typeof liveSyncStatus.lastError === 'string' && liveSyncStatus.lastError.trim()) {
+      return `Last sync failed: ${liveSyncStatus.lastError.trim()}.`;
+    }
+    if (liveSyncStatus && liveSyncStatus.lastResult?.skipped) {
+      return `Last sync was skipped: ${liveSyncStatus.lastResult.reason || 'Unknown reason'}.`;
+    }
+    if (liveSyncStatus && liveSyncStatus.lastResult?.fetched === 0) {
+      return 'Last sync returned zero listings from the feed.';
+    }
+    if (liveSyncStatus && !liveSyncStatus.lastFinishedAt) {
+      return 'A live Yad2 sync has not completed yet.';
+    }
+    if (error && error !== '__starting_up__') return error;
+    return 'Retry shortly while live feed diagnostics refresh.';
+  };
+
+  const getLiveSyncSummary = () => {
+    if (!liveSyncStatus || typeof liveSyncStatus !== 'object') return '';
+    const summary = [];
+    summary.push(`Feed URL: ${liveSyncStatus.feedUrlConfigured ? 'configured' : 'missing'}`);
+    const lastFinished = formatTimestamp(liveSyncStatus.lastFinishedAt);
+    if (lastFinished) summary.push(`Last sync: ${lastFinished}`);
+    const fetched = liveSyncStatus.lastResult?.fetched;
+    if (typeof fetched === 'number') summary.push(`Fetched: ${fetched}`);
+    const pruned = liveSyncStatus.lastResult?.pruned;
+    if (typeof pruned === 'number') summary.push(`Pruned: ${pruned}`);
+    return summary.join(' • ');
+  };
+
   useEffect(() => {
     clearTimers();
     const fetchProperties = async () => {
       setLoading(true);
       setSlowLoad(false);
       setError('');
+      setLiveSyncStatus(null);
       setAutoRetrySecondsLeft(0);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
@@ -187,8 +243,10 @@ const PropertyList = () => {
         // continue to show (locally filtered) demo listings.
         if (data.length > 0) {
           setDbIsEmpty(false);
+          setLiveSyncStatus(null);
         } else if (!hasUserFilters) {
           setDbIsEmpty(true);
+          await loadLiveSyncStatus();
         }
       } catch (err) {
         const status = err.response && err.response.status;
@@ -205,6 +263,7 @@ const PropertyList = () => {
         if (canFallbackToDemo) {
           setDbIsEmpty(true);
           setProperties([]);
+          await loadLiveSyncStatus();
         }
 
         if (isTransient && retryCount < MAX_AUTO_RETRIES) {
@@ -292,11 +351,12 @@ const PropertyList = () => {
             <p>
               {error === '__starting_up__'
                 ? `⏳ Connecting to database… retrying in ${autoRetrySecondsLeft}s. Showing demo listings in the meantime.`
-                : '⚡ Live Yad2 feed is currently unavailable. Retry shortly.'}
+                : '⚡ Live Yad2 feed is currently unavailable.'}
             </p>
-            {error && error !== '__starting_up__' && (
-              <p>{error}</p>
+            {error !== '__starting_up__' && (
+              <p>{getLiveUnavailableReason()}</p>
             )}
+            {error !== '__starting_up__' && getLiveSyncSummary() && <p>{getLiveSyncSummary()}</p>}
             <button
               className="secondary-btn"
               onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}
