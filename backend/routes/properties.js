@@ -10,6 +10,9 @@ const {
     createProperty,
     updateProperty,
     deleteProperty,
+    createPropertyInquiry,
+    registerShowingAttendee,
+    getPropertyEngagement,
 } = require('../controllers/propertyController');
 
 // Input validation for properties
@@ -55,6 +58,15 @@ router.get('/', getAllProperties);
 
 // GET /api/properties/:id
 router.get('/:id', getPropertyById);
+
+// POST /api/properties/:id/inquiries
+router.post('/:id/inquiries', createPropertyInquiry);
+
+// POST /api/properties/:id/showings/:showingId/attendees
+router.post('/:id/showings/:showingId/attendees', registerShowingAttendee);
+
+// GET /api/properties/:id/engagement
+router.get('/:id/engagement', protect, getPropertyEngagement);
 
 // POST /api/properties
 router.post('/', protect, validatePropertyInput, validateInput, createProperty);

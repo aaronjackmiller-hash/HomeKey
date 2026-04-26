@@ -79,6 +79,77 @@ const PropertySchema = new mongoose.Schema(
             availableFrom: { type: Date },
             listingDate: { type: Date, default: Date.now },
         },
+        sourceType: {
+            type: String,
+            enum: ['manual', 'yad2-sync', 'yad2-scrape'],
+            default: 'manual',
+        },
+        sources: [
+            {
+                sourceType: {
+                    type: String,
+                    enum: ['manual', 'yad2-sync', 'yad2-scrape'],
+                    required: true,
+                },
+                externalSource: { type: String, trim: true, lowercase: true },
+                externalId: { type: String, trim: true },
+                externalUrl: { type: String, trim: true },
+                addedAt: { type: Date, default: Date.now },
+            },
+        ],
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+        contact: {
+            name: { type: String, trim: true },
+            email: { type: String, trim: true, lowercase: true },
+            phone: { type: String, trim: true },
+            whatsapp: { type: String, trim: true },
+            preferredMethod: {
+                type: String,
+                enum: ['email', 'whatsapp', 'phone'],
+                default: 'email',
+            },
+        },
+        lifecycle: {
+            expiresAt: { type: Date },
+            lastReminderAt: { type: Date },
+            reminderSentCount: { type: Number, default: 0, min: 0 },
+            expiredAt: { type: Date },
+            autoExpireEnabled: { type: Boolean, default: true },
+        },
+        showings: [
+            {
+                startsAt: { type: Date, required: true },
+                endsAt: { type: Date, required: true },
+                notes: { type: String, trim: true },
+                attendeeLimit: { type: Number, min: 1, default: 20 },
+                attendees: [
+                    {
+                        name: { type: String, trim: true, required: true },
+                        email: { type: String, trim: true, lowercase: true },
+                        phone: { type: String, trim: true },
+                        message: { type: String, trim: true },
+                        createdAt: { type: Date, default: Date.now },
+                    },
+                ],
+            },
+        ],
+        inquiries: [
+            {
+                name: { type: String, trim: true, required: true },
+                email: { type: String, trim: true, lowercase: true },
+                phone: { type: String, trim: true },
+                preferredMethod: {
+                    type: String,
+                    enum: ['email', 'whatsapp', 'phone'],
+                    default: 'email',
+                },
+                message: { type: String, trim: true, required: true },
+                createdAt: { type: Date, default: Date.now },
+            },
+        ],
         images: [{ type: String }],
         externalSource: {
             type: String,

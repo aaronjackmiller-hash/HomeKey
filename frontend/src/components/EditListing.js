@@ -38,6 +38,25 @@ const EditListing = () => {
         dates: {
             availableFrom: '',
         },
+        contact: {
+            name: '',
+            email: '',
+            phone: '',
+            whatsapp: '',
+            preferredMethod: 'email',
+        },
+        lifecycle: {
+            expiresAt: '',
+            autoExpireEnabled: true,
+        },
+        showings: [
+            {
+                startsAt: '',
+                endsAt: '',
+                notes: '',
+                attendeeLimit: 20,
+            },
+        ],
         status: 'active',
     });
 
@@ -78,6 +97,34 @@ const EditListing = () => {
                             ? new Date(p.dates.availableFrom).toISOString().split('T')[0]
                             : '',
                     },
+                    contact: {
+                        name: p.contact?.name || '',
+                        email: p.contact?.email || '',
+                        phone: p.contact?.phone || '',
+                        whatsapp: p.contact?.whatsapp || '',
+                        preferredMethod: p.contact?.preferredMethod || 'email',
+                    },
+                    lifecycle: {
+                        expiresAt: p.lifecycle?.expiresAt
+                            ? new Date(p.lifecycle.expiresAt).toISOString().split('T')[0]
+                            : '',
+                        autoExpireEnabled: p.lifecycle?.autoExpireEnabled !== false,
+                    },
+                    showings: Array.isArray(p.showings) && p.showings.length > 0
+                        ? p.showings.map((showing) => ({
+                            startsAt: showing.startsAt ? new Date(showing.startsAt).toISOString().slice(0, 16) : '',
+                            endsAt: showing.endsAt ? new Date(showing.endsAt).toISOString().slice(0, 16) : '',
+                            notes: showing.notes || '',
+                            attendeeLimit: showing.attendeeLimit || 20,
+                        }))
+                        : [
+                            {
+                                startsAt: '',
+                                endsAt: '',
+                                notes: '',
+                                attendeeLimit: 20,
+                            },
+                        ],
                     status: p.status || 'active',
                 });
             } catch (err) {
@@ -103,10 +150,50 @@ const EditListing = () => {
         }
     };
 
+    const handleShowingChange = (index, field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            showings: prev.showings.map((showing, i) =>
+                i === index ? { ...showing, [field]: value } : showing
+            ),
+        }));
+    };
+
+    const addShowingSlot = () => {
+        setFormData((prev) => ({
+            ...prev,
+            showings: [
+                ...prev.showings,
+                {
+                    startsAt: '',
+                    endsAt: '',
+                    notes: '',
+                    attendeeLimit: 20,
+                },
+            ],
+        }));
+    };
+
+    const removeShowingSlot = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            showings: prev.showings.filter((_, i) => i !== index),
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+
+        const normalizedShowings = (formData.showings || [])
+            .filter((showing) => showing.startsAt && showing.endsAt)
+            .map((showing) => ({
+                startsAt: new Date(showing.startsAt).toISOString(),
+                endsAt: new Date(showing.endsAt).toISOString(),
+                notes: showing.notes,
+                attendeeLimit: Number(showing.attendeeLimit) || 20,
+            }));
 
         const payload = {
             title: formData.title,
@@ -131,6 +218,14 @@ const EditListing = () => {
             dates: {
                 ...(formData.dates.availableFrom && { availableFrom: formData.dates.availableFrom }),
             },
+            contact: {
+                ...formData.contact,
+            },
+            lifecycle: {
+                ...(formData.lifecycle.expiresAt && { expiresAt: formData.lifecycle.expiresAt }),
+                autoExpireEnabled: Boolean(formData.lifecycle.autoExpireEnabled),
+            },
+            showings: normalizedShowings,
             status: formData.status,
         };
 
@@ -267,6 +362,103 @@ const EditListing = () => {
                         <label>Available From</label>
                         <input type="date" name="dates_availableFrom" value={formData.dates.availableFrom} onChange={handleChange} />
                     </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Owner Contact (for buyers/renters)</legend>
+                    <div className="input-field">
+                        <label>Contact Name</label>
+                        <input type="text" name="contact_name" value={formData.contact.name} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact Email</label>
+                        <input type="email" name="contact_email" value={formData.contact.email} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact Phone</label>
+                        <input type="tel" name="contact_phone" value={formData.contact.phone} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact WhatsApp</label>
+                        <input type="tel" name="contact_whatsapp" value={formData.contact.whatsapp} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Preferred Contact Method</label>
+                        <select name="contact_preferredMethod" value={formData.contact.preferredMethod} onChange={handleChange}>
+                            <option value="email">Email</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="phone">Phone</option>
+                        </select>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Listing Expiry</legend>
+                    <div className="input-field">
+                        <label>Expires At</label>
+                        <input type="date" name="lifecycle_expiresAt" value={formData.lifecycle.expiresAt} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="lifecycle_autoExpireEnabled"
+                                checked={Boolean(formData.lifecycle.autoExpireEnabled)}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        lifecycle: {
+                                            ...prev.lifecycle,
+                                            autoExpireEnabled: e.target.checked,
+                                        },
+                                    }))
+                                }
+                            />
+                            Enable automatic expiry/reminders
+                        </label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Showing Schedule</legend>
+                    {formData.showings.map((showing, index) => (
+                        <div key={`showing-${index}`} style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '8px', marginBottom: '10px' }}>
+                            <div className="input-field">
+                                <label>Start Date/Time</label>
+                                <input
+                                    type="datetime-local"
+                                    value={showing.startsAt}
+                                    onChange={(e) => handleShowingChange(index, 'startsAt', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>End Date/Time</label>
+                                <input
+                                    type="datetime-local"
+                                    value={showing.endsAt}
+                                    onChange={(e) => handleShowingChange(index, 'endsAt', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Attendee Limit</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={showing.attendeeLimit}
+                                    onChange={(e) => handleShowingChange(index, 'attendeeLimit', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Notes</label>
+                                <input
+                                    type="text"
+                                    value={showing.notes}
+                                    onChange={(e) => handleShowingChange(index, 'notes', e.target.value)}
+                                />
+                            </div>
+                            {formData.showings.length > 1 && (
+                                <button type="button" onClick={() => removeShowingSlot(index)}>Remove Time Slot</button>
+                            )}
+                        </div>
+                    ))}
+                    <button type="button" onClick={addShowingSlot}>+ Add Showing Time</button>
                 </fieldset>
                 <button type="submit" disabled={loading}>{loading ? 'Saving…' : 'Save Changes'}</button>
                 <button type="button" onClick={() => history.push(`/properties/${id}`)} style={{ marginLeft: '12px' }}>Cancel</button>

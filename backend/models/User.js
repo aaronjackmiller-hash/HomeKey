@@ -22,6 +22,19 @@ const UserSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        whatsapp: {
+            type: String,
+            trim: true,
+        },
+        preferredContactMethod: {
+            type: String,
+            enum: ['email', 'whatsapp', 'phone'],
+            default: 'email',
+        },
+        notifications: {
+            sendThankYou: { type: Boolean, default: true },
+            sendExpiryReminder: { type: Boolean, default: true },
+        },
         role: {
             type: String,
             enum: ['buyer', 'seller', 'agent', 'admin'],

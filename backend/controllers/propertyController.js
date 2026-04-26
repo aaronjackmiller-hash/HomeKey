@@ -2,13 +2,98 @@
 
 const mongoose = require('mongoose');
 const Property = require('../models/Property');
+const User = require('../models/User');
+const {
+    buildManualLifecycleDefaults,
+    sendThankYouForListing,
+    sendInquiryNotificationToOwner,
+    sendShowingRegistrationNotificationToOwner,
+} = require('../services/propertyLifecycleService');
+const {
+    appendSourceIfMissing,
+    findDuplicateCandidate,
+} = require('../services/propertyMergeService');
+const { getRequestUserRole } = require('../utils/authorization');
 
 // Allowed fields for property updates
 const PROPERTY_UPDATE_FIELDS = [
     'title', 'description', 'type', 'price', 'address', 'bedrooms', 'bathrooms',
     'size', 'floorNumber', 'buildingDetails', 'financialDetails', 'dates',
-    'images', 'agent', 'status',
+    'images', 'agent', 'status', 'contact', 'lifecycle', 'showings',
 ];
+
+const parsePreferredMethod = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (['email', 'whatsapp', 'phone'].includes(normalized)) return normalized;
+    return 'email';
+};
+
+const pickFirstNonEmpty = (...values) => {
+    for (const value of values) {
+        if (typeof value === 'string' && value.trim().length > 0) return value.trim();
+    }
+    return '';
+};
+
+const normalizeOptionalEmail = (...values) => {
+    const email = pickFirstNonEmpty(...values);
+    return email ? email.toLowerCase() : '';
+};
+
+const sanitizeShowings = (showings = []) => {
+    if (!Array.isArray(showings)) return [];
+    return showings
+        .map((showing) => {
+            const startsAt = showing?.startsAt ? new Date(showing.startsAt) : null;
+            const endsAt = showing?.endsAt ? new Date(showing.endsAt) : null;
+            if (!startsAt || !endsAt || Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
+                return null;
+            }
+            const attendeeLimit = Number(showing.attendeeLimit);
+            return {
+                startsAt,
+                endsAt,
+                notes: pickFirstNonEmpty(showing.notes),
+                attendeeLimit: Number.isFinite(attendeeLimit) && attendeeLimit > 0 ? Math.floor(attendeeLimit) : 20,
+                attendees: [],
+            };
+        })
+        .filter(Boolean);
+};
+
+const normalizeManualContact = ({ bodyContact = {}, user }) => {
+    const preferredMethod = parsePreferredMethod(
+        bodyContact.preferredMethod || user.preferredContactMethod
+    );
+    return {
+        name: pickFirstNonEmpty(bodyContact.name, user.name),
+        email: normalizeOptionalEmail(bodyContact.email, user.email),
+        phone: pickFirstNonEmpty(bodyContact.phone, user.phone),
+        whatsapp: pickFirstNonEmpty(bodyContact.whatsapp, user.whatsapp),
+        preferredMethod,
+    };
+};
+
+const normalizeSourceType = (property) => {
+    if (property?.sourceType) return property.sourceType;
+    if (property?.externalSource === getLiveYad2SourceTag()) return 'yad2-sync';
+    if (property?.externalSource && String(property.externalSource).includes('scrape')) return 'yad2-scrape';
+    return 'manual';
+};
+
+const sanitizeLifecycleInput = (lifecycle = {}) => {
+    const result = {};
+    if (Object.prototype.hasOwnProperty.call(lifecycle, 'expiresAt')) {
+        const parsed = lifecycle.expiresAt ? new Date(lifecycle.expiresAt) : null;
+        if (parsed && !Number.isNaN(parsed.getTime())) {
+            result.expiresAt = parsed;
+        }
+    }
+    if (Object.prototype.hasOwnProperty.call(lifecycle, 'autoExpireEnabled')) {
+        result.autoExpireEnabled = parseBoolean(lifecycle.autoExpireEnabled, true);
+    }
+    return result;
+};
 
 const parseBoolean = (value, fallback) => {
     if (value == null) return fallback;
@@ -35,8 +120,11 @@ const getAllProperties = async (req, res) => {
         const filter = {};
 
         if (isLiveYad2OnlyMode()) {
-            // Beta mode: serve only live-synced Yad2 inventory.
-            filter.externalSource = getLiveYad2SourceTag();
+            // In live mode, keep synced Yad2 records while still allowing manual listings.
+            filter.$or = [
+                { externalSource: getLiveYad2SourceTag() },
+                { sourceType: 'manual' },
+            ];
         }
 
         // Basic filtering logic
@@ -99,7 +187,78 @@ const getPropertyById = async (req, res) => {
 // @access  Private
 const createProperty = async (req, res) => {
     try {
-        const property = await Property.create(req.body);
+        const owner = await User.findById(req.user.id)
+            .select('name email phone whatsapp preferredContactMethod role notifications');
+        if (!owner) {
+            return res.status(401).json({ success: false, message: 'User not found for property creation' });
+        }
+
+        const payload = {
+            ...req.body,
+            sourceType: 'manual',
+            owner: owner._id,
+            contact: normalizeManualContact({ bodyContact: req.body.contact || {}, user: owner }),
+            lifecycle: {
+                ...buildManualLifecycleDefaults({ role: owner.role }),
+                ...sanitizeLifecycleInput(req.body.lifecycle),
+            },
+            showings: sanitizeShowings(req.body.showings),
+            sources: [
+                {
+                    sourceType: 'manual',
+                    addedAt: new Date(),
+                },
+            ],
+        };
+
+        const duplicate = await findDuplicateCandidate(payload);
+        if (duplicate) {
+            duplicate.title = payload.title;
+            duplicate.description = payload.description || duplicate.description;
+            duplicate.type = payload.type;
+            duplicate.price = payload.price;
+            duplicate.bedrooms = payload.bedrooms;
+            duplicate.bathrooms = payload.bathrooms;
+            duplicate.size = payload.size;
+            duplicate.floorNumber = payload.floorNumber;
+            duplicate.address = payload.address;
+            duplicate.buildingDetails = payload.buildingDetails;
+            duplicate.financialDetails = payload.financialDetails;
+            duplicate.dates = payload.dates;
+            duplicate.status = payload.status || duplicate.status;
+            duplicate.contact = payload.contact;
+            duplicate.owner = duplicate.owner || payload.owner;
+            duplicate.lifecycle = {
+                ...(duplicate.lifecycle || {}),
+                ...sanitizeLifecycleInput(payload.lifecycle || {}),
+            };
+            if (payload.showings.length > 0) {
+                duplicate.showings = payload.showings;
+            }
+            appendSourceIfMissing(duplicate, {
+                sourceType: 'manual',
+                addedAt: new Date(),
+            });
+            await duplicate.save();
+            await User.updateOne(
+                { _id: owner._id },
+                { $addToSet: { listings: duplicate._id } }
+            );
+            await sendThankYouForListing({ user: owner.toObject(), property: duplicate.toObject() });
+            return res.status(200).json({
+                success: true,
+                data: duplicate,
+                mergedDuplicate: true,
+                message: 'Listing matched an existing property and was merged.',
+            });
+        }
+
+        const property = await Property.create(payload);
+        await User.updateOne(
+            { _id: owner._id },
+            { $addToSet: { listings: property._id } }
+        );
+        await sendThankYouForListing({ user: owner.toObject(), property: property.toObject() });
         res.status(201).json({ success: true, data: property });
     } catch (err) {
         if (err.name === 'ValidationError') {
@@ -125,14 +284,43 @@ const updateProperty = async (req, res) => {
             }
         });
 
-        const property = await Property.findByIdAndUpdate(req.params.id, updateData, {
-            new: true,
-            runValidators: true,
-        });
+        const property = await Property.findById(req.params.id);
 
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
+        const actingUserRole = await getRequestUserRole(req);
+        const isOwner = property.owner && String(property.owner) === String(req.user.id);
+        const canManage = isOwner || Boolean(actingUserRole && ['agent', 'admin'].includes(actingUserRole));
+        if (!canManage) {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this property' });
+        }
+
+        Object.assign(property, updateData);
+        if (Object.prototype.hasOwnProperty.call(req.body, 'showings')) {
+            property.showings = sanitizeShowings(req.body.showings);
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'lifecycle')) {
+            property.lifecycle = {
+                ...(property.lifecycle || {}),
+                ...sanitizeLifecycleInput(req.body.lifecycle || {}),
+            };
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'contact')) {
+            const owner = await User.findById(property.owner || req.user.id)
+                .select('name email phone whatsapp preferredContactMethod')
+                .lean();
+            if (owner) {
+                property.contact = normalizeManualContact({
+                    bodyContact: req.body.contact || {},
+                    user: owner,
+                });
+            }
+        }
+        if (!property.sourceType) {
+            property.sourceType = normalizeSourceType(property);
+        }
+        await property.save();
         res.json({ success: true, data: property });
     } catch (err) {
         if (err.name === 'CastError') {
@@ -151,10 +339,17 @@ const updateProperty = async (req, res) => {
 // @access  Private
 const deleteProperty = async (req, res) => {
     try {
-        const property = await Property.findByIdAndDelete(req.params.id);
+        const property = await Property.findById(req.params.id);
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
+        const actingUserRole = await getRequestUserRole(req);
+        const isOwner = property.owner && String(property.owner) === String(req.user.id);
+        const canManage = isOwner || Boolean(actingUserRole && ['agent', 'admin'].includes(actingUserRole));
+        if (!canManage) {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this property' });
+        }
+        await Property.deleteOne({ _id: property._id });
         res.json({ success: true, message: 'Property deleted successfully' });
     } catch (err) {
         if (err.name === 'CastError') {
@@ -164,10 +359,135 @@ const deleteProperty = async (req, res) => {
     }
 };
 
+// @desc    Submit a buyer/renter inquiry to listing owner
+// @route   POST /api/properties/:id/inquiries
+// @access  Public
+const createPropertyInquiry = async (req, res) => {
+    try {
+        const property = await Property.findById(req.params.id);
+        if (!property) {
+            return res.status(404).json({ success: false, message: 'Property not found' });
+        }
+        const name = pickFirstNonEmpty(req.body.name);
+        const message = pickFirstNonEmpty(req.body.message);
+        if (!name || !message) {
+            return res.status(400).json({ success: false, message: 'Name and message are required.' });
+        }
+
+        const inquiry = {
+            name,
+            message,
+            email: normalizeEmail(pickFirstNonEmpty(req.body.email)),
+            phone: pickFirstNonEmpty(req.body.phone),
+            preferredMethod: parsePreferredMethod(req.body.preferredMethod),
+            createdAt: new Date(),
+        };
+        property.inquiries = [...(property.inquiries || []), inquiry];
+        await property.save();
+        if (property.owner) {
+            const owner = await User.findById(property.owner)
+                .select('name email phone whatsapp preferredContactMethod notifications')
+                .lean();
+            if (owner) {
+                await sendInquiryNotificationToOwner({
+                    user: owner,
+                    property: property.toObject(),
+                    inquiry,
+                });
+            }
+        }
+        res.status(201).json({ success: true, data: inquiry });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server Error', error: err.message });
+    }
+};
+
+// @desc    Register attendee for showing
+// @route   POST /api/properties/:id/showings/:showingId/attendees
+// @access  Public
+const registerShowingAttendee = async (req, res) => {
+    try {
+        const property = await Property.findById(req.params.id);
+        if (!property) {
+            return res.status(404).json({ success: false, message: 'Property not found' });
+        }
+        const showing = property.showings.id(req.params.showingId);
+        if (!showing) {
+            return res.status(404).json({ success: false, message: 'Showing not found' });
+        }
+        const name = pickFirstNonEmpty(req.body.name);
+        if (!name) {
+            return res.status(400).json({ success: false, message: 'Attendee name is required.' });
+        }
+        if ((showing.attendees || []).length >= (showing.attendeeLimit || 20)) {
+            return res.status(400).json({ success: false, message: 'Showing attendee limit reached.' });
+        }
+        showing.attendees.push({
+            name,
+            email: normalizeEmail(req.body.email),
+            phone: pickFirstNonEmpty(req.body.phone),
+            message: pickFirstNonEmpty(req.body.message),
+            createdAt: new Date(),
+        });
+        await property.save();
+        if (property.owner) {
+            const owner = await User.findById(property.owner)
+                .select('name email phone whatsapp preferredContactMethod notifications')
+                .lean();
+            if (owner) {
+                const newAttendee = showing.attendees[showing.attendees.length - 1];
+                await sendShowingRegistrationNotificationToOwner({
+                    user: owner,
+                    property: property.toObject(),
+                    showing,
+                    attendee: newAttendee,
+                });
+            }
+        }
+        res.status(201).json({ success: true, data: showing });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server Error', error: err.message });
+    }
+};
+
+// @desc    View full attendees + inquiries for listing owner/agent/admin
+// @route   GET /api/properties/:id/engagement
+// @access  Private
+const getPropertyEngagement = async (req, res) => {
+    try {
+        const property = await Property.findById(req.params.id)
+            .select('owner showings inquiries contact title');
+        if (!property) {
+            return res.status(404).json({ success: false, message: 'Property not found' });
+        }
+        const actingUserRole = await getRequestUserRole(req);
+        const isOwner = property.owner && String(property.owner) === String(req.user.id);
+        const canAccess = isOwner || Boolean(actingUserRole && ['agent', 'admin'].includes(actingUserRole));
+        if (!canAccess) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view engagement data.' });
+        }
+        return res.json({
+            success: true,
+            data: {
+                propertyId: property._id,
+                title: property.title,
+                contact: property.contact || {},
+                inquiries: property.inquiries || [],
+                showings: property.showings || [],
+            },
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Server Error', error: err.message });
+    }
+};
+
 module.exports = {
     getAllProperties,
     getPropertyById,
     createProperty,
     updateProperty,
     deleteProperty,
+    createPropertyInquiry,
+    registerShowingAttendee,
+    getPropertyEngagement,
 };

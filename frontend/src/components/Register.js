@@ -6,7 +6,15 @@ import { useAuth } from '../context/AuthContext';
 const Register = () => {
   const { login } = useAuth();
   const history = useHistory();
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'buyer' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    whatsapp: '',
+    preferredContactMethod: 'email',
+    role: 'buyer',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +60,18 @@ const Register = () => {
         <div className="input-field">
           <label>Phone (optional)</label>
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} />
+        </div>
+        <div className="input-field">
+          <label>WhatsApp (optional)</label>
+          <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange} />
+        </div>
+        <div className="input-field">
+          <label>Preferred Contact Method</label>
+          <select name="preferredContactMethod" value={form.preferredContactMethod} onChange={handleChange}>
+            <option value="email">Email</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="phone">Phone</option>
+          </select>
         </div>
         <div className="input-field">
           <label>Role</label>
