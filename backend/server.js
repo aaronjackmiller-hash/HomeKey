@@ -195,19 +195,23 @@ connectMongo(MONGODB_URI)
         } catch (seedErr) {
             console.error('[startup] Seed failed - demo data not loaded. Use POST /api/admin/seed to retry:', seedErr.message);
         }
-        // Keep a curated set of Israeli Yad2 listings (rent + sale) in sync
-        // so the public listings page always has realistic mixed inventory.
-        try {
-            const curatedImport = await importYad2Listings({
-                rows: featuredYad2ListingsIL,
-                upsert: true,
-                sourceTag: 'yad2-featured-il',
-            });
-            console.log(
-                `[startup] Featured Yad2 listings sync complete (created=${curatedImport.created}, updated=${curatedImport.updated}, skipped=${curatedImport.skipped}).`
-            );
-        } catch (curatedErr) {
-            console.error('[startup] Featured Yad2 listings sync failed:', curatedErr.message);
+        const enableFeaturedSeed = process.env.ENABLE_FEATURED_YAD2_SEED === 'true';
+        if (enableFeaturedSeed) {
+            // Optional curated seed data (disabled by default when running live sync-only mode).
+            try {
+                const curatedImport = await importYad2Listings({
+                    rows: featuredYad2ListingsIL,
+                    upsert: true,
+                    sourceTag: 'yad2-featured-il',
+                });
+                console.log(
+                    `[startup] Featured Yad2 listings sync complete (created=${curatedImport.created}, updated=${curatedImport.updated}, skipped=${curatedImport.skipped}).`
+                );
+            } catch (curatedErr) {
+                console.error('[startup] Featured Yad2 listings sync failed:', curatedErr.message);
+            }
+        } else {
+            console.log('[startup] Featured Yad2 seed is disabled (ENABLE_FEATURED_YAD2_SEED != true).');
         }
 
         yad2Scheduler.start();

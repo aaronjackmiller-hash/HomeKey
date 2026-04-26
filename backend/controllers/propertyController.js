@@ -10,12 +10,34 @@ const PROPERTY_UPDATE_FIELDS = [
     'images', 'agent', 'status',
 ];
 
+const parseBoolean = (value, fallback) => {
+    if (value == null) return fallback;
+    const normalized = String(value).trim().toLowerCase();
+    if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+    if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+    return fallback;
+};
+
+const isLiveYad2OnlyMode = () => parseBoolean(process.env.LIVE_YAD2_ONLY, process.env.NODE_ENV === 'production');
+
+const getLiveYad2SourceTag = () => {
+    const configured = typeof process.env.YAD2_SYNC_SOURCE_TAG === 'string'
+        ? process.env.YAD2_SYNC_SOURCE_TAG.trim().toLowerCase()
+        : '';
+    return configured || 'yad2-live-sync';
+};
+
 // @desc    Get all properties
 // @route   GET /api/properties
 // @access  Public
 const getAllProperties = async (req, res) => {
     try {
         const filter = {};
+
+        if (isLiveYad2OnlyMode()) {
+            // Beta mode: serve only live-synced Yad2 inventory.
+            filter.externalSource = getLiveYad2SourceTag();
+        }
 
         // Basic filtering logic
         if (req.query.type) {
