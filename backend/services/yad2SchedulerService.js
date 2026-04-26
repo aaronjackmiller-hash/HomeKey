@@ -12,7 +12,8 @@ const DEFAULT_SCRAPE_MAX_ITEMS = 120;
 const MAX_SCRAPE_MAX_ITEMS = 500;
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
 const YAD2_FORSALE_URL = 'https://www.yad2.co.il/realestate/forsale';
-const SCRAPE_USER_AGENT = 'Mozilla/5.0 (compatible; HomeKeyBot/1.0; +https://homekey.local)';
+// Use a common desktop browser UA to reduce anti-bot blocking compared with a custom bot UA.
+const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
 const DEFAULT_SEGMENTED_SCRAPE_ENABLED = true;
 const DEFAULT_SEGMENTS = [
     { key: 'center-and-sharon', label: 'Center & Sharon', path: 'center-and-sharon' },
