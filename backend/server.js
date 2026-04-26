@@ -276,13 +276,6 @@ if (!process.env.MONGODB_URI) {
 }
 
 const yad2Scheduler = createYad2Scheduler(console);
-yad2Scheduler.setCaptchaFallbackFetcher(async ({ segmentKey }) => {
-    const rows = await getYad2FallbackFeedRowsForSegment(segmentKey);
-    return {
-        rows,
-        source: 'internal-store',
-    };
-});
 const propertyLifecycleRunner = createPropertyLifecycleRunner(console);
 
 // Start accepting HTTP connections immediately so the React frontend is always

@@ -286,7 +286,7 @@ If upstream scraping is blocked by captcha and you do not have an external fallb
 
 Admin endpoints (same auth as import/sync: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token):
 
-- `POST /api/admin/sync/yad2/fallback-feed`
+- `POST /api/admin/sync/yad2/fallback`
   - Body:
     ```json
     {
@@ -311,7 +311,7 @@ Admin endpoints (same auth as import/sync: `X-Admin-Import-Secret`, `X-Admin-Sec
   - `segmentKey` is optional (defaults to `all`).
   - `replace=true` overwrites that segment; `replace=false` appends/upserts by `id`.
 
-- `GET /api/admin/sync/yad2/fallback-feed`
+- `GET /api/admin/sync/yad2/fallback/status`
   - Optional query: `segmentKey=center-and-sharon`
   - Returns stored fallback feed metadata and item counts.
 
