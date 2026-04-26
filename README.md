@@ -221,6 +221,10 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
 - `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
 
+To make the beta site show only current live Yad2 feed listings, also set:
+
+- `LIVE_YAD2_ONLY=true`
+
 Manual trigger endpoint:
 
 - `POST /api/admin/sync/yad2`

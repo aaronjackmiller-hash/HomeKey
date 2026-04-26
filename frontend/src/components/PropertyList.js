@@ -173,12 +173,12 @@ const PropertyList = () => {
       setAutoRetrySecondsLeft(0);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
-        const params = {};
+        const params = { source: 'live-yad2' };
         if (filter !== 'all') params.type = filter;
         if (citySearch.trim()) params.city = citySearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
         if (maxPrice !== '') params.maxPrice = maxPrice;
-        const hasFilters = Object.keys(params).length > 0;
+        const hasUserFilters = Object.keys(params).length > 1;
         const result = await getProperties(params);
         const data = result.data || [];
         setProperties(data);
@@ -187,7 +187,7 @@ const PropertyList = () => {
         // continue to show (locally filtered) demo listings.
         if (data.length > 0) {
           setDbIsEmpty(false);
-        } else if (!hasFilters) {
+        } else if (!hasUserFilters) {
           setDbIsEmpty(true);
         }
       } catch (err) {
@@ -269,7 +269,7 @@ const PropertyList = () => {
     }
 
     // When the database is empty, filter the local SAMPLE_PROPERTIES to match
-    // whatever type/city/price filters the user has active so searches still work.
+      // whatever type/city/price filters the user has active so searches still work.
     let displayProperties;
     if (dbIsEmpty) {
       let samples = [...SAMPLE_PROPERTIES];
@@ -292,7 +292,7 @@ const PropertyList = () => {
             <p>
               {error === '__starting_up__'
                 ? `⏳ Connecting to database… retrying in ${autoRetrySecondsLeft}s. Showing demo listings in the meantime.`
-                : '⚡ Showing demo listings — connect your database to see real properties.'}
+                : '⚡ Live Yad2 feed is currently unavailable. Retry shortly.'}
             </p>
             {error && error !== '__starting_up__' && (
               <p>{error}</p>
