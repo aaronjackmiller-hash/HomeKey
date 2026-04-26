@@ -155,6 +155,7 @@ const buildFallbackRow = ({ href, anchorText, dealType }) => {
             title,
             description: `Temporary Yad2 scrape fallback listing (${dealType}).`,
             dealType,
+            sourceType: 'yad2-scrape',
             price,
             rooms,
             bathrooms,

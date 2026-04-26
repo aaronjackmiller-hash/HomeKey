@@ -164,7 +164,7 @@ const deriveUnavailableReason = (status, summarizedResult) => {
         return 'Segmented scrape mode is active and rotating through configured regions.';
     }
     if (!status.feedUrlConfigured && !status.scrapeFallbackEnabled) {
-        return 'Live feed URL is not configured on the server.';
+        return 'Live feed URL is not configured. Auto-scrape fallback is enabled by default and will be attempted.';
     }
     if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && status.lastError) {
         return `Scrape fallback failed: ${sanitizeSyncMessage(status.lastError)}.`;

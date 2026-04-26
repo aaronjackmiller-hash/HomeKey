@@ -221,7 +221,7 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
 - `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
 - `YAD2_SYNC_PRUNE_MISSING=true` (optional; when true, removes listings that disappeared from current Yad2 feed for mirror behavior)
-- `YAD2_SCRAPE_FALLBACK_ENABLED=true` (default true; set `false` only to disable no-feed scrape fallback)
+- `YAD2_SCRAPE_FALLBACK_ENABLED=true` (default in code; set `false` only if you explicitly want to disable scrape fallback when no feed URL is set)
 - `YAD2_SCRAPE_MAX_ITEMS=120` (optional; caps temporary scraped listings per run, max 500)
 - `YAD2_SEGMENTED_SCRAPE_ENABLED=true` (default true; rotates through configured regions instead of scraping all regions each run)
 - `YAD2_SCRAPE_SEGMENTS=center-and-sharon,tel-aviv-area,jerusalem-area,south,coastal-north,north-and-valleys` (optional comma-separated region slugs for segmented rotation)
