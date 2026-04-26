@@ -85,6 +85,26 @@ export const importYad2ListingsBatch = async ({
   return response.data;
 };
 
+export const runYad2SyncNow = async ({
+  adminSecret,
+  adminImportSecret,
+} = {}) => {
+  const headers = {};
+  if (typeof adminSecret === 'string' && adminSecret.trim()) {
+    headers['X-Admin-Secret'] = adminSecret.trim();
+  }
+  if (typeof adminImportSecret === 'string' && adminImportSecret.trim()) {
+    headers['X-Admin-Import-Secret'] = adminImportSecret.trim();
+  }
+
+  const response = await api.post(
+    '/admin/sync/yad2',
+    {},
+    Object.keys(headers).length > 0 ? { headers } : undefined
+  );
+  return response.data;
+};
+
 // Agents
 export const getAgents = async () => {
   const response = await api.get('/agents');

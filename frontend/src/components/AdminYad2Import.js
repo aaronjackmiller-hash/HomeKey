@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { importYad2ListingsBatch } from '../services/api';
+import { importYad2ListingsBatch, runYad2SyncNow } from '../services/api';
 
 const pretty = (value) => JSON.stringify(value, null, 2);
 
@@ -9,8 +9,10 @@ const AdminYad2Import = () => {
   const [items, setItems] = useState(null);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  const [syncResult, setSyncResult] = useState(null);
   const [rawPreview, setRawPreview] = useState('');
 
   const handleFile = async (event) => {
@@ -61,12 +63,46 @@ const AdminYad2Import = () => {
     }
   };
 
+  const handleRunSyncNow = async () => {
+    setError('');
+    setSyncResult(null);
+    setSyncLoading(true);
+    try {
+      const response = await runYad2SyncNow();
+      setSyncResult(response);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Yad2 sync failed.');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   return (
     <div className="import-page">
       <h2>Admin Yad2 Batch Import</h2>
       <p className="import-help">
         Upload a JSON array of Yad2 listings. This imports additional listings without deleting existing ones.
       </p>
+      <div className="import-sync-panel">
+        <h3>Live Feed Sync</h3>
+        <p>
+          Run one immediate Yad2 sync now (uses your logged-in agent/admin permissions).
+        </p>
+        <button className="secondary-btn" type="button" onClick={handleRunSyncNow} disabled={syncLoading}>
+          {syncLoading ? 'Running sync...' : 'Run Yad2 Sync Now'}
+        </button>
+        {syncResult && (
+          <p className="import-summary">
+            {syncResult.message || 'Yad2 sync finished.'}
+            {typeof syncResult.fetched === 'number' && (
+              <>
+                {' '}Fetched: <strong>{syncResult.fetched}</strong> | Created: <strong>{syncResult.created ?? 0}</strong> |
+                Updated: <strong>{syncResult.updated ?? 0}</strong> | Skipped: <strong>{syncResult.skipped ?? 0}</strong>
+              </>
+            )}
+          </p>
+        )}
+      </div>
 
       <form className="import-form" onSubmit={handleImport}>
         <div className="input-field">

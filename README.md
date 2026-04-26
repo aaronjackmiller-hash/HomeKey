@@ -203,6 +203,8 @@ From that screen you can:
 
 This uses your logged-in bearer token, so you do not need to paste admin secrets into a terminal.
 
+From the Import Yad2 screen, you can also click **Run Yad2 Sync Now** to trigger one immediate live-feed sync without using PowerShell.
+
 ### Curated Israeli Yad2 listings shown by default
 
 On startup, HomeKey now upserts a curated Yad2-inspired Israeli listings set (both rentals and for-sale properties) into the listings collection. This keeps the listings page populated with realistic local inventory without manual import steps.
