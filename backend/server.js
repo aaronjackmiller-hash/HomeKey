@@ -43,6 +43,7 @@ const generalLimiter = rateLimit({
 
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
+const { createYad2Scheduler } = require('./services/yad2SchedulerService');
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
 
@@ -89,6 +90,36 @@ const withQueryParam = (uri, key, value) => {
     const params = new URLSearchParams(query);
     params.set(key, value);
     return `${base}?${params.toString()}`;
+};
+
+const safeHeaderSecretMatch = (expected, provided) => {
+    if (typeof expected !== 'string' || expected.length === 0) return false;
+    const expectedBuf = Buffer.from(expected);
+    const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
+    const dummy = Buffer.alloc(expectedBuf.length);
+    const cmpBuf = providedBuf.length === expectedBuf.length ? providedBuf : dummy;
+    return crypto.timingSafeEqual(expectedBuf, cmpBuf);
+};
+
+const isYad2ImportAuthorized = async (req) => {
+    const importSecret = process.env.ADMIN_IMPORT_SECRET;
+    const adminSecret = process.env.ADMIN_SECRET;
+    const providedImport = req.headers['x-admin-import-secret'];
+    const providedAdmin = req.headers['x-admin-secret'];
+    const importAuthOk = safeHeaderSecretMatch(importSecret, providedImport);
+    const adminAuthOk = safeHeaderSecretMatch(adminSecret, providedAdmin);
+    if (importAuthOk || adminAuthOk) return true;
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('role');
+        return Boolean(user && ['agent', 'admin'].includes(user.role));
+    } catch (jwtErr) {
+        return false;
+    }
 };
 
 const isAuthFailureError = (err) =>
@@ -144,6 +175,8 @@ if (!process.env.MONGODB_URI) {
     console.warn('WARNING: MONGODB_URI is not set. Falling back to mongodb://localhost:27017/homekey');
 }
 
+const yad2Scheduler = createYad2Scheduler(console);
+
 // Start accepting HTTP connections immediately so the React frontend is always
 // reachable — even during cold starts or while MongoDB is still connecting.
 // API routes that need the database will return 503 until the connection is ready.
@@ -175,6 +208,20 @@ connectMongo(MONGODB_URI)
             );
         } catch (curatedErr) {
             console.error('[startup] Featured Yad2 listings sync failed:', curatedErr.message);
+        }
+
+        yad2Scheduler.start();
+        try {
+            const initialSync = await yad2Scheduler.runSyncOnce('startup');
+            if (initialSync.skipped) {
+                console.log(`[yad2-sync] Startup run skipped: ${initialSync.reason}`);
+            } else {
+                console.log(
+                    `[yad2-sync] Startup sync complete (fetched=${initialSync.fetched}, created=${initialSync.created}, updated=${initialSync.updated}, skipped=${initialSync.skipped}).`
+                );
+            }
+        } catch (syncErr) {
+            console.error('[yad2-sync] Startup sync failed:', syncErr.message);
         }
     })
     .catch((err) => {
@@ -252,44 +299,7 @@ app.post('/api/admin/seed', async (req, res) => {
 //       "sourceTag": "yad2"     // optional label (recommended per batch/source)
 //     }
 app.post('/api/admin/import/yad2', async (req, res) => {
-    const importSecret = process.env.ADMIN_IMPORT_SECRET;
-    const adminSecret = process.env.ADMIN_SECRET;
-
-    // Backward-compatible auth:
-    // - Preferred: X-Admin-Import-Secret + ADMIN_IMPORT_SECRET
-    // - Fallback:  X-Admin-Secret + ADMIN_SECRET
-    // - Optional:  Authorization: Bearer <JWT> for logged-in users with
-    //              role "agent" or "admin" (for in-app imports).
-    const providedImport = req.headers['x-admin-import-secret'];
-    const providedAdmin = req.headers['x-admin-secret'];
-
-    const safeMatch = (expected, provided) => {
-        if (typeof expected !== 'string' || expected.length === 0) return false;
-        const expectedBuf = Buffer.from(expected);
-        const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
-        const dummy = Buffer.alloc(expectedBuf.length);
-        const cmpBuf = providedBuf.length === expectedBuf.length ? providedBuf : dummy;
-        return crypto.timingSafeEqual(expectedBuf, cmpBuf);
-    };
-
-    const importAuthOk = safeMatch(importSecret, providedImport);
-    const adminAuthOk = safeMatch(adminSecret, providedAdmin);
-    let jwtAuthOk = false;
-    if (!importAuthOk && !adminAuthOk) {
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            try {
-                const token = authHeader.split(' ')[1];
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                const user = await User.findById(decoded.id).select('role');
-                jwtAuthOk = Boolean(user && ['agent', 'admin'].includes(user.role));
-            } catch (jwtErr) {
-                jwtAuthOk = false;
-            }
-        }
-    }
-
-    if (!importAuthOk && !adminAuthOk && !jwtAuthOk) {
+    if (!(await isYad2ImportAuthorized(req))) {
         return res.status(403).json({
             success: false,
             message: 'Not authorized for import. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
@@ -333,6 +343,36 @@ app.post('/api/admin/import/yad2', async (req, res) => {
     } catch (err) {
         console.error('[admin/import/yad2] Import failed:', err);
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Admin endpoint — trigger Yad2 scheduled sync manually.
+// Uses the same authorization as /api/admin/import/yad2.
+// Usage: POST /api/admin/sync/yad2
+app.post('/api/admin/sync/yad2', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for sync. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    try {
+        const result = await yad2Scheduler.runSyncOnce('admin-api');
+        if (result.skipped) {
+            return res.json({
+                success: true,
+                message: `Yad2 sync skipped: ${result.reason}.`,
+                ...result,
+            });
+        }
+        return res.json({
+            success: true,
+            message: 'Yad2 sync completed.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[admin/sync/yad2] Sync failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
     }
 });
 
