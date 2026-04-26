@@ -110,6 +110,11 @@ export const getYad2SyncStatus = async () => {
   return response.data;
 };
 
+export const getPublicYad2SyncStatus = async () => {
+  const response = await api.get('/sync/yad2/status');
+  return response.data;
+};
+
 // Agents
 export const getAgents = async () => {
   const response = await api.get('/agents');
