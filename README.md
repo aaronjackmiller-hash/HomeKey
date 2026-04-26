@@ -223,6 +223,8 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_PRUNE_MISSING=true` (optional; when true, removes listings that disappeared from current Yad2 feed for mirror behavior)
 - `YAD2_SCRAPE_FALLBACK_ENABLED=true` (default in code; set `false` only if you explicitly want to disable scrape fallback when no feed URL is set)
 - `YAD2_SCRAPE_MAX_ITEMS=120` (optional; caps temporary scraped listings per run, max 500)
+- `YAD2_SEGMENTED_SCRAPE_ENABLED=true` (default true; rotates through configured regions instead of scraping all regions each run)
+- `YAD2_SCRAPE_SEGMENTS=center-and-sharon,tel-aviv-area,jerusalem-area,south,coastal-north,north-and-valleys` (optional comma-separated region slugs for segmented rotation)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
@@ -253,19 +255,21 @@ UI observability:
 
 ### Temporary scrape fallback mode (when no feed URL is available)
 
-If you need to bootstrap live-ish data before a formal feed integration is ready, HomeKey can temporarily scrape Yad2 listing pages:
+If you need to bootstrap live-ish data before a formal feed integration is ready, HomeKey can scrape Yad2 listing pages:
 
 - Keep `YAD2_SCRAPE_FALLBACK_ENABLED=true` (default)
+- Keep `YAD2_SEGMENTED_SCRAPE_ENABLED=true` (default)
 - Leave `YAD2_SYNC_FEED_URL` unset (or empty)
 - Keep `YAD2_SYNC_ENABLED=true` and `LIVE_YAD2_ONLY=true`
 
-Behavior:
+Behavior (segmented rotation):
 
-- Scheduler fetches from:
-  - `https://www.yad2.co.il/realestate/rent`
-  - `https://www.yad2.co.il/realestate/forsale`
+- Each run targets one region segment (round-robin), for both:
+  - `https://www.yad2.co.il/realestate/rent/<segment>`
+  - `https://www.yad2.co.il/realestate/forsale/<segment>`
+- The next run moves to the next segment in `YAD2_SCRAPE_SEGMENTS`.
 - Extracted listing links are normalized into HomeKey property rows and upserted under your sync source tag.
-- Mirror delete logic (`YAD2_SYNC_MIRROR_DELETES=true`) continues to remove records not present in the latest scrape snapshot.
+- Mirror delete logic (`YAD2_SYNC_MIRROR_DELETES=true`) is segment-aware and prunes only inside the segment that just ran.
 
 Important limitations:
 
