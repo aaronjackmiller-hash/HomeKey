@@ -156,6 +156,11 @@ const PropertySchema = new mongoose.Schema(
             trim: true,
             lowercase: true,
         },
+        externalSegmentKey: {
+            type: String,
+            trim: true,
+            lowercase: true,
+        },
         externalId: {
             type: String,
             trim: true,

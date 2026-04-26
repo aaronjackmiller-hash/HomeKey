@@ -106,6 +106,8 @@ const mapYad2RowToPropertyDoc = (row) => {
     const floorNumber = parseNumber(pickFirst(row.floorNumber, row.floor), undefined);
     const externalUrl = normalizeString(pickFirst(row.url, row.listingUrl, row.externalUrl));
     const sourceType = parseSourceType(pickFirst(row.sourceType, row.source_type, 'yad2-sync'));
+    const externalSegmentKey = normalizeString(pickFirst(row.externalSegmentKey, row.segmentKey, row.segment))
+        .toLowerCase();
 
     const payload = {
         title,
@@ -152,10 +154,12 @@ const mapYad2RowToPropertyDoc = (row) => {
         images: extractImageList(row),
         status: parseStatus(pickFirst(row.status, row.listingStatus)),
         sourceType,
+        ...(externalSegmentKey ? { externalSegmentKey } : {}),
         sources: [
             {
                 sourceType,
                 externalSource: 'yad2',
+                ...(externalSegmentKey ? { externalSegmentKey } : {}),
                 ...(externalId ? { externalId } : {}),
                 ...(externalUrl ? { externalUrl } : {}),
                 addedAt: new Date(),
@@ -199,6 +203,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
             payload.externalSource = normalizedSourceTag;
 
             const sourceType = parseSourceType(payload.sourceType);
+            const segmentKey = normalizeString(payload.externalSegmentKey).toLowerCase();
             const sourceEntry = {
                 sourceType,
                 externalSource: normalizedSourceTag,
@@ -220,6 +225,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         sourceType: hasManualSource ? 'manual' : sourceType,
                         externalSource: normalizedSourceTag,
                         externalId,
+                        ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                     });
                     if (hasManualSource && existing.contact && existing.owner) {
                         // Keep owner-facing manual contact workflow active when merged with live feed records.
@@ -242,6 +248,9 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         duplicate.status = payload.status || duplicate.status;
                         duplicate.externalSource = normalizedSourceTag;
                         duplicate.externalId = externalId;
+                        if (segmentKey) {
+                            duplicate.externalSegmentKey = segmentKey;
+                        }
                         duplicate.externalUrl = payload.externalUrl || duplicate.externalUrl;
                         duplicate.sources = Array.isArray(duplicate.sources) ? duplicate.sources : [];
                         if (!duplicate.title || duplicate.sourceType !== 'manual') {
@@ -257,6 +266,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         await Property.create({
                             ...payload,
                             sourceType,
+                            ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                             sources: [sourceEntry],
                         });
                         summary.created += 1;
@@ -266,6 +276,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                 await Property.create({
                     ...payload,
                     sourceType,
+                    ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                     sources: [sourceEntry],
                 });
                 summary.created += 1;
