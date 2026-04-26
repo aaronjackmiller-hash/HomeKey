@@ -7,6 +7,7 @@ const DEFAULT_USER_EXPIRY_DAYS = 30;
 const DEFAULT_AGENT_EXPIRY_DAYS = 60;
 const DEFAULT_REMINDER_WINDOW_DAYS = 3;
 const DEFAULT_HARD_DELETE_GRACE_DAYS = 30;
+const HOMEKEY_BRAND_PREFIX = '[HomeKey]';
 
 const parsePositiveInt = (value, fallback) => {
     const parsed = Number(value);
@@ -60,6 +61,9 @@ const dispatchContactNotification = async ({
     return { delivered: true, provider: 'log', payload };
 };
 
+const brandSubject = (subject) => `${HOMEKEY_BRAND_PREFIX} ${subject}`;
+const brandBody = (body) => `${HOMEKEY_BRAND_PREFIX} ${body}`;
+
 const sendThankYouForListing = async ({ user, property }) => {
     if (!user || user.notifications?.sendThankYou === false) return null;
     const details = getPreferredContactDetails(user, property.contact);
@@ -68,8 +72,8 @@ const sendThankYouForListing = async ({ user, property }) => {
     return dispatchContactNotification({
         channel: method,
         target,
-        subject: 'Thanks for listing on HomeKey',
-        body: `Thank you ${details.name}! Your listing "${property.title}" is now live on HomeKey.`,
+        subject: brandSubject('Thanks for listing with us'),
+        body: brandBody(`Thank you ${details.name}! Your listing "${property.title}" is now live on HomeKey.`),
         metadata: {
             userId: String(user._id),
             propertyId: String(property._id),
@@ -86,8 +90,8 @@ const sendExpiryReminder = async ({ user, property, expiresAt }) => {
     return dispatchContactNotification({
         channel: method,
         target,
-        subject: 'Listing expiry reminder',
-        body: `Hi ${details.name}, your listing "${property.title}" will expire on ${expiresAt.toLocaleDateString()}. Please renew it if you want it to remain active.`,
+        subject: brandSubject('Listing expiry reminder'),
+        body: brandBody(`Hi ${details.name}, your listing "${property.title}" will expire on ${expiresAt.toLocaleDateString()}. Please renew it on HomeKey if you want it to remain active.`),
         metadata: {
             userId: String(user._id),
             propertyId: String(property._id),
@@ -105,8 +109,8 @@ const sendProspectInquiryNotification = async ({ user, property, inquiry }) => {
     return dispatchContactNotification({
         channel: method,
         target,
-        subject: 'New listing inquiry',
-        body: `${inquiry.name} sent a new inquiry for "${property.title}" and prefers ${inquiry.preferredMethod || 'email'} contact.`,
+        subject: brandSubject('New listing inquiry'),
+        body: brandBody(`${inquiry.name} sent a new inquiry for "${property.title}" and prefers ${inquiry.preferredMethod || 'email'} contact.`),
         metadata: {
             userId: String(user._id),
             propertyId: String(property._id),
@@ -123,8 +127,8 @@ const sendShowingRegistrationNotification = async ({ user, property, showing, at
     return dispatchContactNotification({
         channel: method,
         target,
-        subject: 'New showing registration',
-        body: `${attendee.name} registered for showing ${new Date(showing.startsAt).toLocaleString()} on "${property.title}".`,
+        subject: brandSubject('New showing registration'),
+        body: brandBody(`${attendee.name} registered for showing ${new Date(showing.startsAt).toLocaleString()} on "${property.title}".`),
         metadata: {
             userId: String(user._id),
             propertyId: String(property._id),
