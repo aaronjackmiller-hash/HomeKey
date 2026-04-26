@@ -77,9 +77,22 @@ const fetchYad2FeedRows = async () => {
 const createYad2Scheduler = (logger = console) => {
     let timer = null;
     let inFlight = false;
-    const syncMinutes = parseSyncMinutes();
-    const sourceTag = process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG;
-    const enabled = process.env.YAD2_SYNC_ENABLED !== 'false';
+    const status = {
+        enabled: process.env.YAD2_SYNC_ENABLED !== 'false',
+        sourceTag: process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG,
+        syncMinutes: parseSyncMinutes(),
+        feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
+        inFlight: false,
+        lastStartedAt: null,
+        lastFinishedAt: null,
+        lastTrigger: null,
+        lastResult: null,
+        lastError: null,
+        startedAt: null,
+    };
+    const syncMinutes = status.syncMinutes;
+    const sourceTag = status.sourceTag;
+    const enabled = status.enabled;
 
     const runSyncOnce = async (trigger = 'manual') => {
         if (!enabled) {
@@ -90,24 +103,37 @@ const createYad2Scheduler = (logger = console) => {
         }
 
         inFlight = true;
+        status.inFlight = true;
+        status.lastStartedAt = new Date().toISOString();
+        status.lastTrigger = trigger;
+        status.lastError = null;
         try {
             const feed = await fetchYad2FeedRows();
             if (feed.skipped) {
-                return { skipped: true, reason: feed.reason, trigger, sourceTag };
+                const skippedResult = { skipped: true, reason: feed.reason, trigger, sourceTag };
+                status.lastResult = skippedResult;
+                return skippedResult;
             }
             const result = await importYad2Listings({
                 rows: feed.rows,
                 upsert: true,
                 sourceTag,
             });
-            return {
+            const syncResult = {
                 trigger,
                 sourceTag,
                 fetched: feed.rows.length,
                 ...result,
             };
+            status.lastResult = syncResult;
+            return syncResult;
+        } catch (err) {
+            status.lastError = err.message;
+            throw err;
         } finally {
             inFlight = false;
+            status.inFlight = false;
+            status.lastFinishedAt = new Date().toISOString();
         }
     };
 
@@ -118,6 +144,8 @@ const createYad2Scheduler = (logger = console) => {
         }
         if (timer) return;
         const intervalMs = syncMinutes * 60 * 1000;
+        status.startedAt = new Date().toISOString();
+        status.feedUrlConfigured = Boolean(process.env.YAD2_SYNC_FEED_URL);
         timer = setInterval(async () => {
             try {
                 const result = await runSyncOnce('scheduled');
@@ -149,6 +177,12 @@ const createYad2Scheduler = (logger = console) => {
         start,
         stop,
         runSyncOnce,
+        getStatus: () => ({
+            ...status,
+            timerActive: Boolean(timer),
+            inFlight: status.inFlight,
+            feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
+        }),
     };
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { importYad2ListingsBatch, runYad2SyncNow } from '../services/api';
+import { importYad2ListingsBatch, runYad2SyncNow, getYad2SyncStatus } from '../services/api';
 
 const pretty = (value) => JSON.stringify(value, null, 2);
 
@@ -10,9 +10,11 @@ const AdminYad2Import = () => {
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [syncResult, setSyncResult] = useState(null);
+  const [syncStatus, setSyncStatus] = useState(null);
   const [rawPreview, setRawPreview] = useState('');
 
   const handleFile = async (event) => {
@@ -77,6 +79,19 @@ const AdminYad2Import = () => {
     }
   };
 
+  const handleRefreshStatus = async () => {
+    setError('');
+    setStatusLoading(true);
+    try {
+      const response = await getYad2SyncStatus();
+      setSyncStatus(response);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to load sync status.');
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
   return (
     <div className="import-page">
       <h2>Admin Yad2 Batch Import</h2>
@@ -91,6 +106,34 @@ const AdminYad2Import = () => {
         <button className="secondary-btn" type="button" onClick={handleRunSyncNow} disabled={syncLoading}>
           {syncLoading ? 'Running sync...' : 'Run Yad2 Sync Now'}
         </button>
+        <button className="secondary-btn" type="button" onClick={handleRefreshStatus} disabled={statusLoading}>
+          {statusLoading ? 'Loading status...' : 'Refresh Sync Status'}
+        </button>
+        {syncStatus && (
+          <div className="sync-status-grid">
+            <p><strong>Enabled:</strong> {String(syncStatus.syncEnabled)}</p>
+            <p><strong>Feed configured:</strong> {String(syncStatus.feedConfigured)}</p>
+            <p><strong>Interval:</strong> {syncStatus.intervalMinutes} min</p>
+            <p><strong>Source tag:</strong> {syncStatus.sourceTag}</p>
+            <p><strong>In progress:</strong> {String(syncStatus.inFlight)}</p>
+            <p><strong>Last run:</strong> {syncStatus.lastRunAt || 'never'}</p>
+            <p><strong>Last trigger:</strong> {syncStatus.lastTrigger || 'n/a'}</p>
+            <p><strong>Last status:</strong> {syncStatus.lastStatus || 'n/a'}</p>
+            <p><strong>Last reason:</strong> {syncStatus.lastReason || 'n/a'}</p>
+            {typeof syncStatus.lastFetched === 'number' && (
+              <p><strong>Last fetched:</strong> {syncStatus.lastFetched}</p>
+            )}
+            {typeof syncStatus.lastCreated === 'number' && (
+              <p><strong>Last created:</strong> {syncStatus.lastCreated}</p>
+            )}
+            {typeof syncStatus.lastUpdated === 'number' && (
+              <p><strong>Last updated:</strong> {syncStatus.lastUpdated}</p>
+            )}
+            {typeof syncStatus.lastSkipped === 'number' && (
+              <p><strong>Last skipped:</strong> {syncStatus.lastSkipped}</p>
+            )}
+          </div>
+        )}
         {syncResult && (
           <p className="import-summary">
             {syncResult.message || 'Yad2 sync finished.'}

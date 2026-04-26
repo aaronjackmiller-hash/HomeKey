@@ -231,6 +231,23 @@ Manual trigger endpoint:
   - auth: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token
   - response includes `fetched`, `created`, `updated`, and `skipped`
 
+Status endpoint:
+
+- `GET /api/admin/sync/yad2/status`
+  - same auth requirements as the manual trigger endpoint
+  - returns scheduler configuration + runtime state:
+    - `enabled`, `sourceTag`, `syncMinutes`
+    - `feedConfigured`, `lastRunAt`, `lastSuccessAt`, `lastError`
+    - `lastResult` (`fetched`, `created`, `updated`, `skipped`, etc.)
+
+UI observability:
+
+- In **Import Yad2**, a new **Live Feed Sync Status** panel now shows:
+  - whether the feed URL is configured
+  - last run / last successful sync timestamps
+  - last sync error reason (if any)
+  - latest sync counts
+
 ### Password recovery
 
 HomeKey now includes a built-in password reset flow:

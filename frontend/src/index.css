@@ -725,6 +725,16 @@ a {
   color: #475569;
 }
 
+.import-status-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #334155;
+}
+
+.import-status-list li {
+  margin: 4px 0;
+}
+
 .import-checkbox-row {
   display: flex;
   align-items: center;
