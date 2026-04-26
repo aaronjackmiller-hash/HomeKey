@@ -206,6 +206,13 @@ const PropertyList = () => {
     return 'Retry shortly while live feed diagnostics refresh.';
   };
 
+  const getTopSyncErrorReasons = () => {
+    if (!liveSyncStatus || !Array.isArray(liveSyncStatus.topErrorReasons)) return [];
+    return liveSyncStatus.topErrorReasons
+      .filter((reason) => typeof reason === 'string' && reason.trim())
+      .slice(0, 3);
+  };
+
   const getLiveSyncSummary = () => {
     if (!liveSyncStatus || typeof liveSyncStatus !== 'object') return '';
     const summary = [];
@@ -357,6 +364,16 @@ const PropertyList = () => {
               <p>{getLiveUnavailableReason()}</p>
             )}
             {error !== '__starting_up__' && getLiveSyncSummary() && <p>{getLiveSyncSummary()}</p>}
+            {error !== '__starting_up__' && getTopSyncErrorReasons().length > 0 && (
+              <div>
+                <p><strong>Top sync error reasons:</strong></p>
+                <ol>
+                  {getTopSyncErrorReasons().map((reason, idx) => (
+                    <li key={`sync-reason-${idx}`}>{reason}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
             <button
               className="secondary-btn"
               onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}
