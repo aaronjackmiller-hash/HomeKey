@@ -221,6 +221,7 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
         },
     ];
     const perPageLimit = Math.max(1, Math.floor(scrapeMaxItems / pages.length));
+    const useSegmentPath = Boolean(segment && segment.path);
     const allRows = [];
     const seenIds = new Set();
 
@@ -241,6 +242,36 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
             dealType: page.dealType,
             maxItems: perPageLimit,
         });
+        if (extracted.length === 0 && useSegmentPath) {
+            // Region subpaths can intermittently return thin/empty HTML depending on antibot behavior.
+            // Fall back to base rent/forsale pages for resilience instead of skipping the whole segment.
+            const fallbackBaseUrl = page.dealType === 'rental' ? YAD2_RENT_URL : YAD2_FORSALE_URL;
+            const fallbackResponse = await fetch(fallbackBaseUrl, {
+                headers: {
+                    'User-Agent': SCRAPE_USER_AGENT,
+                    Accept: 'text/html,application/xhtml+xml',
+                },
+                signal: AbortSignal.timeout(30000),
+            });
+            if (fallbackResponse.ok) {
+                const fallbackHtml = await fallbackResponse.text();
+                const fallbackExtracted = extractRowsFromYad2Html({
+                    html: fallbackHtml,
+                    dealType: page.dealType,
+                    maxItems: perPageLimit,
+                });
+                for (const row of fallbackExtracted) {
+                    if (allRows.length >= scrapeMaxItems) break;
+                    if (!row || !row.id || seenIds.has(row.id)) continue;
+                    seenIds.add(row.id);
+                    allRows.push({
+                        ...row,
+                        externalSegmentKey: page.segmentKey,
+                    });
+                }
+                continue;
+            }
+        }
         for (const row of extracted) {
             if (allRows.length >= scrapeMaxItems) break;
             if (!row || !row.id || seenIds.has(row.id)) continue;
@@ -419,6 +450,20 @@ const createYad2Scheduler = (logger = console) => {
                 upsert: true,
                 sourceTag,
             });
+            const successfulWrites = Number(result.created || 0) + Number(result.updated || 0);
+            if (successfulWrites === 0 && Number(result.total || 0) > 0) {
+                const skipReason = `Import wrote zero listings (${result.skipped || 0}/${result.total || 0} skipped).`;
+                const skippedResult = {
+                    skipped: true,
+                    reason: skipReason,
+                    trigger,
+                    sourceTag,
+                    ...(segmentKey ? { segmentKey } : {}),
+                    importSummary: result,
+                };
+                status.lastResult = skippedResult;
+                return skippedResult;
+            }
 
             let pruned = 0;
             if (mirrorDeletesEnabled) {
