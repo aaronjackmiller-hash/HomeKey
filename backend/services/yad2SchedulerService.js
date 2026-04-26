@@ -815,6 +815,7 @@ const createYad2Scheduler = (logger = console) => {
         start,
         stop,
         runSyncOnce,
+        setCaptchaFallbackFetcher: () => {},
         getStatus: () => ({
             ...status,
             timerActive: Boolean(timer),
