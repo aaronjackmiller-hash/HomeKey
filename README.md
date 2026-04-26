@@ -207,6 +207,24 @@ This uses your logged-in bearer token, so you do not need to paste admin secrets
 
 On startup, HomeKey now upserts a curated Yad2-inspired Israeli listings set (both rentals and for-sale properties) into the listings collection. This keeps the listings page populated with realistic local inventory without manual import steps.
 
+### Scheduled Yad2 sync (near real-time updates)
+
+HomeKey now supports a built-in scheduled Yad2 sync worker that periodically fetches listing JSON and upserts it.
+
+Configure these environment variables in Render:
+
+- `YAD2_SYNC_ENABLED=true` (default true; set `false` to disable)
+- `YAD2_SYNC_FEED_URL=https://...` (required for live feed sync)
+- `YAD2_SYNC_INTERVAL_MINUTES=5` (minimum 5, max 180; lower = fresher data)
+- `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
+- `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
+
+Manual trigger endpoint:
+
+- `POST /api/admin/sync/yad2`
+  - auth: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token
+  - response includes `fetched`, `created`, `updated`, and `skipped`
+
 ### Password recovery
 
 HomeKey now includes a built-in password reset flow:
