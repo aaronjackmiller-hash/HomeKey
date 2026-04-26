@@ -111,26 +111,30 @@ const AdminYad2Import = () => {
         </button>
         {syncStatus && (
           <div className="sync-status-grid">
-            <p><strong>Enabled:</strong> {String(syncStatus.syncEnabled)}</p>
-            <p><strong>Feed configured:</strong> {String(syncStatus.feedConfigured)}</p>
-            <p><strong>Interval:</strong> {syncStatus.intervalMinutes} min</p>
+            <p><strong>Enabled:</strong> {String(syncStatus.enabled)}</p>
+            <p><strong>Feed configured:</strong> {String(syncStatus.feedUrlConfigured)}</p>
+            <p><strong>Scrape fallback:</strong> {String(syncStatus.scrapeFallbackEnabled)}</p>
+            <p><strong>Segmented scrape:</strong> {String(syncStatus.segmentedScrapeEnabled)}</p>
+            <p><strong>Current segment:</strong> {syncStatus.currentSegmentKey || 'n/a'}</p>
+            <p><strong>Configured segments:</strong> {Array.isArray(syncStatus.segments) ? syncStatus.segments.map((s) => s.key).join(', ') : 'n/a'}</p>
+            <p><strong>Interval:</strong> {syncStatus.syncMinutes} min</p>
             <p><strong>Source tag:</strong> {syncStatus.sourceTag}</p>
             <p><strong>In progress:</strong> {String(syncStatus.inFlight)}</p>
-            <p><strong>Last run:</strong> {syncStatus.lastRunAt || 'never'}</p>
+            <p><strong>Last run:</strong> {syncStatus.lastFinishedAt || 'never'}</p>
             <p><strong>Last trigger:</strong> {syncStatus.lastTrigger || 'n/a'}</p>
-            <p><strong>Last status:</strong> {syncStatus.lastStatus || 'n/a'}</p>
-            <p><strong>Last reason:</strong> {syncStatus.lastReason || 'n/a'}</p>
-            {typeof syncStatus.lastFetched === 'number' && (
-              <p><strong>Last fetched:</strong> {syncStatus.lastFetched}</p>
+            <p><strong>Last error:</strong> {syncStatus.lastError || 'n/a'}</p>
+            <p><strong>Last segment run:</strong> {syncStatus.lastSegmentRun?.key || 'n/a'}</p>
+            {typeof syncStatus.lastResult?.fetched === 'number' && (
+              <p><strong>Last fetched:</strong> {syncStatus.lastResult.fetched}</p>
             )}
-            {typeof syncStatus.lastCreated === 'number' && (
-              <p><strong>Last created:</strong> {syncStatus.lastCreated}</p>
+            {typeof syncStatus.lastResult?.created === 'number' && (
+              <p><strong>Last created:</strong> {syncStatus.lastResult.created}</p>
             )}
-            {typeof syncStatus.lastUpdated === 'number' && (
-              <p><strong>Last updated:</strong> {syncStatus.lastUpdated}</p>
+            {typeof syncStatus.lastResult?.updated === 'number' && (
+              <p><strong>Last updated:</strong> {syncStatus.lastResult.updated}</p>
             )}
-            {typeof syncStatus.lastSkipped === 'number' && (
-              <p><strong>Last skipped:</strong> {syncStatus.lastSkipped}</p>
+            {typeof syncStatus.lastResult?.pruned === 'number' && (
+              <p><strong>Last pruned:</strong> {syncStatus.lastResult.pruned}</p>
             )}
           </div>
         )}
@@ -139,7 +143,7 @@ const AdminYad2Import = () => {
             {syncResult.message || 'Yad2 sync finished.'}
             {typeof syncResult.fetched === 'number' && (
               <>
-                {' '}Fetched: <strong>{syncResult.fetched}</strong> | Created: <strong>{syncResult.created ?? 0}</strong> |
+                {' '}Segment: <strong>{syncResult.segmentKey || 'all'}</strong> | Fetched: <strong>{syncResult.fetched}</strong> | Created: <strong>{syncResult.created ?? 0}</strong> |
                 Updated: <strong>{syncResult.updated ?? 0}</strong> | Skipped: <strong>{syncResult.skipped ?? 0}</strong>
               </>
             )}

@@ -13,6 +13,15 @@ const MAX_SCRAPE_MAX_ITEMS = 500;
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
 const YAD2_FORSALE_URL = 'https://www.yad2.co.il/realestate/forsale';
 const SCRAPE_USER_AGENT = 'Mozilla/5.0 (compatible; HomeKeyBot/1.0; +https://homekey.local)';
+const DEFAULT_SEGMENTED_SCRAPE_ENABLED = true;
+const DEFAULT_SEGMENTS = [
+    { key: 'center-and-sharon', label: 'Center & Sharon', path: 'center-and-sharon' },
+    { key: 'tel-aviv-area', label: 'Tel Aviv Area', path: 'tel-aviv-area' },
+    { key: 'jerusalem-area', label: 'Jerusalem Area', path: 'jerusalem-area' },
+    { key: 'south', label: 'South', path: 'south' },
+    { key: 'coastal-north', label: 'Coastal North', path: 'coastal-north' },
+    { key: 'north-and-valleys', label: 'North & Valleys', path: 'north-and-valleys' },
+];
 
 const parseSyncMinutes = () => {
     const raw = Number(process.env.YAD2_SYNC_INTERVAL_MINUTES || DEFAULT_SYNC_MINUTES);
@@ -32,6 +41,26 @@ const parseScrapeMaxItems = () => {
     const raw = Number(process.env.YAD2_SCRAPE_MAX_ITEMS || DEFAULT_SCRAPE_MAX_ITEMS);
     if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
     return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
+};
+
+const parseSegmentedScrapeEnabled = () =>
+    parseBooleanEnv(process.env.YAD2_SEGMENTED_SCRAPE_ENABLED, DEFAULT_SEGMENTED_SCRAPE_ENABLED);
+
+const parseSegmentList = () => {
+    const configured = typeof process.env.YAD2_SCRAPE_SEGMENTS === 'string'
+        ? process.env.YAD2_SCRAPE_SEGMENTS
+        : '';
+    if (!configured.trim()) return DEFAULT_SEGMENTS;
+    const segments = configured
+        .split(',')
+        .map((part) => part.trim().toLowerCase())
+        .filter(Boolean)
+        .map((part) => ({
+            key: part,
+            label: part.replace(/-/g, ' '),
+            path: part,
+        }));
+    return segments.length > 0 ? segments : DEFAULT_SEGMENTS;
 };
 
 const normalizeSpaces = (value) =>
@@ -176,11 +205,20 @@ const extractRowsFromYad2Html = ({ html, dealType, maxItems }) => {
     return rows;
 };
 
-const scrapeYad2Listings = async () => {
+const scrapeYad2Listings = async ({ segment = null } = {}) => {
     const scrapeMaxItems = parseScrapeMaxItems();
+    const segmentSuffix = segment && segment.path ? `/${segment.path}` : '';
     const pages = [
-        { url: YAD2_RENT_URL, dealType: 'rental' },
-        { url: YAD2_FORSALE_URL, dealType: 'sale' },
+        {
+            url: `${YAD2_RENT_URL}${segmentSuffix}`,
+            dealType: 'rental',
+            segmentKey: segment ? segment.key : 'all',
+        },
+        {
+            url: `${YAD2_FORSALE_URL}${segmentSuffix}`,
+            dealType: 'sale',
+            segmentKey: segment ? segment.key : 'all',
+        },
     ];
     const perPageLimit = Math.max(1, Math.floor(scrapeMaxItems / pages.length));
     const allRows = [];
@@ -207,15 +245,28 @@ const scrapeYad2Listings = async () => {
             if (allRows.length >= scrapeMaxItems) break;
             if (!row || !row.id || seenIds.has(row.id)) continue;
             seenIds.add(row.id);
-            allRows.push(row);
+            allRows.push({
+                ...row,
+                externalSegmentKey: page.segmentKey,
+            });
         }
     }
 
     if (allRows.length === 0) {
-        return { rows: [], skipped: true, reason: 'Scrape fallback returned zero listings' };
+        return {
+            rows: [],
+            skipped: true,
+            reason: segment
+                ? `Scrape fallback returned zero listings for segment ${segment.key}`
+                : 'Scrape fallback returned zero listings',
+        };
     }
 
-    return { rows: allRows, skipped: false };
+    return {
+        rows: allRows,
+        skipped: false,
+        segmentKey: segment ? segment.key : 'all',
+    };
 };
 
 const normalizeRow = (row) => {
@@ -256,7 +307,7 @@ const mapFeedToRows = (payload) => {
 
 const fetchYad2FeedRows = async () => {
     const feedUrl = process.env.YAD2_SYNC_FEED_URL;
-    const scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false);
+    const scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
     if (!feedUrl) {
         if (scrapeFallbackEnabled) {
             return scrapeYad2Listings();
@@ -283,15 +334,30 @@ const fetchYad2FeedRows = async () => {
     return { rows, skipped: false };
 };
 
+const fetchYad2SegmentedScrapeRows = async ({ segment }) => {
+    const scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
+    if (!scrapeFallbackEnabled) {
+        return { rows: [], skipped: true, reason: 'Scrape fallback disabled', segmentKey: segment.key };
+    }
+    return scrapeYad2Listings({ segment });
+};
+
 const createYad2Scheduler = (logger = console) => {
     let timer = null;
     let inFlight = false;
+    let segmentCursor = 0;
+    const segments = parseSegmentList();
+    const segmentedScrapeEnabled = parseSegmentedScrapeEnabled();
     const status = {
         enabled: process.env.YAD2_SYNC_ENABLED !== 'false',
         sourceTag: process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG,
         syncMinutes: parseSyncMinutes(),
         feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
-        scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false),
+        scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
+        segmentedScrapeEnabled,
+        segments: segments.map((segment) => ({ key: segment.key, label: segment.label })),
+        currentSegmentKey: segmentedScrapeEnabled && segments.length > 0 ? segments[0].key : null,
+        lastSegmentRun: null,
         mirrorDeletesEnabled: parseBooleanEnv(process.env.YAD2_SYNC_MIRROR_DELETES, DEFAULT_MIRROR_MODE),
         inFlight: false,
         lastStartedAt: null,
@@ -320,9 +386,31 @@ const createYad2Scheduler = (logger = console) => {
         status.lastTrigger = trigger;
         status.lastError = null;
         try {
-            const feed = await fetchYad2FeedRows();
+            let feed;
+            let segmentKey = null;
+            const shouldUseSegmentedScrape = !process.env.YAD2_SYNC_FEED_URL && status.segmentedScrapeEnabled && segments.length > 0;
+            if (shouldUseSegmentedScrape) {
+                const segment = segments[segmentCursor % segments.length];
+                segmentCursor = (segmentCursor + 1) % segments.length;
+                status.currentSegmentKey = segment.key;
+                feed = await fetchYad2SegmentedScrapeRows({ segment });
+                segmentKey = segment.key;
+                status.lastSegmentRun = {
+                    key: segment.key,
+                    label: segment.label,
+                    at: new Date().toISOString(),
+                };
+            } else {
+                feed = await fetchYad2FeedRows();
+            }
             if (feed.skipped) {
-                const skippedResult = { skipped: true, reason: feed.reason, trigger, sourceTag };
+                const skippedResult = {
+                    skipped: true,
+                    reason: feed.reason,
+                    trigger,
+                    sourceTag,
+                    ...(segmentKey ? { segmentKey } : {}),
+                };
                 status.lastResult = skippedResult;
                 return skippedResult;
             }
@@ -338,17 +426,24 @@ const createYad2Scheduler = (logger = console) => {
                     .map((row) => (row && typeof row.id === 'string' ? row.id.trim() : String(row && row.id || '').trim()))
                     .filter(Boolean);
                 if (externalIds.length > 0) {
-                    const deleteResult = await Property.deleteMany({
+                    const pruneFilter = {
                         externalSource: sourceTag,
                         externalId: { $nin: externalIds },
-                    });
+                    };
+                    if (segmentKey) {
+                        pruneFilter.externalSegmentKey = segmentKey;
+                    }
+                    const deleteResult = await Property.deleteMany(pruneFilter);
                     pruned = Number(deleteResult && deleteResult.deletedCount ? deleteResult.deletedCount : 0);
                 }
             }
             const syncResult = {
                 trigger,
                 sourceTag,
-                mode: process.env.YAD2_SYNC_FEED_URL ? 'feed-url' : 'scrape-fallback',
+                mode: process.env.YAD2_SYNC_FEED_URL
+                    ? 'feed-url'
+                    : (segmentKey ? 'segmented-scrape' : 'scrape-fallback'),
+                ...(segmentKey ? { segmentKey } : {}),
                 fetched: feed.rows.length,
                 pruned,
                 ...result,
@@ -374,7 +469,8 @@ const createYad2Scheduler = (logger = console) => {
         const intervalMs = syncMinutes * 60 * 1000;
         status.startedAt = new Date().toISOString();
         status.feedUrlConfigured = Boolean(process.env.YAD2_SYNC_FEED_URL);
-        status.scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false);
+        status.scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
+        status.segmentedScrapeEnabled = segmentedScrapeEnabled;
         timer = setInterval(async () => {
             try {
                 const result = await runSyncOnce('scheduled');
@@ -411,7 +507,9 @@ const createYad2Scheduler = (logger = console) => {
             timerActive: Boolean(timer),
             inFlight: status.inFlight,
             feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
-            scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false),
+            scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
+            segmentedScrapeEnabled: parseSegmentedScrapeEnabled(),
+            currentSegmentKey: status.currentSegmentKey,
         }),
     };
 };

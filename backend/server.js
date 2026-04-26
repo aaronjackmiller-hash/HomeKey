@@ -150,11 +150,19 @@ const summarizeSyncResult = (lastResult) => {
         updated: toOptionalNumber(lastResult.updated),
         failed: toOptionalNumber(lastResult.failed),
         pruned: toOptionalNumber(lastResult.pruned),
+        segmentKey: typeof lastResult.segmentKey === 'string' ? lastResult.segmentKey : null,
     };
 };
 
 const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
+    if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
+    if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && status.segmentedScrapeEnabled) {
+        if (status.currentSegmentKey) {
+            return `Segmented scrape mode is active. Current segment: ${status.currentSegmentKey}.`;
+        }
+        return 'Segmented scrape mode is active and rotating through configured regions.';
+    }
     if (!status.feedUrlConfigured && !status.scrapeFallbackEnabled) {
         return 'Live feed URL is not configured on the server.';
     }
@@ -164,7 +172,6 @@ const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && !status.lastFinishedAt) {
         return 'Scrape fallback is enabled but has not completed a sync yet.';
     }
-    if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
     if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
     if (summarizedResult && summarizedResult.skipped) {
         return `Last sync was skipped: ${summarizedResult.reason || 'Unknown reason'}.`;
@@ -185,6 +192,10 @@ const getPublicYad2SyncStatus = () => {
         syncMinutes: status.syncMinutes,
         feedUrlConfigured: Boolean(status.feedUrlConfigured),
         scrapeFallbackEnabled: Boolean(status.scrapeFallbackEnabled),
+        segmentedScrapeEnabled: Boolean(status.segmentedScrapeEnabled),
+        segments: Array.isArray(status.segments) ? status.segments : [],
+        currentSegmentKey: typeof status.currentSegmentKey === 'string' ? status.currentSegmentKey : null,
+        lastSegmentRun: status.lastSegmentRun || null,
         mirrorDeletesEnabled: Boolean(status.mirrorDeletesEnabled),
         timerActive: Boolean(status.timerActive),
         inFlight: Boolean(status.inFlight),
