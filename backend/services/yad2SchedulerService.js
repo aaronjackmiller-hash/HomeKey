@@ -11,6 +11,9 @@ const DEFAULT_MIRROR_MODE = true;
 const DEFAULT_SCRAPE_MAX_ITEMS = 120;
 const MAX_SCRAPE_MAX_ITEMS = 500;
 const DEFAULT_SCRAPE_FETCH_ATTEMPTS = 3;
+const DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS = 30000;
+const DEFAULT_SCRAPE_PROXY_ENABLED = true;
+const DEFAULT_SCRAPE_PROXY_TEMPLATE = 'https://api.codetabs.com/v1/proxy?quest={url}';
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
 const YAD2_FORSALE_URL = 'https://www.yad2.co.il/realestate/forsale';
 const YAD2_HOMEPAGE_URL = 'https://www.yad2.co.il/';
@@ -47,6 +50,29 @@ const parseScrapeMaxItems = () => {
     const raw = Number(process.env.YAD2_SCRAPE_MAX_ITEMS || DEFAULT_SCRAPE_MAX_ITEMS);
     if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
     return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
+};
+
+const parseCaptchaFallbackTimeoutMs = () => {
+    const raw = Number(process.env.YAD2_CAPTCHA_FALLBACK_TIMEOUT_MS || DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS);
+    if (!Number.isFinite(raw)) return DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS;
+    return Math.max(1000, Math.min(120000, Math.floor(raw)));
+};
+
+const parseScrapeProxyEnabled = () =>
+    parseBooleanEnv(process.env.YAD2_SCRAPE_PROXY_ENABLED, DEFAULT_SCRAPE_PROXY_ENABLED);
+
+const buildProxyUrl = (targetUrl) => {
+    const template = typeof process.env.YAD2_SCRAPE_PROXY_TEMPLATE === 'string'
+        ? process.env.YAD2_SCRAPE_PROXY_TEMPLATE.trim()
+        : DEFAULT_SCRAPE_PROXY_TEMPLATE;
+    if (!template) return null;
+    if (template.includes('{url}')) {
+        return template.replace('{url}', encodeURIComponent(targetUrl));
+    }
+    if (template.endsWith('?')) {
+        return `${template}${encodeURIComponent(targetUrl)}`;
+    }
+    return `${template}${template.includes('?') ? '&' : '?'}url=${encodeURIComponent(targetUrl)}`;
 };
 
 const parseSegmentedScrapeEnabled = () =>
@@ -105,7 +131,106 @@ const looksLikeBotChallenge = (html) => {
         'cloudflare',
         'akamai',
         'incident id',
+        'shieldsquare',
+        'radware bot manager',
     ].some((marker) => normalized.includes(marker));
+};
+
+const normalizeExternalFeedRows = (payload, sourceUrl) => {
+    const toNumberOrNull = (value) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const normalizeDealType = (value) => {
+        const normalized = String(value || '').trim().toLowerCase();
+        if (['rent', 'rental', 'lease'].includes(normalized)) return 'rental';
+        if (['sale', 'forsale', 'for-sale', 'buy'].includes(normalized)) return 'sale';
+        return null;
+    };
+
+    const normalizeArray = (candidate) => {
+        if (Array.isArray(candidate)) return candidate;
+        if (candidate && Array.isArray(candidate.items)) return candidate.items;
+        if (candidate && Array.isArray(candidate.listings)) return candidate.listings;
+        if (candidate && Array.isArray(candidate.data)) return candidate.data;
+        return [];
+    };
+
+    const rows = normalizeArray(payload);
+    return rows.map((row, index) => {
+        if (!row || typeof row !== 'object') return null;
+        const idCandidate = row.id ?? row.externalId ?? row._id ?? row.adNumber ?? row.ad_number;
+        const id = String(idCandidate || '').trim() || `fallback-${index + 1}`;
+        const dealType = normalizeDealType(row.dealType ?? row.type ?? row.deal_type) || 'rental';
+        const city = String(row.city ?? row.region ?? row.state ?? 'Israel').trim() || 'Israel';
+        const title = String(row.title ?? row.headline ?? `${dealType} listing in ${city}`).trim();
+        const price = toNumberOrNull(row.price ?? row.priceNis ?? row.amount) || (dealType === 'rental' ? 5000 : 2500000);
+        const rooms = toNumberOrNull(row.rooms ?? row.roomCount ?? row.bedrooms) || (dealType === 'rental' ? 3 : 4);
+        const area = toNumberOrNull(row.area ?? row.squareMeters ?? row.size) || (dealType === 'rental' ? 80 : 110);
+        const bathrooms = toNumberOrNull(row.bathrooms ?? row.bath ?? row.bathroomCount) || Math.max(1, Math.round(rooms / 2));
+        const url = typeof row.url === 'string' ? row.url : sourceUrl;
+        return {
+            id,
+            title,
+            description: String(row.description ?? row.details ?? 'External fallback listing feed').trim(),
+            dealType,
+            sourceType: 'yad2-scrape',
+            price,
+            rooms,
+            bathrooms,
+            area,
+            city,
+            country: String(row.country ?? 'Israel').trim() || 'Israel',
+            status: String(row.status ?? 'active').trim() || 'active',
+            url,
+        };
+    }).filter(Boolean);
+};
+
+const fetchExternalCaptchaFallbackRows = async ({ segment = null } = {}) => {
+    const fallbackUrl = process.env.YAD2_CAPTCHA_FALLBACK_URL;
+    if (!fallbackUrl) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: 'Captcha detected and YAD2_CAPTCHA_FALLBACK_URL is not configured',
+        };
+    }
+
+    const timeoutMs = parseCaptchaFallbackTimeoutMs();
+    const urlObj = new URL(fallbackUrl);
+    if (segment && segment.key) {
+        urlObj.searchParams.set('segment', segment.key);
+    }
+
+    const response = await fetch(urlObj.toString(), {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: `Captcha fallback feed request failed (${response.status})`,
+        };
+    }
+
+    const payload = await response.json();
+    const rows = normalizeExternalFeedRows(payload, urlObj.toString());
+    if (rows.length === 0) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: 'Captcha fallback feed returned zero listings',
+        };
+    }
+
+    return {
+        rows,
+        skipped: false,
+        usedCaptchaFallback: true,
+    };
 };
 
 const parsePathToRegion = (pathValue) => {
@@ -278,60 +403,82 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
     const allRows = [];
     const seenIds = new Set();
     const diagnostics = [];
+    let sawCaptchaChallenge = false;
+    let usedProxyFallback = false;
 
     const fetchAndExtractRows = async ({ url, dealType }) => {
+        const proxyEnabled = parseScrapeProxyEnabled();
+        const proxyUrl = proxyEnabled ? buildProxyUrl(url) : null;
+        const requestTargets = [
+            { url, label: 'direct' },
+            ...(proxyUrl ? [{ url: proxyUrl, label: 'proxy' }] : []),
+        ];
         for (let attempt = 1; attempt <= DEFAULT_SCRAPE_FETCH_ATTEMPTS; attempt += 1) {
             const userAgent = SCRAPE_USER_AGENTS[(attempt - 1) % SCRAPE_USER_AGENTS.length];
-            try {
-                const response = await fetch(url, {
-                    headers: buildScrapeHeaders(userAgent),
-                    signal: AbortSignal.timeout(30000),
-                });
-                if (!response.ok) {
-                    diagnostics.push(`${dealType}:${response.status} from ${url}`);
-                    continue;
+            for (const target of requestTargets) {
+                try {
+                    const response = await fetch(target.url, {
+                        headers: buildScrapeHeaders(userAgent),
+                        signal: AbortSignal.timeout(30000),
+                    });
+                    if (!response.ok) {
+                        diagnostics.push(`${dealType}:${target.label}:${response.status} from ${url}`);
+                        continue;
+                    }
+                    const html = await response.text();
+                    const extraction = extractRowsFromYad2Html({
+                        html,
+                        dealType,
+                        maxItems: perPageLimit,
+                    });
+                    if (extraction.rows.length > 0) {
+                        return {
+                            rows: extraction.rows,
+                            usedProxy: target.label === 'proxy',
+                        };
+                    }
+                    if (extraction.challengeDetected) {
+                        sawCaptchaChallenge = true;
+                    }
+                    diagnostics.push(
+                        extraction.challengeDetected
+                            ? `${dealType}:${target.label}: challenge-like page on attempt ${attempt} (${url})`
+                            : `${dealType}:${target.label}: zero links extracted on attempt ${attempt} (${url})`
+                    );
+                } catch (err) {
+                    diagnostics.push(`${dealType}:${target.label}: ${err.message}`);
                 }
-                const html = await response.text();
-                const extraction = extractRowsFromYad2Html({
-                    html,
-                    dealType,
-                    maxItems: perPageLimit,
-                });
-                if (extraction.rows.length > 0) {
-                    return extraction.rows;
-                }
-                diagnostics.push(
-                    extraction.challengeDetected
-                        ? `${dealType}: challenge-like page on attempt ${attempt} (${url})`
-                        : `${dealType}: zero links extracted on attempt ${attempt} (${url})`
-                );
-            } catch (err) {
-                diagnostics.push(`${dealType}: ${err.message}`);
             }
         }
-        return [];
+        return { rows: [], usedProxy: false };
     };
 
     for (const page of pages) {
-        let extracted = await fetchAndExtractRows({
+        let extractionResult = await fetchAndExtractRows({
             url: page.url,
             dealType: page.dealType,
         });
+        let extracted = extractionResult.rows;
+        if (extractionResult.usedProxy) usedProxyFallback = true;
         if (extracted.length === 0 && useSegmentPath) {
             // Region subpaths can intermittently return thin/empty HTML depending on antibot behavior.
             // Fall back to base rent/forsale pages for resilience instead of skipping the whole segment.
             const fallbackBaseUrl = page.dealType === 'rental' ? YAD2_RENT_URL : YAD2_FORSALE_URL;
-            extracted = await fetchAndExtractRows({
+            extractionResult = await fetchAndExtractRows({
                 url: fallbackBaseUrl,
                 dealType: page.dealType,
             });
+            extracted = extractionResult.rows;
+            if (extractionResult.usedProxy) usedProxyFallback = true;
         }
         if (extracted.length === 0) {
             // Some network paths only expose real-estate cards on the Yad2 lobby page.
-            extracted = await fetchAndExtractRows({
+            extractionResult = await fetchAndExtractRows({
                 url: YAD2_HOMEPAGE_URL,
                 dealType: page.dealType,
             });
+            extracted = extractionResult.rows;
+            if (extractionResult.usedProxy) usedProxyFallback = true;
         }
         for (const row of extracted) {
             if (allRows.length >= scrapeMaxItems) break;
@@ -345,6 +492,18 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
     }
 
     if (allRows.length === 0) {
+        if (sawCaptchaChallenge) {
+            const fallbackFeed = await fetchExternalCaptchaFallbackRows({ segment });
+            if (!fallbackFeed.skipped && Array.isArray(fallbackFeed.rows) && fallbackFeed.rows.length > 0) {
+                return {
+                    rows: fallbackFeed.rows,
+                    skipped: false,
+                    segmentKey: segment ? segment.key : 'all',
+                    usedCaptchaFallback: true,
+                };
+            }
+            diagnostics.push(`captcha-fallback: ${fallbackFeed.reason}`);
+        }
         const diagnosticSummary = diagnostics.length > 0
             ? `. Diagnostics: ${diagnostics.slice(0, 4).join(' | ')}`
             : '';
@@ -361,6 +520,7 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
         rows: allRows,
         skipped: false,
         segmentKey: segment ? segment.key : 'all',
+        usedProxyFallback,
     };
 };
 
