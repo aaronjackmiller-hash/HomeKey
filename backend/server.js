@@ -164,6 +164,12 @@ const summarizeSyncResult = (lastResult) => {
 const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
     if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
+    if (summarizedResult && summarizedResult.skipped) {
+        // Prefer explicit runtime skip reason over generic mode text so operators
+        // can immediately see why listings are missing.
+        return `Last sync was skipped: ${summarizedResult.reason || 'Unknown reason'}.`;
+    }
+    if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
     if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && status.segmentedScrapeEnabled) {
         if (status.currentSegmentKey) {
             return `Segmented scrape mode is active. Current segment: ${status.currentSegmentKey}.`;
@@ -178,10 +184,6 @@ const deriveUnavailableReason = (status, summarizedResult) => {
     }
     if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && !status.lastFinishedAt) {
         return 'Scrape fallback is enabled but has not completed a sync yet.';
-    }
-    if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
-    if (summarizedResult && summarizedResult.skipped) {
-        return `Last sync was skipped: ${summarizedResult.reason || 'Unknown reason'}.`;
     }
     if (!status.lastFinishedAt) return 'A live Yad2 sync has not completed yet.';
     if (summarizedResult && summarizedResult.fetched === 0) {
