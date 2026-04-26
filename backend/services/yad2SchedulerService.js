@@ -126,6 +126,7 @@ const buildFallbackRow = ({ href, anchorText, dealType }) => {
             title,
             description: `Temporary Yad2 scrape fallback listing (${dealType}).`,
             dealType,
+            sourceType: 'yad2-scrape',
             price,
             rooms,
             bathrooms,
@@ -256,7 +257,7 @@ const mapFeedToRows = (payload) => {
 
 const fetchYad2FeedRows = async () => {
     const feedUrl = process.env.YAD2_SYNC_FEED_URL;
-    const scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false);
+    const scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
     if (!feedUrl) {
         if (scrapeFallbackEnabled) {
             return scrapeYad2Listings();
@@ -291,7 +292,7 @@ const createYad2Scheduler = (logger = console) => {
         sourceTag: process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG,
         syncMinutes: parseSyncMinutes(),
         feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
-        scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false),
+        scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
         mirrorDeletesEnabled: parseBooleanEnv(process.env.YAD2_SYNC_MIRROR_DELETES, DEFAULT_MIRROR_MODE),
         inFlight: false,
         lastStartedAt: null,
@@ -374,7 +375,7 @@ const createYad2Scheduler = (logger = console) => {
         const intervalMs = syncMinutes * 60 * 1000;
         status.startedAt = new Date().toISOString();
         status.feedUrlConfigured = Boolean(process.env.YAD2_SYNC_FEED_URL);
-        status.scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false);
+        status.scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
         timer = setInterval(async () => {
             try {
                 const result = await runSyncOnce('scheduled');
@@ -411,7 +412,7 @@ const createYad2Scheduler = (logger = console) => {
             timerActive: Boolean(timer),
             inFlight: status.inFlight,
             feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
-            scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, false),
+            scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
         }),
     };
 };

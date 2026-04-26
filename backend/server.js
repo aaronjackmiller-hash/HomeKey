@@ -156,7 +156,7 @@ const summarizeSyncResult = (lastResult) => {
 const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
     if (!status.feedUrlConfigured && !status.scrapeFallbackEnabled) {
-        return 'Live feed URL is not configured on the server.';
+        return 'Live feed URL is not configured. Auto-scrape fallback is enabled by default and will be attempted.';
     }
     if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && status.lastError) {
         return `Scrape fallback failed: ${sanitizeSyncMessage(status.lastError)}.`;
