@@ -53,6 +53,22 @@ const { createPropertyLifecycleRunner } = require('./services/propertyLifecycleR
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
 
+const ensureFallbackFeedSeeded = async () => {
+    try {
+        const summary = await getYad2FallbackFeedSummary();
+        if (summary.totalRows > 0) return { seeded: false, rows: summary.totalRows };
+        await upsertYad2FallbackFeedRows({
+            segmentKey: 'all',
+            items: featuredYad2ListingsIL,
+            sourceLabel: 'startup-featured-seed',
+        });
+        return { seeded: true, rows: featuredYad2ListingsIL.length };
+    } catch (err) {
+        console.error('[startup] Failed to seed internal fallback feed:', err.message);
+        return { seeded: false, rows: 0, error: err.message };
+    }
+};
+
 /**
  * Render environment groups can sometimes strip '+' from values entered manually,
  * turning "mongodb+srv://" into "mongodb://". Fix only that SRV-shaped case.
@@ -315,6 +331,11 @@ connectMongo(MONGODB_URI)
             console.log('[startup] Featured Yad2 seed is disabled (ENABLE_FEATURED_YAD2_SEED != true).');
         }
 
+        const fallbackSeed = await ensureFallbackFeedSeeded();
+        if (fallbackSeed.seeded) {
+            console.log(`[startup] Internal fallback feed seeded (${fallbackSeed.rows} rows).`);
+        }
+
         yad2Scheduler.start();
         propertyLifecycleRunner.start();
         try {
@@ -518,7 +539,7 @@ app.get('/api/admin/sync/yad2/status', async (req, res) => {
 // {
 //   "items": [ ... ] // or "listings" or raw array
 // }
-app.post('/api/admin/sync/yad2/fallback', async (req, res) => {
+const handleFallbackUpload = async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
         return res.status(403).json({
             success: false,
@@ -550,11 +571,13 @@ app.post('/api/admin/sync/yad2/fallback', async (req, res) => {
         console.error('[admin/sync/yad2/fallback] Upload failed:', err);
         return res.status(500).json({ success: false, message: err.message });
     }
-});
+};
+app.post('/api/admin/sync/yad2/fallback', handleFallbackUpload);
+app.post('/api/admin/sync/yad2/fallback-feed', handleFallbackUpload);
 
 // Admin endpoint — view fallback feed store summary for diagnostics.
 // Usage: GET /api/admin/sync/yad2/fallback/status
-app.get('/api/admin/sync/yad2/fallback/status', async (req, res) => {
+const handleFallbackStatus = async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
         return res.status(403).json({
             success: false,
@@ -571,7 +594,9 @@ app.get('/api/admin/sync/yad2/fallback/status', async (req, res) => {
         console.error('[admin/sync/yad2/fallback/status] Failed:', err);
         return res.status(500).json({ success: false, message: err.message });
     }
-});
+};
+app.get('/api/admin/sync/yad2/fallback/status', handleFallbackStatus);
+app.get('/api/admin/sync/yad2/fallback-feed', handleFallbackStatus);
 
 // Admin endpoint — run listing lifecycle sweep manually.
 // Authorization: same as Yad2 import/sync admin gates.

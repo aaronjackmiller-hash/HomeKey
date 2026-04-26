@@ -287,6 +287,7 @@ If upstream scraping is blocked by captcha and you do not have an external fallb
 Admin endpoints (same auth as import/sync: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token):
 
 - `POST /api/admin/sync/yad2/fallback`
+  - Alias supported: `POST /api/admin/sync/yad2/fallback-feed`
   - Body:
     ```json
     {
@@ -312,6 +313,7 @@ Admin endpoints (same auth as import/sync: `X-Admin-Import-Secret`, `X-Admin-Sec
   - `replace=true` overwrites that segment; `replace=false` appends/upserts by `id`.
 
 - `GET /api/admin/sync/yad2/fallback/status`
+  - Alias supported: `GET /api/admin/sync/yad2/fallback-feed`
   - Optional query: `segmentKey=center-and-sharon`
   - Returns stored fallback feed metadata and item counts.
 
@@ -322,6 +324,11 @@ Scheduler behavior:
   2. then external fallback URL (if configured),
   3. then internal stored fallback feed (if present).
 - For fallback-source runs, prune deletes are skipped to prevent accidental data loss from partial upstream/fallback snapshots.
+
+Startup auto-bootstrap:
+
+- On boot, if internal fallback feed segment `all` is empty, HomeKey now preloads it with `featuredYad2ListingsIL`.
+- This ensures captcha fallback has an immediate baseline dataset without requiring a manual first upload.
 
 ### Password recovery
 
