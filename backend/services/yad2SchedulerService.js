@@ -1,16 +1,26 @@
 'use strict';
 
 const { importYad2Listings } = require('./yad2ImportService');
+const Property = require('../models/Property');
 
 const DEFAULT_SYNC_MINUTES = 15;
 const MIN_SYNC_MINUTES = 5;
 const MAX_SYNC_MINUTES = 180;
 const DEFAULT_SOURCE_TAG = 'yad2-live-sync';
+const DEFAULT_MIRROR_MODE = true;
 
 const parseSyncMinutes = () => {
     const raw = Number(process.env.YAD2_SYNC_INTERVAL_MINUTES || DEFAULT_SYNC_MINUTES);
     if (!Number.isFinite(raw)) return DEFAULT_SYNC_MINUTES;
     return Math.max(MIN_SYNC_MINUTES, Math.min(MAX_SYNC_MINUTES, Math.floor(raw)));
+};
+
+const parseBooleanEnv = (value, defaultValue = false) => {
+    if (typeof value !== 'string') return defaultValue;
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+    return defaultValue;
 };
 
 const normalizeRow = (row) => {
@@ -77,9 +87,24 @@ const fetchYad2FeedRows = async () => {
 const createYad2Scheduler = (logger = console) => {
     let timer = null;
     let inFlight = false;
-    const syncMinutes = parseSyncMinutes();
-    const sourceTag = process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG;
-    const enabled = process.env.YAD2_SYNC_ENABLED !== 'false';
+    const status = {
+        enabled: process.env.YAD2_SYNC_ENABLED !== 'false',
+        sourceTag: process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG,
+        syncMinutes: parseSyncMinutes(),
+        feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
+        mirrorDeletesEnabled: parseBooleanEnv(process.env.YAD2_SYNC_MIRROR_DELETES, DEFAULT_MIRROR_MODE),
+        inFlight: false,
+        lastStartedAt: null,
+        lastFinishedAt: null,
+        lastTrigger: null,
+        lastResult: null,
+        lastError: null,
+        startedAt: null,
+    };
+    const syncMinutes = status.syncMinutes;
+    const sourceTag = status.sourceTag;
+    const enabled = status.enabled;
+    const mirrorDeletesEnabled = status.mirrorDeletesEnabled;
 
     const runSyncOnce = async (trigger = 'manual') => {
         if (!enabled) {
@@ -90,24 +115,52 @@ const createYad2Scheduler = (logger = console) => {
         }
 
         inFlight = true;
+        status.inFlight = true;
+        status.lastStartedAt = new Date().toISOString();
+        status.lastTrigger = trigger;
+        status.lastError = null;
         try {
             const feed = await fetchYad2FeedRows();
             if (feed.skipped) {
-                return { skipped: true, reason: feed.reason, trigger, sourceTag };
+                const skippedResult = { skipped: true, reason: feed.reason, trigger, sourceTag };
+                status.lastResult = skippedResult;
+                return skippedResult;
             }
             const result = await importYad2Listings({
                 rows: feed.rows,
                 upsert: true,
                 sourceTag,
             });
-            return {
+
+            let pruned = 0;
+            if (mirrorDeletesEnabled) {
+                const externalIds = feed.rows
+                    .map((row) => (row && typeof row.id === 'string' ? row.id.trim() : String(row && row.id || '').trim()))
+                    .filter(Boolean);
+                if (externalIds.length > 0) {
+                    const deleteResult = await Property.deleteMany({
+                        externalSource: sourceTag,
+                        externalId: { $nin: externalIds },
+                    });
+                    pruned = Number(deleteResult && deleteResult.deletedCount ? deleteResult.deletedCount : 0);
+                }
+            }
+            const syncResult = {
                 trigger,
                 sourceTag,
                 fetched: feed.rows.length,
+                pruned,
                 ...result,
             };
+            status.lastResult = syncResult;
+            return syncResult;
+        } catch (err) {
+            status.lastError = err.message;
+            throw err;
         } finally {
             inFlight = false;
+            status.inFlight = false;
+            status.lastFinishedAt = new Date().toISOString();
         }
     };
 
@@ -118,6 +171,8 @@ const createYad2Scheduler = (logger = console) => {
         }
         if (timer) return;
         const intervalMs = syncMinutes * 60 * 1000;
+        status.startedAt = new Date().toISOString();
+        status.feedUrlConfigured = Boolean(process.env.YAD2_SYNC_FEED_URL);
         timer = setInterval(async () => {
             try {
                 const result = await runSyncOnce('scheduled');
@@ -149,6 +204,12 @@ const createYad2Scheduler = (logger = console) => {
         start,
         stop,
         runSyncOnce,
+        getStatus: () => ({
+            ...status,
+            timerActive: Boolean(timer),
+            inFlight: status.inFlight,
+            feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
+        }),
     };
 };
 

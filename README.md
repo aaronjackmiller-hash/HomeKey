@@ -220,6 +220,7 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_INTERVAL_MINUTES=5` (minimum 5, max 180; lower = fresher data)
 - `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
 - `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
+- `YAD2_SYNC_PRUNE_MISSING=true` (optional; when true, removes listings that disappeared from current Yad2 feed for mirror behavior)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
@@ -230,6 +231,23 @@ Manual trigger endpoint:
 - `POST /api/admin/sync/yad2`
   - auth: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token
   - response includes `fetched`, `created`, `updated`, and `skipped`
+
+Status endpoint:
+
+- `GET /api/admin/sync/yad2/status`
+  - same auth requirements as the manual trigger endpoint
+  - returns scheduler configuration + runtime state:
+    - `enabled`, `sourceTag`, `syncMinutes`
+    - `feedConfigured`, `lastRunAt`, `lastSuccessAt`, `lastError`
+    - `lastResult` (`fetched`, `created`, `updated`, `skipped`, etc.)
+
+UI observability:
+
+- In **Import Yad2**, a new **Live Feed Sync Status** panel now shows:
+  - whether the feed URL is configured
+  - last run / last successful sync timestamps
+  - last sync error reason (if any)
+  - latest sync counts
 
 ### Password recovery
 

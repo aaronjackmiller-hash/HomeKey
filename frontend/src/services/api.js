@@ -105,6 +105,11 @@ export const runYad2SyncNow = async ({
   return response.data;
 };
 
+export const getYad2SyncStatus = async () => {
+  const response = await api.get('/admin/sync/yad2/status');
+  return response.data;
+};
+
 // Agents
 export const getAgents = async () => {
   const response = await api.get('/agents');

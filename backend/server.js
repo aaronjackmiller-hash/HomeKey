@@ -380,6 +380,23 @@ app.post('/api/admin/sync/yad2', async (req, res) => {
     }
 });
 
+// Admin endpoint — view Yad2 sync status/health.
+// Uses the same authorization as /api/admin/import/yad2.
+// Usage: GET /api/admin/sync/yad2/status
+app.get('/api/admin/sync/yad2/status', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for sync status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    const status = yad2Scheduler.getStatus();
+    return res.json({
+        success: true,
+        ...status,
+    });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     const dbState = mongoose.connection.readyState;
