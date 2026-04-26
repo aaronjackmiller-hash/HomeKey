@@ -154,7 +154,15 @@ const summarizeSyncResult = (lastResult) => {
 
 const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
-    if (!status.feedUrlConfigured) return 'Live feed URL is not configured on the server.';
+    if (!status.feedUrlConfigured && !status.scrapeFallbackEnabled) {
+        return 'Live feed URL is not configured on the server.';
+    }
+    if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && status.lastError) {
+        return `Scrape fallback failed: ${sanitizeSyncMessage(status.lastError)}.`;
+    }
+    if (!status.feedUrlConfigured && status.scrapeFallbackEnabled && !status.lastFinishedAt) {
+        return 'Scrape fallback is enabled but has not completed a sync yet.';
+    }
     if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
     if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
     if (summarizedResult && summarizedResult.skipped) {
@@ -175,6 +183,7 @@ const getPublicYad2SyncStatus = () => {
         sourceTag: status.sourceTag,
         syncMinutes: status.syncMinutes,
         feedUrlConfigured: Boolean(status.feedUrlConfigured),
+        scrapeFallbackEnabled: Boolean(status.scrapeFallbackEnabled),
         mirrorDeletesEnabled: Boolean(status.mirrorDeletesEnabled),
         timerActive: Boolean(status.timerActive),
         inFlight: Boolean(status.inFlight),
