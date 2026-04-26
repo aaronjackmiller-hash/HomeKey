@@ -225,6 +225,9 @@ Configure these environment variables in Render:
 - `YAD2_SCRAPE_MAX_ITEMS=120` (optional; caps temporary scraped listings per run, max 500)
 - `YAD2_SEGMENTED_SCRAPE_ENABLED=true` (default true; rotates through configured regions instead of scraping all regions each run)
 - `YAD2_SCRAPE_SEGMENTS=center-and-sharon,tel-aviv-area,jerusalem-area,south,coastal-north,north-and-valleys` (optional comma-separated region slugs for segmented rotation)
+- `YAD2_CAPTCHA_PROXY_URL_TEMPLATE=https://api.codetabs.com/v1/proxy?quest={{url}}` (optional; captcha bypass proxy template, must include `{{url}}`)
+- `YAD2_CAPTCHA_FALLBACK_URL=https://...` (optional external JSON fallback feed for captcha scenarios)
+- `YAD2_CAPTCHA_FALLBACK_TIMEOUT_MS=30000` (optional timeout for fallback feed fetch)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
@@ -276,6 +279,49 @@ Important limitations:
 - Scraped fields are best-effort and less complete than a structured API/feed.
 - Markup changes, anti-bot controls, or regional blocks can break scraping at any time.
 - Use this as a temporary bridge until you configure an authorized structured feed URL.
+
+### Internal captcha fallback feed (new)
+
+If upstream scraping is blocked by captcha and you do not have an external fallback URL yet, HomeKey now provides an internal fallback feed store that can be uploaded via admin API and automatically consumed by the scheduler.
+
+Admin endpoints (same auth as import/sync: `X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token):
+
+- `POST /api/admin/sync/yad2/fallback-feed`
+  - Body:
+    ```json
+    {
+      "segmentKey": "center-and-sharon",
+      "replace": true,
+      "items": [
+        {
+          "id": "fallback-1001",
+          "title": "3-room rental in Tel Aviv",
+          "dealType": "rental",
+          "price": 7800,
+          "rooms": 3,
+          "bathrooms": 1,
+          "area": 82,
+          "city": "Tel Aviv",
+          "status": "active",
+          "url": "https://example.com/listing/1001"
+        }
+      ]
+    }
+    ```
+  - `segmentKey` is optional (defaults to `all`).
+  - `replace=true` overwrites that segment; `replace=false` appends/upserts by `id`.
+
+- `GET /api/admin/sync/yad2/fallback-feed`
+  - Optional query: `segmentKey=center-and-sharon`
+  - Returns stored fallback feed metadata and item counts.
+
+Scheduler behavior:
+
+- When captcha/challenge pages prevent extraction:
+  1. tries proxy template (if configured),
+  2. then external fallback URL (if configured),
+  3. then internal stored fallback feed (if present).
+- For fallback-source runs, prune deletes are skipped to prevent accidental data loss from partial upstream/fallback snapshots.
 
 ### Password recovery
 

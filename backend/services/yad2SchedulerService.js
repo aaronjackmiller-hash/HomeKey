@@ -2,6 +2,9 @@
 
 const { importYad2Listings } = require('./yad2ImportService');
 const Property = require('../models/Property');
+const {
+    getFallbackRowsForSegment,
+} = require('./yad2FallbackFeedService');
 
 const DEFAULT_SYNC_MINUTES = 15;
 const MIN_SYNC_MINUTES = 5;
@@ -56,6 +59,12 @@ const parseCaptchaFallbackTimeoutMs = () => {
     const raw = Number(process.env.YAD2_CAPTCHA_FALLBACK_TIMEOUT_MS || DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS);
     if (!Number.isFinite(raw)) return DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS;
     return Math.max(1000, Math.min(120000, Math.floor(raw)));
+};
+
+const parseCaptchaFallbackRowsLimit = () => {
+    const raw = Number(process.env.YAD2_CAPTCHA_FALLBACK_MAX_ROWS || DEFAULT_SCRAPE_MAX_ITEMS);
+    if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
+    return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
 };
 
 const parseScrapeProxyEnabled = () =>
@@ -230,6 +239,27 @@ const fetchExternalCaptchaFallbackRows = async ({ segment = null } = {}) => {
         rows,
         skipped: false,
         usedCaptchaFallback: true,
+    };
+};
+
+const fetchInternalCaptchaFallbackRows = async ({ segment = null } = {}) => {
+    const segmentKey = segment && segment.key ? segment.key : null;
+    const limit = parseCaptchaFallbackRowsLimit();
+    const rows = await getFallbackRowsForSegment({ segmentKey, limit });
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: segmentKey
+                ? `Internal fallback feed has no rows for segment ${segmentKey}`
+                : 'Internal fallback feed is empty',
+        };
+    }
+    return {
+        rows,
+        skipped: false,
+        usedCaptchaFallback: true,
+        fallbackSource: 'internal-db',
     };
 };
 
@@ -500,9 +530,21 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
                     skipped: false,
                     segmentKey: segment ? segment.key : 'all',
                     usedCaptchaFallback: true,
+                    fallbackSource: fallbackFeed.fallbackSource || 'external-feed',
                 };
             }
             diagnostics.push(`captcha-fallback: ${fallbackFeed.reason}`);
+            const internalFallback = await fetchInternalCaptchaFallbackRows({ segment });
+            if (!internalFallback.skipped && Array.isArray(internalFallback.rows) && internalFallback.rows.length > 0) {
+                return {
+                    rows: internalFallback.rows,
+                    skipped: false,
+                    segmentKey: segment ? segment.key : 'all',
+                    usedCaptchaFallback: true,
+                    fallbackSource: internalFallback.fallbackSource || 'internal-db',
+                };
+            }
+            diagnostics.push(`captcha-fallback-internal: ${internalFallback.reason}`);
         }
         const diagnosticSummary = diagnostics.length > 0
             ? `. Diagnostics: ${diagnostics.slice(0, 4).join(' | ')}`
@@ -690,7 +732,7 @@ const createYad2Scheduler = (logger = console) => {
             }
 
             let pruned = 0;
-            if (mirrorDeletesEnabled) {
+            if (mirrorDeletesEnabled && !feed.usedCaptchaFallback) {
                 const externalIds = feed.rows
                     .map((row) => (row && typeof row.id === 'string' ? row.id.trim() : String(row && row.id || '').trim()))
                     .filter(Boolean);
@@ -715,6 +757,8 @@ const createYad2Scheduler = (logger = console) => {
                 ...(segmentKey ? { segmentKey } : {}),
                 fetched: feed.rows.length,
                 pruned,
+                ...(feed.usedCaptchaFallback ? { usedCaptchaFallback: true } : {}),
+                ...(feed.fallbackSource ? { fallbackSource: feed.fallbackSource } : {}),
                 ...result,
             };
             status.lastResult = syncResult;
