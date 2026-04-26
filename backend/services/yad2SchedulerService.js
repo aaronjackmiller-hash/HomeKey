@@ -10,10 +10,15 @@ const DEFAULT_SOURCE_TAG = 'yad2-live-sync';
 const DEFAULT_MIRROR_MODE = true;
 const DEFAULT_SCRAPE_MAX_ITEMS = 120;
 const MAX_SCRAPE_MAX_ITEMS = 500;
+const DEFAULT_SCRAPE_FETCH_ATTEMPTS = 3;
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
 const YAD2_FORSALE_URL = 'https://www.yad2.co.il/realestate/forsale';
-// Use a common desktop browser UA to reduce anti-bot blocking compared with a custom bot UA.
-const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
+const YAD2_HOMEPAGE_URL = 'https://www.yad2.co.il/';
+const SCRAPE_USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+];
 const DEFAULT_SEGMENTED_SCRAPE_ENABLED = true;
 const DEFAULT_SEGMENTS = [
     { key: 'center-and-sharon', label: 'Center & Sharon', path: 'center-and-sharon' },
@@ -79,6 +84,29 @@ const decodeHtmlEntities = (value) =>
         .replace(/&gt;/g, '>');
 
 const stripTags = (value) => String(value || '').replace(/<[^>]*>/g, ' ');
+
+const buildScrapeHeaders = (userAgent) => ({
+    'User-Agent': userAgent,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+    Referer: 'https://www.yad2.co.il/',
+    Pragma: 'no-cache',
+    'Cache-Control': 'no-cache',
+});
+
+const looksLikeBotChallenge = (html) => {
+    const normalized = String(html || '').toLowerCase();
+    if (!normalized) return true;
+    return [
+        'captcha',
+        'verify you are human',
+        'access denied',
+        'service unavailable',
+        'cloudflare',
+        'akamai',
+        'incident id',
+    ].some((marker) => normalized.includes(marker));
+};
 
 const parsePathToRegion = (pathValue) => {
     const parts = String(pathValue || '').split('/').filter(Boolean);
@@ -174,37 +202,60 @@ const buildFallbackRow = ({ href, anchorText, dealType }) => {
 const extractRowsFromYad2Html = ({ html, dealType, maxItems }) => {
     const rows = [];
     const seenIds = new Set();
-    const anchorRegex = /<a[^>]+href="([^"]*\/realestate\/item\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-    let match = anchorRegex.exec(html);
-    while (match && rows.length < maxItems) {
-        const href = normalizeHref(match[1]);
-        if (href) {
-            const row = buildFallbackRow({ href, anchorText: match[2], dealType });
-            if (row && !seenIds.has(row.id)) {
-                seenIds.add(row.id);
-                rows.push(row);
+    const rawHtml = String(html || '');
+    const challengeDetected = looksLikeBotChallenge(rawHtml);
+    const htmlVariants = rawHtml.includes('\\/realestate\\/item/')
+        ? [rawHtml, rawHtml.replace(/\\\//g, '/')]
+        : [rawHtml];
+    const addRowFromHref = (hrefCandidate, anchorText = '') => {
+        if (rows.length >= maxItems) return;
+        const href = normalizeHref(String(hrefCandidate || '').replace(/\\\//g, '/'));
+        if (!href) return;
+        const row = buildFallbackRow({ href, anchorText, dealType });
+        if (!row || seenIds.has(row.id)) return;
+        seenIds.add(row.id);
+        rows.push(row);
+    };
+
+    for (const variant of htmlVariants) {
+        const anchorRegexes = [
+            /<a[^>]+href\s*=\s*"([^"]*\/realestate\/item\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi,
+            /<a[^>]+href\s*=\s*'([^']*\/realestate\/item\/[^']+)'[^>]*>([\s\S]*?)<\/a>/gi,
+            /<a[^>]+href\s*=\s*([^"'\s>]+\/realestate\/item\/[^"'\s>]+)[^>]*>([\s\S]*?)<\/a>/gi,
+        ];
+        for (const anchorRegex of anchorRegexes) {
+            let match = anchorRegex.exec(variant);
+            while (match && rows.length < maxItems) {
+                addRowFromHref(match[1], match[2]);
+                match = anchorRegex.exec(variant);
             }
+            if (rows.length >= maxItems) break;
         }
-        match = anchorRegex.exec(html);
+        if (rows.length >= maxItems) break;
     }
 
-    if (rows.length > 0) return rows;
+    if (rows.length > 0) return { rows, challengeDetected };
 
-    // Fallback extractor in case anchor markup changes and nested content is removed.
-    const hrefRegex = /\/realestate\/item\/[a-z0-9-]+\/[a-z0-9]+(?:\?[^"'\s<]*)?/gi;
-    let hrefMatch = hrefRegex.exec(html);
-    while (hrefMatch && rows.length < maxItems) {
-        const href = normalizeHref(hrefMatch[0]);
-        if (href) {
-            const row = buildFallbackRow({ href, anchorText: '', dealType });
-            if (row && !seenIds.has(row.id)) {
-                seenIds.add(row.id);
-                rows.push(row);
+    // Fallback extractors in case Yad2 embeds links inside script blobs.
+    for (const variant of htmlVariants) {
+        const hrefRegexes = [
+            /https?:\/\/www\.yad2\.co\.il\/realestate\/item\/[a-z0-9-]+\/[a-z0-9]+(?:\?[^"'\s<]*)?/gi,
+            /\/realestate\/item\/[a-z0-9-]+\/[a-z0-9]+(?:\?[^"'\s<]*)?/gi,
+            /https?:\\\/\\\/www\.yad2\.co\.il\\\/realestate\\\/item\\\/[a-z0-9-]+\\\/[a-z0-9]+(?:\\\?[^"'\s<]*)?/gi,
+            /\\\/realestate\\\/item\\\/[a-z0-9-]+\\\/[a-z0-9]+(?:\\\?[^"'\s<]*)?/gi,
+        ];
+        for (const hrefRegex of hrefRegexes) {
+            let hrefMatch = hrefRegex.exec(variant);
+            while (hrefMatch && rows.length < maxItems) {
+                addRowFromHref(hrefMatch[0]);
+                hrefMatch = hrefRegex.exec(variant);
             }
+            if (rows.length >= maxItems) break;
         }
-        hrefMatch = hrefRegex.exec(html);
+        if (rows.length >= maxItems) break;
     }
-    return rows;
+
+    return { rows, challengeDetected };
 };
 
 const scrapeYad2Listings = async ({ segment = null } = {}) => {
@@ -226,53 +277,61 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
     const useSegmentPath = Boolean(segment && segment.path);
     const allRows = [];
     const seenIds = new Set();
+    const diagnostics = [];
+
+    const fetchAndExtractRows = async ({ url, dealType }) => {
+        for (let attempt = 1; attempt <= DEFAULT_SCRAPE_FETCH_ATTEMPTS; attempt += 1) {
+            const userAgent = SCRAPE_USER_AGENTS[(attempt - 1) % SCRAPE_USER_AGENTS.length];
+            try {
+                const response = await fetch(url, {
+                    headers: buildScrapeHeaders(userAgent),
+                    signal: AbortSignal.timeout(30000),
+                });
+                if (!response.ok) {
+                    diagnostics.push(`${dealType}:${response.status} from ${url}`);
+                    continue;
+                }
+                const html = await response.text();
+                const extraction = extractRowsFromYad2Html({
+                    html,
+                    dealType,
+                    maxItems: perPageLimit,
+                });
+                if (extraction.rows.length > 0) {
+                    return extraction.rows;
+                }
+                diagnostics.push(
+                    extraction.challengeDetected
+                        ? `${dealType}: challenge-like page on attempt ${attempt} (${url})`
+                        : `${dealType}: zero links extracted on attempt ${attempt} (${url})`
+                );
+            } catch (err) {
+                diagnostics.push(`${dealType}: ${err.message}`);
+            }
+        }
+        return [];
+    };
 
     for (const page of pages) {
-        const response = await fetch(page.url, {
-            headers: {
-                'User-Agent': SCRAPE_USER_AGENT,
-                Accept: 'text/html,application/xhtml+xml',
-            },
-            signal: AbortSignal.timeout(30000),
-        });
-        if (!response.ok) {
-            throw new Error(`Scrape fetch failed (${response.status}) for ${page.dealType}`);
-        }
-        const html = await response.text();
-        const extracted = extractRowsFromYad2Html({
-            html,
+        let extracted = await fetchAndExtractRows({
+            url: page.url,
             dealType: page.dealType,
-            maxItems: perPageLimit,
         });
         if (extracted.length === 0 && useSegmentPath) {
             // Region subpaths can intermittently return thin/empty HTML depending on antibot behavior.
             // Fall back to base rent/forsale pages for resilience instead of skipping the whole segment.
             const fallbackBaseUrl = page.dealType === 'rental' ? YAD2_RENT_URL : YAD2_FORSALE_URL;
-            const fallbackResponse = await fetch(fallbackBaseUrl, {
-                headers: {
-                    'User-Agent': SCRAPE_USER_AGENT,
-                    Accept: 'text/html,application/xhtml+xml',
-                },
-                signal: AbortSignal.timeout(30000),
+            extracted = await fetchAndExtractRows({
+                url: fallbackBaseUrl,
+                dealType: page.dealType,
             });
-            if (fallbackResponse.ok) {
-                const fallbackHtml = await fallbackResponse.text();
-                const fallbackExtracted = extractRowsFromYad2Html({
-                    html: fallbackHtml,
-                    dealType: page.dealType,
-                    maxItems: perPageLimit,
-                });
-                for (const row of fallbackExtracted) {
-                    if (allRows.length >= scrapeMaxItems) break;
-                    if (!row || !row.id || seenIds.has(row.id)) continue;
-                    seenIds.add(row.id);
-                    allRows.push({
-                        ...row,
-                        externalSegmentKey: page.segmentKey,
-                    });
-                }
-                continue;
-            }
+        }
+        if (extracted.length === 0) {
+            // Some network paths only expose real-estate cards on the Yad2 lobby page.
+            extracted = await fetchAndExtractRows({
+                url: YAD2_HOMEPAGE_URL,
+                dealType: page.dealType,
+            });
         }
         for (const row of extracted) {
             if (allRows.length >= scrapeMaxItems) break;
@@ -286,12 +345,15 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
     }
 
     if (allRows.length === 0) {
+        const diagnosticSummary = diagnostics.length > 0
+            ? `. Diagnostics: ${diagnostics.slice(0, 4).join(' | ')}`
+            : '';
         return {
             rows: [],
             skipped: true,
             reason: segment
-                ? `Scrape fallback returned zero listings for segment ${segment.key}`
-                : 'Scrape fallback returned zero listings',
+                ? `Scrape fallback returned zero listings for segment ${segment.key}${diagnosticSummary}`
+                : `Scrape fallback returned zero listings${diagnosticSummary}`,
         };
     }
 
