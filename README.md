@@ -221,6 +221,8 @@ Configure these environment variables in Render:
 - `YAD2_SYNC_SOURCE_TAG=yad2-live-sync` (optional source namespace)
 - `YAD2_SYNC_AUTH_HEADER_NAME` and `YAD2_SYNC_AUTH_HEADER_VALUE` (optional feed auth header pair)
 - `YAD2_SYNC_PRUNE_MISSING=true` (optional; when true, removes listings that disappeared from current Yad2 feed for mirror behavior)
+- `YAD2_SCRAPE_FALLBACK_ENABLED=false` (optional; when `true`, temporary HTML scraping fallback is used if no `YAD2_SYNC_FEED_URL` is set)
+- `YAD2_SCRAPE_MAX_ITEMS=120` (optional; caps temporary scraped listings per run, max 500)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
@@ -248,6 +250,28 @@ UI observability:
   - last run / last successful sync timestamps
   - last sync error reason (if any)
   - latest sync counts
+
+### Temporary scrape fallback mode (when no feed URL is available)
+
+If you need to bootstrap live-ish data before a formal feed integration is ready, HomeKey can temporarily scrape Yad2 listing pages:
+
+- Set `YAD2_SCRAPE_FALLBACK_ENABLED=true`
+- Leave `YAD2_SYNC_FEED_URL` unset (or empty)
+- Keep `YAD2_SYNC_ENABLED=true` and `LIVE_YAD2_ONLY=true`
+
+Behavior:
+
+- Scheduler fetches from:
+  - `https://www.yad2.co.il/realestate/rent`
+  - `https://www.yad2.co.il/realestate/forsale`
+- Extracted listing links are normalized into HomeKey property rows and upserted under your sync source tag.
+- Mirror delete logic (`YAD2_SYNC_MIRROR_DELETES=true`) continues to remove records not present in the latest scrape snapshot.
+
+Important limitations:
+
+- Scraped fields are best-effort and less complete than a structured API/feed.
+- Markup changes, anti-bot controls, or regional blocks can break scraping at any time.
+- Use this as a temporary bridge until you configure an authorized structured feed URL.
 
 ### Password recovery
 
