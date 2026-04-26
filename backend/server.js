@@ -139,6 +139,12 @@ const sanitizeSyncMessage = (value) => {
 
 const summarizeSyncResult = (lastResult) => {
     if (!lastResult || typeof lastResult !== 'object') return null;
+    const topErrorReasons = Array.isArray(lastResult.topErrorReasons)
+        ? lastResult.topErrorReasons
+            .map((item) => sanitizeSyncMessage(item))
+            .filter(Boolean)
+            .slice(0, 3)
+        : [];
     return {
         skipped: Boolean(lastResult.skipped),
         reason: sanitizeSyncMessage(lastResult.reason),
@@ -150,6 +156,7 @@ const summarizeSyncResult = (lastResult) => {
         updated: toOptionalNumber(lastResult.updated),
         failed: toOptionalNumber(lastResult.failed),
         pruned: toOptionalNumber(lastResult.pruned),
+        topErrorReasons,
     };
 };
 
