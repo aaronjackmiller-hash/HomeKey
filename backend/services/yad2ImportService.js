@@ -1,6 +1,10 @@
 'use strict';
 
 const Property = require('../models/Property');
+const {
+    appendSourceIfMissing,
+    findDuplicateCandidate,
+} = require('./propertyMergeService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -26,6 +30,13 @@ const parseStatus = (raw) => {
     if (['rented', 'let'].includes(normalized)) return 'rented';
     if (['inactive', 'archived', 'draft'].includes(normalized)) return 'inactive';
     return 'active';
+};
+
+const parseSourceType = (value) => {
+    const normalized = normalizeString(value).toLowerCase();
+    if (normalized === 'manual') return 'manual';
+    if (normalized === 'yad2-scrape') return 'yad2-scrape';
+    return 'yad2-sync';
 };
 
 const extractImageList = (row) => {
@@ -94,6 +105,7 @@ const mapYad2RowToPropertyDoc = (row) => {
     const type = parseType(pickFirst(row.type, row.dealType, row.deal_type));
     const floorNumber = parseNumber(pickFirst(row.floorNumber, row.floor), undefined);
     const externalUrl = normalizeString(pickFirst(row.url, row.listingUrl, row.externalUrl));
+    const sourceType = parseSourceType(pickFirst(row.sourceType, row.source_type, 'yad2-sync'));
 
     const payload = {
         title,
@@ -139,6 +151,16 @@ const mapYad2RowToPropertyDoc = (row) => {
         },
         images: extractImageList(row),
         status: parseStatus(pickFirst(row.status, row.listingStatus)),
+        sourceType,
+        sources: [
+            {
+                sourceType,
+                externalSource: 'yad2',
+                ...(externalId ? { externalId } : {}),
+                ...(externalUrl ? { externalUrl } : {}),
+                addedAt: new Date(),
+            },
+        ],
         externalSource: 'yad2',
         ...(externalId ? { externalId } : {}),
         ...(externalUrl ? { externalUrl } : {}),
@@ -176,20 +198,76 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
 
             payload.externalSource = normalizedSourceTag;
 
+            const sourceType = parseSourceType(payload.sourceType);
+            const sourceEntry = {
+                sourceType,
+                externalSource: normalizedSourceTag,
+                ...(externalId ? { externalId } : {}),
+                ...(payload.externalUrl ? { externalUrl: payload.externalUrl } : {}),
+                addedAt: new Date(),
+            };
+
             if (upsert && externalId) {
                 const existing = await Property.findOne({
                     externalSource: normalizedSourceTag,
                     externalId,
                 });
                 if (existing) {
-                    await Property.findByIdAndUpdate(existing._id, payload, { new: true, runValidators: true });
+                    const hasManualSource = existing.sourceType === 'manual'
+                        || (Array.isArray(existing.sources) && existing.sources.some((source) => source && source.sourceType === 'manual'));
+                    appendSourceIfMissing(existing, sourceEntry);
+                    Object.assign(existing, payload, {
+                        sourceType: hasManualSource ? 'manual' : sourceType,
+                        externalSource: normalizedSourceTag,
+                        externalId,
+                    });
+                    if (hasManualSource && existing.contact && existing.owner) {
+                        // Keep owner-facing manual contact workflow active when merged with live feed records.
+                        existing.sourceType = 'manual';
+                    }
+                    await existing.save();
                     summary.updated += 1;
                 } else {
-                    await Property.create(payload);
-                    summary.created += 1;
+                    const duplicate = await findDuplicateCandidate(payload);
+                    if (duplicate) {
+                        duplicate.description = payload.description || duplicate.description;
+                        duplicate.price = payload.price;
+                        duplicate.bedrooms = payload.bedrooms;
+                        duplicate.bathrooms = payload.bathrooms;
+                        duplicate.size = payload.size;
+                        duplicate.floorNumber = payload.floorNumber;
+                        duplicate.financialDetails = payload.financialDetails;
+                        duplicate.dates = payload.dates;
+                        duplicate.images = Array.isArray(payload.images) && payload.images.length > 0 ? payload.images : duplicate.images;
+                        duplicate.status = payload.status || duplicate.status;
+                        duplicate.externalSource = normalizedSourceTag;
+                        duplicate.externalId = externalId;
+                        duplicate.externalUrl = payload.externalUrl || duplicate.externalUrl;
+                        duplicate.sources = Array.isArray(duplicate.sources) ? duplicate.sources : [];
+                        if (!duplicate.title || duplicate.sourceType !== 'manual') {
+                            duplicate.title = payload.title;
+                        }
+                        if (!duplicate.sourceType || duplicate.sourceType !== 'manual') {
+                            duplicate.sourceType = sourceType;
+                        }
+                        appendSourceIfMissing(duplicate, sourceEntry);
+                        await duplicate.save();
+                        summary.updated += 1;
+                    } else {
+                        await Property.create({
+                            ...payload,
+                            sourceType,
+                            sources: [sourceEntry],
+                        });
+                        summary.created += 1;
+                    }
                 }
             } else {
-                await Property.create(payload);
+                await Property.create({
+                    ...payload,
+                    sourceType,
+                    sources: [sourceEntry],
+                });
                 summary.created += 1;
             }
         } catch (err) {

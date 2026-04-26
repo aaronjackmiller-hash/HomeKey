@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import { getProperty, deleteProperty } from '../services/api';
+import {
+    getProperty,
+    deleteProperty,
+    createPropertyInquiry,
+    registerShowingAttendee,
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const formatCurrency = (value) => {
@@ -19,10 +24,27 @@ const getAddressLine = (address) =>
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const isManualListing = property?.sourceType === 'manual';
+    const canManageListing = Boolean(
+        isAuthenticated && (
+            (property?.owner && user?._id && String(property.owner) === String(user._id))
+            || ['agent', 'admin'].includes(user?.role)
+        )
+    );
+    const [inquiry, setInquiry] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        preferredMethod: 'email',
+        message: '',
+    });
+    const [inquiryStatus, setInquiryStatus] = useState('');
+    const [showingForms, setShowingForms] = useState({});
+    const [showingStatus, setShowingStatus] = useState({});
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -49,6 +71,57 @@ const PropertyDetail = () => {
             history.push('/');
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to delete property.');
+        }
+    };
+
+    const handleInquirySubmit = async (e) => {
+        e.preventDefault();
+        setInquiryStatus('');
+        try {
+            await createPropertyInquiry(id, inquiry);
+            setInquiryStatus('Inquiry sent to the listing owner.');
+            setInquiry({
+                name: '',
+                email: '',
+                phone: '',
+                preferredMethod: 'email',
+                message: '',
+            });
+            const result = await getProperty(id);
+            setProperty(result.data);
+        } catch (err) {
+            setInquiryStatus(err.response?.data?.message || 'Failed to send inquiry.');
+        }
+    };
+
+    const handleShowingInput = (showingId, field, value) => {
+        setShowingForms((prev) => ({
+            ...prev,
+            [showingId]: {
+                ...(prev[showingId] || { name: '', email: '', phone: '', message: '' }),
+                [field]: value,
+            },
+        }));
+    };
+
+    const handleShowingSubmit = async (e, showingId) => {
+        e.preventDefault();
+        setShowingStatus((prev) => ({ ...prev, [showingId]: '' }));
+        const payload = showingForms[showingId] || {};
+        try {
+            await registerShowingAttendee(id, showingId, payload);
+            setShowingStatus((prev) => ({ ...prev, [showingId]: 'You are registered for this showing.' }));
+            setShowingForms((prev) => ({
+                ...prev,
+                [showingId]: { name: '', email: '', phone: '', message: '' },
+            }));
+            const refreshed = await getProperty(id);
+            setProperty(refreshed.data);
+        } catch (err) {
+            setShowingStatus((prev) => ({
+                ...prev,
+                [showingId]: err.response?.data?.message || 'Failed to register for this showing.',
+            }));
         }
     };
 
@@ -99,6 +172,7 @@ const PropertyDetail = () => {
             items: [
                 { label: 'Available From', value: formatDate(property.dates?.availableFrom) },
                 { label: 'Listing Date', value: formatDate(property.dates?.listingDate) },
+                { label: 'Expires At', value: formatDate(property.lifecycle?.expiresAt) },
                 { label: 'Created At', value: formatDate(property.createdAt) },
                 { label: 'Updated At', value: formatDate(property.updatedAt) },
             ],
@@ -179,8 +253,126 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {isAuthenticated && (
+                {property.contact && (
+                    <section className="detail-section-card">
+                        <h2>Contact Listing Owner</h2>
+                        <p>Preferred method: {property.contact.preferredMethod || 'email'}</p>
+                        <div className="agent-grid">
+                            {property.contact.email && <p>Email: {property.contact.email}</p>}
+                            {property.contact.phone && <p>Phone: {property.contact.phone}</p>}
+                            {property.contact.whatsapp && <p>WhatsApp: {property.contact.whatsapp}</p>}
+                        </div>
+                        <form onSubmit={handleInquirySubmit}>
+                            <div className="input-field">
+                                <label>Your Name</label>
+                                <input
+                                    type="text"
+                                    value={inquiry.name}
+                                    onChange={(e) => setInquiry((prev) => ({ ...prev, name: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Your Email</label>
+                                <input
+                                    type="email"
+                                    value={inquiry.email}
+                                    onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Your Phone</label>
+                                <input
+                                    type="tel"
+                                    value={inquiry.phone}
+                                    onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Preferred Contact Method</label>
+                                <select
+                                    value={inquiry.preferredMethod}
+                                    onChange={(e) => setInquiry((prev) => ({ ...prev, preferredMethod: e.target.value }))}
+                                >
+                                    <option value="email">Email</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="phone">Phone</option>
+                                </select>
+                            </div>
+                            <div className="input-field">
+                                <label>Message</label>
+                                <textarea
+                                    value={inquiry.message}
+                                    onChange={(e) => setInquiry((prev) => ({ ...prev, message: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="primary-button">Send Inquiry</button>
+                            {inquiryStatus && <p>{inquiryStatus}</p>}
+                        </form>
+                    </section>
+                )}
+
+                {Array.isArray(property.showings) && property.showings.length > 0 && (
+                    <section className="detail-section-card">
+                        <h2>Property Showings</h2>
+                        {property.showings.map((showing) => {
+                            const attendeeCount = Array.isArray(showing.attendees) ? showing.attendees.length : 0;
+                            const formState = showingForms[showing._id] || {};
+                            return (
+                                <div key={showing._id} style={{ border: '1px solid #ddd', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
+                                    <p><strong>Starts:</strong> {new Date(showing.startsAt).toLocaleString()}</p>
+                                    <p><strong>Ends:</strong> {new Date(showing.endsAt).toLocaleString()}</p>
+                                    <p><strong>Available spots:</strong> {Math.max((showing.attendeeLimit || 20) - attendeeCount, 0)}</p>
+                                    {showing.notes && <p>{showing.notes}</p>}
+                                    <form onSubmit={(e) => handleShowingSubmit(e, showing._id)}>
+                                        <div className="input-field">
+                                            <label>Your Name</label>
+                                            <input
+                                                type="text"
+                                                value={formState.name || ''}
+                                                onChange={(e) => handleShowingInput(showing._id, 'name', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="input-field">
+                                            <label>Your Email</label>
+                                            <input
+                                                type="email"
+                                                value={formState.email || ''}
+                                                onChange={(e) => handleShowingInput(showing._id, 'email', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="input-field">
+                                            <label>Your Phone</label>
+                                            <input
+                                                type="tel"
+                                                value={formState.phone || ''}
+                                                onChange={(e) => handleShowingInput(showing._id, 'phone', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="input-field">
+                                            <label>Message (optional)</label>
+                                            <input
+                                                type="text"
+                                                value={formState.message || ''}
+                                                onChange={(e) => handleShowingInput(showing._id, 'message', e.target.value)}
+                                            />
+                                        </div>
+                                        <button type="submit" className="primary-button">Reserve Showing Slot</button>
+                                        {showingStatus[showing._id] && <p>{showingStatus[showing._id]}</p>}
+                                    </form>
+                                </div>
+                            );
+                        })}
+                    </section>
+                )}
+
+                {canManageListing && isManualListing && (
                     <div className="detail-actions">
+                        <button className="secondary-button" onClick={() => history.push(`/properties/${property._id}/engagement`)}>
+                            View inquiries & attendee list
+                        </button>
                         <button className="primary-button" onClick={() => history.push(`/edit-listing/${property._id}`)}>
                             Edit Listing
                         </button>

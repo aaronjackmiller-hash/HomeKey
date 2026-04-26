@@ -62,6 +62,21 @@ export const deleteProperty = async (id) => {
   return response.data;
 };
 
+export const createPropertyInquiry = async (id, inquiry) => {
+  const response = await api.post(`/properties/${id}/inquiries`, inquiry);
+  return response.data;
+};
+
+export const registerShowingAttendee = async (id, showingId, attendee) => {
+  const response = await api.post(`/properties/${id}/showings/${showingId}/attendees`, attendee);
+  return response.data;
+};
+
+export const getPropertyEngagement = async (id) => {
+  const response = await api.get(`/properties/${id}/engagement`);
+  return response.data;
+};
+
 export const importYad2ListingsBatch = async ({
   items,
   sourceTag = 'yad2',

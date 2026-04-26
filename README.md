@@ -285,3 +285,68 @@ Endpoints:
 
 - `POST /api/auth/forgot-password` with `{ "email": "user@example.com" }`
 - `POST /api/auth/reset-password` with `{ "token": "...", "newPassword": "NewPass123!" }`
+
+---
+
+## Listing lifecycle, contact preferences, and showings
+
+HomeKey now supports an end-to-end manual listing lifecycle workflow for user/agent-created listings:
+
+- preferred contact channel per user/listing owner (`email`, `whatsapp`, or `phone`)
+- thank-you notification when a manual listing is created
+- expiry date support with auto-expire + reminder sweeps
+- buyer/renter inquiries to listing owners
+- showing schedule slots with attendee registration
+- owner/agent engagement dashboard with inquiry and attendee lists
+
+### New registration/contact fields
+
+`POST /api/auth/register` accepts:
+
+- `whatsapp` (optional)
+- `preferredContactMethod` (`email` | `whatsapp` | `phone`, optional)
+
+### Manual listing lifecycle behavior
+
+When a user/agent creates a listing:
+
+- `sourceType` is set to `manual`
+- owner/contact details are stored on the listing
+- expiry defaults are applied by role:
+  - users/sellers default: `MANUAL_LISTING_USER_EXPIRY_DAYS` (default 30)
+  - agents default: `MANUAL_LISTING_AGENT_EXPIRY_DAYS` (default 60)
+- a thank-you notification is dispatched to the preferred contact channel
+
+### Lifecycle sweep runner
+
+Background sweep runner:
+
+- auto-expires manual listings when `lifecycle.expiresAt` is reached (status → `inactive`)
+- sends reminder notifications before expiry (`MANUAL_LISTING_REMINDER_WINDOW_DAYS`, default 3)
+- hard-deletes long-expired inactive manual listings after grace period (`MANUAL_LISTING_DELETE_GRACE_DAYS`, default 30)
+
+Environment variables:
+
+- `LISTING_LIFECYCLE_ENABLED=true` (default true)
+- `LISTING_LIFECYCLE_SWEEP_MINUTES=60` (minimum 5)
+- `MANUAL_LISTING_USER_EXPIRY_DAYS=30`
+- `MANUAL_LISTING_AGENT_EXPIRY_DAYS=60`
+- `MANUAL_LISTING_REMINDER_WINDOW_DAYS=3`
+- `MANUAL_LISTING_DELETE_GRACE_DAYS=30`
+
+### New property APIs
+
+- `POST /api/properties/:id/inquiries` (public)
+  - submit buyer/renter questions with preferred contact method
+- `POST /api/properties/:id/showings/:showingId/attendees` (public)
+  - register for a showing slot
+- `GET /api/properties/:id/engagement` (private, owner/agent/admin)
+  - returns inquiries + showing attendee list
+
+### Lifecycle admin APIs
+
+- `POST /api/admin/lifecycle/run`
+  - trigger lifecycle sweep manually
+- `GET /api/admin/lifecycle/status`
+  - view lifecycle runner status
+  - auth: same as other admin sync endpoints (`X-Admin-Import-Secret`, `X-Admin-Secret`, or agent/admin bearer token)

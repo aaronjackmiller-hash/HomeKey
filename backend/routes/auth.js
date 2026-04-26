@@ -15,6 +15,8 @@ const validateRegister = [
     body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long').notEmpty().withMessage('Password is required'),
     body('phone').optional().isMobilePhone('any').withMessage('Phone must be a valid mobile number'),
+    body('whatsapp').optional().isMobilePhone('any').withMessage('WhatsApp must be a valid mobile number'),
+    body('preferredContactMethod').optional().isIn(['email', 'whatsapp', 'phone']).withMessage('Invalid preferred contact method'),
     body('role').optional().isIn(['buyer', 'seller', 'agent', 'admin']).withMessage('Invalid role'),
 ];
 

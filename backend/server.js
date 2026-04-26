@@ -44,6 +44,7 @@ const generalLimiter = rateLimit({
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
 const { createYad2Scheduler } = require('./services/yad2SchedulerService');
+const { createPropertyLifecycleRunner } = require('./services/propertyLifecycleRunner');
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
 
@@ -250,6 +251,7 @@ if (!process.env.MONGODB_URI) {
 }
 
 const yad2Scheduler = createYad2Scheduler(console);
+const propertyLifecycleRunner = createPropertyLifecycleRunner(console);
 
 // Start accepting HTTP connections immediately so the React frontend is always
 // reachable — even during cold starts or while MongoDB is still connecting.
@@ -289,6 +291,7 @@ connectMongo(MONGODB_URI)
         }
 
         yad2Scheduler.start();
+        propertyLifecycleRunner.start();
         try {
             const initialSync = await yad2Scheduler.runSyncOnce('startup');
             if (initialSync.skipped) {
@@ -300,6 +303,18 @@ connectMongo(MONGODB_URI)
             }
         } catch (syncErr) {
             console.error('[yad2-sync] Startup sync failed:', syncErr.message);
+        }
+        try {
+            const lifecycleResult = await propertyLifecycleRunner.runOnce('startup');
+            if (lifecycleResult.skipped) {
+                console.log(`[lifecycle] Startup sweep skipped: ${lifecycleResult.reason}`);
+            } else {
+                console.log(
+                    `[lifecycle] Startup sweep complete (expired=${lifecycleResult.expiredListings}, reminders=${lifecycleResult.remindersSent}, deleted=${lifecycleResult.deletedListings}).`
+                );
+            }
+        } catch (lifecycleErr) {
+            console.error('[lifecycle] Startup sweep failed:', lifecycleErr.message);
         }
     })
     .catch((err) => {
@@ -465,6 +480,52 @@ app.get('/api/admin/sync/yad2/status', async (req, res) => {
         });
     }
     const status = yad2Scheduler.getStatus();
+    return res.json({
+        success: true,
+        ...status,
+    });
+});
+
+// Admin endpoint — run listing lifecycle sweep manually.
+// Authorization: same as Yad2 import/sync admin gates.
+// Usage: POST /api/admin/lifecycle/run
+app.post('/api/admin/lifecycle/run', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for lifecycle run. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    try {
+        const result = await propertyLifecycleRunner.runOnce('admin-api');
+        if (result.skipped) {
+            return res.json({
+                success: true,
+                message: `Lifecycle sweep skipped: ${result.reason}.`,
+                ...result,
+            });
+        }
+        return res.json({
+            success: true,
+            message: 'Lifecycle sweep completed.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[admin/lifecycle/run] Sweep failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Admin endpoint — lifecycle runner status.
+// Usage: GET /api/admin/lifecycle/status
+app.get('/api/admin/lifecycle/status', async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for lifecycle status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    const status = propertyLifecycleRunner.getStatus();
     return res.json({
         success: true,
         ...status,

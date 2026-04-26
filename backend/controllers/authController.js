@@ -35,8 +35,24 @@ const getResetCookieOptions = (minutes) => ({
 });
 
 // POST /api/auth/register
+const parsePreferredContactMethod = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (['email', 'whatsapp', 'phone'].includes(normalized)) return normalized;
+    return 'email';
+};
+
 const register = async (req, res) => {
-    const { name, email, password, phone, role, agency, bio } = req.body;
+    const {
+        name,
+        email,
+        password,
+        phone,
+        whatsapp,
+        preferredContactMethod,
+        role,
+        agency,
+        bio,
+    } = req.body;
     try {
         const existing = await User.findOne({ email: String(email) });
         if (existing) {
@@ -44,7 +60,17 @@ const register = async (req, res) => {
         }
 
         const hashed = await bcrypt.hash(password, 12);
-        const user = await User.create({ name, email, password: hashed, phone, role, agency, bio });
+        const user = await User.create({
+            name,
+            email,
+            password: hashed,
+            phone,
+            whatsapp,
+            preferredContactMethod: parsePreferredContactMethod(preferredContactMethod),
+            role,
+            agency,
+            bio,
+        });
 
         const token = generateToken(user._id);
         res.status(201).json({
@@ -54,6 +80,9 @@ const register = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                whatsapp: user.whatsapp,
+                preferredContactMethod: user.preferredContactMethod,
                 role: user.role,
             },
         });
@@ -91,6 +120,7 @@ const login = async (req, res) => {
         }
 
         const token = generateToken(user._id);
+        const preferredContactMethod = parsePreferredContactMethod(user.preferredContactMethod);
         res.json({
             success: true,
             token,
@@ -98,6 +128,9 @@ const login = async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                whatsapp: user.whatsapp,
+                preferredContactMethod,
                 role: user.role,
             },
         });

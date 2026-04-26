@@ -1,55 +1,24 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createProperty } from '../services/api';
+import {
+    createInitialPropertyDraft,
+    buildPropertyPayload,
+    updateNestedFormValue,
+    updateShowingValue,
+    addShowingSlot as addShowingSlotDraft,
+    removeShowingSlot as removeShowingSlotDraft,
+} from '../utils/propertyDraft';
 
 const AddListing = () => {
     const history = useHistory();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        type: 'sale',
-        price: '',
-        bedrooms: '',
-        bathrooms: '',
-        size: '',
-        floorNumber: '',
-        address: {
-            street: '',
-            city: '',
-            state: '',
-            zip: '',
-        },
-        buildingDetails: {
-            name: '',
-            floorCount: '',
-            apartmentCount: '',
-        },
-        financialDetails: {
-            totalMonthlyPayment: '',
-            vaadAmount: '',
-            cityTaxes: '',
-            maintenanceFees: '',
-            propertyTax: '',
-        },
-        dates: {
-            availableFrom: '',
-        },
-    });
+    const [formData, setFormData] = useState(createInitialPropertyDraft);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        const parts = name.split('_');
-        if (parts.length === 2) {
-            const [group, field] = parts;
-            setFormData((prev) => ({
-                ...prev,
-                [group]: { ...prev[group], [field]: value },
-            }));
-        } else {
-            setFormData((prev) => ({ ...prev, [name]: value }));
-        }
+        updateNestedFormValue(setFormData, name, value);
     };
 
     const handleSubmit = async (e) => {
@@ -57,31 +26,7 @@ const AddListing = () => {
         setError('');
         setLoading(true);
 
-        // Build the payload, coercing numeric fields
-        const payload = {
-            title: formData.title,
-            description: formData.description,
-            type: formData.type,
-            price: Number(formData.price),
-            bedrooms: Number(formData.bedrooms),
-            bathrooms: Number(formData.bathrooms),
-            size: Number(formData.size),
-            ...(formData.floorNumber !== '' && { floorNumber: Number(formData.floorNumber) }),
-            address: formData.address,
-            buildingDetails: {
-                name: formData.buildingDetails.name,
-                ...(formData.buildingDetails.floorCount !== '' && { floorCount: Number(formData.buildingDetails.floorCount) }),
-                ...(formData.buildingDetails.apartmentCount !== '' && { apartmentCount: Number(formData.buildingDetails.apartmentCount) }),
-            },
-            financialDetails: Object.fromEntries(
-                Object.entries(formData.financialDetails)
-                    .filter(([, v]) => v !== '')
-                    .map(([k, v]) => [k, Number(v)])
-            ),
-            dates: {
-                ...(formData.dates.availableFrom && { availableFrom: formData.dates.availableFrom }),
-            },
-        };
+        const payload = buildPropertyPayload(formData);
 
         try {
             const result = await createProperty(payload);
@@ -96,6 +41,18 @@ const AddListing = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleShowingChange = (index, field, value) => {
+        updateShowingValue(setFormData, index, field, value);
+    };
+
+    const addShowingSlot = () => {
+        addShowingSlotDraft(setFormData);
+    };
+
+    const removeShowingSlot = (index) => {
+        removeShowingSlotDraft(setFormData, index);
     };
 
     return (
@@ -204,6 +161,103 @@ const AddListing = () => {
                         <label>Available From</label>
                         <input type="date" name="dates_availableFrom" value={formData.dates.availableFrom} onChange={handleChange} />
                     </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Owner Contact (for buyers/renters)</legend>
+                    <div className="input-field">
+                        <label>Contact Name</label>
+                        <input type="text" name="contact_name" value={formData.contact.name} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact Email</label>
+                        <input type="email" name="contact_email" value={formData.contact.email} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact Phone</label>
+                        <input type="tel" name="contact_phone" value={formData.contact.phone} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Contact WhatsApp</label>
+                        <input type="tel" name="contact_whatsapp" value={formData.contact.whatsapp} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>Preferred Contact Method</label>
+                        <select name="contact_preferredMethod" value={formData.contact.preferredMethod} onChange={handleChange}>
+                            <option value="email">Email</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="phone">Phone</option>
+                        </select>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Listing Expiry</legend>
+                    <div className="input-field">
+                        <label>Expires At (optional override)</label>
+                        <input type="date" name="lifecycle_expiresAt" value={formData.lifecycle.expiresAt} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="lifecycle_autoExpireEnabled"
+                                checked={Boolean(formData.lifecycle.autoExpireEnabled)}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        lifecycle: {
+                                            ...prev.lifecycle,
+                                            autoExpireEnabled: e.target.checked,
+                                        },
+                                    }))
+                                }
+                            />
+                            Enable automatic expiry/reminders
+                        </label>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Showing Schedule</legend>
+                    {formData.showings.map((showing, index) => (
+                        <div key={`showing-${index}`} style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '8px', marginBottom: '10px' }}>
+                            <div className="input-field">
+                                <label>Start Date/Time</label>
+                                <input
+                                    type="datetime-local"
+                                    value={showing.startsAt}
+                                    onChange={(e) => handleShowingChange(index, 'startsAt', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>End Date/Time</label>
+                                <input
+                                    type="datetime-local"
+                                    value={showing.endsAt}
+                                    onChange={(e) => handleShowingChange(index, 'endsAt', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Attendee Limit</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={showing.attendeeLimit}
+                                    onChange={(e) => handleShowingChange(index, 'attendeeLimit', e.target.value)}
+                                />
+                            </div>
+                            <div className="input-field">
+                                <label>Notes</label>
+                                <input
+                                    type="text"
+                                    value={showing.notes}
+                                    onChange={(e) => handleShowingChange(index, 'notes', e.target.value)}
+                                />
+                            </div>
+                            {formData.showings.length > 1 && (
+                                <button type="button" onClick={() => removeShowingSlot(index)}>Remove Time Slot</button>
+                            )}
+                        </div>
+                    ))}
+                    <button type="button" onClick={addShowingSlot}>+ Add Showing Time</button>
                 </fieldset>
                 <button type="submit" disabled={loading}>{loading ? 'Submitting…' : 'Submit Listing'}</button>
                 <button type="button" onClick={() => history.push('/')} style={{ marginLeft: '12px' }}>Cancel</button>
