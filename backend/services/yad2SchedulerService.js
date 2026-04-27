@@ -15,6 +15,8 @@ const DEFAULT_SCRAPE_MAX_ITEMS = 120;
 const MAX_SCRAPE_MAX_ITEMS = 500;
 const DEFAULT_SCRAPE_FETCH_ATTEMPTS = 3;
 const DEFAULT_CAPTCHA_FALLBACK_TIMEOUT_MS = 30000;
+const DEFAULT_APIFY_TIMEOUT_SECONDS = 180;
+const DEFAULT_APIFY_MAX_ITEMS = 120;
 const DEFAULT_SCRAPE_PROXY_ENABLED = true;
 const DEFAULT_SCRAPE_PROXY_TEMPLATE = 'https://api.codetabs.com/v1/proxy?quest={url}';
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
@@ -66,6 +68,37 @@ const parseCaptchaFallbackRowsLimit = () => {
     if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
     return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
 };
+
+const parseApifyTimeoutSeconds = () => {
+    const raw = Number(process.env.YAD2_APIFY_TIMEOUT_SECONDS || DEFAULT_APIFY_TIMEOUT_SECONDS);
+    if (!Number.isFinite(raw)) return DEFAULT_APIFY_TIMEOUT_SECONDS;
+    return Math.max(15, Math.min(600, Math.floor(raw)));
+};
+
+const parseApifyMaxItems = () => {
+    const raw = Number(process.env.YAD2_APIFY_MAX_ITEMS || DEFAULT_APIFY_MAX_ITEMS);
+    if (!Number.isFinite(raw)) return DEFAULT_APIFY_MAX_ITEMS;
+    return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
+};
+
+const parseJsonOrNull = (rawValue) => {
+    if (typeof rawValue !== 'string' || !rawValue.trim()) return null;
+    try {
+        return JSON.parse(rawValue);
+    } catch (err) {
+        return null;
+    }
+};
+
+const getApifyConfig = () => ({
+    token: typeof process.env.YAD2_APIFY_TOKEN === 'string' ? process.env.YAD2_APIFY_TOKEN.trim() : '',
+    actorId: typeof process.env.YAD2_APIFY_ACTOR_ID === 'string' ? process.env.YAD2_APIFY_ACTOR_ID.trim() : '',
+    taskId: typeof process.env.YAD2_APIFY_TASK_ID === 'string' ? process.env.YAD2_APIFY_TASK_ID.trim() : '',
+    input: parseJsonOrNull(process.env.YAD2_APIFY_INPUT_JSON),
+});
+
+const hasApifyProviderConfig = (config = getApifyConfig()) =>
+    Boolean(config.token && (config.actorId || config.taskId));
 
 const isRealScrapeOnlyMode = () =>
     parseBooleanEnv(process.env.YAD2_REAL_SCRAPE_ONLY, false);

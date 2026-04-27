@@ -228,6 +228,13 @@ Configure these environment variables in Render:
 - `YAD2_CAPTCHA_PROXY_URL_TEMPLATE=https://api.codetabs.com/v1/proxy?quest={{url}}` (optional; captcha bypass proxy template, must include `{{url}}`)
 - `YAD2_CAPTCHA_FALLBACK_URL=https://...` (optional external JSON fallback feed for captcha scenarios)
 - `YAD2_CAPTCHA_FALLBACK_TIMEOUT_MS=30000` (optional timeout for fallback feed fetch)
+- `YAD2_PROVIDER=apify` (optional; when set, scheduler fetches listings from Apify dataset instead of direct page scraping)
+- `APIFY_TOKEN=<token>` (required for `YAD2_PROVIDER=apify`)
+- `APIFY_TASK_ID=<task-id>` (recommended; scheduler runs task then reads latest dataset)
+- `APIFY_ACTOR_ID=<actor-id>` (alternative if no task is configured)
+- `APIFY_MAX_ITEMS=120` (optional; max dataset items consumed per run)
+- `APIFY_TIMEOUT_MS=90000` (optional; task run + dataset fetch timeout)
+- `APIFY_DATASET_CLEAN=true` (optional; drop dataset rows that fail required fields before import)
 
 To make the beta site show only current live Yad2 feed listings, also set:
 
@@ -324,6 +331,22 @@ Scheduler behavior:
   2. then external fallback URL (if configured),
   3. then internal stored fallback feed (if present).
 - For fallback-source runs, prune deletes are skipped to prevent accidental data loss from partial upstream/fallback snapshots.
+
+### Apify provider mode (recommended when direct scrape is blocked)
+
+If direct scraping is blocked by anti-bot controls, configure Apify and let HomeKey consume Apify dataset rows:
+
+1. Set `YAD2_PROVIDER=apify`
+2. Set `APIFY_TOKEN`
+3. Set either:
+   - `APIFY_TASK_ID` (preferred), or
+   - `APIFY_ACTOR_ID`
+
+Behavior:
+
+- Scheduler triggers Apify task/actor runs and fetches the resulting dataset items.
+- Rows are normalized through the same Yad2 import mapper.
+- In `YAD2_REAL_SCRAPE_ONLY=true`, Apify rows are treated as valid real-source rows (`isProviderFeed=true`) and are not rejected as fallback placeholders.
 
 ### Real scrape only mode (strict)
 
