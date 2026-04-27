@@ -53,6 +53,11 @@ const { createPropertyLifecycleRunner } = require('./services/propertyLifecycleR
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
 const User = require('./models/User');
 
+const isRealScrapeOnlyMode = () => {
+    const raw = String(process.env.REAL_YAD2_SCRAPE_ONLY || '').trim().toLowerCase();
+    return ['1', 'true', 'yes', 'on'].includes(raw);
+};
+
 const ensureFallbackFeedSeeded = async () => {
     try {
         const summary = await getYad2FallbackFeedSummary();
@@ -331,9 +336,13 @@ connectMongo(MONGODB_URI)
             console.log('[startup] Featured Yad2 seed is disabled (ENABLE_FEATURED_YAD2_SEED != true).');
         }
 
-        const fallbackSeed = await ensureFallbackFeedSeeded();
-        if (fallbackSeed.seeded) {
-            console.log(`[startup] Internal fallback feed seeded (${fallbackSeed.rows} rows).`);
+        if (!isRealScrapeOnlyMode()) {
+            const fallbackSeed = await ensureFallbackFeedSeeded();
+            if (fallbackSeed.seeded) {
+                console.log(`[startup] Internal fallback feed seeded (${fallbackSeed.rows} rows).`);
+            }
+        } else {
+            console.log('[startup] REAL_YAD2_SCRAPE_ONLY enabled: internal fallback feed seeding skipped.');
         }
 
         yad2Scheduler.start();

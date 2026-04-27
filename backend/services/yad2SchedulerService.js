@@ -67,6 +67,9 @@ const parseCaptchaFallbackRowsLimit = () => {
     return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
 };
 
+const isRealScrapeOnlyMode = () =>
+    parseBooleanEnv(process.env.YAD2_REAL_SCRAPE_ONLY, false);
+
 const parseScrapeProxyEnabled = () =>
     parseBooleanEnv(process.env.YAD2_SCRAPE_PROXY_ENABLED, DEFAULT_SCRAPE_PROXY_ENABLED);
 
@@ -263,6 +266,20 @@ const fetchInternalCaptchaFallbackRows = async ({ segment = null } = {}) => {
     };
 };
 
+const isLikelyRealYad2ExternalId = (externalId) => {
+    const normalized = String(externalId || '').trim().toLowerCase();
+    if (!normalized) return false;
+    // Curated/bootstrap/fallback IDs use a synthetic yad2-il-* namespace.
+    if (normalized.startsWith('yad2-il-')) return false;
+    // Real Yad2 item IDs are short alphanumeric slugs (often 8+ chars).
+    return /^[a-z0-9]{6,}$/.test(normalized);
+};
+
+const filterRowsForRealScrapeOnly = (rows) => {
+    if (!Array.isArray(rows)) return [];
+    return rows.filter((row) => isLikelyRealYad2ExternalId(row && row.id));
+};
+
 const parsePathToRegion = (pathValue) => {
     const parts = String(pathValue || '').split('/').filter(Boolean);
     if (parts.length < 4) return 'Israel';
@@ -415,6 +432,7 @@ const extractRowsFromYad2Html = ({ html, dealType, maxItems }) => {
 
 const scrapeYad2Listings = async ({ segment = null } = {}) => {
     const scrapeMaxItems = parseScrapeMaxItems();
+    const realScrapeOnly = isRealScrapeOnlyMode();
     const segmentSuffix = segment && segment.path ? `/${segment.path}` : '';
     const pages = [
         {
@@ -525,6 +543,9 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
         if (sawCaptchaChallenge) {
             const fallbackFeed = await fetchExternalCaptchaFallbackRows({ segment });
             if (!fallbackFeed.skipped && Array.isArray(fallbackFeed.rows) && fallbackFeed.rows.length > 0) {
+                if (realScrapeOnly) {
+                    diagnostics.push('captcha-fallback: blocked by YAD2_REAL_SCRAPE_ONLY=true');
+                } else {
                 return {
                     rows: fallbackFeed.rows,
                     skipped: false,
@@ -532,10 +553,14 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
                     usedCaptchaFallback: true,
                     fallbackSource: fallbackFeed.fallbackSource || 'external-feed',
                 };
+                }
             }
             diagnostics.push(`captcha-fallback: ${fallbackFeed.reason}`);
             const internalFallback = await fetchInternalCaptchaFallbackRows({ segment });
             if (!internalFallback.skipped && Array.isArray(internalFallback.rows) && internalFallback.rows.length > 0) {
+                if (realScrapeOnly) {
+                    diagnostics.push('captcha-fallback-internal: blocked by YAD2_REAL_SCRAPE_ONLY=true');
+                } else {
                 return {
                     rows: internalFallback.rows,
                     skipped: false,
@@ -543,6 +568,7 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
                     usedCaptchaFallback: true,
                     fallbackSource: internalFallback.fallbackSource || 'internal-db',
                 };
+                }
             }
             diagnostics.push(`captcha-fallback-internal: ${internalFallback.reason}`);
         }
@@ -559,8 +585,11 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
     }
 
     return {
-        rows: allRows,
-        skipped: false,
+        rows: realScrapeOnly ? filterRowsForRealScrapeOnly(allRows) : allRows,
+        skipped: !(realScrapeOnly ? filterRowsForRealScrapeOnly(allRows).length > 0 : allRows.length > 0),
+        reason: realScrapeOnly && filterRowsForRealScrapeOnly(allRows).length === 0
+            ? `Real scrape only mode filtered all extracted rows for segment ${segment ? segment.key : 'all'}`
+            : undefined,
         segmentKey: segment ? segment.key : 'all',
         usedProxyFallback,
     };
