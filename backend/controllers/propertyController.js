@@ -112,6 +112,12 @@ const getLiveYad2SourceTag = () => {
     return configured || 'yad2-live-sync';
 };
 
+const isRealScrapeOnlyMode = () =>
+    parseBoolean(process.env.YAD2_REAL_SCRAPE_ONLY, false);
+
+const isRealScrapedExternalId = (value) =>
+    typeof value === 'string' && /^[a-z0-9]{6,}$/i.test(value);
+
 // @desc    Get all properties
 // @route   GET /api/properties
 // @access  Public
@@ -120,11 +126,13 @@ const getAllProperties = async (req, res) => {
         const filter = {};
 
         if (isLiveYad2OnlyMode()) {
-            // In live mode, keep synced Yad2 records while still allowing manual listings.
-            filter.$or = [
-                { externalSource: getLiveYad2SourceTag() },
-                { sourceType: 'manual' },
-            ];
+            const liveSourceFilter = { externalSource: getLiveYad2SourceTag() };
+            if (isRealScrapeOnlyMode()) {
+                // Strict mode: only show IDs that look like real scraped Yad2 item IDs,
+                // excluding curated/seed fallback identifiers like yad2-il-...
+                liveSourceFilter.externalId = { $regex: '^[a-z0-9]{6,}$', $options: 'i' };
+            }
+            filter.$or = [liveSourceFilter];
         }
 
         // Basic filtering logic

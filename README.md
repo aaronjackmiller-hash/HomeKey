@@ -325,6 +325,18 @@ Scheduler behavior:
   3. then internal stored fallback feed (if present).
 - For fallback-source runs, prune deletes are skipped to prevent accidental data loss from partial upstream/fallback snapshots.
 
+### Real scrape only mode (strict)
+
+If you want to show **only true scraped Yad2 listings** (and never fallback/featured placeholders), enable strict mode:
+
+- `YAD2_REAL_SCRAPE_ONLY=true`
+
+Behavior in strict mode:
+
+- Sync runs that rely on captcha fallback sources are marked as skipped and do not import placeholder rows.
+- Public/live listing queries only return records with non-featured external IDs (not `yad2-il-*`).
+- The sync status reason explicitly states when fallback rows were blocked by strict mode.
+
 Startup auto-bootstrap:
 
 - On boot, if internal fallback feed segment `all` is empty, HomeKey now preloads it with `featuredYad2ListingsIL`.
