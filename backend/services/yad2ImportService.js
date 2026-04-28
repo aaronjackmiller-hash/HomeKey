@@ -319,6 +319,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         duplicate.floorNumber = payload.floorNumber;
                         duplicate.financialDetails = payload.financialDetails;
                         duplicate.dates = payload.dates;
+                        duplicate.contact = payload.contact;
                         duplicate.images = Array.isArray(payload.images) && payload.images.length > 0 ? payload.images : duplicate.images;
                         duplicate.status = payload.status || duplicate.status;
                         duplicate.externalSource = normalizedSourceTag;

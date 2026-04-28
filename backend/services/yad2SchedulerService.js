@@ -825,6 +825,10 @@ const scrapeYad2Listings = async ({ segment = null } = {}) => {
 const normalizeRow = (row) => {
     if (!row || typeof row !== 'object') return null;
 
+    const contact = row.contact && typeof row.contact === 'object' ? row.contact : undefined;
+    const agent = row.agent && typeof row.agent === 'object' ? row.agent : undefined;
+    const advertiser = row.advertiser && typeof row.advertiser === 'object' ? row.advertiser : undefined;
+
     const mapped = {
         id: row.id ?? row._id ?? row.externalId ?? row.ad_number ?? row.adNumber ?? row.listingId ?? row.listing_id,
         title: row.title ?? row.headline ?? row.subject,
@@ -845,6 +849,25 @@ const normalizeRow = (row) => {
         url: row.url ?? row.listingUrl ?? row.externalUrl,
         availableFrom: row.availableFrom ?? (row.dates && row.dates.availableFrom),
         listingDate: row.listingDate ?? row.publishedAt ?? row.createdAt,
+        contactName: row.contactName ?? row.managerName ?? row.agentName ?? row.ownerName ?? row.advertiserName
+            ?? (contact && contact.name) ?? (agent && agent.name) ?? (advertiser && advertiser.name),
+        contactPhone: row.contactPhone ?? row.managerPhone ?? row.agentPhone ?? row.ownerPhone ?? row.phone
+            ?? (contact && contact.phone) ?? (agent && agent.phone) ?? (advertiser && advertiser.phone),
+        contactWhatsapp: row.contactWhatsapp ?? row.managerWhatsapp ?? row.agentWhatsapp ?? row.whatsapp ?? row.whatsApp
+            ?? (contact && (contact.whatsapp ?? contact.whatsApp))
+            ?? (agent && (agent.whatsapp ?? agent.whatsApp))
+            ?? (advertiser && (advertiser.whatsapp ?? advertiser.whatsApp)),
+        contactEmail: row.contactEmail ?? row.managerEmail ?? row.agentEmail ?? row.ownerEmail ?? row.email
+            ?? (contact && contact.email) ?? (agent && agent.email) ?? (advertiser && advertiser.email),
+        contactAgency: row.contactAgency ?? row.agentAgency ?? row.agency
+            ?? (contact && contact.agency) ?? (agent && agent.agency) ?? (advertiser && advertiser.agency),
+        preferredContactMethod: row.preferredContactMethod ?? row.preferredMethod
+            ?? (contact && (contact.preferredContactMethod ?? contact.preferredMethod))
+            ?? (agent && (agent.preferredContactMethod ?? agent.preferredMethod))
+            ?? (advertiser && (advertiser.preferredContactMethod ?? advertiser.preferredMethod)),
+        contact,
+        agent,
+        advertiser,
     };
 
     return mapped;
