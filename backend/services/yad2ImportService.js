@@ -72,6 +72,14 @@ const normalizePhone = (value) => {
     return cleaned || raw;
 };
 
+const normalizePreferredContactMethod = (value) => {
+    const normalized = normalizeString(value).toLowerCase();
+    if (['whatsapp', 'whats_app', 'wa'].includes(normalized)) return 'whatsapp';
+    if (['phone', 'call', 'tel'].includes(normalized)) return 'phone';
+    if (['email', 'mail'].includes(normalized)) return 'email';
+    return '';
+};
+
 const mapYad2RowToPropertyDoc = (row) => {
     const externalId = normalizeString(String(pickFirst(
         row.externalId,
@@ -118,29 +126,55 @@ const mapYad2RowToPropertyDoc = (row) => {
     const contactName = normalizeString(pickFirst(
         row.contactName,
         row.managerName,
+        row.agentName,
         row.contact && row.contact.name,
+        row.agent && row.agent.name,
         row.ownerName,
         row.advertiserName
     ));
     const contactPhone = normalizePhone(pickFirst(
         row.contactPhone,
         row.phone,
+        row.agentPhone,
         row.contact && row.contact.phone,
+        row.agent && row.agent.phone,
         row.managerPhone,
         row.ownerPhone
     ));
     const contactWhatsapp = normalizePhone(pickFirst(
         row.whatsapp,
         row.whatsApp,
+        row.contactWhatsapp,
+        row.agentWhatsapp,
         row.contact && row.contact.whatsapp,
+        row.contact && row.contact.whatsApp,
+        row.agent && row.agent.whatsapp,
+        row.agent && row.agent.whatsApp,
         row.managerWhatsapp
     ));
     const contactEmail = normalizeString(pickFirst(
         row.contactEmail,
         row.email,
+        row.agentEmail,
         row.contact && row.contact.email,
+        row.agent && row.agent.email,
         row.managerEmail
     )).toLowerCase();
+    const contactAgency = normalizeString(pickFirst(
+        row.agency,
+        row.agentAgency,
+        row.contactAgency,
+        row.contact && row.contact.agency,
+        row.agent && row.agent.agency
+    ));
+    const preferredContactMethod = normalizePreferredContactMethod(pickFirst(
+        row.preferredContactMethod,
+        row.preferredMethod,
+        row.contact && row.contact.preferredMethod,
+        row.contact && row.contact.preferredContactMethod,
+        row.agent && row.agent.preferredMethod,
+        row.agent && row.agent.preferredContactMethod
+    ));
 
     const payload = {
         title,
@@ -190,10 +224,11 @@ const mapYad2RowToPropertyDoc = (row) => {
         ...(externalSegmentKey ? { externalSegmentKey } : {}),
         contact: {
             ...(contactName ? { name: contactName } : {}),
+            ...(contactAgency ? { agency: contactAgency } : {}),
             ...(contactPhone ? { phone: contactPhone } : {}),
             ...(contactWhatsapp ? { whatsapp: contactWhatsapp } : {}),
             ...(contactEmail ? { email: contactEmail } : {}),
-            preferredMethod: contactWhatsapp ? 'whatsapp' : (contactPhone ? 'phone' : 'email'),
+            preferredMethod: preferredContactMethod || (contactWhatsapp ? 'whatsapp' : (contactPhone ? 'phone' : 'email')),
         },
         sources: [
             {

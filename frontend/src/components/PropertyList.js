@@ -18,6 +18,56 @@ const formatTimestamp = (isoValue) => {
   return parsed.toLocaleString();
 };
 
+const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const getAddressDisplay = (address = {}) => {
+  const street = safeText(address.street);
+  const city = safeText(address.city);
+  const state = safeText(address.state);
+  const zip = safeText(address.zip);
+  const fullAddress = [street, city, state, zip].filter(Boolean).join(', ');
+  return { street, fullAddress };
+};
+
+const formatContactMethod = (method) => {
+  const normalized = String(method || '').trim().toLowerCase();
+  if (normalized === 'whatsapp') return 'WhatsApp';
+  if (normalized === 'phone') return 'Phone';
+  return 'Email';
+};
+
+const getListingContact = (property = {}) => {
+  const externalContact = property.externalContact && typeof property.externalContact === 'object'
+    ? property.externalContact
+    : {};
+  const directContact = property.contact && typeof property.contact === 'object'
+    ? property.contact
+    : {};
+  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+    ? property.agent
+    : {};
+
+  const name = externalContact.name || directContact.name || agentContact.name || '';
+  const agency = externalContact.agency || directContact.agency || agentContact.agency || '';
+  const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
+  const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
+  const email = externalContact.email || directContact.email || agentContact.email || '';
+  const preferredMethod =
+    externalContact.preferredMethod
+    || directContact.preferredMethod
+    || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
+
+  return {
+    name,
+    agency,
+    phone,
+    whatsapp,
+    email,
+    preferredMethod,
+    hasAny: Boolean(name || agency || phone || whatsapp || email),
+  };
+};
+
 // Fallback sample properties shown when the database returns no results
 const SAMPLE_PROPERTIES = [
   {
@@ -392,9 +442,11 @@ const PropertyList = () => {
           const imageSrc =
             (Array.isArray(property.images) && property.images[0]) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
-          const cityLine = [property.address?.city, property.address?.state].filter(Boolean).join(', ');
-          const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
+          const { street, fullAddress } = getAddressDisplay(property.address);
+          const displayTitle = street || fullAddress || property.title || 'Untitled property';
+          const displayLocation = fullAddress || [property.address?.city, property.address?.state].filter(Boolean).join(', ');
           const monthly = property.financialDetails?.totalMonthlyPayment;
+          const listingContact = getListingContact(property);
 
           return (
             <div
@@ -403,20 +455,34 @@ const PropertyList = () => {
               onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
-              <img className="property-card-image" src={imageSrc} alt={property.title || 'Property listing'} />
+              <img className="property-card-image" src={imageSrc} alt={displayTitle || 'Property listing'} />
               <div className="property-card-body">
-                <div className="property-card-meta">
-                  <span className="property-chip">{typeLabel}</span>
-                  <span className="property-chip property-chip-muted">{property.status || 'active'}</span>
-                </div>
-                <h3 className="property-card-title">{property.title || 'Untitled property'}</h3>
-                <p className="property-card-location">{cityLine || 'Location not provided'}</p>
+                <h3 className="property-card-title">{displayTitle}</h3>
+                <p className="property-card-location">{displayLocation || 'Location not provided'}</p>
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
                 <p className="property-card-stats">
                   {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
                 </p>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
+                )}
+                {listingContact.hasAny && (
+                  <div className="property-card-contact">
+                    <p className="property-card-contact-title">
+                      Contact {listingContact.name || 'Listing manager'}
+                    </p>
+                    {listingContact.agency && (
+                      <p className="property-card-contact-line">Agency: {listingContact.agency}</p>
+                    )}
+                    {listingContact.preferredMethod && (
+                      <p className="property-card-contact-line">
+                        Preferred: {formatContactMethod(listingContact.preferredMethod)}
+                      </p>
+                    )}
+                    {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
+                    {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
+                    {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
+                  </div>
                 )}
               </div>
             </div>
