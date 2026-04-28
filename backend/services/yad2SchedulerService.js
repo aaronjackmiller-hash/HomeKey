@@ -19,6 +19,7 @@ const DEFAULT_APIFY_TIMEOUT_SECONDS = 180;
 const DEFAULT_APIFY_MAX_ITEMS = 120;
 const DEFAULT_SCRAPE_PROXY_ENABLED = true;
 const DEFAULT_SCRAPE_PROXY_TEMPLATE = 'https://api.codetabs.com/v1/proxy?quest={url}';
+const APIFY_API_BASE_URL = 'https://api.apify.com/v2';
 const YAD2_RENT_URL = 'https://www.yad2.co.il/realestate/rent';
 const YAD2_FORSALE_URL = 'https://www.yad2.co.il/realestate/forsale';
 const YAD2_HOMEPAGE_URL = 'https://www.yad2.co.il/';
@@ -51,6 +52,15 @@ const parseBooleanEnv = (value, defaultValue = false) => {
     return defaultValue;
 };
 
+const getFirstEnvValue = (...keys) => {
+    for (const key of keys) {
+        if (typeof process.env[key] !== 'string') continue;
+        const value = process.env[key].trim();
+        if (value) return value;
+    }
+    return '';
+};
+
 const parseScrapeMaxItems = () => {
     const raw = Number(process.env.YAD2_SCRAPE_MAX_ITEMS || DEFAULT_SCRAPE_MAX_ITEMS);
     if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
@@ -70,13 +80,17 @@ const parseCaptchaFallbackRowsLimit = () => {
 };
 
 const parseApifyTimeoutSeconds = () => {
-    const raw = Number(process.env.YAD2_APIFY_TIMEOUT_SECONDS || DEFAULT_APIFY_TIMEOUT_SECONDS);
+    const timeoutMsRaw = Number(getFirstEnvValue('YAD2_APIFY_TIMEOUT_MS', 'APIFY_TIMEOUT_MS'));
+    if (Number.isFinite(timeoutMsRaw) && timeoutMsRaw > 0) {
+        return Math.max(15, Math.min(600, Math.floor(timeoutMsRaw / 1000)));
+    }
+    const raw = Number(getFirstEnvValue('YAD2_APIFY_TIMEOUT_SECONDS', 'APIFY_TIMEOUT_SECONDS') || DEFAULT_APIFY_TIMEOUT_SECONDS);
     if (!Number.isFinite(raw)) return DEFAULT_APIFY_TIMEOUT_SECONDS;
     return Math.max(15, Math.min(600, Math.floor(raw)));
 };
 
 const parseApifyMaxItems = () => {
-    const raw = Number(process.env.YAD2_APIFY_MAX_ITEMS || DEFAULT_APIFY_MAX_ITEMS);
+    const raw = Number(getFirstEnvValue('YAD2_APIFY_MAX_ITEMS', 'APIFY_MAX_ITEMS') || DEFAULT_APIFY_MAX_ITEMS);
     if (!Number.isFinite(raw)) return DEFAULT_APIFY_MAX_ITEMS;
     return Math.max(1, Math.min(MAX_SCRAPE_MAX_ITEMS, Math.floor(raw)));
 };
@@ -91,14 +105,125 @@ const parseJsonOrNull = (rawValue) => {
 };
 
 const getApifyConfig = () => ({
-    token: typeof process.env.YAD2_APIFY_TOKEN === 'string' ? process.env.YAD2_APIFY_TOKEN.trim() : '',
-    actorId: typeof process.env.YAD2_APIFY_ACTOR_ID === 'string' ? process.env.YAD2_APIFY_ACTOR_ID.trim() : '',
-    taskId: typeof process.env.YAD2_APIFY_TASK_ID === 'string' ? process.env.YAD2_APIFY_TASK_ID.trim() : '',
-    input: parseJsonOrNull(process.env.YAD2_APIFY_INPUT_JSON),
+    token: getFirstEnvValue('YAD2_APIFY_TOKEN', 'APIFY_TOKEN'),
+    actorId: getFirstEnvValue('YAD2_APIFY_ACTOR_ID', 'APIFY_ACTOR_ID'),
+    taskId: getFirstEnvValue('YAD2_APIFY_TASK_ID', 'APIFY_TASK_ID'),
+    datasetId: getFirstEnvValue('YAD2_APIFY_DATASET_ID', 'APIFY_DATASET_ID'),
+    datasetItemsUrl: getFirstEnvValue('YAD2_APIFY_DATASET_ITEMS_URL', 'APIFY_DATASET_ITEMS_URL'),
+    datasetClean: parseBooleanEnv(getFirstEnvValue('YAD2_APIFY_DATASET_CLEAN', 'APIFY_DATASET_CLEAN'), true),
+    input: parseJsonOrNull(
+        getFirstEnvValue('YAD2_APIFY_INPUT_JSON', 'APIFY_INPUT_JSON')
+            || (typeof process.env.YAD2_APIFY_INPUT_JSON === 'string' ? process.env.YAD2_APIFY_INPUT_JSON : '')
+    ),
+    timeoutSeconds: parseApifyTimeoutSeconds(),
+    maxItems: parseApifyMaxItems(),
 });
 
 const hasApifyProviderConfig = (config = getApifyConfig()) =>
-    Boolean(config.token && (config.actorId || config.taskId));
+    Boolean(config.token && (config.datasetId || config.datasetItemsUrl || config.actorId || config.taskId));
+
+const fetchApifyJson = async ({ url, timeoutMs, method = 'GET', body = null }) => {
+    const headers = { Accept: 'application/json' };
+    if (body !== null) {
+        headers['Content-Type'] = 'application/json';
+    }
+    const response = await fetch(url, {
+        method,
+        headers,
+        signal: AbortSignal.timeout(timeoutMs),
+        ...(body !== null ? { body: JSON.stringify(body) } : {}),
+    });
+    if (!response.ok) {
+        const snippet = await response.text().catch(() => '');
+        throw new Error(`Apify request failed (${response.status})${snippet ? `: ${snippet.slice(0, 240)}` : ''}`);
+    }
+    return response.json();
+};
+
+const buildApifyDatasetItemsUrl = ({ config, datasetId }) => {
+    if (config.datasetItemsUrl) {
+        const url = new URL(config.datasetItemsUrl);
+        if (!url.searchParams.has('token') && config.token) {
+            url.searchParams.set('token', config.token);
+        }
+        if (!url.searchParams.has('format')) {
+            url.searchParams.set('format', 'json');
+        }
+        if (!url.searchParams.has('limit')) {
+            url.searchParams.set('limit', String(config.maxItems));
+        }
+        if (!url.searchParams.has('clean')) {
+            url.searchParams.set('clean', config.datasetClean ? 'true' : 'false');
+        }
+        return url;
+    }
+    const url = new URL(`${APIFY_API_BASE_URL}/datasets/${encodeURIComponent(datasetId)}/items`);
+    url.searchParams.set('token', config.token);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('clean', config.datasetClean ? 'true' : 'false');
+    url.searchParams.set('limit', String(config.maxItems));
+    return url;
+};
+
+const fetchApifyRows = async ({ logger = console } = {}) => {
+    const config = getApifyConfig();
+    if (!hasApifyProviderConfig(config)) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: 'YAD2_PROVIDER=apify but APIFY token/task/actor/dataset configuration is incomplete',
+        };
+    }
+
+    const timeoutMs = Math.max(15000, Math.floor(config.timeoutSeconds * 1000));
+    let datasetId = config.datasetId || null;
+
+    if (!datasetId && !config.datasetItemsUrl) {
+        const runPath = config.taskId
+            ? `/actor-tasks/${encodeURIComponent(config.taskId)}/runs`
+            : `/acts/${encodeURIComponent(config.actorId)}/runs`;
+        const runUrl = new URL(`${APIFY_API_BASE_URL}${runPath}`);
+        runUrl.searchParams.set('token', config.token);
+        runUrl.searchParams.set('waitForFinish', String(config.timeoutSeconds));
+        const runPayload = await fetchApifyJson({
+            url: runUrl.toString(),
+            timeoutMs,
+            method: 'POST',
+            body: config.input || {},
+        });
+        const runData = runPayload && runPayload.data ? runPayload.data : null;
+        datasetId = runData && runData.defaultDatasetId ? String(runData.defaultDatasetId).trim() : '';
+        if (!datasetId) {
+            throw new Error('Apify run did not return defaultDatasetId');
+        }
+    }
+
+    const itemsUrl = buildApifyDatasetItemsUrl({ config, datasetId });
+    const payload = await fetchApifyJson({
+        url: itemsUrl.toString(),
+        timeoutMs,
+    });
+    const rows = mapFeedToRows(payload)
+        .filter((row) => row && row.id)
+        .slice(0, config.maxItems);
+    if (rows.length === 0) {
+        return {
+            rows: [],
+            skipped: true,
+            reason: 'Apify dataset returned zero listings',
+            usedProviderFeed: true,
+            provider: 'apify',
+        };
+    }
+    logger.log(`[yad2-sync] Apify provider returned ${rows.length} row(s).`);
+    return {
+        rows,
+        skipped: false,
+        usedProviderFeed: true,
+        provider: 'apify',
+        datasetId: datasetId || null,
+    };
+};
 
 const isRealScrapeOnlyMode = () =>
     parseBooleanEnv(process.env.YAD2_REAL_SCRAPE_ONLY, false);
@@ -710,6 +835,7 @@ const createYad2Scheduler = (logger = console) => {
     const status = {
         enabled: process.env.YAD2_SYNC_ENABLED !== 'false',
         sourceTag: process.env.YAD2_SYNC_SOURCE_TAG || DEFAULT_SOURCE_TAG,
+        provider: String(process.env.YAD2_PROVIDER || '').trim().toLowerCase() || 'native',
         syncMinutes: parseSyncMinutes(),
         feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
         scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
@@ -747,8 +873,14 @@ const createYad2Scheduler = (logger = console) => {
         try {
             let feed;
             let segmentKey = null;
-            const shouldUseSegmentedScrape = !process.env.YAD2_SYNC_FEED_URL && status.segmentedScrapeEnabled && segments.length > 0;
-            if (shouldUseSegmentedScrape) {
+            const provider = String(process.env.YAD2_PROVIDER || '').trim().toLowerCase();
+            const shouldUseSegmentedScrape = provider !== 'apify'
+                && !process.env.YAD2_SYNC_FEED_URL
+                && status.segmentedScrapeEnabled
+                && segments.length > 0;
+            if (provider === 'apify') {
+                feed = await fetchApifyRows({ logger });
+            } else if (shouldUseSegmentedScrape) {
                 const segment = segments[segmentCursor % segments.length];
                 segmentCursor = (segmentCursor + 1) % segments.length;
                 status.currentSegmentKey = segment.key;
@@ -813,7 +945,9 @@ const createYad2Scheduler = (logger = console) => {
             const syncResult = {
                 trigger,
                 sourceTag,
-                mode: process.env.YAD2_SYNC_FEED_URL
+                mode: provider === 'apify'
+                    ? 'apify-provider'
+                    : process.env.YAD2_SYNC_FEED_URL
                     ? 'feed-url'
                     : (segmentKey ? 'segmented-scrape' : 'scrape-fallback'),
                 ...(segmentKey ? { segmentKey } : {}),
@@ -821,6 +955,9 @@ const createYad2Scheduler = (logger = console) => {
                 pruned,
                 ...(feed.usedCaptchaFallback ? { usedCaptchaFallback: true } : {}),
                 ...(feed.fallbackSource ? { fallbackSource: feed.fallbackSource } : {}),
+                ...(feed.usedProviderFeed ? { usedProviderFeed: true } : {}),
+                ...(feed.provider ? { provider: feed.provider } : {}),
+                ...(feed.datasetId ? { datasetId: feed.datasetId } : {}),
                 ...result,
             };
             status.lastResult = syncResult;
@@ -843,6 +980,7 @@ const createYad2Scheduler = (logger = console) => {
         if (timer) return;
         const intervalMs = syncMinutes * 60 * 1000;
         status.startedAt = new Date().toISOString();
+        status.provider = String(process.env.YAD2_PROVIDER || '').trim().toLowerCase() || 'native';
         status.feedUrlConfigured = Boolean(process.env.YAD2_SYNC_FEED_URL);
         status.scrapeFallbackEnabled = parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true);
         status.segmentedScrapeEnabled = segmentedScrapeEnabled;
@@ -882,6 +1020,7 @@ const createYad2Scheduler = (logger = console) => {
             ...status,
             timerActive: Boolean(timer),
             inFlight: status.inFlight,
+            provider: String(process.env.YAD2_PROVIDER || '').trim().toLowerCase() || 'native',
             feedUrlConfigured: Boolean(process.env.YAD2_SYNC_FEED_URL),
             scrapeFallbackEnabled: parseBooleanEnv(process.env.YAD2_SCRAPE_FALLBACK_ENABLED, true),
             segmentedScrapeEnabled: parseSegmentedScrapeEnabled(),
