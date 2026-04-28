@@ -21,6 +21,13 @@ const formatDate = (value) => {
 const getAddressLine = (address) =>
     [address?.street, address?.city, address?.state, address?.zip].filter(Boolean).join(', ');
 
+const formatContactMethod = (method) => {
+    const normalized = String(method || '').toLowerCase();
+    if (normalized === 'whatsapp') return 'WhatsApp';
+    if (normalized === 'phone') return 'Phone';
+    return 'Email';
+};
+
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
@@ -253,14 +260,25 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {property.contact && (
+                {(property.contact || property.externalContact) && (
                     <section className="detail-section-card">
-                        <h2>Contact Listing Owner</h2>
-                        <p>Preferred method: {property.contact.preferredMethod || 'email'}</p>
+                        <h2>Contact Listing Manager</h2>
+                        <p>
+                            Preferred method:{' '}
+                            {formatContactMethod(
+                                property.externalContact?.preferredMethod
+                                || property.contact?.preferredMethod
+                            )}
+                        </p>
                         <div className="agent-grid">
-                            {property.contact.email && <p>Email: {property.contact.email}</p>}
-                            {property.contact.phone && <p>Phone: {property.contact.phone}</p>}
-                            {property.contact.whatsapp && <p>WhatsApp: {property.contact.whatsapp}</p>}
+                            {property.externalContact?.name && <p>Manager: {property.externalContact.name}</p>}
+                            {property.externalContact?.email && <p>Email: {property.externalContact.email}</p>}
+                            {property.externalContact?.phone && <p>Phone: {property.externalContact.phone}</p>}
+                            {property.externalContact?.whatsapp && <p>WhatsApp: {property.externalContact.whatsapp}</p>}
+                            {!property.externalContact?.name && property.contact?.name && <p>Name: {property.contact.name}</p>}
+                            {!property.externalContact?.email && property.contact?.email && <p>Email: {property.contact.email}</p>}
+                            {!property.externalContact?.phone && property.contact?.phone && <p>Phone: {property.contact.phone}</p>}
+                            {!property.externalContact?.whatsapp && property.contact?.whatsapp && <p>WhatsApp: {property.contact.whatsapp}</p>}
                         </div>
                         <form onSubmit={handleInquirySubmit}>
                             <div className="input-field">

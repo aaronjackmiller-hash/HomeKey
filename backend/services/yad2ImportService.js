@@ -65,6 +65,13 @@ const parseDate = (value) => {
     return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
 
+const normalizePhone = (value) => {
+    const raw = normalizeString(value);
+    if (!raw) return '';
+    const cleaned = raw.replace(/[^\d+]/g, '');
+    return cleaned || raw;
+};
+
 const mapYad2RowToPropertyDoc = (row) => {
     const externalId = normalizeString(String(pickFirst(
         row.externalId,
@@ -108,6 +115,32 @@ const mapYad2RowToPropertyDoc = (row) => {
     const sourceType = parseSourceType(pickFirst(row.sourceType, row.source_type, 'yad2-sync'));
     const externalSegmentKey = normalizeString(pickFirst(row.externalSegmentKey, row.segmentKey, row.segment))
         .toLowerCase();
+    const contactName = normalizeString(pickFirst(
+        row.contactName,
+        row.managerName,
+        row.contact && row.contact.name,
+        row.ownerName,
+        row.advertiserName
+    ));
+    const contactPhone = normalizePhone(pickFirst(
+        row.contactPhone,
+        row.phone,
+        row.contact && row.contact.phone,
+        row.managerPhone,
+        row.ownerPhone
+    ));
+    const contactWhatsapp = normalizePhone(pickFirst(
+        row.whatsapp,
+        row.whatsApp,
+        row.contact && row.contact.whatsapp,
+        row.managerWhatsapp
+    ));
+    const contactEmail = normalizeString(pickFirst(
+        row.contactEmail,
+        row.email,
+        row.contact && row.contact.email,
+        row.managerEmail
+    )).toLowerCase();
 
     const payload = {
         title,
@@ -155,6 +188,13 @@ const mapYad2RowToPropertyDoc = (row) => {
         status: parseStatus(pickFirst(row.status, row.listingStatus)),
         sourceType,
         ...(externalSegmentKey ? { externalSegmentKey } : {}),
+        contact: {
+            ...(contactName ? { name: contactName } : {}),
+            ...(contactPhone ? { phone: contactPhone } : {}),
+            ...(contactWhatsapp ? { whatsapp: contactWhatsapp } : {}),
+            ...(contactEmail ? { email: contactEmail } : {}),
+            preferredMethod: contactWhatsapp ? 'whatsapp' : (contactPhone ? 'phone' : 'email'),
+        },
         sources: [
             {
                 sourceType,

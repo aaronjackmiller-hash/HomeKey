@@ -103,6 +103,7 @@ const PropertySchema = new mongoose.Schema(
         },
         contact: {
             name: { type: String, trim: true },
+            agency: { type: String, trim: true },
             email: { type: String, trim: true, lowercase: true },
             phone: { type: String, trim: true },
             whatsapp: { type: String, trim: true },
