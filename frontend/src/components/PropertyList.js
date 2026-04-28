@@ -18,6 +18,45 @@ const formatTimestamp = (isoValue) => {
   return parsed.toLocaleString();
 };
 
+const formatContactMethod = (method) => {
+  const normalized = String(method || '').trim().toLowerCase();
+  if (normalized === 'whatsapp') return 'WhatsApp';
+  if (normalized === 'phone') return 'Phone';
+  return 'Email';
+};
+
+const getListingContact = (property = {}) => {
+  const externalContact = property.externalContact && typeof property.externalContact === 'object'
+    ? property.externalContact
+    : {};
+  const directContact = property.contact && typeof property.contact === 'object'
+    ? property.contact
+    : {};
+  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+    ? property.agent
+    : {};
+
+  const name = externalContact.name || directContact.name || agentContact.name || '';
+  const agency = externalContact.agency || directContact.agency || agentContact.agency || '';
+  const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
+  const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
+  const email = externalContact.email || directContact.email || agentContact.email || '';
+  const preferredMethod =
+    externalContact.preferredMethod
+    || directContact.preferredMethod
+    || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
+
+  return {
+    name,
+    agency,
+    phone,
+    whatsapp,
+    email,
+    preferredMethod,
+    hasAny: Boolean(name || agency || phone || whatsapp || email),
+  };
+};
+
 // Fallback sample properties shown when the database returns no results
 const SAMPLE_PROPERTIES = [
   {
@@ -395,6 +434,7 @@ const PropertyList = () => {
           const cityLine = [property.address?.city, property.address?.state].filter(Boolean).join(', ');
           const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
           const monthly = property.financialDetails?.totalMonthlyPayment;
+          const listingContact = getListingContact(property);
 
           return (
             <div
@@ -417,6 +457,24 @@ const PropertyList = () => {
                 </p>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
+                )}
+                {listingContact.hasAny && (
+                  <div className="property-card-contact">
+                    <p className="property-card-contact-title">
+                      Contact {listingContact.name || 'Listing manager'}
+                    </p>
+                    {listingContact.agency && (
+                      <p className="property-card-contact-line">Agency: {listingContact.agency}</p>
+                    )}
+                    {listingContact.preferredMethod && (
+                      <p className="property-card-contact-line">
+                        Preferred: {formatContactMethod(listingContact.preferredMethod)}
+                      </p>
+                    )}
+                    {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
+                    {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
+                    {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
+                  </div>
                 )}
               </div>
             </div>

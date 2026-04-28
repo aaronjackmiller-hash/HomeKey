@@ -334,6 +334,25 @@ a {
   color: #334155;
 }
 
+.property-card-contact {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.property-card-contact-title {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.property-card-contact-line {
+  margin: 0 0 3px;
+  font-size: 0.84rem;
+  color: #475569;
+}
+
 .empty-state {
   grid-column: 1 / -1;
   padding: 20px;
