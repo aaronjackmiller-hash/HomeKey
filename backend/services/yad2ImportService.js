@@ -590,4 +590,5 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
 
 module.exports = {
     importYad2Listings,
+    mapYad2RowToPropertyDoc,
 };

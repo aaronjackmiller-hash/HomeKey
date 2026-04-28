@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node seed.js",
+    "yad2:backfill": "node services/yad2BackfillService.js",
     "render-build": "npm ci --prefix ../frontend && NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=384\" CI=false npm run build --prefix ../frontend && test -f ../frontend/build/index.html && npm ci"
   },
   "dependencies": {
