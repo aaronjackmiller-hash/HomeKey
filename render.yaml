@@ -35,3 +35,27 @@ services:
       # Admin secret for the POST /api/admin/seed endpoint
       - key: ADMIN_SECRET
         generateValue: true
+      # Optional Yad2 live sync controls
+      - key: YAD2_SYNC_ENABLED
+        value: true
+      - key: LIVE_YAD2_ONLY
+        value: true
+      - key: YAD2_REAL_SCRAPE_ONLY
+        value: true
+      # Provider mode: native scrape/feed | apify
+      - key: YAD2_PROVIDER
+        value: apify
+      # Apify provider credentials/configuration
+      - key: APIFY_TOKEN
+        sync: false
+      - key: APIFY_DATASET_ID
+        sync: false
+      # Optional alternative: full dataset items URL (supports signed URLs)
+      - key: APIFY_DATASET_ITEMS_URL
+        sync: false
+      - key: APIFY_MAX_ITEMS
+        value: 120
+      - key: APIFY_TIMEOUT_MS
+        value: 90000
+      - key: APIFY_DATASET_CLEAN
+        value: true
