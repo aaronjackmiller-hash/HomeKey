@@ -18,6 +18,17 @@ const formatTimestamp = (isoValue) => {
   return parsed.toLocaleString();
 };
 
+const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const getAddressDisplay = (address = {}) => {
+  const street = safeText(address.street);
+  const city = safeText(address.city);
+  const state = safeText(address.state);
+  const zip = safeText(address.zip);
+  const fullAddress = [street, city, state, zip].filter(Boolean).join(', ');
+  return { street, fullAddress };
+};
+
 const formatContactMethod = (method) => {
   const normalized = String(method || '').trim().toLowerCase();
   if (normalized === 'whatsapp') return 'WhatsApp';
@@ -431,8 +442,9 @@ const PropertyList = () => {
           const imageSrc =
             (Array.isArray(property.images) && property.images[0]) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
-          const cityLine = [property.address?.city, property.address?.state].filter(Boolean).join(', ');
-          const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
+          const { street, fullAddress } = getAddressDisplay(property.address);
+          const displayTitle = street || fullAddress || property.title || 'Untitled property';
+          const displayLocation = fullAddress || [property.address?.city, property.address?.state].filter(Boolean).join(', ');
           const monthly = property.financialDetails?.totalMonthlyPayment;
           const listingContact = getListingContact(property);
 
@@ -443,14 +455,10 @@ const PropertyList = () => {
               onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
-              <img className="property-card-image" src={imageSrc} alt={property.title || 'Property listing'} />
+              <img className="property-card-image" src={imageSrc} alt={displayTitle || 'Property listing'} />
               <div className="property-card-body">
-                <div className="property-card-meta">
-                  <span className="property-chip">{typeLabel}</span>
-                  <span className="property-chip property-chip-muted">{property.status || 'active'}</span>
-                </div>
-                <h3 className="property-card-title">{property.title || 'Untitled property'}</h3>
-                <p className="property-card-location">{cityLine || 'Location not provided'}</p>
+                <h3 className="property-card-title">{displayTitle}</h3>
+                <p className="property-card-location">{displayLocation || 'Location not provided'}</p>
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
                 <p className="property-card-stats">
                   {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
