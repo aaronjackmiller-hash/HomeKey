@@ -61,6 +61,46 @@ const getFirstEnvValue = (...keys) => {
     return '';
 };
 
+const extractDatasetIdFromMaybeUrl = (value) => {
+    const input = String(value || '').trim();
+    if (!input) return '';
+    const datasetPathMatch = input.match(/\/datasets\/([^/?#]+)/i);
+    if (datasetPathMatch && datasetPathMatch[1]) {
+        return decodeURIComponent(datasetPathMatch[1]).trim();
+    }
+    try {
+        const url = new URL(input);
+        const pathMatch = String(url.pathname || '').match(/\/datasets\/([^/?#]+)/i);
+        return pathMatch && pathMatch[1] ? decodeURIComponent(pathMatch[1]).trim() : '';
+    } catch (err) {
+        return '';
+    }
+};
+
+const normalizeDatasetItemsUrl = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    try {
+        const url = new URL(raw);
+        // Accept dataset base URLs and auto-upgrade to /items endpoint.
+        if (/\/datasets\/[^/]+$/i.test(url.pathname)) {
+            url.pathname = `${url.pathname.replace(/\/+$/, '')}/items`;
+        }
+        return url.toString();
+    } catch (err) {
+        return raw;
+    }
+};
+
+const hasSignedDatasetUrl = (value) => {
+    try {
+        const url = new URL(String(value || '').trim());
+        return url.searchParams.has('signature');
+    } catch (err) {
+        return false;
+    }
+};
+
 const parseScrapeMaxItems = () => {
     const raw = Number(process.env.YAD2_SCRAPE_MAX_ITEMS || DEFAULT_SCRAPE_MAX_ITEMS);
     if (!Number.isFinite(raw)) return DEFAULT_SCRAPE_MAX_ITEMS;
@@ -108,8 +148,13 @@ const getApifyConfig = () => ({
     token: getFirstEnvValue('YAD2_APIFY_TOKEN', 'APIFY_TOKEN'),
     actorId: getFirstEnvValue('YAD2_APIFY_ACTOR_ID', 'APIFY_ACTOR_ID'),
     taskId: getFirstEnvValue('YAD2_APIFY_TASK_ID', 'APIFY_TASK_ID'),
-    datasetId: getFirstEnvValue('YAD2_APIFY_DATASET_ID', 'APIFY_DATASET_ID'),
-    datasetItemsUrl: getFirstEnvValue('YAD2_APIFY_DATASET_ITEMS_URL', 'APIFY_DATASET_ITEMS_URL'),
+    datasetId: (() => {
+        const raw = getFirstEnvValue('YAD2_APIFY_DATASET_ID', 'APIFY_DATASET_ID');
+        return extractDatasetIdFromMaybeUrl(raw) || raw;
+    })(),
+    datasetItemsUrl: normalizeDatasetItemsUrl(
+        getFirstEnvValue('YAD2_APIFY_DATASET_ITEMS_URL', 'APIFY_DATASET_ITEMS_URL')
+    ),
     datasetClean: parseBooleanEnv(getFirstEnvValue('YAD2_APIFY_DATASET_CLEAN', 'APIFY_DATASET_CLEAN'), true),
     input: parseJsonOrNull(
         getFirstEnvValue('YAD2_APIFY_INPUT_JSON', 'APIFY_INPUT_JSON')
@@ -120,7 +165,10 @@ const getApifyConfig = () => ({
 });
 
 const hasApifyProviderConfig = (config = getApifyConfig()) =>
-    Boolean(config.token && (config.datasetId || config.datasetItemsUrl || config.actorId || config.taskId));
+    Boolean(
+        (config.token && (config.datasetId || config.datasetItemsUrl || config.actorId || config.taskId))
+        || (!config.token && config.datasetItemsUrl && hasSignedDatasetUrl(config.datasetItemsUrl))
+    );
 
 const fetchApifyJson = async ({ url, timeoutMs, method = 'GET', body = null }) => {
     const headers = { Accept: 'application/json' };
@@ -168,10 +216,13 @@ const buildApifyDatasetItemsUrl = ({ config, datasetId }) => {
 const fetchApifyRows = async ({ logger = console } = {}) => {
     const config = getApifyConfig();
     if (!hasApifyProviderConfig(config)) {
+        const hasSignedDataset = hasSignedDatasetUrl(config.datasetItemsUrl);
         return {
             rows: [],
             skipped: true,
-            reason: 'YAD2_PROVIDER=apify but APIFY token/task/actor/dataset configuration is incomplete',
+            reason: hasSignedDataset
+                ? 'YAD2_PROVIDER=apify but APIFY_DATASET_ITEMS_URL is invalid or inaccessible'
+                : 'YAD2_PROVIDER=apify requires APIFY_TOKEN plus one of APIFY_DATASET_ID, APIFY_DATASET_ITEMS_URL, APIFY_TASK_ID, or APIFY_ACTOR_ID',
         };
     }
 
@@ -198,11 +249,29 @@ const fetchApifyRows = async ({ logger = console } = {}) => {
         }
     }
 
-    const itemsUrl = buildApifyDatasetItemsUrl({ config, datasetId });
-    const payload = await fetchApifyJson({
-        url: itemsUrl.toString(),
-        timeoutMs,
-    });
+    let itemsUrl;
+    try {
+        itemsUrl = buildApifyDatasetItemsUrl({ config, datasetId });
+    } catch (err) {
+        throw new Error(`Invalid APIFY_DATASET_ITEMS_URL value: ${err.message}`);
+    }
+    let payload;
+    try {
+        payload = await fetchApifyJson({
+            url: itemsUrl.toString(),
+            timeoutMs,
+        });
+    } catch (err) {
+        const message = String(err && err.message ? err.message : err);
+        if (message.includes('record-not-found') || message.includes('Dataset was not found')) {
+            const configuredDataset = datasetId || extractDatasetIdFromMaybeUrl(config.datasetItemsUrl);
+            throw new Error(
+                `Apify dataset not found (${configuredDataset || 'unknown'}). ` +
+                'Set APIFY_DATASET_ID to the dataset id only (not token), or set APIFY_DATASET_ITEMS_URL to a valid /datasets/<id>/items URL.'
+            );
+        }
+        throw err;
+    }
     const rows = mapFeedToRows(payload)
         .filter((row) => row && row.id)
         .slice(0, config.maxItems);
