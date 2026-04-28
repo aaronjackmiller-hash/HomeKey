@@ -432,6 +432,11 @@ a {
   height: 100%;
   min-height: 320px;
   object-fit: cover;
+  cursor: zoom-in;
+}
+
+.detail-hero-image.yad2-image {
+  object-position: center 22%;
 }
 
 .detail-hero-content {
@@ -515,6 +520,109 @@ a {
   height: 140px;
   object-fit: cover;
   border-radius: 12px;
+  cursor: zoom-in;
+}
+
+.detail-gallery-grid img.yad2-image {
+  object-position: center 22%;
+}
+
+.detail-gallery-image-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: zoom-in;
+}
+
+.detail-gallery-image-button img {
+  display: block;
+}
+
+.image-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(2, 6, 23, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.image-lightbox-panel {
+  width: min(1120px, 96vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.image-lightbox-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e2e8f0;
+}
+
+.image-lightbox-toolbar button {
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.image-lightbox-toolbar button:hover {
+  background: rgba(15, 23, 42, 0.88);
+}
+
+.image-lightbox-stage {
+  position: relative;
+  background: rgba(15, 23, 42, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.image-lightbox-stage img {
+  width: 100%;
+  max-height: 76vh;
+  object-fit: contain;
+  display: block;
+}
+
+.image-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.72);
+  color: #f8fafc;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  font-size: 1.45rem;
+  cursor: pointer;
+}
+
+.image-lightbox-nav:hover {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.image-lightbox-nav.prev {
+  left: 10px;
+}
+
+.image-lightbox-nav.next {
+  right: 10px;
+}
+
+.contact-missing-note {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 0.92rem;
 }
 
 .detail-section-card,

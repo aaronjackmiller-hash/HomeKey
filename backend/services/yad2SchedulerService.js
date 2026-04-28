@@ -826,8 +826,14 @@ const normalizeRow = (row) => {
     if (!row || typeof row !== 'object') return null;
 
     const contact = row.contact && typeof row.contact === 'object' ? row.contact : undefined;
+    const externalContact = row.externalContact && typeof row.externalContact === 'object' ? row.externalContact : undefined;
     const agent = row.agent && typeof row.agent === 'object' ? row.agent : undefined;
     const advertiser = row.advertiser && typeof row.advertiser === 'object' ? row.advertiser : undefined;
+    const manager = row.manager && typeof row.manager === 'object' ? row.manager : undefined;
+    const owner = row.owner && typeof row.owner === 'object' ? row.owner : undefined;
+    const contactDetails = row.contactDetails && typeof row.contactDetails === 'object' ? row.contactDetails : undefined;
+    const address = row.address && typeof row.address === 'object' ? row.address : undefined;
+    const location = row.location && typeof row.location === 'object' ? row.location : undefined;
 
     const mapped = {
         id: row.id ?? row._id ?? row.externalId ?? row.ad_number ?? row.adNumber ?? row.listingId ?? row.listing_id,
@@ -836,11 +842,15 @@ const normalizeRow = (row) => {
         dealType: row.dealType ?? row.type ?? row.deal_type,
         price: row.price ?? row.priceNis ?? row.amount,
         rooms: row.rooms ?? row.bedrooms ?? row.roomCount,
-        bathrooms: row.bathrooms ?? row.bathroomCount ?? row.bath,
+        bathrooms: row.bathrooms ?? row.bathroomCount ?? row.bath ?? row.baths ?? row.wc ?? row.toilets,
+        bathroomText: row.bathroomText ?? row.bathroomsText ?? row.featuresText ?? row.attributesText,
         area: row.area ?? row.size ?? row.squareMeters ?? row.sqm ?? row.areaSqm,
         floor: row.floor ?? row.floorNumber,
-        city: row.city ?? (row.address && row.address.city),
-        street: row.street ?? row.streetName ?? (row.address && row.address.street),
+        city: row.city ?? (address && address.city) ?? (location && location.city),
+        street: row.street ?? row.streetName ?? (address && (address.street ?? address.streetName)) ?? (location && location.street),
+        streetNumber: row.streetNumber ?? row.houseNumber ?? row.buildingNumber
+            ?? (address && (address.streetNumber ?? address.houseNumber ?? address.number))
+            ?? (location && location.streetNumber),
         state: row.state ?? row.region ?? row.district,
         zip: row.zip ?? row.postalCode,
         country: row.country ?? 'Israel',
@@ -850,24 +860,62 @@ const normalizeRow = (row) => {
         availableFrom: row.availableFrom ?? (row.dates && row.dates.availableFrom),
         listingDate: row.listingDate ?? row.publishedAt ?? row.createdAt,
         contactName: row.contactName ?? row.managerName ?? row.agentName ?? row.ownerName ?? row.advertiserName
-            ?? (contact && contact.name) ?? (agent && agent.name) ?? (advertiser && advertiser.name),
+            ?? row.contactPerson ?? row.contactFullName
+            ?? (contact && (contact.name ?? contact.fullName))
+            ?? (externalContact && (externalContact.name ?? externalContact.fullName))
+            ?? (agent && (agent.name ?? agent.fullName))
+            ?? (manager && (manager.name ?? manager.fullName))
+            ?? (owner && (owner.name ?? owner.fullName))
+            ?? (advertiser && (advertiser.name ?? advertiser.fullName))
+            ?? (contactDetails && (contactDetails.name ?? contactDetails.fullName)),
         contactPhone: row.contactPhone ?? row.managerPhone ?? row.agentPhone ?? row.ownerPhone ?? row.phone
-            ?? (contact && contact.phone) ?? (agent && agent.phone) ?? (advertiser && advertiser.phone),
+            ?? row.contactMobile ?? row.mobile
+            ?? (contact && (contact.phone ?? contact.mobile ?? contact.phoneNumber))
+            ?? (externalContact && (externalContact.phone ?? externalContact.mobile ?? externalContact.phoneNumber))
+            ?? (agent && (agent.phone ?? agent.mobile ?? agent.phoneNumber))
+            ?? (manager && (manager.phone ?? manager.mobile ?? manager.phoneNumber))
+            ?? (owner && (owner.phone ?? owner.mobile ?? owner.phoneNumber))
+            ?? (advertiser && (advertiser.phone ?? advertiser.mobile ?? advertiser.phoneNumber))
+            ?? (contactDetails && (contactDetails.phone ?? contactDetails.mobile ?? contactDetails.phoneNumber)),
         contactWhatsapp: row.contactWhatsapp ?? row.managerWhatsapp ?? row.agentWhatsapp ?? row.whatsapp ?? row.whatsApp
             ?? (contact && (contact.whatsapp ?? contact.whatsApp))
+            ?? (externalContact && (externalContact.whatsapp ?? externalContact.whatsApp))
             ?? (agent && (agent.whatsapp ?? agent.whatsApp))
+            ?? (manager && (manager.whatsapp ?? manager.whatsApp))
+            ?? (owner && (owner.whatsapp ?? owner.whatsApp))
             ?? (advertiser && (advertiser.whatsapp ?? advertiser.whatsApp)),
         contactEmail: row.contactEmail ?? row.managerEmail ?? row.agentEmail ?? row.ownerEmail ?? row.email
-            ?? (contact && contact.email) ?? (agent && agent.email) ?? (advertiser && advertiser.email),
+            ?? (contact && (contact.email ?? contact.mail))
+            ?? (externalContact && (externalContact.email ?? externalContact.mail))
+            ?? (agent && (agent.email ?? agent.mail))
+            ?? (manager && (manager.email ?? manager.mail))
+            ?? (owner && (owner.email ?? owner.mail))
+            ?? (advertiser && (advertiser.email ?? advertiser.mail))
+            ?? (contactDetails && (contactDetails.email ?? contactDetails.mail)),
         contactAgency: row.contactAgency ?? row.agentAgency ?? row.agency
-            ?? (contact && contact.agency) ?? (agent && agent.agency) ?? (advertiser && advertiser.agency),
+            ?? (contact && contact.agency)
+            ?? (externalContact && externalContact.agency)
+            ?? (agent && agent.agency)
+            ?? (manager && manager.agency)
+            ?? (owner && owner.agency)
+            ?? (advertiser && advertiser.agency)
+            ?? (contactDetails && contactDetails.agency),
         preferredContactMethod: row.preferredContactMethod ?? row.preferredMethod
             ?? (contact && (contact.preferredContactMethod ?? contact.preferredMethod))
+            ?? (externalContact && (externalContact.preferredContactMethod ?? externalContact.preferredMethod))
             ?? (agent && (agent.preferredContactMethod ?? agent.preferredMethod))
+            ?? (manager && (manager.preferredContactMethod ?? manager.preferredMethod))
+            ?? (owner && (owner.preferredContactMethod ?? owner.preferredMethod))
             ?? (advertiser && (advertiser.preferredContactMethod ?? advertiser.preferredMethod)),
+        address,
+        location,
         contact,
+        externalContact,
         agent,
+        manager,
+        owner,
         advertiser,
+        contactDetails,
     };
 
     return mapped;
