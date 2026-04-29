@@ -236,6 +236,27 @@ const combineStreetAndNumber = (streetName, streetNumber) => {
     return `${street} ${number}`;
 };
 
+const extractStreetNumberFromText = (value) => {
+    const text = normalizeString(value);
+    if (!text) return { street: '', number: '' };
+
+    const patterns = [
+        /(?:street|st\.?)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:at|in)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:רחוב|רח׳|רח)\s*([א-תa-zA-Z0-9'\-.\s]{1,60})\s+(\d+[א-תa-zA-Z0-9\-\/]*)/i,
+        /([a-zA-Zא-ת][a-zA-Zא-ת0-9'\-.\s]{1,60})[, ]+(\d+[a-zA-Zא-ת0-9\-\/]*)/,
+    ];
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (!match || !match[1] || !match[2]) continue;
+        return {
+            street: normalizeHumanText(match[1]),
+            number: normalizeHumanText(match[2]),
+        };
+    }
+    return { street: '', number: '' };
+};
+
 const mapYad2RowToPropertyDoc = (row) => {
     const externalId = normalizeString(String(pickFirst(
         row.externalId,
@@ -267,14 +288,32 @@ const mapYad2RowToPropertyDoc = (row) => {
 
     const description = normalizeHumanText(pickFirst(row.description, row.body, row.notes, row.details));
 
+    const parsedStreetFromText = extractStreetNumberFromText(pickFirst(
+        row.addressLine,
+        row.addressText,
+        row.fullAddress,
+        row.addressLine1,
+        row.locationText,
+        row.location && row.location.text,
+        row.address && row.address.full,
+        row.address && row.address.text,
+        row.title,
+        row.headline,
+        row.description,
+        row.details
+    ));
+
     const addressStreet = combineStreetAndNumber(
         pickFirst(
             row.street,
             row.streetName,
+            row.streetAddress,
+            row.address1,
             row.addressLine1,
             row.address && row.address.street,
             row.address && row.address.streetName,
-            row.location && row.location.street
+            row.location && row.location.street,
+            parsedStreetFromText.street
         ),
         pickFirst(
             row.streetNumber,
@@ -286,7 +325,9 @@ const mapYad2RowToPropertyDoc = (row) => {
             row.address && row.address.streetNumber,
             row.address && row.address.houseNumber,
             row.address && row.address.number,
-            row.location && row.location.streetNumber
+            row.location && row.location.streetNumber,
+            row.location && row.location.number,
+            parsedStreetFromText.number
         )
     );
     const addressState = normalizeHumanText(pickFirst(row.state, row.district, row.region));

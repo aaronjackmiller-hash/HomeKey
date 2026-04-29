@@ -34,11 +34,13 @@ const formatContactMethod = (method) => {
     return 'Email';
 };
 
-const removeYad2ImageLogo = (url) => {
+const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
-    if (!source || !/yad2/i.test(source)) return source;
+    if (!source) return '';
+    // Yad2 listing photos may contain top-left badges/logos. Crop top region from
+    // every listing image to consistently hide branding overlays regardless of host.
     const separator = source.includes('?') ? '&' : '?';
-    return `${source}${separator}fit=crop&crop=top&h=860`;
+    return `${source}${separator}fit=crop&crop=entropy&crop-top=14&h=860`;
 };
 
 const PropertyDetail = () => {
@@ -152,7 +154,7 @@ const PropertyDetail = () => {
 
     const addressLine = getAddressLine(property.address);
     const allImages = (Array.isArray(property.images) ? property.images : [])
-        .map((image) => removeYad2ImageLogo(image))
+        .map((image) => sanitizeImageSource(image))
         .filter(Boolean);
     const heroImage =
         allImages[0] ||
