@@ -244,6 +244,21 @@ a {
   border-color: #94a3b8;
 }
 
+.secondary-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
 .tabs {
   display: flex;
   gap: 8px;
@@ -322,6 +337,10 @@ a {
   font-size: 1.06rem;
 }
 
+.property-card-title--street {
+  font-weight: 800;
+}
+
 .property-card-location {
   margin: 0 0 8px;
   color: #64748b;
@@ -351,6 +370,17 @@ a {
   margin: 0 0 3px;
   font-size: 0.84rem;
   color: #475569;
+}
+
+.property-card-contact-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.property-card-contact-actions a {
+  text-decoration: none;
 }
 
 .empty-state {
@@ -619,6 +649,20 @@ a {
   right: 10px;
 }
 
+.image-lightbox-close {
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.image-lightbox-close:hover {
+  background: rgba(15, 23, 42, 0.88);
+}
+
 .contact-missing-note {
   margin-top: 8px;
   color: #64748b;
@@ -692,6 +736,17 @@ a {
 .agent-name {
   font-weight: 700;
   font-size: 1.03rem;
+}
+
+.detail-contact-actions {
+  margin: 10px 0 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-contact-actions a {
+  text-decoration: none;
 }
 
 .detail-actions {

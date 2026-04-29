@@ -18,13 +18,53 @@ const formatDate = (value) => {
     return new Date(value).toLocaleDateString();
 };
 
-const getAddressLine = (address) =>
-    [address?.street, address?.city, address?.state, address?.zip].filter(Boolean).join(', ');
+const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const ENGLISH_LISTING_WORD_RE = /\b(the|and|with|for|in|to|from|apartment|property|rent|rental|sale|bed|bath|room|building|near|available|price|spacious|located)\b/i;
+
+const hasHebrew = (value) => /[א-ת]/.test(String(value || ''));
+
+const isYad2LikeListing = (property = {}) =>
+    /yad2/i.test(String(property.externalSource || ''))
+    || ['yad2-sync', 'yad2-scrape'].includes(String(property.sourceType || ''));
+
+const isReadableImportedText = (property = {}, value) => {
+    const text = safeText(value);
+    if (!text) return false;
+    if (hasHebrew(text)) return true;
+    if (!isYad2LikeListing(property)) return true;
+    return ENGLISH_LISTING_WORD_RE.test(text);
+};
+
+const dedupeCaseInsensitive = (values = []) => {
+    const seen = new Set();
+    return values.filter((value) => {
+        const normalized = safeText(value);
+        if (!normalized) return false;
+        const key = normalized.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+};
+
+const getAddressLine = (address) => {
+    const street = safeText(address?.street);
+    const city = safeText(address?.city);
+    const state = safeText(address?.state);
+    const zip = safeText(address?.zip);
+    const nonIsraelCountry = safeText(address?.country).toLowerCase() === 'israel' ? '' : safeText(address?.country);
+    const parts = dedupeCaseInsensitive([street, city, state, zip, nonIsraelCountry]);
+    return parts.join(', ');
+};
 
 const getPrimaryAddressTitle = (property = {}) => {
     const street = String(property.address?.street || '').trim();
     if (street) return street;
-    return String(property.title || '').trim() || 'Untitled property';
+    const title = String(property.title || '').trim();
+    if (isReadableImportedText(property, title)) return title;
+    const city = safeText(property.address?.city);
+    return city ? `Property in ${city}` : 'Property listing';
 };
 
 const formatContactMethod = (method) => {
@@ -32,6 +72,63 @@ const formatContactMethod = (method) => {
     if (normalized === 'whatsapp') return 'WhatsApp';
     if (normalized === 'phone') return 'Phone';
     return 'Email';
+};
+
+const getLocationLine = (address = {}) => {
+    const city = safeText(address.city);
+    const state = safeText(address.state);
+    const zip = safeText(address.zip);
+    const nonIsraelCountry = safeText(address.country).toLowerCase() === 'israel' ? '' : safeText(address.country);
+    const parts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
+    return parts.join(', ');
+};
+
+const getListingContact = (property = {}) => {
+    const externalContact = property.externalContact && typeof property.externalContact === 'object'
+        ? property.externalContact
+        : {};
+    const directContact = property.contact && typeof property.contact === 'object'
+        ? property.contact
+        : {};
+    const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+        ? property.agent
+        : {};
+
+    const name = externalContact.name || directContact.name || agentContact.name || '';
+    const agency = externalContact.agency || directContact.agency || agentContact.agency || '';
+    const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
+    const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
+    const email = externalContact.email || directContact.email || agentContact.email || '';
+    const preferredMethod =
+        externalContact.preferredMethod
+        || directContact.preferredMethod
+        || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
+
+    return {
+        name,
+        agency,
+        phone,
+        whatsapp,
+        email,
+        preferredMethod,
+        hasAny: Boolean(name || agency || phone || whatsapp || email),
+    };
+};
+
+const normalizePhoneForLinks = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const cleaned = raw.replace(/[^\d+]/g, '');
+    if (!cleaned) return '';
+    if (cleaned.startsWith('+')) return cleaned.slice(1);
+    if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
+    return cleaned;
+};
+
+const buildWhatsAppHref = (phone, title = 'this listing') => {
+    const normalizedPhone = normalizePhoneForLinks(phone);
+    if (!normalizedPhone) return '';
+    return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
 const sanitizeImageSource = (url) => {
@@ -153,6 +250,7 @@ const PropertyDetail = () => {
     if (!property) return null;
 
     const addressLine = getAddressLine(property.address);
+    const locationLine = getLocationLine(property.address);
     const allImages = (Array.isArray(property.images) ? property.images : [])
         .map((image) => sanitizeImageSource(image))
         .filter(Boolean);
@@ -163,6 +261,8 @@ const PropertyDetail = () => {
     const detailTitle = getPrimaryAddressTitle(property);
     const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
+    const listingContact = getListingContact(property);
+    const managerWhatsAppHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, detailTitle);
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
@@ -248,7 +348,9 @@ const PropertyDetail = () => {
                         <div>
                             <p className="detail-type-pill">{typeLabel}</p>
                             <h1>{detailTitle}</h1>
-                            <p className="detail-address">{addressLine || 'Address not provided'}</p>
+                            <p className="detail-address">
+                                {locationLine || addressLine || 'Address not provided'}
+                            </p>
                             <div className="detail-highlight-row">
                                 <span>{property.bedrooms ?? '—'} bed</span>
                                 <span>{property.bathrooms ?? '—'} bath</span>
@@ -283,7 +385,7 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {property.description && (
+                {isReadableImportedText(property, property.description) && (
                     <section className="detail-section-card">
                         <h2>About this property</h2>
                         <p className="detail-description">{property.description}</p>
@@ -322,25 +424,37 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {(property.contact || property.externalContact) && (
+                {listingContact.hasAny && (
                     <section className="detail-section-card">
+                        <div id="contact-manager-form" />
                         <h2>Contact Listing Manager</h2>
                         <p>
                             Preferred method:{' '}
-                            {formatContactMethod(
-                                property.externalContact?.preferredMethod
-                                || property.contact?.preferredMethod
-                            )}
+                            {formatContactMethod(listingContact.preferredMethod)}
                         </p>
                         <div className="agent-grid">
-                            {property.externalContact?.name && <p>Manager: {property.externalContact.name}</p>}
-                            {property.externalContact?.email && <p>Email: {property.externalContact.email}</p>}
-                            {property.externalContact?.phone && <p>Phone: {property.externalContact.phone}</p>}
-                            {property.externalContact?.whatsapp && <p>WhatsApp: {property.externalContact.whatsapp}</p>}
-                            {!property.externalContact?.name && property.contact?.name && <p>Name: {property.contact.name}</p>}
-                            {!property.externalContact?.email && property.contact?.email && <p>Email: {property.contact.email}</p>}
-                            {!property.externalContact?.phone && property.contact?.phone && <p>Phone: {property.contact.phone}</p>}
-                            {!property.externalContact?.whatsapp && property.contact?.whatsapp && <p>WhatsApp: {property.contact.whatsapp}</p>}
+                            {listingContact.name && <p>Manager: {listingContact.name}</p>}
+                            {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
+                            {listingContact.phone && <p>Phone: {listingContact.phone}</p>}
+                            {listingContact.whatsapp && <p>WhatsApp: {listingContact.whatsapp}</p>}
+                            {listingContact.email && <p>Email: {listingContact.email}</p>}
+                        </div>
+                        <div className="detail-contact-actions">
+                            {managerWhatsAppHref && (
+                                <a
+                                    href={managerWhatsAppHref}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="secondary-btn"
+                                >
+                                    Chat on WhatsApp
+                                </a>
+                            )}
+                            {listingContact.email && (
+                                <a href={`mailto:${listingContact.email}`} className="secondary-btn">
+                                    Send Message
+                                </a>
+                            )}
                         </div>
                         <form onSubmit={handleInquirySubmit}>
                             <div className="input-field">
@@ -450,7 +564,7 @@ const PropertyDetail = () => {
 
                 {canManageListing && isManualListing && (
                     <div className="detail-actions">
-                        <button className="secondary-button" onClick={() => history.push(`/properties/${property._id}/engagement`)}>
+                        <button className="secondary-btn" onClick={() => history.push(`/properties/${property._id}/engagement`)}>
                             View inquiries & attendee list
                         </button>
                         <button className="primary-button" onClick={() => history.push(`/edit-listing/${property._id}`)}>
@@ -463,12 +577,17 @@ const PropertyDetail = () => {
                 )}
             </div>
             {selectedImageIndex != null && allImages[selectedImageIndex] && (
-                <div className="image-lightbox" onClick={closeImageViewer}>
-                    <button className="image-lightbox-close" onClick={closeImageViewer} type="button">×</button>
+                <div className="image-lightbox-backdrop" onClick={closeImageViewer}>
+                    <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
+                        <div className="image-lightbox-toolbar">
+                            <span>{selectedImageIndex + 1} / {allImages.length}</span>
+                            <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
+                        </div>
+                        <div className="image-lightbox-stage">
                     {allImages.length > 1 && (
                         <>
                             <button
-                                className="image-lightbox-nav image-lightbox-nav-prev"
+                                className="image-lightbox-nav prev"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     showPrevImage();
@@ -478,7 +597,7 @@ const PropertyDetail = () => {
                                 ‹
                             </button>
                             <button
-                                className="image-lightbox-nav image-lightbox-nav-next"
+                                className="image-lightbox-nav next"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     showNextImage();
@@ -490,14 +609,12 @@ const PropertyDetail = () => {
                         </>
                     )}
                     <img
-                        className="image-lightbox-image"
                         src={allImages[selectedImageIndex]}
                         alt={`Property image ${selectedImageIndex + 1}`}
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <p className="image-lightbox-counter">
-                        {selectedImageIndex + 1} / {allImages.length}
-                    </p>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
