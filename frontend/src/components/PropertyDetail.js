@@ -261,6 +261,7 @@ const PropertyDetail = () => {
     const detailTitle = getPrimaryAddressTitle(property);
     const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
+    const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
     const managerWhatsAppHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, detailTitle);
 
@@ -330,20 +331,25 @@ const PropertyDetail = () => {
                 </button>
 
                 <section className="detail-hero-card">
-                    <img
-                        className="detail-hero-image"
-                        src={heroImage}
-                        alt={detailTitle || 'Property'}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => openImageViewer(0)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                openImageViewer(0);
-                            }
-                        }}
-                    />
+                    <div className="detail-hero-image-wrap">
+                        <img
+                            className={`detail-hero-image ${isYad2ListingMedia ? 'yad2-image' : ''}`}
+                            src={heroImage}
+                            alt={detailTitle || 'Property'}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => openImageViewer(0)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    openImageViewer(0);
+                                }
+                            }}
+                        />
+                        {isYad2ListingMedia && (
+                            <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
+                        )}
+                    </div>
                     <div className="detail-hero-content">
                         <div>
                             <p className="detail-type-pill">{typeLabel}</p>
@@ -367,12 +373,10 @@ const PropertyDetail = () => {
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
                         {additionalImages.map((image, index) => (
-                            <img
+                            <button
                                 key={index}
-                                src={image}
-                                alt={`Property visual ${index + 2}`}
-                                role="button"
-                                tabIndex={0}
+                                type="button"
+                                className="detail-gallery-image-button"
                                 onClick={() => openImageViewer(index + 1)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -380,7 +384,16 @@ const PropertyDetail = () => {
                                         openImageViewer(index + 1);
                                     }
                                 }}
-                            />
+                            >
+                                <img
+                                    className={isYad2ListingMedia ? 'yad2-image' : ''}
+                                    src={image}
+                                    alt={`Property visual ${index + 2}`}
+                                />
+                                {isYad2ListingMedia && (
+                                    <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
+                                )}
+                            </button>
                         ))}
                     </section>
                 )}
@@ -583,7 +596,7 @@ const PropertyDetail = () => {
                             <span>{selectedImageIndex + 1} / {allImages.length}</span>
                             <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
                         </div>
-                        <div className="image-lightbox-stage">
+                        <div className={`image-lightbox-stage ${isYad2ListingMedia ? 'yad2-stage' : ''}`}>
                     {allImages.length > 1 && (
                         <>
                             <button
@@ -609,10 +622,14 @@ const PropertyDetail = () => {
                         </>
                     )}
                     <img
+                        className={isYad2ListingMedia ? 'yad2-image' : ''}
                         src={allImages[selectedImageIndex]}
                         alt={`Property image ${selectedImageIndex + 1}`}
                         onClick={(e) => e.stopPropagation()}
                     />
+                    {isYad2ListingMedia && (
+                        <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
+                    )}
                         </div>
                     </div>
                 </div>

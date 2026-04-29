@@ -465,8 +465,27 @@ a {
   cursor: zoom-in;
 }
 
+.detail-hero-media {
+  position: relative;
+}
+
 .detail-hero-image.yad2-image {
-  object-position: center 22%;
+  object-position: center 34%;
+}
+
+.detail-hero-media.yad2-image::after,
+.detail-gallery-item.yad2-image::after,
+.image-lightbox-stage.yad2-stage::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 78px;
+  height: 34px;
+  border-radius: 999px;
+  background: #ffffff;
+  z-index: 4;
+  pointer-events: none;
 }
 
 .detail-hero-content {
@@ -553,8 +572,12 @@ a {
   cursor: zoom-in;
 }
 
+.detail-gallery-item {
+  position: relative;
+}
+
 .detail-gallery-grid img.yad2-image {
-  object-position: center 22%;
+  object-position: center 34%;
 }
 
 .detail-gallery-image-button {
@@ -621,6 +644,10 @@ a {
   max-height: 76vh;
   object-fit: contain;
   display: block;
+}
+
+.image-lightbox-stage img.yad2-image {
+  object-position: center 38%;
 }
 
 .image-lightbox-nav {
