@@ -351,7 +351,7 @@ const PropertyDetail = () => {
                 </button>
 
                 <section className="detail-hero-card">
-                    <div className="detail-hero-image-wrap">
+                    <div className={`detail-hero-image-wrap ${isYad2ListingMedia ? 'yad2-image-wrap' : ''}`}>
                         <img
                             className={`detail-hero-image ${isYad2ListingMedia ? 'yad2-image' : ''}`}
                             src={heroImage}
@@ -366,9 +366,6 @@ const PropertyDetail = () => {
                                 }
                             }}
                         />
-                        {isYad2ListingMedia && (
-                            <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                        )}
                     </div>
                     <div className="detail-hero-content">
                         <div>
@@ -396,7 +393,7 @@ const PropertyDetail = () => {
                             <button
                                 key={index}
                                 type="button"
-                                className="detail-gallery-image-button"
+                                className={`detail-gallery-image-button ${isYad2ListingMedia ? 'yad2-image-wrap' : ''}`}
                                 onClick={() => openImageViewer(index + 1)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -410,9 +407,6 @@ const PropertyDetail = () => {
                                     src={image}
                                     alt={`Property visual ${index + 2}`}
                                 />
-                                {isYad2ListingMedia && (
-                                    <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                )}
                             </button>
                         ))}
                     </section>
@@ -647,9 +641,6 @@ const PropertyDetail = () => {
                         alt={`Property image ${selectedImageIndex + 1}`}
                         onClick={(e) => e.stopPropagation()}
                     />
-                    {isYad2ListingMedia && (
-                        <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
-                    )}
                         </div>
                     </div>
                 </div>
