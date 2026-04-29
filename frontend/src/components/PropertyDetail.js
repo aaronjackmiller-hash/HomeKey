@@ -184,6 +184,35 @@ const getDisplayWhatsApp = (contact = {}) => {
     return raw;
 };
 
+const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
+
+const buildAmenities = (property = {}) => {
+    const haystack = String(property.description || '').toLowerCase();
+    const amenities = [];
+    const addAmenity = (label, condition) => {
+        if (!condition || amenities.includes(label)) return;
+        amenities.push(label);
+    };
+
+    addAmenity('Modern kitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
+    addAmenity('Air conditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
+    addAmenity('Balcony', hasAnyPattern(haystack, [/balcony/i, /מרפסת/]));
+    addAmenity('Secure parking', hasAnyPattern(haystack, [/parking/i, /חניה/]));
+    addAmenity('Safe room', hasAnyPattern(haystack, [/safe\s*room/i, /\bmamad\b/i, /ממד/]));
+    addAmenity('Elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
+    addAmenity('Renovated', hasAnyPattern(haystack, [/renovat/i, /משופצ/]));
+    addAmenity('Secure building', Boolean(property.buildingDetails?.name));
+
+    if (amenities.length === 0) {
+        if (property.type === 'rental') {
+            amenities.push('Modern kitchen', 'Air conditioning', 'Balcony');
+        } else {
+            amenities.push('Secure building', 'Modern kitchen', 'Balcony');
+        }
+    }
+    return amenities.slice(0, 4);
+};
+
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
@@ -315,6 +344,7 @@ const PropertyDetail = () => {
     const listingContact = getListingContact(property);
     const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
     const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle);
+    const amenities = buildAmenities(property);
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
@@ -399,7 +429,14 @@ const PropertyDetail = () => {
                         />
                     </div>
                     <div className="detail-hero-content">
-                        <div>
+                        <div className="detail-brand-badge" aria-label="HomeKey brand">
+                            <span className="detail-brand-icon">HK</span>
+                            <div className="detail-brand-text">
+                                <strong>HomeKey</strong>
+                                <small>Real Estate Platform</small>
+                            </div>
+                        </div>
+                        <div className="detail-hero-main">
                             <p className="detail-type-pill">{typeLabel}</p>
                             <h1>{detailTitle}</h1>
                             <p className="detail-address">
@@ -411,6 +448,14 @@ const PropertyDetail = () => {
                                 <span>{property.size ? `${property.size} sqm` : '—'}</span>
                             </div>
                         </div>
+                        <section className="detail-amenities-panel" aria-label="Amenities">
+                            <h3>Amenities</h3>
+                            <ul className="detail-amenities-list">
+                                {amenities.map((amenity) => (
+                                    <li key={amenity}>{amenity}</li>
+                                ))}
+                            </ul>
+                        </section>
                         <div className="detail-price-box">
                             <p>Price</p>
                             <strong>{formatCurrency(property.price)}</strong>

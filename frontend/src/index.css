@@ -455,6 +455,7 @@ a {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.24);
+  position: relative;
 }
 
 .detail-hero-image {
@@ -503,6 +504,37 @@ a {
   gap: 18px;
 }
 
+.detail-hero-brand-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 6;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #0f172a;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.28);
+  min-width: 94px;
+}
+
+.detail-hero-brand-badge strong {
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.detail-hero-brand-badge span {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.61rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
 .detail-hero-content h1 {
   margin: 0 0 10px;
   font-size: clamp(1.45rem, 2vw, 2rem);
@@ -526,6 +558,12 @@ a {
   line-height: 1.45;
 }
 
+.detail-address--hero {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
 .detail-highlight-row {
   margin-top: 14px;
   display: flex;
@@ -540,6 +578,36 @@ a {
   padding: 5px 10px;
   font-size: 0.86rem;
   color: #e2e8f0;
+}
+
+.detail-amenities-panel {
+  margin-top: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.38);
+  padding: 10px 12px;
+}
+
+.detail-amenities-panel h3 {
+  margin: 0 0 8px;
+  font-size: 0.83rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.detail-amenities-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-amenities-list li {
+  color: #e2e8f0;
+  font-size: 0.92rem;
 }
 
 .detail-price-box {
