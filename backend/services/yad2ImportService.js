@@ -80,6 +80,183 @@ const normalizePreferredContactMethod = (value) => {
     return '';
 };
 
+const HEBREW_TOKEN_REPLACEMENTS = [
+    ['דירת גן', 'garden apartment'],
+    ['להשכרה', 'for rent'],
+    ['השכרה', 'rental'],
+    ['למכירה', 'for sale'],
+    ['מכירה', 'sale'],
+    ['דירה', 'apartment'],
+    ['חדרים', 'rooms'],
+    ['חדר', 'room'],
+    ['מרפסות', 'balconies'],
+    ['מרפסת', 'balcony'],
+    ['קומה', 'floor'],
+    ['שירותים', 'bathrooms'],
+    ['רחוב', 'street'],
+    ['טלפון', 'phone'],
+    ['וואטסאפ', 'whatsapp'],
+    ['עיר', 'city'],
+    ['בניין', 'building'],
+    ['מרכז', 'center'],
+];
+
+const HEBREW_CHAR_REPLACEMENTS = {
+    א: 'a',
+    ב: 'b',
+    ג: 'g',
+    ד: 'd',
+    ה: 'h',
+    ו: 'v',
+    ז: 'z',
+    ח: 'h',
+    ט: 't',
+    י: 'y',
+    כ: 'k',
+    ך: 'k',
+    ל: 'l',
+    מ: 'm',
+    ם: 'm',
+    נ: 'n',
+    ן: 'n',
+    ס: 's',
+    ע: 'a',
+    פ: 'p',
+    ף: 'p',
+    צ: 'ts',
+    ץ: 'ts',
+    ק: 'k',
+    ר: 'r',
+    ש: 'sh',
+    ת: 't',
+};
+
+const transliterateHebrew = (value) =>
+    String(value || '')
+        .split('')
+        .map((ch) => HEBREW_CHAR_REPLACEMENTS[ch] || ch)
+        .join('');
+
+const normalizeHumanText = (value) => {
+    const raw = normalizeString(value);
+    if (!raw) return '';
+    if (!/[א-ת]/.test(raw)) return raw;
+
+    let translated = raw;
+    for (const [from, to] of HEBREW_TOKEN_REPLACEMENTS) {
+        translated = translated.split(from).join(to);
+    }
+
+    return transliterateHebrew(translated)
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
+const parsePositiveNumber = (value) => {
+    const parsed = parseNumber(value, null);
+    return parsed != null && parsed > 0 ? parsed : null;
+};
+
+const parseBathroomsFromText = (value) => {
+    const text = normalizeString(value);
+    if (!text) return null;
+
+    const patterns = [
+        /(\d+(?:\.\d+)?)\s*(?:bath(?:room)?s?|wc|toilet[s]?)/i,
+        /(?:bath(?:room)?s?|wc|toilet[s]?)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i,
+        /(\d+(?:\.\d+)?)\s*(?:שירותים|חדרי רחצה|אמבטי(?:ה|ות)?)/,
+        /(?:שירותים|חדרי רחצה|אמבטי(?:ה|ות)?)\s*[:\-]?\s*(\d+(?:\.\d+)?)/,
+    ];
+
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (!match || !match[1]) continue;
+        const parsed = Number(match[1]);
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return null;
+};
+
+const parseBathrooms = (row, bedrooms) => {
+    const directCandidates = [
+        row.bathrooms,
+        row.bathroomCount,
+        row.bath,
+        row.baths,
+        row.bathRooms,
+        row.numberOfBathrooms,
+        row.numBathrooms,
+        row.bathroom_count,
+        row.wc,
+        row.toilets,
+        row.washrooms,
+        row.sanitarios,
+        row.details && row.details.bathrooms,
+        row.details && row.details.bathroomCount,
+        row.specs && row.specs.bathrooms,
+        row.attributes && row.attributes.bathrooms,
+        row.meta && row.meta.bathrooms,
+    ];
+
+    for (const candidate of directCandidates) {
+        const parsed = parsePositiveNumber(candidate);
+        if (parsed != null) return parsed;
+    }
+
+    const textCandidates = [
+        row.bathroomText,
+        row.bathroomsText,
+        row.featuresText,
+        row.attributesText,
+        row.summary,
+        row.description,
+        row.details,
+        row.body,
+        row.notes,
+        row.title,
+        row.headline,
+        row.subject,
+    ];
+
+    for (const text of textCandidates) {
+        const parsed = parseBathroomsFromText(text);
+        if (parsed != null) return parsed;
+    }
+
+    if (bedrooms > 0) return Math.max(1, Math.round(bedrooms / 2));
+    return 1;
+};
+
+const combineStreetAndNumber = (streetName, streetNumber) => {
+    const street = normalizeHumanText(streetName);
+    const number = normalizeHumanText(streetNumber);
+    if (!street) return number;
+    if (!number) return street;
+    if (street.toLowerCase().includes(number.toLowerCase())) return street;
+    return `${street} ${number}`;
+};
+
+const extractStreetNumberFromText = (value) => {
+    const text = normalizeString(value);
+    if (!text) return { street: '', number: '' };
+
+    const patterns = [
+        /(?:street|st\.?)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:at|in)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:רחוב|רח׳|רח)\s*([א-תa-zA-Z0-9'\-.\s]{1,60})\s+(\d+[א-תa-zA-Z0-9\-\/]*)/i,
+        /([a-zA-Zא-ת][a-zA-Zא-ת0-9'\-.\s]{1,60})[, ]+(\d+[a-zA-Zא-ת0-9\-\/]*)/,
+    ];
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (!match || !match[1] || !match[2]) continue;
+        return {
+            street: normalizeHumanText(match[1]),
+            number: normalizeHumanText(match[2]),
+        };
+    }
+    return { street: '', number: '' };
+};
+
 const mapYad2RowToPropertyDoc = (row) => {
     const externalId = normalizeString(String(pickFirst(
         row.externalId,
@@ -92,25 +269,72 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.listing_id,
         ''
     ) || ''));
-    const city = normalizeString(pickFirst(row.city, row.address && row.address.city, row.town));
+    const city = normalizeHumanText(pickFirst(
+        row.city,
+        row.address && row.address.city,
+        row.town,
+        row.locality,
+        row.location && row.location.city
+    ));
 
-    const title = normalizeString(
+    const title = normalizeHumanText(
         pickFirst(row.title, row.headline, row.propertyTitle, row.listingTitle, row.subject)
     ) || `${parseType(row.type || row.dealType) === 'rental' ? 'Rental' : 'For Sale'} Listing in ${city || 'Israel'}`;
 
     const price = parseNumber(pickFirst(row.price, row.priceNis, row.amount), 0);
     const bedrooms = parseNumber(pickFirst(row.bedrooms, row.rooms, row.roomCount), 0);
-    const bathrooms = parseNumber(pickFirst(row.bathrooms, row.bathroomCount), 0);
+    const bathrooms = parseBathrooms(row, bedrooms);
     const size = parseNumber(pickFirst(row.size, row.area, row.squareMeters), 1);
 
-    const description = normalizeString(pickFirst(row.description, row.body, row.notes, row.details));
+    const description = normalizeHumanText(pickFirst(row.description, row.body, row.notes, row.details));
 
-    const addressStreet = normalizeString(pickFirst(row.street, row.address && row.address.street));
-    const addressState = normalizeString(pickFirst(row.state, row.district, row.region));
+    const parsedStreetFromText = extractStreetNumberFromText(pickFirst(
+        row.addressLine,
+        row.addressText,
+        row.fullAddress,
+        row.addressLine1,
+        row.locationText,
+        row.location && row.location.text,
+        row.address && row.address.full,
+        row.address && row.address.text,
+        row.title,
+        row.headline,
+        row.description,
+        row.details
+    ));
+
+    const addressStreet = combineStreetAndNumber(
+        pickFirst(
+            row.street,
+            row.streetName,
+            row.streetAddress,
+            row.address1,
+            row.addressLine1,
+            row.address && row.address.street,
+            row.address && row.address.streetName,
+            row.location && row.location.street,
+            parsedStreetFromText.street
+        ),
+        pickFirst(
+            row.streetNumber,
+            row.houseNumber,
+            row.buildingNumber,
+            row.addressNumber,
+            row.streetNo,
+            row.street_no,
+            row.address && row.address.streetNumber,
+            row.address && row.address.houseNumber,
+            row.address && row.address.number,
+            row.location && row.location.streetNumber,
+            row.location && row.location.number,
+            parsedStreetFromText.number
+        )
+    );
+    const addressState = normalizeHumanText(pickFirst(row.state, row.district, row.region));
     const addressZip = normalizeString(pickFirst(row.zip, row.postalCode));
-    const addressCountry = normalizeString(pickFirst(row.country, 'Israel')) || 'Israel';
+    const addressCountry = normalizeHumanText(pickFirst(row.country, 'Israel')) || 'Israel';
 
-    const buildingName = normalizeString(pickFirst(row.buildingName, row.building && row.building.name));
+    const buildingName = normalizeHumanText(pickFirst(row.buildingName, row.building && row.building.name));
     const floorCount = parseNumber(pickFirst(row.floorCount, row.building && row.building.floorCount), undefined);
     const apartmentCount = parseNumber(pickFirst(row.apartmentCount, row.building && row.building.apartmentCount), undefined);
 
@@ -119,37 +343,62 @@ const mapYad2RowToPropertyDoc = (row) => {
 
     const type = parseType(pickFirst(row.type, row.dealType, row.deal_type));
     const floorNumber = parseNumber(pickFirst(row.floorNumber, row.floor), undefined);
-    const externalUrl = normalizeString(pickFirst(row.url, row.listingUrl, row.externalUrl));
+    const externalUrl = normalizeString(pickFirst(row.url, row.listingUrl, row.externalUrl, row.link));
     const sourceType = parseSourceType(pickFirst(row.sourceType, row.source_type, 'yad2-sync'));
     const externalSegmentKey = normalizeString(pickFirst(row.externalSegmentKey, row.segmentKey, row.segment))
         .toLowerCase();
-    const contactName = normalizeString(pickFirst(
+    const contactName = normalizeHumanText(pickFirst(
         row.contactName,
         row.managerName,
         row.agentName,
+        row.contactPerson,
+        row.contact_person,
+        row.contactFullName,
         row.contact && row.contact.name,
+        row.contact && row.contact.fullName,
         row.agent && row.agent.name,
+        row.manager && row.manager.name,
+        row.owner && row.owner.name,
+        row.advertiser && row.advertiser.name,
+        row.contactDetails && row.contactDetails.name,
         row.ownerName,
         row.advertiserName
     ));
     const contactPhone = normalizePhone(pickFirst(
         row.contactPhone,
         row.phone,
+        row.mobile,
+        row.contactMobile,
         row.agentPhone,
         row.contact && row.contact.phone,
+        row.contact && row.contact.mobile,
+        row.contact && row.contact.phoneNumber,
         row.agent && row.agent.phone,
+        row.agent && row.agent.mobile,
+        row.manager && row.manager.phone,
+        row.owner && row.owner.phone,
+        row.advertiser && row.advertiser.phone,
+        row.contactDetails && row.contactDetails.phone,
         row.managerPhone,
-        row.ownerPhone
+        row.ownerPhone,
+        row.advertiserPhone
     ));
     const contactWhatsapp = normalizePhone(pickFirst(
         row.whatsapp,
         row.whatsApp,
+        row.whatsappNumber,
         row.contactWhatsapp,
+        row.contactWhatsApp,
         row.agentWhatsapp,
+        row.agentWhatsApp,
         row.contact && row.contact.whatsapp,
         row.contact && row.contact.whatsApp,
         row.agent && row.agent.whatsapp,
         row.agent && row.agent.whatsApp,
+        row.manager && row.manager.whatsapp,
+        row.owner && row.owner.whatsapp,
+        row.advertiser && row.advertiser.whatsapp,
+        row.contactDetails && row.contactDetails.whatsapp,
         row.managerWhatsapp
     ));
     const contactEmail = normalizeString(pickFirst(
@@ -157,23 +406,37 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.email,
         row.agentEmail,
         row.contact && row.contact.email,
+        row.contact && row.contact.mail,
         row.agent && row.agent.email,
-        row.managerEmail
+        row.manager && row.manager.email,
+        row.owner && row.owner.email,
+        row.advertiser && row.advertiser.email,
+        row.contactDetails && row.contactDetails.email,
+        row.managerEmail,
+        row.ownerEmail,
+        row.advertiserEmail
     )).toLowerCase();
-    const contactAgency = normalizeString(pickFirst(
+    const contactAgency = normalizeHumanText(pickFirst(
         row.agency,
+        row.brokerAgency,
+        row.officeName,
         row.agentAgency,
         row.contactAgency,
         row.contact && row.contact.agency,
-        row.agent && row.agent.agency
+        row.agent && row.agent.agency,
+        row.manager && row.manager.agency,
+        row.advertiser && row.advertiser.agency,
+        row.contactDetails && row.contactDetails.agency
     ));
     const preferredContactMethod = normalizePreferredContactMethod(pickFirst(
         row.preferredContactMethod,
         row.preferredMethod,
+        row.contactMethod,
         row.contact && row.contact.preferredMethod,
         row.contact && row.contact.preferredContactMethod,
         row.agent && row.agent.preferredMethod,
-        row.agent && row.agent.preferredContactMethod
+        row.agent && row.agent.preferredContactMethod,
+        row.contactDetails && row.contactDetails.preferredMethod
     ));
 
     const payload = {
@@ -368,4 +631,5 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
 
 module.exports = {
     importYad2Listings,
+    mapYad2RowToPropertyDoc,
 };

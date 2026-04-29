@@ -29,6 +29,15 @@ const getAddressDisplay = (address = {}) => {
   return { street, fullAddress };
 };
 
+const removeYad2ImageLogo = (url, sourceType = '') => {
+  const source = String(url || '').trim();
+  if (!source) return source;
+  const fromYad2 = /yad2/i.test(source) || /yad2/i.test(String(sourceType || ''));
+  if (!fromYad2) return source;
+  const separator = source.includes('?') ? '&' : '?';
+  return `${source}${separator}fit=crop&crop=top&h=780`;
+};
+
 const formatContactMethod = (method) => {
   const normalized = String(method || '').trim().toLowerCase();
   if (normalized === 'whatsapp') return 'WhatsApp';
@@ -440,7 +449,7 @@ const PropertyList = () => {
           const canOpenDetail = Boolean(propertyId) && !isSample;
           const key = propertyId || `property-${index}`;
           const imageSrc =
-            (Array.isArray(property.images) && property.images[0]) ||
+            removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, fullAddress } = getAddressDisplay(property.address);
           const displayTitle = street || fullAddress || property.title || 'Untitled property';

@@ -21,11 +21,26 @@ const formatDate = (value) => {
 const getAddressLine = (address) =>
     [address?.street, address?.city, address?.state, address?.zip].filter(Boolean).join(', ');
 
+const getPrimaryAddressTitle = (property = {}) => {
+    const street = String(property.address?.street || '').trim();
+    if (street) return street;
+    return String(property.title || '').trim() || 'Untitled property';
+};
+
 const formatContactMethod = (method) => {
     const normalized = String(method || '').toLowerCase();
     if (normalized === 'whatsapp') return 'WhatsApp';
     if (normalized === 'phone') return 'Phone';
     return 'Email';
+};
+
+const sanitizeImageSource = (url) => {
+    const source = String(url || '').trim();
+    if (!source) return '';
+    // Yad2 listing photos may contain top-left badges/logos. Crop top region from
+    // every listing image to consistently hide branding overlays regardless of host.
+    const separator = source.includes('?') ? '&' : '?';
+    return `${source}${separator}fit=crop&crop=entropy&crop-top=14&h=860`;
 };
 
 const PropertyDetail = () => {
@@ -52,6 +67,7 @@ const PropertyDetail = () => {
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
+    const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -137,11 +153,31 @@ const PropertyDetail = () => {
     if (!property) return null;
 
     const addressLine = getAddressLine(property.address);
+    const allImages = (Array.isArray(property.images) ? property.images : [])
+        .map((image) => sanitizeImageSource(image))
+        .filter(Boolean);
     const heroImage =
-        (Array.isArray(property.images) && property.images[0]) ||
+        allImages[0] ||
         'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
-    const additionalImages = Array.isArray(property.images) ? property.images.slice(1) : [];
+    const additionalImages = allImages.slice(1);
+    const detailTitle = getPrimaryAddressTitle(property);
     const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
+    const isRental = property.type === 'rental';
+
+    const openImageViewer = (index) => {
+        if (allImages.length === 0) return;
+        const bounded = Math.max(0, Math.min(index, allImages.length - 1));
+        setSelectedImageIndex(bounded);
+    };
+    const closeImageViewer = () => setSelectedImageIndex(null);
+    const showPrevImage = () => {
+        if (selectedImageIndex == null || allImages.length <= 1) return;
+        setSelectedImageIndex((selectedImageIndex - 1 + allImages.length) % allImages.length);
+    };
+    const showNextImage = () => {
+        if (selectedImageIndex == null || allImages.length <= 1) return;
+        setSelectedImageIndex((selectedImageIndex + 1) % allImages.length);
+    };
 
     const profileSections = [
         {
@@ -155,7 +191,7 @@ const PropertyDetail = () => {
                 { label: 'Type', value: typeLabel },
             ],
         },
-        {
+        ...(!isRental ? [{
             title: 'Financial Profile',
             items: [
                 { label: 'Listing Price', value: formatCurrency(property.price) },
@@ -165,7 +201,7 @@ const PropertyDetail = () => {
                 { label: 'Maintenance Fees', value: formatCurrency(property.financialDetails?.maintenanceFees) },
                 { label: 'Property Tax', value: formatCurrency(property.financialDetails?.propertyTax) },
             ],
-        },
+        }] : []),
         {
             title: 'Building Details',
             items: [
@@ -194,11 +230,24 @@ const PropertyDetail = () => {
                 </button>
 
                 <section className="detail-hero-card">
-                    <img className="detail-hero-image" src={heroImage} alt={property.title || 'Property'} />
+                    <img
+                        className="detail-hero-image"
+                        src={heroImage}
+                        alt={detailTitle || 'Property'}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openImageViewer(0)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openImageViewer(0);
+                            }
+                        }}
+                    />
                     <div className="detail-hero-content">
                         <div>
                             <p className="detail-type-pill">{typeLabel}</p>
-                            <h1>{property.title || 'Untitled property'}</h1>
+                            <h1>{detailTitle}</h1>
                             <p className="detail-address">{addressLine || 'Address not provided'}</p>
                             <div className="detail-highlight-row">
                                 <span>{property.bedrooms ?? '—'} bed</span>
@@ -216,7 +265,20 @@ const PropertyDetail = () => {
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
                         {additionalImages.map((image, index) => (
-                            <img key={index} src={image} alt={`Property visual ${index + 2}`} />
+                            <img
+                                key={index}
+                                src={image}
+                                alt={`Property visual ${index + 2}`}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => openImageViewer(index + 1)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        openImageViewer(index + 1);
+                                    }
+                                }}
+                            />
                         ))}
                     </section>
                 )}
@@ -400,6 +462,44 @@ const PropertyDetail = () => {
                     </div>
                 )}
             </div>
+            {selectedImageIndex != null && allImages[selectedImageIndex] && (
+                <div className="image-lightbox" onClick={closeImageViewer}>
+                    <button className="image-lightbox-close" onClick={closeImageViewer} type="button">×</button>
+                    {allImages.length > 1 && (
+                        <>
+                            <button
+                                className="image-lightbox-nav image-lightbox-nav-prev"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    showPrevImage();
+                                }}
+                                type="button"
+                            >
+                                ‹
+                            </button>
+                            <button
+                                className="image-lightbox-nav image-lightbox-nav-next"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    showNextImage();
+                                }}
+                                type="button"
+                            >
+                                ›
+                            </button>
+                        </>
+                    )}
+                    <img
+                        className="image-lightbox-image"
+                        src={allImages[selectedImageIndex]}
+                        alt={`Property image ${selectedImageIndex + 1}`}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    <p className="image-lightbox-counter">
+                        {selectedImageIndex + 1} / {allImages.length}
+                    </p>
+                </div>
+            )}
         </div>
     );
 };

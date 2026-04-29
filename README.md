@@ -205,6 +205,105 @@ This uses your logged-in bearer token, so you do not need to paste admin secrets
 
 From the Import Yad2 screen, you can also click **Run Yad2 Sync Now** to trigger one immediate live-feed sync without using PowerShell.
 
+### Reprocess existing Yad2 records (one-time backfill)
+
+When parser logic changes (address extraction, contact aliases, bathroom parsing, Hebrew normalization), older database records keep their previous mapped values until they are re-imported or backfilled.
+
+You can run a one-time in-place reprocessing job using the new admin endpoint:
+
+#### Endpoint
+
+- `POST /api/admin/backfill/yad2`
+
+#### Authorization
+
+Same as other Yad2 admin routes:
+
+- `X-Admin-Import-Secret: <ADMIN_IMPORT_SECRET>`, or
+- `X-Admin-Secret: <ADMIN_SECRET>`, or
+- Bearer token for an `agent` / `admin` user
+
+#### Example (PowerShell)
+
+```powershell
+$headers = @{
+  # Preferred:
+  # "X-Admin-Import-Secret" = "YOUR_ADMIN_IMPORT_SECRET"
+  # Fallback:
+  "X-Admin-Secret" = "YOUR_ADMIN_SECRET"
+  "Content-Type"   = "application/json"
+}
+
+$body = @{
+  sourceTag = "yad2-live-sync" # optional; defaults to all sources containing "yad2"
+  batchSize = 250              # optional; defaults to 250 (50-1000)
+  limit     = 1000             # optional; process only first N
+  dryRun    = $false           # optional; true = preview only
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "https://YOUR-RENDER-URL.onrender.com/api/admin/backfill/yad2" -Headers $headers -Body $body
+```
+
+#### Local CLI alternative
+
+From `backend/`:
+
+```bash
+npm run yad2:backfill
+```
+
+This command uses `MONGODB_URI` and processes Yad2-sourced listings directly in MongoDB.
+Optional CLI flags:
+
+```bash
+npm run yad2:backfill -- --sourceTag=yad2-live-sync --batchSize=250 --limit=1000 --dry-run
+```
+
+### Run a fresh Yad2 sync/import (recommended after parser updates)
+
+Use one of the options below so records are reprocessed with the newest mapping logic.
+
+#### Option A — Trigger live sync now (server feed/scrape provider)
+
+```powershell
+$headers = @{
+  "X-Admin-Secret" = "YOUR_ADMIN_SECRET"
+}
+
+Invoke-RestMethod -Method Post -Uri "https://YOUR-RENDER-URL.onrender.com/api/admin/sync/yad2" -Headers $headers
+```
+
+Then check status:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "https://YOUR-RENDER-URL.onrender.com/api/admin/sync/yad2/status" -Headers $headers
+```
+
+#### Option B — Import a JSON file again (explicit re-import)
+
+```powershell
+$headers = @{
+  "X-Admin-Secret" = "YOUR_ADMIN_SECRET"
+  "Content-Type"   = "application/json"
+}
+
+$payload = @{
+  sourceTag = "yad2-live-sync" # use the same source namespace you want to update
+  upsert    = $true
+  items     = (Get-Content ".\yad2-listings.json" -Raw | ConvertFrom-Json)
+} | ConvertTo-Json -Depth 20
+
+Invoke-RestMethod -Method Post -Uri "https://YOUR-RENDER-URL.onrender.com/api/admin/import/yad2" -Headers $headers -Body $payload
+```
+
+#### Option C — Run backfill only
+
+If you already have Yad2 listings in DB and only need remapping with new parser rules, run:
+
+- `POST /api/admin/backfill/yad2`
+
+This is fastest and does not require downloading/re-uploading feed data.
+
 ### Curated Israeli Yad2 listings shown by default
 
 On startup, HomeKey now upserts a curated Yad2-inspired Israeli listings set (both rentals and for-sale properties) into the listings collection. This keeps the listings page populated with realistic local inventory without manual import steps.

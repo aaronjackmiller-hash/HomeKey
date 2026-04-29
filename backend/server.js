@@ -43,6 +43,7 @@ const generalLimiter = rateLimit({
 
 const { runSeed } = require('./seed');
 const { importYad2Listings } = require('./services/yad2ImportService');
+const { backfillYad2Listings } = require('./services/yad2BackfillService');
 const { createYad2Scheduler } = require('./services/yad2SchedulerService');
 const {
     getYad2FallbackFeedRowsForSegment,
@@ -523,6 +524,50 @@ app.post('/api/admin/sync/yad2', async (req, res) => {
         return res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// Admin endpoint — one-time reprocessing backfill for existing Yad2 records.
+// Re-imports already stored Yad2 listings through latest mapping logic so
+// address/contact/bathroom/transliteration fixes apply to existing records.
+// Uses same authorization as /api/admin/import/yad2.
+// Usage: POST /api/admin/backfill/yad2
+//    or: POST /api/admin/sync/yad2/backfill
+// Body (optional):
+// {
+//   "sourceTag": "yad2-live-sync", // default: all Yad2-like sources
+//   "batchSize": 300               // default 250, max 1000
+// }
+const handleYad2Backfill = async (req, res) => {
+    if (!(await isYad2ImportAuthorized(req))) {
+        return res.status(403).json({
+            success: false,
+            message: 'Not authorized for backfill. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
+        });
+    }
+    try {
+        const payload = req.body || {};
+        const sourceTag = typeof payload.sourceTag === 'string' && payload.sourceTag.trim()
+            ? payload.sourceTag.trim()
+            : null;
+        const batchSizeRaw = Number(payload.batchSize);
+        const batchSize = Number.isFinite(batchSizeRaw)
+            ? Math.min(1000, Math.max(50, Math.floor(batchSizeRaw)))
+            : 250;
+        const result = await backfillYad2Listings({
+            sourceTag,
+            batchSize,
+        });
+        return res.json({
+            success: true,
+            message: 'Yad2 backfill completed.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[admin/backfill/yad2] Backfill failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+app.post('/api/admin/backfill/yad2', handleYad2Backfill);
+app.post('/api/admin/sync/yad2/backfill', handleYad2Backfill);
 
 // Admin endpoint — view Yad2 sync status/health.
 // Uses the same authorization as /api/admin/import/yad2.
