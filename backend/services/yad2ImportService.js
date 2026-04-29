@@ -39,6 +39,12 @@ const parseSourceType = (value) => {
     return 'yad2-sync';
 };
 
+const hasManualSource = (propertyDoc) =>
+    Boolean(propertyDoc) && (
+        propertyDoc.sourceType === 'manual'
+        || (Array.isArray(propertyDoc.sources) && propertyDoc.sources.some((source) => source && source.sourceType === 'manual'))
+    );
+
 const extractImageList = (row) => {
     const candidates = [
         row.images,
@@ -508,7 +514,15 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                     summary.updated += 1;
                 } else {
                     const duplicate = await findDuplicateCandidate(payload);
-                    if (duplicate) {
+                    const shouldMergeIntoDuplicate = Boolean(duplicate) && (
+                        // Preserve the manual-owner workflow by merging feed updates into a
+                        // manually created listing that represents the same home.
+                        hasManualSource(duplicate)
+                        // Rows without external IDs cannot be safely upserted and may still
+                        // require fuzzy duplicate matching to avoid repeated inserts.
+                        || !externalId
+                    );
+                    if (shouldMergeIntoDuplicate) {
                         duplicate.description = payload.description || duplicate.description;
                         duplicate.price = payload.price;
                         duplicate.bedrooms = payload.bedrooms;
@@ -536,7 +550,11 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         appendSourceIfMissing(duplicate, sourceEntry);
                         await duplicate.save();
                         summary.updated += 1;
-                    } else {
+                    }
+                    if (!shouldMergeIntoDuplicate) {
+                        // For Yad2 rows with explicit external IDs, keep each externalId as a
+                        // distinct listing record. This prevents unrelated feed rows from being
+                        // collapsed into a single document by fuzzy duplicate scoring.
                         await Property.create({
                             ...payload,
                             sourceType,
