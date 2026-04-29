@@ -78,6 +78,38 @@ const normalizePhone = (value) => {
     return cleaned || raw;
 };
 
+const firstPhoneFromValue = (value) => {
+    if (typeof value === 'string') {
+        const parts = value
+            .split(/[|,;/]+/)
+            .map((part) => normalizePhone(part))
+            .filter(Boolean);
+        return parts[0] || '';
+    }
+    if (Array.isArray(value)) {
+        for (const entry of value) {
+            const normalized = firstPhoneFromValue(entry);
+            if (normalized) return normalized;
+        }
+    }
+    if (value && typeof value === 'object') {
+        const candidates = [
+            value.phone,
+            value.mobile,
+            value.phoneNumber,
+            value.whatsapp,
+            value.whatsApp,
+            value.number,
+            value.value,
+        ];
+        for (const candidate of candidates) {
+            const normalized = firstPhoneFromValue(candidate);
+            if (normalized) return normalized;
+        }
+    }
+    return '';
+};
+
 const dedupeRepeatedPhrases = (value) => {
     const text = normalizeHumanText(value);
     if (!text) return '';
@@ -353,41 +385,66 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.ownerName,
         row.advertiserName
     ));
-    const contactPhone = normalizePhone(pickFirst(
+    const contactPhone = firstPhoneFromValue(pickFirst(
         row.contactPhone,
         row.phone,
         row.mobile,
+        row.telephone,
+        row.mobilePhone,
+        row.contactPhones,
+        row.phoneNumbers,
         row.contactMobile,
         row.agentPhone,
         row.contact && row.contact.phone,
         row.contact && row.contact.mobile,
+        row.contact && row.contact.phoneNumbers,
         row.contact && row.contact.phoneNumber,
         row.agent && row.agent.phone,
         row.agent && row.agent.mobile,
+        row.agent && row.agent.phoneNumbers,
         row.manager && row.manager.phone,
+        row.manager && row.manager.mobile,
+        row.manager && row.manager.phoneNumbers,
         row.owner && row.owner.phone,
+        row.owner && row.owner.mobile,
         row.advertiser && row.advertiser.phone,
+        row.advertiser && row.advertiser.mobile,
         row.contactDetails && row.contactDetails.phone,
+        row.contactDetails && row.contactDetails.mobile,
+        row.contactDetails && row.contactDetails.phoneNumbers,
         row.managerPhone,
+        row.managerMobile,
         row.ownerPhone,
+        row.ownerMobile,
         row.advertiserPhone
     ));
-    const contactWhatsapp = normalizePhone(pickFirst(
+    const contactWhatsapp = firstPhoneFromValue(pickFirst(
         row.whatsapp,
         row.whatsApp,
         row.whatsappNumber,
+        row.whatsappPhone,
+        row.whatsappMobile,
+        row.whatsapp_number,
         row.contactWhatsapp,
         row.contactWhatsApp,
         row.agentWhatsapp,
         row.agentWhatsApp,
         row.contact && row.contact.whatsapp,
         row.contact && row.contact.whatsApp,
+        row.contact && row.contact.whatsappNumber,
         row.agent && row.agent.whatsapp,
         row.agent && row.agent.whatsApp,
+        row.agent && row.agent.whatsappNumber,
         row.manager && row.manager.whatsapp,
+        row.manager && row.manager.whatsApp,
+        row.manager && row.manager.whatsappNumber,
         row.owner && row.owner.whatsapp,
+        row.owner && row.owner.whatsApp,
         row.advertiser && row.advertiser.whatsapp,
+        row.advertiser && row.advertiser.whatsApp,
         row.contactDetails && row.contactDetails.whatsapp,
+        row.contactDetails && row.contactDetails.whatsApp,
+        row.contactDetails && row.contactDetails.whatsappNumber,
         row.managerWhatsapp
     ));
     const contactEmail = normalizeString(pickFirst(

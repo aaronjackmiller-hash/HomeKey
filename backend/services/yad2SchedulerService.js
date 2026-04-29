@@ -908,20 +908,25 @@ const normalizeRow = (row) => {
             ?? (contactDetails && (contactDetails.name ?? contactDetails.fullName)),
         contactPhone: row.contactPhone ?? row.managerPhone ?? row.agentPhone ?? row.ownerPhone ?? row.phone
             ?? row.contactMobile ?? row.mobile
+            ?? row.telephone ?? row.tel ?? row.phoneNumber ?? row.contact_number
             ?? (contact && (contact.phone ?? contact.mobile ?? contact.phoneNumber))
             ?? (externalContact && (externalContact.phone ?? externalContact.mobile ?? externalContact.phoneNumber))
             ?? (agent && (agent.phone ?? agent.mobile ?? agent.phoneNumber))
             ?? (manager && (manager.phone ?? manager.mobile ?? manager.phoneNumber))
             ?? (owner && (owner.phone ?? owner.mobile ?? owner.phoneNumber))
             ?? (advertiser && (advertiser.phone ?? advertiser.mobile ?? advertiser.phoneNumber))
-            ?? (contactDetails && (contactDetails.phone ?? contactDetails.mobile ?? contactDetails.phoneNumber)),
+            ?? (contactDetails && (contactDetails.phone ?? contactDetails.mobile ?? contactDetails.phoneNumber))
+            ?? (Array.isArray(row.phones) ? row.phones.find((value) => typeof value === 'string' && value.trim()) : undefined)
+            ?? (Array.isArray(row.phoneNumbers) ? row.phoneNumbers.find((value) => typeof value === 'string' && value.trim()) : undefined),
         contactWhatsapp: row.contactWhatsapp ?? row.managerWhatsapp ?? row.agentWhatsapp ?? row.whatsapp ?? row.whatsApp
+            ?? row.whatsappPhone ?? row.whatsappNumber
             ?? (contact && (contact.whatsapp ?? contact.whatsApp))
             ?? (externalContact && (externalContact.whatsapp ?? externalContact.whatsApp))
             ?? (agent && (agent.whatsapp ?? agent.whatsApp))
             ?? (manager && (manager.whatsapp ?? manager.whatsApp))
             ?? (owner && (owner.whatsapp ?? owner.whatsApp))
-            ?? (advertiser && (advertiser.whatsapp ?? advertiser.whatsApp)),
+            ?? (advertiser && (advertiser.whatsapp ?? advertiser.whatsApp))
+            ?? (contactDetails && (contactDetails.whatsapp ?? contactDetails.whatsApp)),
         contactEmail: row.contactEmail ?? row.managerEmail ?? row.agentEmail ?? row.ownerEmail ?? row.email
             ?? (contact && (contact.email ?? contact.mail))
             ?? (externalContact && (externalContact.email ?? externalContact.mail))

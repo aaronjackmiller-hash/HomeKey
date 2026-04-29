@@ -179,6 +179,11 @@ const buildWhatsAppHref = (phone, title = 'this listing') => {
     return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
+const getDisplayWhatsApp = (contact = {}) => {
+    const raw = safeText(contact.whatsapp || contact.phone);
+    return raw;
+};
+
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
@@ -308,7 +313,8 @@ const PropertyDetail = () => {
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
-    const managerWhatsAppHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, detailTitle);
+    const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
+    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle);
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
@@ -488,7 +494,7 @@ const PropertyDetail = () => {
                             {listingContact.name && <p>Manager: {listingContact.name}</p>}
                             {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
                             {listingContact.phone && <p>Phone: {listingContact.phone}</p>}
-                            {listingContact.whatsapp && <p>WhatsApp: {listingContact.whatsapp}</p>}
+                            {managerWhatsAppDisplay && <p>WhatsApp: {managerWhatsAppDisplay}</p>}
                             {listingContact.email && <p>Email: {listingContact.email}</p>}
                         </div>
                         <div className="detail-contact-actions">
