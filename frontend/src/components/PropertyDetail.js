@@ -370,8 +370,11 @@ const PropertyDetail = () => {
                             <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
                         )}
                     </div>
+                    <div className="homekey-logo-badge" aria-label="HomeKey logo">
+                        HomeKey
+                    </div>
                     <div className="detail-hero-content">
-                        <div>
+                        <div className="detail-hero-main">
                             <p className="detail-type-pill">{typeLabel}</p>
                             <h1>{detailTitle}</h1>
                             <p className="detail-address">
@@ -383,6 +386,14 @@ const PropertyDetail = () => {
                                 <span>{property.size ? `${property.size} sqm` : '—'}</span>
                             </div>
                         </div>
+                        <section className="detail-amenities-panel" aria-label="Amenities">
+                            <h3>Amenities</h3>
+                            <ul className="detail-amenities-list">
+                                {amenities.map((amenity) => (
+                                    <li key={amenity}>{amenity}</li>
+                                ))}
+                            </ul>
+                        </section>
                         <div className="detail-price-box">
                             <p>Price</p>
                             <strong>{formatCurrency(property.price)}</strong>
@@ -469,7 +480,7 @@ const PropertyDetail = () => {
                             {listingContact.name && <p>Manager: {listingContact.name}</p>}
                             {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
                             {listingContact.phone && <p>Phone: {listingContact.phone}</p>}
-                            {listingContact.whatsapp && <p>WhatsApp: {listingContact.whatsapp}</p>}
+                            {managerWhatsAppDisplay && <p>WhatsApp: {managerWhatsAppDisplay}</p>}
                             {listingContact.email && <p>Email: {listingContact.email}</p>}
                         </div>
                         <div className="detail-contact-actions">
@@ -616,7 +627,7 @@ const PropertyDetail = () => {
                             <span>{selectedImageIndex + 1} / {allImages.length}</span>
                             <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
                         </div>
-                        <div className={`image-lightbox-stage ${isYad2ListingMedia ? 'yad2-stage' : ''}`}>
+                        <div className="image-lightbox-stage">
                     {allImages.length > 1 && (
                         <>
                             <button
@@ -641,15 +652,17 @@ const PropertyDetail = () => {
                             </button>
                         </>
                     )}
-                    <img
-                        className={isYad2ListingMedia ? 'yad2-image' : ''}
-                        src={allImages[selectedImageIndex]}
-                        alt={`Property image ${selectedImageIndex + 1}`}
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    {isYad2ListingMedia && (
-                        <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
-                    )}
+                    <div className="image-lightbox-image-wrap">
+                        <img
+                            className={isYad2ListingMedia ? 'yad2-image' : ''}
+                            src={allImages[selectedImageIndex]}
+                            alt={`Property image ${selectedImageIndex + 1}`}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        {isYad2ListingMedia && (
+                            <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
+                        )}
+                    </div>
                         </div>
                     </div>
                 </div>
