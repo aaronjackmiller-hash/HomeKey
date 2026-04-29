@@ -573,10 +573,11 @@ a {
 
 .detail-gallery-grid img {
   width: 100%;
-  height: 140px;
-  object-fit: cover;
+  height: 180px;
+  object-fit: contain;
   border-radius: 12px;
   cursor: zoom-in;
+  background: #0f172a;
 }
 
 .detail-gallery-grid img.yad2-image {

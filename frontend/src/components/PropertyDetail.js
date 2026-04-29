@@ -66,10 +66,38 @@ const dedupeRepeatingPhrase = (value) => {
     return text;
 };
 
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizeStreetDisplay = (streetValue, explicitStreetNumber = '') => {
+    let street = safeText(streetValue);
+    let streetNumber = safeText(explicitStreetNumber);
+
+    if (!streetNumber) {
+        const leadingNumber = street.match(/^(\d+[a-zA-Zא-ת0-9\-\/]*)\s+(.+)$/);
+        if (leadingNumber) {
+            streetNumber = safeText(leadingNumber[1]);
+            street = safeText(leadingNumber[2]);
+        }
+    }
+    if (!streetNumber) {
+        const trailingNumber = street.match(/^(.+?)\s+(\d+[a-zA-Zא-ת0-9\-\/]*)$/);
+        if (trailingNumber) {
+            street = safeText(trailingNumber[1]);
+            streetNumber = safeText(trailingNumber[2]);
+        }
+    }
+    if (street && streetNumber) {
+        const escaped = escapeRegex(streetNumber);
+        street = street
+            .replace(new RegExp(`^${escaped}\\s+`, 'i'), '')
+            .replace(new RegExp(`\\s+${escaped}$`, 'i'), '')
+            .trim();
+    }
+    return [street, streetNumber].filter(Boolean).join(' ').trim();
+};
+
 const getAddressLine = (address) => {
-    const streetName = safeText(address?.street);
-    const streetNumber = safeText(address?.streetNumber);
-    const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
+    const street = normalizeStreetDisplay(address?.street, address?.streetNumber);
     const city = safeText(address?.city);
     const state = safeText(address?.state);
     const zip = safeText(address?.zip);
@@ -79,7 +107,7 @@ const getAddressLine = (address) => {
 };
 
 const getPrimaryAddressTitle = (property = {}) => {
-    const street = String(property.address?.street || '').trim();
+    const street = normalizeStreetDisplay(property.address?.street, property.address?.streetNumber);
     if (street) return street;
     const title = String(property.title || '').trim();
     if (isReadableImportedText(property, title)) return title;
@@ -154,10 +182,7 @@ const buildWhatsAppHref = (phone, title = 'this listing') => {
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
-    // Yad2 listing photos may contain top-left badges/logos. Crop top region from
-    // every listing image to consistently hide branding overlays regardless of host.
-    const separator = source.includes('?') ? '&' : '?';
-    return `${source}${separator}fit=crop&crop=entropy&crop-top=14&h=860`;
+    return source;
 };
 
 const PropertyDetail = () => {

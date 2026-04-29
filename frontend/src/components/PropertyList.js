@@ -68,10 +68,20 @@ const dedupeCaseInsensitive = (values = []) => {
   });
 };
 
+const normalizeStreetDisplay = (streetNameRaw = '', streetNumberRaw = '') => {
+  const streetName = safeText(streetNameRaw);
+  const explicitNumber = safeText(streetNumberRaw);
+  const matchFromStreet = streetName.match(/^(.*?)(?:[,\s]+)(\d+[a-zA-Zא-ת0-9\-\/]*)$/);
+  const parsedStreetName = matchFromStreet ? safeText(matchFromStreet[1]) : streetName;
+  const parsedStreetNumber = matchFromStreet ? safeText(matchFromStreet[2]) : '';
+  const number = explicitNumber || parsedStreetNumber;
+  if (!parsedStreetName) return number;
+  if (!number) return parsedStreetName;
+  return `${parsedStreetName} ${number}`;
+};
+
 const getAddressDisplay = (address = {}) => {
-  const streetName = safeText(address.street);
-  const streetNumber = safeText(address.streetNumber);
-  const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
+  const street = normalizeStreetDisplay(address.street, address.streetNumber);
   const city = safeText(address.city);
   const state = safeText(address.state);
   const zip = safeText(address.zip);
