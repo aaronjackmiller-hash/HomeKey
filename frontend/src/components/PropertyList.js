@@ -20,13 +20,27 @@ const formatTimestamp = (isoValue) => {
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
+const dedupeCaseInsensitive = (values = []) => {
+  const seen = new Set();
+  return values.filter((value) => {
+    const normalized = safeText(value);
+    if (!normalized) return false;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const getAddressDisplay = (address = {}) => {
   const street = safeText(address.street);
   const city = safeText(address.city);
   const state = safeText(address.state);
   const zip = safeText(address.zip);
-  const fullAddress = [street, city, state, zip].filter(Boolean).join(', ');
-  return { street, fullAddress };
+  const nonIsraelCountry = safeText(address.country).toLowerCase() === 'israel' ? '' : safeText(address.country);
+  const locationParts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
+  const fullAddress = [street, ...locationParts].filter(Boolean).join(', ');
+  return { street, fullAddress, locationLine: locationParts.join(', ') };
 };
 
 const removeYad2ImageLogo = (url, sourceType = '') => {
@@ -38,11 +52,20 @@ const removeYad2ImageLogo = (url, sourceType = '') => {
   return `${source}${separator}fit=crop&crop=top&h=780`;
 };
 
-const formatContactMethod = (method) => {
-  const normalized = String(method || '').trim().toLowerCase();
-  if (normalized === 'whatsapp') return 'WhatsApp';
-  if (normalized === 'phone') return 'Phone';
-  return 'Email';
+const normalizePhoneForLinks = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const cleaned = raw.replace(/[^\d+]/g, '');
+  if (!cleaned) return '';
+  if (cleaned.startsWith('+')) return cleaned.slice(1);
+  if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
+  return cleaned;
+};
+
+const buildWhatsAppHref = (phone, title = 'this listing') => {
+  const normalizedPhone = normalizePhoneForLinks(phone);
+  if (!normalizedPhone) return '';
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
 const getListingContact = (property = {}) => {
@@ -451,23 +474,29 @@ const PropertyList = () => {
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
-          const { street, fullAddress } = getAddressDisplay(property.address);
-          const displayTitle = street || fullAddress || property.title || 'Untitled property';
-          const displayLocation = fullAddress || [property.address?.city, property.address?.state].filter(Boolean).join(', ');
+          const { street, locationLine } = getAddressDisplay(property.address);
+          const titleFromData = safeText(property.title);
+          const displayTitle = street || titleFromData || locationLine || 'Untitled property';
+          const displayLocation = locationLine;
+          const shouldShowLocation = Boolean(
+            displayLocation
+            && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
+          );
           const monthly = property.financialDetails?.totalMonthlyPayment;
           const listingContact = getListingContact(property);
+          const whatsappHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, displayTitle);
 
           return (
             <div
               key={key}
-              className='property-card'
+              className={`property-card ${canOpenDetail ? 'is-clickable' : ''}`}
               onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
               <img className="property-card-image" src={imageSrc} alt={displayTitle || 'Property listing'} />
               <div className="property-card-body">
-                <h3 className="property-card-title">{displayTitle}</h3>
-                <p className="property-card-location">{displayLocation || 'Location not provided'}</p>
+                <h3 className={`property-card-title ${street ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
+                {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
                 <p className="property-card-stats">
                   {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
@@ -483,14 +512,43 @@ const PropertyList = () => {
                     {listingContact.agency && (
                       <p className="property-card-contact-line">Agency: {listingContact.agency}</p>
                     )}
-                    {listingContact.preferredMethod && (
-                      <p className="property-card-contact-line">
-                        Preferred: {formatContactMethod(listingContact.preferredMethod)}
-                      </p>
-                    )}
                     {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
                     {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
                     {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
+                    <div className="property-card-contact-actions">
+                      {whatsappHref && (
+                        <a
+                          href={whatsappHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="secondary-btn"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          WhatsApp
+                        </a>
+                      )}
+                      {canOpenDetail && (
+                        <button
+                          type="button"
+                          className="secondary-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            history.push(`/properties/${propertyId}#contact-manager-form`);
+                          }}
+                        >
+                          Message
+                        </button>
+                      )}
+                      {!canOpenDetail && listingContact.email && (
+                        <a
+                          href={`mailto:${listingContact.email}`}
+                          className="secondary-btn"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Message
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -506,10 +564,6 @@ const PropertyList = () => {
       <section className="hero-banner">
         <p className="hero-kicker">Beta Property Portal</p>
         <h1>Find your next home in Israel</h1>
-        <p>
-          Browse curated listings with complete property profiles including pricing,
-          building details, taxes, HOA fees, and availability dates.
-        </p>
       </section>
 
       <section className="search-panel">

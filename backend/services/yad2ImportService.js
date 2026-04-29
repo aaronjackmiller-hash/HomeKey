@@ -80,76 +80,11 @@ const normalizePreferredContactMethod = (value) => {
     return '';
 };
 
-const HEBREW_TOKEN_REPLACEMENTS = [
-    ['דירת גן', 'garden apartment'],
-    ['להשכרה', 'for rent'],
-    ['השכרה', 'rental'],
-    ['למכירה', 'for sale'],
-    ['מכירה', 'sale'],
-    ['דירה', 'apartment'],
-    ['חדרים', 'rooms'],
-    ['חדר', 'room'],
-    ['מרפסות', 'balconies'],
-    ['מרפסת', 'balcony'],
-    ['קומה', 'floor'],
-    ['שירותים', 'bathrooms'],
-    ['רחוב', 'street'],
-    ['טלפון', 'phone'],
-    ['וואטסאפ', 'whatsapp'],
-    ['עיר', 'city'],
-    ['בניין', 'building'],
-    ['מרכז', 'center'],
-];
-
-const HEBREW_CHAR_REPLACEMENTS = {
-    א: 'a',
-    ב: 'b',
-    ג: 'g',
-    ד: 'd',
-    ה: 'h',
-    ו: 'v',
-    ז: 'z',
-    ח: 'h',
-    ט: 't',
-    י: 'y',
-    כ: 'k',
-    ך: 'k',
-    ל: 'l',
-    מ: 'm',
-    ם: 'm',
-    נ: 'n',
-    ן: 'n',
-    ס: 's',
-    ע: 'a',
-    פ: 'p',
-    ף: 'p',
-    צ: 'ts',
-    ץ: 'ts',
-    ק: 'k',
-    ר: 'r',
-    ש: 'sh',
-    ת: 't',
-};
-
-const transliterateHebrew = (value) =>
-    String(value || '')
-        .split('')
-        .map((ch) => HEBREW_CHAR_REPLACEMENTS[ch] || ch)
-        .join('');
-
 const normalizeHumanText = (value) => {
     const raw = normalizeString(value);
     if (!raw) return '';
-    if (!/[א-ת]/.test(raw)) return raw;
-
-    let translated = raw;
-    for (const [from, to] of HEBREW_TOKEN_REPLACEMENTS) {
-        translated = translated.split(from).join(to);
-    }
-
-    return transliterateHebrew(translated)
-        .replace(/\s+/g, ' ')
-        .trim();
+    // Preserve Hebrew text exactly as provided so UI rendering remains readable.
+    return raw.replace(/\s+/g, ' ').trim();
 };
 
 const parsePositiveNumber = (value) => {
