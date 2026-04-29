@@ -20,6 +20,7 @@ const Navbar = () => {
             <>
               <Link to="/add-listing" className="site-nav__link">Add Listing</Link>
               <Link to="/admin/import-yad2" className="site-nav__link">Import Yad2</Link>
+              <Link to="/conversations" className="site-nav__link">Messages</Link>
               <span className="site-nav__welcome">Hi, {user?.name || 'Agent'}</span>
               <button onClick={handleLogout} className="site-nav__link site-nav__button" type="button">
                 Logout

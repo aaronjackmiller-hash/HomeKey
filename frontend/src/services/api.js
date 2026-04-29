@@ -77,6 +77,35 @@ export const getPropertyEngagement = async (id) => {
   return response.data;
 };
 
+// Conversations / Chat
+export const getConversations = async () => {
+  const response = await api.get('/conversations');
+  return response.data;
+};
+
+export const getConversationMessages = async (conversationId) => {
+  const response = await api.get(`/conversations/${conversationId}`);
+  return response.data;
+};
+
+export const openConversationForListing = async ({
+  propertyId,
+  recipientId,
+  initialMessage,
+}) => {
+  const response = await api.post('/conversations', {
+    propertyId,
+    recipientId,
+    initialMessage,
+  });
+  return response.data;
+};
+
+export const sendConversationMessage = async (conversationId, body) => {
+  const response = await api.post(`/conversations/${conversationId}/messages`, { body });
+  return response.data;
+};
+
 export const importYad2ListingsBatch = async ({
   items,
   sourceTag = 'yad2',

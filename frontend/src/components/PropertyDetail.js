@@ -5,6 +5,7 @@ import {
     deleteProperty,
     createPropertyInquiry,
     registerShowingAttendee,
+    openConversationForListing,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -99,6 +100,7 @@ const PropertyDetail = () => {
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+    const [chatStatus, setChatStatus] = useState('');
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -176,6 +178,29 @@ const PropertyDetail = () => {
                 ...prev,
                 [showingId]: err.response?.data?.message || 'Failed to register for this showing.',
             }));
+        }
+    };
+
+    const handleStartChat = async () => {
+        if (!property?._id) return;
+        setChatStatus('');
+        try {
+            const result = await openConversationForListing({
+                propertyId: property._id,
+                initialMessage: '',
+            });
+            const conversationId = result?.data?._id;
+            if (!conversationId) {
+                setChatStatus('Unable to open chat right now.');
+                return;
+            }
+            history.push(`/messages?conversation=${conversationId}`);
+        } catch (err) {
+            if (err.response?.status === 401) {
+                history.push('/login');
+                return;
+            }
+            setChatStatus(err.response?.data?.message || 'Failed to open chat.');
         }
     };
 
@@ -296,6 +321,13 @@ const PropertyDetail = () => {
                                         WhatsApp {managerName || 'manager'}
                                     </a>
                                 )}
+                                <button
+                                    type="button"
+                                    className="detail-chat-cta"
+                                    onClick={handleStartChat}
+                                >
+                                    Chat with manager
+                                </button>
                                 {translateHref && (
                                     <a
                                         className="detail-translate-link"
@@ -307,6 +339,7 @@ const PropertyDetail = () => {
                                     </a>
                                 )}
                             </div>
+                            {chatStatus && <p className="contact-missing-note">{chatStatus}</p>}
                             {!whatsappHref && (
                                 <p className="contact-missing-note">
                                     Manager WhatsApp not available for this listing.

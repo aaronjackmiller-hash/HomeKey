@@ -8,6 +8,7 @@ import AddListing from './components/AddListing';
 import EditListing from './components/EditListing';
 import PropertyEngagement from './components/PropertyEngagement';
 import AdminYad2Import from './components/AdminYad2Import';
+import Conversations from './components/Conversations';
 import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
@@ -48,6 +49,9 @@ const App = () => {
             </PrivateRoute>
             <PrivateRoute path="/admin/import-yad2">
               <AdminYad2Import />
+            </PrivateRoute>
+            <PrivateRoute path="/messages">
+              <Conversations />
             </PrivateRoute>
             <Redirect to="/" />
           </Switch>
