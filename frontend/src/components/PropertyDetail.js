@@ -34,13 +34,44 @@ const formatContactMethod = (method) => {
     return 'Email';
 };
 
+const stripQueryParam = (url, key) => {
+    if (!url.includes('?')) return url;
+    const [base, query] = url.split('?');
+    const filtered = query
+        .split('&')
+        .filter(Boolean)
+        .filter((part) => !part.toLowerCase().startsWith(`${key.toLowerCase()}=`));
+    return filtered.length > 0 ? `${base}?${filtered.join('&')}` : base;
+};
+
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
-    // Yad2 listing photos may contain top-left badges/logos. Crop top region from
-    // every listing image to consistently hide branding overlays regardless of host.
-    const separator = source.includes('?') ? '&' : '?';
-    return `${source}${separator}fit=crop&crop=entropy&crop-top=14&h=860`;
+    const withoutParams = [
+        'fit', 'crop', 'crop-top', 'crop_bottom', 'crop-bottom', 'h', 'w', 'height', 'width', 'q', 'quality',
+    ].reduce((acc, param) => stripQueryParam(acc, param), source);
+    // Aggressively crop the top edge where Yad2 overlays branding badges.
+    const separator = withoutParams.includes('?') ? '&' : '?';
+    return `${withoutParams}${separator}fit=crop&crop=top&h=860&q=90`;
+};
+
+const buildWhatsappHref = (value) => {
+    const normalized = String(value || '').replace(/[^\d+]/g, '');
+    if (!normalized) return '';
+    const withCountry = normalized.startsWith('+') ? normalized : `+972${normalized.replace(/^0+/, '')}`;
+    return `https://wa.me/${withCountry.replace(/[^\d]/g, '')}`;
+};
+
+const buildTranslateHref = (property) => {
+    const chunks = [
+        property?.title,
+        property?.description,
+        property?.address?.street,
+        property?.address?.city,
+    ].filter(Boolean);
+    if (chunks.length === 0) return '';
+    const text = encodeURIComponent(chunks.join('\n'));
+    return `https://translate.google.com/?sl=auto&tl=en&text=${text}&op=translate`;
 };
 
 const PropertyDetail = () => {
@@ -163,6 +194,11 @@ const PropertyDetail = () => {
     const detailTitle = getPrimaryAddressTitle(property);
     const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
+    const managerName = property.externalContact?.name || property.contact?.name || property.agent?.name || '';
+    const managerWhatsapp = property.externalContact?.whatsapp || property.contact?.whatsapp || '';
+    const managerPhone = property.externalContact?.phone || property.contact?.phone || property.agent?.phone || '';
+    const whatsappHref = buildWhatsappHref(managerWhatsapp || managerPhone);
+    const translateHref = buildTranslateHref(property);
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
@@ -249,6 +285,33 @@ const PropertyDetail = () => {
                             <p className="detail-type-pill">{typeLabel}</p>
                             <h1>{detailTitle}</h1>
                             <p className="detail-address">{addressLine || 'Address not provided'}</p>
+                            <div className="detail-quick-actions">
+                                {whatsappHref && (
+                                    <a
+                                        className="detail-whatsapp-cta"
+                                        href={whatsappHref}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        WhatsApp {managerName || 'manager'}
+                                    </a>
+                                )}
+                                {translateHref && (
+                                    <a
+                                        className="detail-translate-link"
+                                        href={translateHref}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Translate with Google
+                                    </a>
+                                )}
+                            </div>
+                            {!whatsappHref && (
+                                <p className="contact-missing-note">
+                                    Manager WhatsApp not available for this listing.
+                                </p>
+                            )}
                             <div className="detail-highlight-row">
                                 <span>{property.bedrooms ?? '—'} bed</span>
                                 <span>{property.bathrooms ?? '—'} bath</span>
@@ -265,20 +328,17 @@ const PropertyDetail = () => {
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
                         {additionalImages.map((image, index) => (
-                            <img
+                            <button
                                 key={index}
-                                src={image}
-                                alt={`Property visual ${index + 2}`}
-                                role="button"
-                                tabIndex={0}
+                                type="button"
+                                className="detail-gallery-image-button"
                                 onClick={() => openImageViewer(index + 1)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openImageViewer(index + 1);
-                                    }
-                                }}
-                            />
+                            >
+                                <img
+                                    src={image}
+                                    alt={`Property visual ${index + 2}`}
+                                />
+                            </button>
                         ))}
                     </section>
                 )}
@@ -342,6 +402,11 @@ const PropertyDetail = () => {
                             {!property.externalContact?.phone && property.contact?.phone && <p>Phone: {property.contact.phone}</p>}
                             {!property.externalContact?.whatsapp && property.contact?.whatsapp && <p>WhatsApp: {property.contact.whatsapp}</p>}
                         </div>
+                        {whatsappHref && (
+                            <p style={{ marginTop: '8px' }}>
+                                <a href={whatsappHref} target="_blank" rel="noreferrer">Open WhatsApp chat</a>
+                            </p>
+                        )}
                         <form onSubmit={handleInquirySubmit}>
                             <div className="input-field">
                                 <label>Your Name</label>
@@ -463,41 +528,35 @@ const PropertyDetail = () => {
                 )}
             </div>
             {selectedImageIndex != null && allImages[selectedImageIndex] && (
-                <div className="image-lightbox" onClick={closeImageViewer}>
-                    <button className="image-lightbox-close" onClick={closeImageViewer} type="button">×</button>
-                    {allImages.length > 1 && (
-                        <>
-                            <button
-                                className="image-lightbox-nav image-lightbox-nav-prev"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    showPrevImage();
-                                }}
-                                type="button"
-                            >
-                                ‹
-                            </button>
-                            <button
-                                className="image-lightbox-nav image-lightbox-nav-next"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    showNextImage();
-                                }}
-                                type="button"
-                            >
-                                ›
-                            </button>
-                        </>
-                    )}
-                    <img
-                        className="image-lightbox-image"
-                        src={allImages[selectedImageIndex]}
-                        alt={`Property image ${selectedImageIndex + 1}`}
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    <p className="image-lightbox-counter">
-                        {selectedImageIndex + 1} / {allImages.length}
-                    </p>
+                <div
+                    className="image-lightbox-backdrop"
+                    onClick={closeImageViewer}
+                    onWheel={(e) => {
+                        if (allImages.length <= 1) return;
+                        e.preventDefault();
+                        if (e.deltaY > 0) showNextImage();
+                        else showPrevImage();
+                    }}
+                >
+                    <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
+                        <div className="image-lightbox-toolbar">
+                            <span>{selectedImageIndex + 1} / {allImages.length}</span>
+                            <button type="button" onClick={closeImageViewer}>Close</button>
+                        </div>
+                        <div className="image-lightbox-stage">
+                            {allImages.length > 1 && (
+                                <>
+                                    <button className="image-lightbox-nav prev" type="button" onClick={showPrevImage}>‹</button>
+                                    <button className="image-lightbox-nav next" type="button" onClick={showNextImage}>›</button>
+                                </>
+                            )}
+                            <img
+                                className="yad2-image"
+                                src={allImages[selectedImageIndex]}
+                                alt={`Property image ${selectedImageIndex + 1}`}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

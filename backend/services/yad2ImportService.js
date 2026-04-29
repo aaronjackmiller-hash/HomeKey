@@ -80,77 +80,7 @@ const normalizePreferredContactMethod = (value) => {
     return '';
 };
 
-const HEBREW_TOKEN_REPLACEMENTS = [
-    ['דירת גן', 'garden apartment'],
-    ['להשכרה', 'for rent'],
-    ['השכרה', 'rental'],
-    ['למכירה', 'for sale'],
-    ['מכירה', 'sale'],
-    ['דירה', 'apartment'],
-    ['חדרים', 'rooms'],
-    ['חדר', 'room'],
-    ['מרפסות', 'balconies'],
-    ['מרפסת', 'balcony'],
-    ['קומה', 'floor'],
-    ['שירותים', 'bathrooms'],
-    ['רחוב', 'street'],
-    ['טלפון', 'phone'],
-    ['וואטסאפ', 'whatsapp'],
-    ['עיר', 'city'],
-    ['בניין', 'building'],
-    ['מרכז', 'center'],
-];
-
-const HEBREW_CHAR_REPLACEMENTS = {
-    א: 'a',
-    ב: 'b',
-    ג: 'g',
-    ד: 'd',
-    ה: 'h',
-    ו: 'v',
-    ז: 'z',
-    ח: 'h',
-    ט: 't',
-    י: 'y',
-    כ: 'k',
-    ך: 'k',
-    ל: 'l',
-    מ: 'm',
-    ם: 'm',
-    נ: 'n',
-    ן: 'n',
-    ס: 's',
-    ע: 'a',
-    פ: 'p',
-    ף: 'p',
-    צ: 'ts',
-    ץ: 'ts',
-    ק: 'k',
-    ר: 'r',
-    ש: 'sh',
-    ת: 't',
-};
-
-const transliterateHebrew = (value) =>
-    String(value || '')
-        .split('')
-        .map((ch) => HEBREW_CHAR_REPLACEMENTS[ch] || ch)
-        .join('');
-
-const normalizeHumanText = (value) => {
-    const raw = normalizeString(value);
-    if (!raw) return '';
-    if (!/[א-ת]/.test(raw)) return raw;
-
-    let translated = raw;
-    for (const [from, to] of HEBREW_TOKEN_REPLACEMENTS) {
-        translated = translated.split(from).join(to);
-    }
-
-    return transliterateHebrew(translated)
-        .replace(/\s+/g, ' ')
-        .trim();
-};
+const normalizeHumanText = (value) => normalizeString(value);
 
 const parsePositiveNumber = (value) => {
     const parsed = parseNumber(value, null);
@@ -240,17 +170,28 @@ const extractStreetNumberFromText = (value) => {
     const text = normalizeString(value);
     if (!text) return { street: '', number: '' };
 
+    const lowered = text.toLowerCase();
+    const hasAddressMarker = [
+        'street', 'st.', 'st ', 'address', 'ave', 'avenue',
+        'רחוב', 'רח׳', 'רח ', 'כתובת',
+    ].some((marker) => lowered.includes(marker));
+
     const patterns = [
-        /(?:street|st\.?)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
-        /(?:at|in)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
-        /(?:רחוב|רח׳|רח)\s*([א-תa-zA-Z0-9'\-.\s]{1,60})\s+(\d+[א-תa-zA-Z0-9\-\/]*)/i,
-        /([a-zA-Zא-ת][a-zA-Zא-ת0-9'\-.\s]{1,60})[, ]+(\d+[a-zA-Zא-ת0-9\-\/]*)/,
+        /(?:street|st\.?|address|ave(?:nue)?)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,80})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:at|in)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,80})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
+        /(?:רחוב|רח׳|רח|כתובת)\s*([א-תa-zA-Z0-9'\-.\s]{1,80})\s+(\d+[א-תa-zA-Z0-9\-\/]*)/i,
+        /([a-zA-Zא-ת][a-zA-Zא-ת0-9'\-.\s]{1,80})[, ]+(\d+[a-zA-Zא-ת0-9\-\/]*)/,
     ];
     for (const pattern of patterns) {
         const match = text.match(pattern);
         if (!match || !match[1] || !match[2]) continue;
+        if (!hasAddressMarker && !/(?:רחוב|street|st\.?|ave|address|כתובת)/i.test(match[0])) {
+            continue;
+        }
+        const candidateStreet = normalizeHumanText(match[1]);
+        if (/^\d+$/.test(candidateStreet)) continue;
         return {
-            street: normalizeHumanText(match[1]),
+            street: candidateStreet,
             number: normalizeHumanText(match[2]),
         };
     }
@@ -258,6 +199,10 @@ const extractStreetNumberFromText = (value) => {
 };
 
 const mapYad2RowToPropertyDoc = (row) => {
+    const addressObject = row.address && typeof row.address === 'object' ? row.address : {};
+    const locationObject = row.location && typeof row.location === 'object' ? row.location : {};
+    const addressTextValue = typeof row.address === 'string' ? row.address : '';
+    const locationTextValue = typeof row.location === 'string' ? row.location : '';
     const externalId = normalizeString(String(pickFirst(
         row.externalId,
         row.id,
@@ -271,10 +216,10 @@ const mapYad2RowToPropertyDoc = (row) => {
     ) || ''));
     const city = normalizeHumanText(pickFirst(
         row.city,
-        row.address && row.address.city,
+        addressObject.city,
         row.town,
         row.locality,
-        row.location && row.location.city
+        locationObject.city
     ));
 
     const title = normalizeHumanText(
@@ -292,11 +237,13 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.addressLine,
         row.addressText,
         row.fullAddress,
+        addressTextValue,
         row.addressLine1,
         row.locationText,
-        row.location && row.location.text,
-        row.address && row.address.full,
-        row.address && row.address.text,
+        locationTextValue,
+        locationObject.text,
+        addressObject.full,
+        addressObject.text,
         row.title,
         row.headline,
         row.description,
@@ -308,11 +255,12 @@ const mapYad2RowToPropertyDoc = (row) => {
             row.street,
             row.streetName,
             row.streetAddress,
+            addressTextValue,
             row.address1,
             row.addressLine1,
-            row.address && row.address.street,
-            row.address && row.address.streetName,
-            row.location && row.location.street,
+            addressObject.street,
+            addressObject.streetName,
+            locationObject.street,
             parsedStreetFromText.street
         ),
         pickFirst(
@@ -322,11 +270,11 @@ const mapYad2RowToPropertyDoc = (row) => {
             row.addressNumber,
             row.streetNo,
             row.street_no,
-            row.address && row.address.streetNumber,
-            row.address && row.address.houseNumber,
-            row.address && row.address.number,
-            row.location && row.location.streetNumber,
-            row.location && row.location.number,
+            addressObject.streetNumber,
+            addressObject.houseNumber,
+            addressObject.number,
+            locationObject.streetNumber,
+            locationObject.number,
             parsedStreetFromText.number
         )
     );

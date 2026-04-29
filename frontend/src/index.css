@@ -295,6 +295,10 @@ a {
   object-fit: cover;
 }
 
+.property-card-image.yad2-image {
+  object-position: center 28%;
+}
+
 .property-card-body {
   padding: 14px;
 }
@@ -470,6 +474,47 @@ a {
   line-height: 1.45;
 }
 
+.detail-quick-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-whatsapp-cta,
+.detail-translate-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.detail-whatsapp-cta {
+  background: #10b981;
+  border: 1px solid #10b981;
+  color: #ffffff;
+}
+
+.detail-whatsapp-cta:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.detail-translate-link {
+  background: rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #e2e8f0;
+}
+
+.detail-translate-link:hover {
+  background: rgba(15, 23, 42, 0.38);
+}
+
 .detail-highlight-row {
   margin-top: 14px;
   display: flex;
@@ -591,6 +636,11 @@ a {
   max-height: 76vh;
   object-fit: contain;
   display: block;
+}
+
+.image-lightbox-stage img.yad2-image {
+  object-fit: cover;
+  object-position: center 28%;
 }
 
 .image-lightbox-nav {

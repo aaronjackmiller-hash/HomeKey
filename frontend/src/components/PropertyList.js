@@ -29,13 +29,14 @@ const getAddressDisplay = (address = {}) => {
   return { street, fullAddress };
 };
 
-const removeYad2ImageLogo = (url, sourceType = '') => {
+const sanitizeImageSource = (url, sourceType = '') => {
   const source = String(url || '').trim();
-  if (!source) return source;
+  if (!source) return '';
   const fromYad2 = /yad2/i.test(source) || /yad2/i.test(String(sourceType || ''));
   if (!fromYad2) return source;
+  const [base] = source.split('?');
   const separator = source.includes('?') ? '&' : '?';
-  return `${source}${separator}fit=crop&crop=top&h=780`;
+  return `${base}${separator}fit=crop&crop=entropy&crop-top=20&h=760&q=92&fm=jpg`;
 };
 
 const formatContactMethod = (method) => {
@@ -449,7 +450,7 @@ const PropertyList = () => {
           const canOpenDetail = Boolean(propertyId) && !isSample;
           const key = propertyId || `property-${index}`;
           const imageSrc =
-            removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
+            sanitizeImageSource(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, fullAddress } = getAddressDisplay(property.address);
           const displayTitle = street || fullAddress || property.title || 'Untitled property';
