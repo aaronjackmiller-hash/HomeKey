@@ -399,7 +399,19 @@ const normalizeExternalFeedRows = (payload, sourceUrl) => {
     const rows = normalizeArray(payload);
     return rows.map((row, index) => {
         if (!row || typeof row !== 'object') return null;
-        const idCandidate = row.id ?? row.externalId ?? row._id ?? row.adNumber ?? row.ad_number;
+        const idFromUrl = (() => {
+            const rowUrl = String(row.url || row.listingUrl || row.externalUrl || '').trim();
+            if (!rowUrl) return '';
+            const itemId = parseYad2ItemIdFromUrl(rowUrl);
+            if (itemId) return itemId;
+            try {
+                const pathname = new URL(rowUrl).pathname || '';
+                return parseListingIdFromPath(pathname);
+            } catch (_err) {
+                return '';
+            }
+        })();
+        const idCandidate = idFromUrl || row.id || row.externalId || row._id || row.adNumber || row.ad_number;
         const id = String(idCandidate || '').trim() || `fallback-${index + 1}`;
         const dealType = normalizeDealType(row.dealType ?? row.type ?? row.deal_type) || 'rental';
         const city = String(row.city ?? row.region ?? row.state ?? 'Israel').trim() || 'Israel';
@@ -522,6 +534,20 @@ const parsePathToRegion = (pathValue) => {
 const parseListingIdFromPath = (pathValue) => {
     const parts = String(pathValue || '').split('/').filter(Boolean);
     return parts[parts.length - 1] || '';
+};
+
+const parseYad2ItemIdFromUrl = (urlValue) => {
+    const href = String(urlValue || '').trim();
+    if (!href) return '';
+    try {
+        const urlObj = new URL(href);
+        if (!/yad2\.co\.il$/i.test(urlObj.hostname)) return '';
+        const itemPathMatch = String(urlObj.pathname || '').match(/\/item\/([a-z0-9]+)/i);
+        if (itemPathMatch && itemPathMatch[1]) return itemPathMatch[1].trim();
+    } catch (_err) {
+        return '';
+    }
+    return '';
 };
 
 const parseNisPrice = (text) => {
@@ -834,9 +860,21 @@ const normalizeRow = (row) => {
     const contactDetails = row.contactDetails && typeof row.contactDetails === 'object' ? row.contactDetails : undefined;
     const address = row.address && typeof row.address === 'object' ? row.address : undefined;
     const location = row.location && typeof row.location === 'object' ? row.location : undefined;
+    const listingIdFromUrl = (() => {
+        const rowUrl = String(row.url || row.listingUrl || row.externalUrl || '').trim();
+        if (!rowUrl) return '';
+        const itemId = parseYad2ItemIdFromUrl(rowUrl);
+        if (itemId) return itemId;
+        try {
+            const pathname = new URL(rowUrl).pathname || '';
+            return parseListingIdFromPath(pathname);
+        } catch (_err) {
+            return '';
+        }
+    })();
 
     const mapped = {
-        id: row.id ?? row._id ?? row.externalId ?? row.ad_number ?? row.adNumber ?? row.listingId ?? row.listing_id,
+        id: listingIdFromUrl || row.id || row._id || row.externalId || row.ad_number || row.adNumber || row.listingId || row.listing_id,
         title: row.title ?? row.headline ?? row.subject,
         description: row.description ?? row.details ?? row.body ?? row.listingDescription,
         dealType: row.dealType ?? row.type ?? row.deal_type,
@@ -1068,7 +1106,12 @@ const createYad2Scheduler = (logger = console) => {
             let pruned = 0;
             if (mirrorDeletesEnabled && !feed.usedCaptchaFallback) {
                 const externalIds = feed.rows
-                    .map((row) => (row && typeof row.id === 'string' ? row.id.trim() : String(row && row.id || '').trim()))
+                    .map((row) => {
+                        if (!row || typeof row !== 'object') return '';
+                        return parseYad2ItemIdFromUrl(
+                            row.url || row.listingUrl || row.externalUrl
+                        ) || (typeof row.id === 'string' ? row.id.trim() : String(row.id || '').trim());
+                    })
                     .filter(Boolean);
                 if (externalIds.length > 0) {
                     const pruneFilter = {

@@ -39,6 +39,12 @@ const parseSourceType = (value) => {
     return 'yad2-sync';
 };
 
+const hasManualSource = (propertyDoc) =>
+    Boolean(propertyDoc) && (
+        propertyDoc.sourceType === 'manual'
+        || (Array.isArray(propertyDoc.sources) && propertyDoc.sources.some((source) => source && source.sourceType === 'manual'))
+    );
+
 const extractImageList = (row) => {
     const candidates = [
         row.images,
@@ -70,6 +76,51 @@ const normalizePhone = (value) => {
     if (!raw) return '';
     const cleaned = raw.replace(/[^\d+]/g, '');
     return cleaned || raw;
+};
+
+const dedupeRepeatedPhrases = (value) => {
+    const text = normalizeHumanText(value);
+    if (!text) return '';
+    const chunks = text
+        .split(/[|,;/]+/)
+        .map((chunk) => normalizeHumanText(chunk))
+        .filter(Boolean);
+    if (chunks.length === 0) return text;
+    const seen = new Set();
+    const unique = [];
+    chunks.forEach((chunk) => {
+        const key = chunk.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        unique.push(chunk);
+    });
+    return unique.join(' • ');
+};
+
+const removeAgencyPrefixFromName = (name, agency) => {
+    const normalizedName = normalizeHumanText(name);
+    if (!normalizedName) return '';
+    const normalizedAgency = normalizeHumanText(agency);
+    if (!normalizedAgency) return normalizedName;
+    const agencyLower = normalizedAgency.toLowerCase();
+    const parts = normalizedName
+        .split(/[|,;/]+/)
+        .map((chunk) => normalizeHumanText(chunk))
+        .filter(Boolean)
+        .filter((chunk) => chunk.toLowerCase() !== agencyLower);
+    if (parts.length === 0) return normalizedName;
+    return parts.join(' • ');
+};
+
+const extractStreetAndNumberFromRawStreet = (streetValue) => {
+    const streetRaw = normalizeHumanText(streetValue);
+    if (!streetRaw) return { streetName: '', streetNumber: '' };
+    const match = streetRaw.match(/^(.*?)(?:[,\s]+)(\d+[a-zA-Zא-ת0-9\-\/]*)$/);
+    if (!match) return { streetName: streetRaw, streetNumber: '' };
+    return {
+        streetName: normalizeHumanText(match[1]),
+        streetNumber: normalizeHumanText(match[2]),
+    };
 };
 
 const normalizePreferredContactMethod = (value) => {
@@ -265,6 +316,9 @@ const mapYad2RowToPropertyDoc = (row) => {
             parsedStreetFromText.number
         )
     );
+    const parsedAddressStreet = extractStreetAndNumberFromRawStreet(addressStreet);
+    const finalStreet = parsedAddressStreet.streetName || addressStreet;
+    const finalStreetNumber = parsedAddressStreet.streetNumber || parsedStreetFromText.number || '';
     const addressState = normalizeHumanText(pickFirst(row.state, row.district, row.region));
     const addressZip = normalizeString(pickFirst(row.zip, row.postalCode));
     const addressCountry = normalizeHumanText(pickFirst(row.country, 'Israel')) || 'Israel';
@@ -282,7 +336,7 @@ const mapYad2RowToPropertyDoc = (row) => {
     const sourceType = parseSourceType(pickFirst(row.sourceType, row.source_type, 'yad2-sync'));
     const externalSegmentKey = normalizeString(pickFirst(row.externalSegmentKey, row.segmentKey, row.segment))
         .toLowerCase();
-    const contactName = normalizeHumanText(pickFirst(
+    const rawContactName = normalizeHumanText(pickFirst(
         row.contactName,
         row.managerName,
         row.agentName,
@@ -351,7 +405,7 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.ownerEmail,
         row.advertiserEmail
     )).toLowerCase();
-    const contactAgency = normalizeHumanText(pickFirst(
+    const contactAgency = dedupeRepeatedPhrases(pickFirst(
         row.agency,
         row.brokerAgency,
         row.officeName,
@@ -363,6 +417,7 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.advertiser && row.advertiser.agency,
         row.contactDetails && row.contactDetails.agency
     ));
+    const contactName = removeAgencyPrefixFromName(dedupeRepeatedPhrases(rawContactName), contactAgency);
     const preferredContactMethod = normalizePreferredContactMethod(pickFirst(
         row.preferredContactMethod,
         row.preferredMethod,
@@ -384,7 +439,8 @@ const mapYad2RowToPropertyDoc = (row) => {
         size,
         ...(floorNumber != null ? { floorNumber } : {}),
         address: {
-            street: addressStreet,
+            street: finalStreet,
+            ...(finalStreetNumber ? { streetNumber: finalStreetNumber } : {}),
             city,
             state: addressState,
             zip: addressZip,
@@ -508,7 +564,15 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                     summary.updated += 1;
                 } else {
                     const duplicate = await findDuplicateCandidate(payload);
-                    if (duplicate) {
+                    const shouldMergeIntoDuplicate = Boolean(duplicate) && (
+                        // Preserve the manual-owner workflow by merging feed updates into a
+                        // manually created listing that represents the same home.
+                        hasManualSource(duplicate)
+                        // Rows without external IDs cannot be safely upserted and may still
+                        // require fuzzy duplicate matching to avoid repeated inserts.
+                        || !externalId
+                    );
+                    if (shouldMergeIntoDuplicate) {
                         duplicate.description = payload.description || duplicate.description;
                         duplicate.price = payload.price;
                         duplicate.bedrooms = payload.bedrooms;
@@ -536,7 +600,11 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         appendSourceIfMissing(duplicate, sourceEntry);
                         await duplicate.save();
                         summary.updated += 1;
-                    } else {
+                    }
+                    if (!shouldMergeIntoDuplicate) {
+                        // For Yad2 rows with explicit external IDs, keep each externalId as a
+                        // distinct listing record. This prevents unrelated feed rows from being
+                        // collapsed into a single document by fuzzy duplicate scoring.
                         await Property.create({
                             ...payload,
                             sourceType,

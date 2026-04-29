@@ -25,6 +25,7 @@ const PropertySchema = new mongoose.Schema(
         },
         address: {
             street: { type: String, trim: true },
+            streetNumber: { type: String, trim: true },
             city: { type: String, trim: true },
             state: { type: String, trim: true },
             zip: { type: String, trim: true },

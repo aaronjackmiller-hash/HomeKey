@@ -69,7 +69,9 @@ const dedupeCaseInsensitive = (values = []) => {
 };
 
 const getAddressDisplay = (address = {}) => {
-  const street = safeText(address.street);
+  const streetName = safeText(address.street);
+  const streetNumber = safeText(address.streetNumber);
+  const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
   const city = safeText(address.city);
   const state = safeText(address.state);
   const zip = safeText(address.zip);
@@ -104,6 +106,23 @@ const buildWhatsAppHref = (phone, title = 'this listing') => {
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
+const dedupeRepeatingPhrase = (value) => {
+  const text = safeText(value);
+  if (!text) return '';
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return text;
+  const maxPhraseLen = Math.min(6, Math.floor(words.length / 2));
+  for (let phraseLen = maxPhraseLen; phraseLen >= 1; phraseLen -= 1) {
+    const phrase = words.slice(0, phraseLen).join(' ');
+    const repeated = words
+      .join(' ')
+      .replace(new RegExp(`^(?:${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+){2,}`, 'i'), `${phrase} `)
+      .trim();
+    if (repeated.length < text.length) return repeated;
+  }
+  return text;
+};
+
 const getListingContact = (property = {}) => {
   const externalContact = property.externalContact && typeof property.externalContact === 'object'
     ? property.externalContact
@@ -115,8 +134,8 @@ const getListingContact = (property = {}) => {
     ? property.agent
     : {};
 
-  const name = sanitizeReadableText(property, externalContact.name || directContact.name || agentContact.name || '');
-  const agency = sanitizeReadableText(property, externalContact.agency || directContact.agency || agentContact.agency || '');
+  const name = dedupeRepeatingPhrase(sanitizeReadableText(property, externalContact.name || directContact.name || agentContact.name || ''));
+  const agency = dedupeRepeatingPhrase(sanitizeReadableText(property, externalContact.agency || directContact.agency || agentContact.agency || ''));
   const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
   const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
   const email = externalContact.email || directContact.email || agentContact.email || '';
@@ -524,7 +543,7 @@ const PropertyList = () => {
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address);
-          const displayStreet = sanitizeReadableText(property, street);
+          const displayStreet = dedupeRepeatingPhrase(sanitizeReadableText(property, street));
           const titleFromData = sanitizeReadableText(property, property.title);
           const displayLocation = sanitizeReadableText(property, locationLine);
           const displayTitle = displayStreet || titleFromData || displayLocation || 'Property listing';
@@ -554,20 +573,17 @@ const PropertyList = () => {
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
                 )}
-                {(listingContact.hasAny || canOpenDetail) && (
+                {listingContact.hasAny && (
                   <div className="property-card-contact">
                     <p className="property-card-contact-title">
                       Contact {listingContact.name || 'Listing manager'}
                     </p>
-                    {listingContact.agency && (
+                    {listingContact.agency && listingContact.agency.toLowerCase() !== listingContact.name.toLowerCase() && (
                       <p className="property-card-contact-line">Agency: {listingContact.agency}</p>
                     )}
                     {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
                     {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
                     {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
-                    {!listingContact.hasAny && canOpenDetail && (
-                      <p className="property-card-contact-line">Open listing to send a message.</p>
-                    )}
                     <div className="property-card-contact-actions">
                       {whatsappHref && (
                         <a
@@ -578,27 +594,6 @@ const PropertyList = () => {
                           onClick={(e) => e.stopPropagation()}
                         >
                           WhatsApp
-                        </a>
-                      )}
-                      {canOpenDetail && (
-                        <button
-                          type="button"
-                          className="secondary-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            history.push(`/properties/${propertyId}#contact-manager-form`);
-                          }}
-                        >
-                          Message
-                        </button>
-                      )}
-                      {!canOpenDetail && listingContact.email && (
-                        <a
-                          href={`mailto:${listingContact.email}`}
-                          className="secondary-btn"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Message
                         </a>
                       )}
                     </div>
