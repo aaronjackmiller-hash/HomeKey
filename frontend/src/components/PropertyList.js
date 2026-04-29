@@ -19,6 +19,19 @@ const formatTimestamp = (isoValue) => {
 };
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const ENGLISH_LISTING_WORD_RE = /\b(the|and|with|for|in|to|from|apartment|property|rent|rental|sale|bed|bath|room|building|near|available|price|spacious|located)\b/i;
+const hasHebrew = (value) => /[א-ת]/.test(String(value || ''));
+const isYad2LikeListing = (property = {}) =>
+  /yad2/i.test(String(property.externalSource || ''))
+  || ['yad2-sync', 'yad2-scrape'].includes(String(property.sourceType || ''));
+const isReadableImportedText = (property = {}, value) => {
+  const text = safeText(value);
+  if (!text) return false;
+  if (hasHebrew(text)) return true;
+  if (!isYad2LikeListing(property)) return true;
+  return ENGLISH_LISTING_WORD_RE.test(text);
+};
+const sanitizeReadableText = (property = {}, value) => (isReadableImportedText(property, value) ? safeText(value) : '');
 
 const dedupeCaseInsensitive = (values = []) => {
   const seen = new Set();
@@ -79,8 +92,8 @@ const getListingContact = (property = {}) => {
     ? property.agent
     : {};
 
-  const name = externalContact.name || directContact.name || agentContact.name || '';
-  const agency = externalContact.agency || directContact.agency || agentContact.agency || '';
+  const name = sanitizeReadableText(property, externalContact.name || directContact.name || agentContact.name || '');
+  const agency = sanitizeReadableText(property, externalContact.agency || directContact.agency || agentContact.agency || '');
   const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
   const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
   const email = externalContact.email || directContact.email || agentContact.email || '';
@@ -475,9 +488,10 @@ const PropertyList = () => {
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address);
-          const titleFromData = safeText(property.title);
-          const displayTitle = street || titleFromData || locationLine || 'Untitled property';
-          const displayLocation = locationLine;
+          const displayStreet = sanitizeReadableText(property, street);
+          const titleFromData = sanitizeReadableText(property, property.title);
+          const displayLocation = sanitizeReadableText(property, locationLine);
+          const displayTitle = displayStreet || titleFromData || displayLocation || 'Property listing';
           const shouldShowLocation = Boolean(
             displayLocation
             && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
@@ -495,7 +509,7 @@ const PropertyList = () => {
             >
               <img className="property-card-image" src={imageSrc} alt={displayTitle || 'Property listing'} />
               <div className="property-card-body">
-                <h3 className={`property-card-title ${street ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
+                <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                 {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
                 <p className="property-card-stats">
@@ -504,7 +518,7 @@ const PropertyList = () => {
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
                 )}
-                {listingContact.hasAny && (
+                {(listingContact.hasAny || canOpenDetail) && (
                   <div className="property-card-contact">
                     <p className="property-card-contact-title">
                       Contact {listingContact.name || 'Listing manager'}
@@ -515,6 +529,9 @@ const PropertyList = () => {
                     {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
                     {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
                     {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
+                    {!listingContact.hasAny && canOpenDetail && (
+                      <p className="property-card-contact-line">Open listing to send a message.</p>
+                    )}
                     <div className="property-card-contact-actions">
                       {whatsappHref && (
                         <a
