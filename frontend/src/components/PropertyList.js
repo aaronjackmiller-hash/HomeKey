@@ -5,6 +5,7 @@ import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
 const SEARCH_DEBOUNCE_MS = 400;
+const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -16,6 +17,28 @@ const formatTimestamp = (isoValue) => {
   const parsed = new Date(isoValue);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toLocaleString();
+};
+
+const readCachedLiveListings = () => {
+  if (typeof window === 'undefined' || !window.localStorage) return [];
+  try {
+    const raw = window.localStorage.getItem(LIVE_LISTINGS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item) => item && typeof item === 'object');
+  } catch (_err) {
+    return [];
+  }
+};
+
+const writeCachedLiveListings = (listings) => {
+  if (typeof window === 'undefined' || !window.localStorage || !Array.isArray(listings)) return;
+  try {
+    window.localStorage.setItem(LIVE_LISTINGS_CACHE_KEY, JSON.stringify(listings.slice(0, 250)));
+  } catch (_err) {
+    // Ignore quota/storage errors; cache is best-effort only.
+  }
 };
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -346,6 +369,7 @@ const PropertyList = () => {
         if (data.length > 0) {
           setDbIsEmpty(false);
           setLiveSyncStatus(null);
+          writeCachedLiveListings(data);
         } else if (!hasUserFilters) {
           setDbIsEmpty(true);
           await loadLiveSyncStatus();
@@ -360,12 +384,20 @@ const PropertyList = () => {
         const isTimeout = err.code === 'ECONNABORTED';
         const canFallbackToDemo = isTransient || isTimeout || (status >= 500 && status < 600);
 
-        // Keep the beta site usable even when backend/API is temporarily unavailable.
-        // We render the built-in sample listings until the API recovers.
+        // Keep the beta site usable when backend/API is temporarily unavailable.
+        // Prefer cached live listings; fall back to built-in demo listings only if no cache exists.
+        let usedCachedLiveListings = false;
         if (canFallbackToDemo) {
-          setDbIsEmpty(true);
-          setProperties([]);
-          await loadLiveSyncStatus();
+          const cached = readCachedLiveListings();
+          if (cached.length > 0) {
+            setProperties(cached);
+            setDbIsEmpty(false);
+            usedCachedLiveListings = true;
+          } else {
+            setDbIsEmpty(true);
+            setProperties([]);
+            await loadLiveSyncStatus();
+          }
         }
 
         if (isTransient && retryCount < MAX_AUTO_RETRIES) {
@@ -379,9 +411,13 @@ const PropertyList = () => {
             clearInterval(countdownTimerRef.current);
             setRetryCount((c) => c + 1);
           }, RETRY_INTERVAL_MS);
-          setError('__starting_up__');
+          if (!usedCachedLiveListings) setError('__starting_up__');
         } else if (canFallbackToDemo) {
-          setError('Using demo listings while the database is unavailable.');
+          if (!usedCachedLiveListings) {
+            setError('Using demo listings while the database is unavailable.');
+          } else {
+            setError('Live feed temporarily unavailable. Showing recent listings from cache.');
+          }
         } else if (isTimeout) {
           setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
         } else {
