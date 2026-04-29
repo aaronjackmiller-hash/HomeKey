@@ -20,6 +20,22 @@ const formatDate = (value) => {
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
+const ENGLISH_LISTING_WORD_RE = /\b(the|and|with|for|in|to|from|apartment|property|rent|rental|sale|bed|bath|room|building|near|available|price|spacious|located)\b/i;
+
+const hasHebrew = (value) => /[א-ת]/.test(String(value || ''));
+
+const isYad2LikeListing = (property = {}) =>
+    /yad2/i.test(String(property.externalSource || ''))
+    || ['yad2-sync', 'yad2-scrape'].includes(String(property.sourceType || ''));
+
+const isReadableImportedText = (property = {}, value) => {
+    const text = safeText(value);
+    if (!text) return false;
+    if (hasHebrew(text)) return true;
+    if (!isYad2LikeListing(property)) return true;
+    return ENGLISH_LISTING_WORD_RE.test(text);
+};
+
 const dedupeCaseInsensitive = (values = []) => {
     const seen = new Set();
     return values.filter((value) => {
@@ -45,7 +61,10 @@ const getAddressLine = (address) => {
 const getPrimaryAddressTitle = (property = {}) => {
     const street = String(property.address?.street || '').trim();
     if (street) return street;
-    return String(property.title || '').trim() || 'Untitled property';
+    const title = String(property.title || '').trim();
+    if (isReadableImportedText(property, title)) return title;
+    const city = safeText(property.address?.city);
+    return city ? `Property in ${city}` : 'Property listing';
 };
 
 const formatContactMethod = (method) => {
@@ -366,7 +385,7 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {property.description && (
+                {isReadableImportedText(property, property.description) && (
                     <section className="detail-section-card">
                         <h2>About this property</h2>
                         <p className="detail-description">{property.description}</p>
