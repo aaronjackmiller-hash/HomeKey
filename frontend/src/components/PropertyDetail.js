@@ -48,8 +48,28 @@ const dedupeCaseInsensitive = (values = []) => {
     });
 };
 
+const dedupeRepeatingPhrase = (value) => {
+    const text = safeText(value);
+    if (!text) return '';
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length < 2) return text;
+    const maxPhraseLen = Math.min(6, Math.floor(words.length / 2));
+    for (let phraseLen = maxPhraseLen; phraseLen >= 1; phraseLen -= 1) {
+        const phrase = words.slice(0, phraseLen).join(' ');
+        const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const repeated = words
+            .join(' ')
+            .replace(new RegExp(`^(?:${escaped}\\s+){2,}`, 'i'), `${phrase} `)
+            .trim();
+        if (repeated.length < text.length) return repeated;
+    }
+    return text;
+};
+
 const getAddressLine = (address) => {
-    const street = safeText(address?.street);
+    const streetName = safeText(address?.street);
+    const streetNumber = safeText(address?.streetNumber);
+    const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
     const city = safeText(address?.city);
     const state = safeText(address?.state);
     const zip = safeText(address?.zip);
@@ -94,8 +114,8 @@ const getListingContact = (property = {}) => {
         ? property.agent
         : {};
 
-    const name = externalContact.name || directContact.name || agentContact.name || '';
-    const agency = externalContact.agency || directContact.agency || agentContact.agency || '';
+    const name = dedupeRepeatingPhrase(externalContact.name || directContact.name || agentContact.name || '');
+    const agency = dedupeRepeatingPhrase(externalContact.agency || directContact.agency || agentContact.agency || '');
     const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
     const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
     const email = externalContact.email || directContact.email || agentContact.email || '';
