@@ -440,10 +440,6 @@ a {
   position: relative;
 }
 
-.detail-hero-image.yad2-image {
-  object-position: center 34%;
-}
-
 .yad2-logo-mask {
   position: absolute;
   top: 0;
@@ -751,10 +747,6 @@ a {
   background: rgba(15, 23, 42, 0.75);
 }
 
-.detail-gallery-grid img.yad2-image {
-  object-position: center 34%;
-}
-
 .detail-gallery-image-button {
   position: relative;
   padding: 0;
@@ -833,10 +825,6 @@ a {
   object-fit: contain;
   display: block;
   border-radius: 8px;
-}
-
-.image-lightbox-stage img.yad2-image {
-  object-position: center 38%;
 }
 
 .image-lightbox-image-wrap {
