@@ -66,10 +66,46 @@ const dedupeRepeatingPhrase = (value) => {
     return text;
 };
 
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const splitStreetAndNumber = (streetValue = '', explicitStreetNumber = '') => {
+    let street = safeText(streetValue);
+    let streetNumber = safeText(explicitStreetNumber);
+
+    if (!streetNumber) {
+        const leadingNumber = street.match(/^(\d+[a-zA-Zא-ת0-9\-\/]*)\s+(.+)$/);
+        if (leadingNumber) {
+            streetNumber = safeText(leadingNumber[1]);
+            street = safeText(leadingNumber[2]);
+        }
+    }
+
+    if (!streetNumber) {
+        const trailingNumber = street.match(/^(.+?)\s+(\d+[a-zA-Zא-ת0-9\-\/]*)$/);
+        if (trailingNumber) {
+            street = safeText(trailingNumber[1]);
+            streetNumber = safeText(trailingNumber[2]);
+        }
+    }
+
+    if (street && streetNumber) {
+        const escapedNumber = escapeRegex(streetNumber);
+        street = street
+            .replace(new RegExp(`^${escapedNumber}\\s+`, 'i'), '')
+            .replace(new RegExp(`\\s+${escapedNumber}$`, 'i'), '')
+            .trim();
+    }
+
+    return { street, streetNumber };
+};
+
+const normalizeStreetDisplay = (streetValue = '', explicitStreetNumber = '') => {
+    const { street, streetNumber } = splitStreetAndNumber(streetValue, explicitStreetNumber);
+    return [street, streetNumber].filter(Boolean).join(' ').trim();
+};
+
 const getAddressLine = (address) => {
-    const streetName = safeText(address?.street);
-    const streetNumber = safeText(address?.streetNumber);
-    const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
+    const street = normalizeStreetDisplay(address?.street, address?.streetNumber);
     const city = safeText(address?.city);
     const state = safeText(address?.state);
     const zip = safeText(address?.zip);
@@ -79,12 +115,20 @@ const getAddressLine = (address) => {
 };
 
 const getPrimaryAddressTitle = (property = {}) => {
-    const street = String(property.address?.street || '').trim();
+    const street = normalizeStreetDisplay(property.address?.street, property.address?.streetNumber);
     if (street) return street;
     const title = String(property.title || '').trim();
     if (isReadableImportedText(property, title)) return title;
     const city = safeText(property.address?.city);
     return city ? `Property in ${city}` : 'Property listing';
+};
+
+const getPrimaryStreetParts = (property = {}) => {
+    const fromAddress = splitStreetAndNumber(property.address?.street, property.address?.streetNumber);
+    if (fromAddress.street || fromAddress.streetNumber) return fromAddress;
+    const title = safeText(property.title);
+    if (!title) return { street: '', streetNumber: '' };
+    return splitStreetAndNumber(title, '');
 };
 
 const formatContactMethod = (method) => {
@@ -313,6 +357,9 @@ const PropertyDetail = () => {
         'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
     const additionalImages = allImages.slice(1);
     const detailTitle = getPrimaryAddressTitle(property);
+    const coverStreetParts = getPrimaryStreetParts(property);
+    const coverTitleStreet = coverStreetParts.street || detailTitle;
+    const coverTitleNumber = coverStreetParts.streetNumber;
     const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
@@ -407,13 +454,19 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <div className="homekey-logo-badge" aria-label="HomeKey logo">
-                        HomeKey
+                        <span className="homekey-logo-mark">HK</span>
+                        <span className="homekey-logo-text">HomeKey</span>
                     </div>
                     <div className="detail-hero-content">
                         <div className="detail-hero-main">
                             <p className="detail-type-pill">{typeLabel}</p>
-                            <h1>{detailTitle}</h1>
-                            <p className="detail-address">
+                            <h1 className="detail-address-title">
+                                <span className="detail-address-title-street" dir="auto">{coverTitleStreet}</span>
+                                {coverTitleNumber && (
+                                    <span className="detail-address-title-number" dir="ltr">{coverTitleNumber}</span>
+                                )}
+                            </h1>
+                            <p className="detail-address detail-address--hero">
                                 {locationLine || addressLine || 'Address not provided'}
                             </p>
                             <div className="detail-highlight-row">
