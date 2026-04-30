@@ -90,22 +90,6 @@ const removeYad2ImageLogo = (url, sourceType = '') => {
   return `${source}${separator}fit=crop&crop=top&h=780`;
 };
 
-const normalizePhoneForLinks = (value) => {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  const cleaned = raw.replace(/[^\d+]/g, '');
-  if (!cleaned) return '';
-  if (cleaned.startsWith('+')) return cleaned.slice(1);
-  if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
-  return cleaned;
-};
-
-const buildWhatsAppHref = (phone, title = 'this listing') => {
-  const normalizedPhone = normalizePhoneForLinks(phone);
-  if (!normalizedPhone) return '';
-  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
-};
-
 const dedupeRepeatingPhrase = (value) => {
   const text = safeText(value);
   if (!text) return '';
@@ -121,38 +105,6 @@ const dedupeRepeatingPhrase = (value) => {
     if (repeated.length < text.length) return repeated;
   }
   return text;
-};
-
-const getListingContact = (property = {}) => {
-  const externalContact = property.externalContact && typeof property.externalContact === 'object'
-    ? property.externalContact
-    : {};
-  const directContact = property.contact && typeof property.contact === 'object'
-    ? property.contact
-    : {};
-  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-    ? property.agent
-    : {};
-
-  const name = dedupeRepeatingPhrase(sanitizeReadableText(property, externalContact.name || directContact.name || agentContact.name || ''));
-  const agency = dedupeRepeatingPhrase(sanitizeReadableText(property, externalContact.agency || directContact.agency || agentContact.agency || ''));
-  const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
-  const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
-  const email = externalContact.email || directContact.email || agentContact.email || '';
-  const preferredMethod =
-    externalContact.preferredMethod
-    || directContact.preferredMethod
-    || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
-
-  return {
-    name,
-    agency,
-    phone,
-    whatsapp,
-    email,
-    preferredMethod,
-    hasAny: Boolean(name || agency || phone || whatsapp || email),
-  };
 };
 
 // Fallback sample properties shown when the database returns no results
@@ -552,9 +504,6 @@ const PropertyList = () => {
             && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
           );
           const monthly = property.financialDetails?.totalMonthlyPayment;
-          const listingContact = getListingContact(property);
-          const whatsappHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, displayTitle);
-
           return (
             <div
               key={key}
@@ -572,32 +521,6 @@ const PropertyList = () => {
                 </p>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
-                )}
-                {listingContact.hasAny && (
-                  <div className="property-card-contact">
-                    <p className="property-card-contact-title">
-                      Contact {listingContact.name || 'Listing manager'}
-                    </p>
-                    {listingContact.agency && listingContact.agency.toLowerCase() !== listingContact.name.toLowerCase() && (
-                      <p className="property-card-contact-line">Agency: {listingContact.agency}</p>
-                    )}
-                    {listingContact.phone && <p className="property-card-contact-line">Phone: {listingContact.phone}</p>}
-                    {listingContact.whatsapp && <p className="property-card-contact-line">WhatsApp: {listingContact.whatsapp}</p>}
-                    {listingContact.email && <p className="property-card-contact-line">Email: {listingContact.email}</p>}
-                    <div className="property-card-contact-actions">
-                      {whatsappHref && (
-                        <a
-                          href={whatsappHref}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="secondary-btn"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          WhatsApp
-                        </a>
-                      )}
-                    </div>
-                  </div>
                 )}
               </div>
             </div>
