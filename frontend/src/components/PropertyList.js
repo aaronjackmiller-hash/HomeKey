@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import {
+  isFavoriteProperty,
+  isSavedProperty,
+  toggleFavoriteProperty,
+  toggleSavedProperty,
+  getInterestSummary,
+} from '../utils/propertyInterest';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -254,6 +261,8 @@ const PropertyList = () => {
   const [liveSyncStatus, setLiveSyncStatus] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
+  const [interestVersion, setInterestVersion] = useState(0);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const debounceRef = useRef(null);
@@ -450,6 +459,26 @@ const PropertyList = () => {
     setMaxPrice(maxPriceInput);
   };
 
+  const handleToggleInterest = (event, mode, property) => {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!property || typeof property !== 'object') return;
+    const propertyId = property._id || property.id;
+    if (!propertyId) return;
+    if (mode === 'favorite') {
+      toggleFavoriteProperty(property);
+    } else {
+      toggleSavedProperty(property);
+    }
+    setInterestVersion((value) => value + 1);
+  };
+
+  // Recompute summary when local interest toggles change.
+  void interestVersion;
+  const interestSummary = getInterestSummary();
+  const favoritesCount = interestSummary.favoriteIds.length;
+  const savedCount = interestSummary.savedIds.length;
+
   // Decide what to render in the results area
   const renderResults = () => {
     if (loading) {
@@ -488,6 +517,14 @@ const PropertyList = () => {
       displayProperties = samples;
     } else {
       displayProperties = properties;
+    }
+
+    if (favoritesOnly) {
+      const favoriteIdSet = new Set(interestSummary.favoriteIds);
+      displayProperties = displayProperties.filter((property) => {
+        const propertyId = property && (property._id || property.id);
+        return propertyId ? favoriteIdSet.has(String(propertyId)) : false;
+      });
     }
 
     return (
@@ -529,6 +566,8 @@ const PropertyList = () => {
           const canOpenDetail = Boolean(propertyId) && !isSample;
           const isYad2Media = isYad2LikeListing(property);
           const key = propertyId || `property-${index}`;
+          const favoriteActive = isFavoriteProperty(propertyId);
+          const savedActive = isSavedProperty(propertyId);
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
@@ -561,6 +600,24 @@ const PropertyList = () => {
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                 {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
+                <div className="property-interest-actions">
+                  <button
+                    type="button"
+                    className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
+                    onClick={(event) => handleToggleInterest(event, 'favorite', property)}
+                    aria-pressed={favoriteActive}
+                  >
+                    {favoriteActive ? 'Favorited' : 'Favorite'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
+                    onClick={(event) => handleToggleInterest(event, 'saved', property)}
+                    aria-pressed={savedActive}
+                  >
+                    {savedActive ? 'Saved' : 'Save'}
+                  </button>
+                </div>
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
                 <p className="property-card-stats">
                   {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
@@ -625,6 +682,21 @@ const PropertyList = () => {
         <button className={filter === 'all' ? 'active-tab' : ''} onClick={() => setFilter('all')}>All</button>
         <button className={filter === 'rental' ? 'active-tab' : ''} onClick={() => setFilter('rental')}>Rental</button>
         <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
+      </div>
+      <div className="property-interest-toolbar">
+        <button
+          type="button"
+          className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
+          onClick={() => setFavoritesOnly((value) => !value)}
+        >
+          {favoritesOnly ? 'Show All Listings' : 'Show Favorites Only'}
+        </button>
+      </div>
+      <div className="property-interest-summary" aria-live="polite">
+        <div className="property-interest-summary-counts">
+          <span>Favorites: {favoritesCount}</span>
+          <span>Saved file: {savedCount}</span>
+        </div>
       </div>
       {renderResults()}
     </div>

@@ -78,6 +78,94 @@ const normalizePhone = (value) => {
     return cleaned || raw;
 };
 
+const normalizePhoneLikeValue = (value) => {
+    const normalized = normalizePhone(value);
+    if (!normalized) return '';
+    const digits = normalized.replace(/[^\d]/g, '');
+    if (digits.length < 9 || digits.length > 15) return '';
+    if (normalized.startsWith('+')) return `+${digits}`;
+    return digits;
+};
+
+const firstPhoneFromValue = (value, seen = new Set()) => {
+    if (value == null) return '';
+    if (typeof value === 'string' || typeof value === 'number') {
+        return normalizePhoneLikeValue(String(value));
+    }
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            const extracted = firstPhoneFromValue(item, seen);
+            if (extracted) return extracted;
+        }
+        return '';
+    }
+    if (typeof value === 'object') {
+        if (seen.has(value)) return '';
+        seen.add(value);
+
+        const direct = firstPhoneFromValue(pickFirst(
+            value.phone,
+            value.phoneNumber,
+            value.mobile,
+            value.whatsapp,
+            value.whatsApp,
+            value.telephone,
+            value.tel,
+            value.cell,
+            value.value,
+            value.number
+        ), seen);
+        if (direct) return direct;
+
+        const typeHint = normalizeString(pickFirst(value.type, value.label, value.kind, value.method)).toLowerCase();
+        if (/(phone|mobile|whats|tel|call|sms|טלפון|נייד|וואטסאפ|ווטסאפ)/i.test(typeHint)) {
+            const typed = firstPhoneFromValue(pickFirst(value.value, value.number, value.phone, value.mobile), seen);
+            if (typed) return typed;
+        }
+
+        const entries = Object.entries(value);
+        for (const [key, nestedValue] of entries) {
+            if (/(phone|mobile|whats|tel|cell|gsm|contactNumber|contact_number)/i.test(key)) {
+                const extracted = firstPhoneFromValue(nestedValue, seen);
+                if (extracted) return extracted;
+            }
+        }
+        for (const [key, nestedValue] of entries) {
+            if (
+                /^(contact|externalContact|agent|manager|owner|advertiser|broker|details|methods|options|phones?|whatsapp|contacts?)$/i.test(key)
+                || Array.isArray(nestedValue)
+                || (nestedValue && typeof nestedValue === 'object')
+            ) {
+                const extracted = firstPhoneFromValue(nestedValue, seen);
+                if (extracted) return extracted;
+            }
+        }
+    }
+    return '';
+};
+
+const mergeContactDetails = (existingContact = {}, incomingContact = {}) => {
+    const merged = {
+        ...(normalizeHumanText(pickFirst(incomingContact.name, existingContact.name)) ? { name: normalizeHumanText(pickFirst(incomingContact.name, existingContact.name)) } : {}),
+        ...(normalizeHumanText(pickFirst(incomingContact.agency, existingContact.agency)) ? { agency: normalizeHumanText(pickFirst(incomingContact.agency, existingContact.agency)) } : {}),
+        ...(normalizeString(pickFirst(incomingContact.email, existingContact.email)).toLowerCase() ? { email: normalizeString(pickFirst(incomingContact.email, existingContact.email)).toLowerCase() } : {}),
+        ...(firstPhoneFromValue(pickFirst(incomingContact.phone, existingContact.phone))
+            ? { phone: firstPhoneFromValue(pickFirst(incomingContact.phone, existingContact.phone)) }
+            : {}),
+        ...(firstPhoneFromValue(pickFirst(incomingContact.whatsapp, existingContact.whatsapp, incomingContact.phone, existingContact.phone))
+            ? { whatsapp: firstPhoneFromValue(pickFirst(incomingContact.whatsapp, existingContact.whatsapp, incomingContact.phone, existingContact.phone)) }
+            : {}),
+    };
+
+    const preferred = normalizePreferredContactMethod(pickFirst(
+        incomingContact.preferredMethod,
+        existingContact.preferredMethod
+    ));
+    merged.preferredMethod = preferred || (merged.whatsapp ? 'whatsapp' : (merged.phone ? 'phone' : 'email'));
+
+    return merged;
+};
+
 const dedupeRepeatedPhrases = (value) => {
     const text = normalizeHumanText(value);
     if (!text) return '';
@@ -353,41 +441,90 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.ownerName,
         row.advertiserName
     ));
-    const contactPhone = normalizePhone(pickFirst(
+    const contactPhone = firstPhoneFromValue(pickFirst(
         row.contactPhone,
         row.phone,
         row.mobile,
+        row.phoneNumber,
+        row.phoneNumbers,
+        row.phones,
+        row.contactPhones,
         row.contactMobile,
         row.agentPhone,
         row.contact && row.contact.phone,
         row.contact && row.contact.mobile,
         row.contact && row.contact.phoneNumber,
+        row.contact && row.contact.phoneNumbers,
+        row.contact && row.contact.phones,
         row.agent && row.agent.phone,
         row.agent && row.agent.mobile,
+        row.agent && row.agent.phoneNumber,
+        row.agent && row.agent.phoneNumbers,
         row.manager && row.manager.phone,
+        row.manager && row.manager.mobile,
+        row.manager && row.manager.phoneNumber,
+        row.manager && row.manager.phoneNumbers,
         row.owner && row.owner.phone,
+        row.owner && row.owner.mobile,
+        row.owner && row.owner.phoneNumber,
+        row.owner && row.owner.phoneNumbers,
         row.advertiser && row.advertiser.phone,
+        row.advertiser && row.advertiser.mobile,
+        row.advertiser && row.advertiser.phoneNumber,
+        row.advertiser && row.advertiser.phoneNumbers,
         row.contactDetails && row.contactDetails.phone,
+        row.contactDetails && row.contactDetails.mobile,
+        row.contactDetails && row.contactDetails.phoneNumber,
+        row.contactDetails && row.contactDetails.phoneNumbers,
+        row.externalContact && row.externalContact.phone,
+        row.externalContact && row.externalContact.mobile,
+        row.externalContact && row.externalContact.phoneNumber,
+        row.externalContact && row.externalContact.phoneNumbers,
+        row.contactMethods,
+        row.contactOptions,
         row.managerPhone,
         row.ownerPhone,
         row.advertiserPhone
     ));
-    const contactWhatsapp = normalizePhone(pickFirst(
+    const contactWhatsapp = firstPhoneFromValue(pickFirst(
         row.whatsapp,
         row.whatsApp,
         row.whatsappNumber,
+        row.whatsappPhone,
+        row.whatsAppPhone,
+        row.whatsappNumbers,
         row.contactWhatsapp,
         row.contactWhatsApp,
         row.agentWhatsapp,
         row.agentWhatsApp,
         row.contact && row.contact.whatsapp,
         row.contact && row.contact.whatsApp,
+        row.contact && row.contact.whatsappNumber,
+        row.contact && row.contact.whatsappNumbers,
         row.agent && row.agent.whatsapp,
         row.agent && row.agent.whatsApp,
+        row.agent && row.agent.whatsappNumber,
+        row.agent && row.agent.whatsappNumbers,
         row.manager && row.manager.whatsapp,
+        row.manager && row.manager.whatsApp,
+        row.manager && row.manager.whatsappNumber,
+        row.manager && row.manager.whatsappNumbers,
         row.owner && row.owner.whatsapp,
+        row.owner && row.owner.whatsApp,
+        row.owner && row.owner.whatsappNumber,
+        row.owner && row.owner.whatsappNumbers,
         row.advertiser && row.advertiser.whatsapp,
+        row.advertiser && row.advertiser.whatsApp,
+        row.advertiser && row.advertiser.whatsappNumber,
+        row.advertiser && row.advertiser.whatsappNumbers,
         row.contactDetails && row.contactDetails.whatsapp,
+        row.contactDetails && row.contactDetails.whatsApp,
+        row.contactDetails && row.contactDetails.whatsappNumber,
+        row.contactDetails && row.contactDetails.whatsappNumbers,
+        row.externalContact && row.externalContact.whatsapp,
+        row.externalContact && row.externalContact.whatsApp,
+        row.externalContact && row.externalContact.whatsappNumber,
+        row.externalContact && row.externalContact.whatsappNumbers,
         row.managerWhatsapp
     ));
     const contactEmail = normalizeString(pickFirst(
@@ -476,14 +613,14 @@ const mapYad2RowToPropertyDoc = (row) => {
         status: parseStatus(pickFirst(row.status, row.listingStatus)),
         sourceType,
         ...(externalSegmentKey ? { externalSegmentKey } : {}),
-        contact: {
+        contact: mergeContactDetails({}, {
             ...(contactName ? { name: contactName } : {}),
             ...(contactAgency ? { agency: contactAgency } : {}),
             ...(contactPhone ? { phone: contactPhone } : {}),
             ...(contactWhatsapp ? { whatsapp: contactWhatsapp } : {}),
             ...(contactEmail ? { email: contactEmail } : {}),
             preferredMethod: preferredContactMethod || (contactWhatsapp ? 'whatsapp' : (contactPhone ? 'phone' : 'email')),
-        },
+        }),
         sources: [
             {
                 sourceType,
@@ -556,6 +693,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         externalId,
                         ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                     });
+                    existing.contact = mergeContactDetails(existing.contact, payload.contact);
                     if (hasManualSource && existing.contact && existing.owner) {
                         // Keep owner-facing manual contact workflow active when merged with live feed records.
                         existing.sourceType = 'manual';
@@ -581,7 +719,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         duplicate.floorNumber = payload.floorNumber;
                         duplicate.financialDetails = payload.financialDetails;
                         duplicate.dates = payload.dates;
-                        duplicate.contact = payload.contact;
+                        duplicate.contact = mergeContactDetails(duplicate.contact, payload.contact);
                         duplicate.images = Array.isArray(payload.images) && payload.images.length > 0 ? payload.images : duplicate.images;
                         duplicate.status = payload.status || duplicate.status;
                         duplicate.externalSource = normalizedSourceTag;

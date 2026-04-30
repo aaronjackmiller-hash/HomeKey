@@ -318,6 +318,40 @@ a {
   padding: 14px;
 }
 
+.property-interest-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.property-interest-summary-counts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.property-interest-filter {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  padding: 7px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.property-interest-filter.is-active {
+  border-color: #0f766e;
+  background: #e6fffb;
+  color: #0f766e;
+}
+
 .property-card-type {
   display: inline-block;
   font-size: 0.75rem;
@@ -355,6 +389,34 @@ a {
   margin: 0;
   font-size: 0.92rem;
   color: #334155;
+}
+
+.property-interest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 10px;
+}
+
+.property-interest-btn {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  padding: 5px 11px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.property-interest-btn:hover {
+  border-color: #0f766e;
+}
+
+.property-interest-btn.is-active {
+  border-color: #0f766e;
+  background: #e6fffb;
+  color: #0f766e;
 }
 
 .empty-state {
@@ -1022,6 +1084,36 @@ a {
   text-decoration: none;
 }
 
+.detail-interest-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.manager-whatsapp-highlight {
+  margin: 10px 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #99f6e4;
+  background: #ecfeff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.manager-whatsapp-highlight p {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.manager-whatsapp-highlight strong {
+  color: #0f766e;
+}
+
 .detail-actions {
   margin-top: 4px;
   display: flex;
@@ -1292,7 +1384,7 @@ legend {
   }
 
   .detail-hero-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1.1fr 1fr;
   }
 
   .detail-hero-image {
@@ -1317,6 +1409,10 @@ legend {
     grid-template-columns: 1fr;
   }
 
+  .detail-hero-card {
+    grid-template-columns: 1fr;
+  }
+
   .homekey-logo-badge {
     top: 8px;
     right: 8px;
@@ -1332,5 +1428,10 @@ legend {
     width: 64px;
     min-height: 31px;
     border-radius: 8px;
+  }
+
+  .property-interest-summary {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

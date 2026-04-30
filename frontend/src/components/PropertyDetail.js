@@ -8,6 +8,12 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import {
+    isFavoriteProperty,
+    isSavedProperty,
+    toggleFavoriteProperty,
+    toggleSavedProperty,
+} from '../utils/propertyInterest';
 
 const formatCurrency = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -262,6 +268,7 @@ const PropertyDetail = () => {
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+    const [interestVersion, setInterestVersion] = useState(0);
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -364,8 +371,27 @@ const PropertyDetail = () => {
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
     const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
+    const managerPhoneDisplay = safeText(listingContact.phone);
     const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle);
+    const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
+    const propertyId = property?._id || property?.id;
+    const favoriteActive = isFavoriteProperty(propertyId);
+    const savedActive = isSavedProperty(propertyId);
+
+    const handleToggleInterest = (mode) => {
+        if (!propertyId) return;
+        if (mode === 'favorite') {
+            toggleFavoriteProperty(property);
+        } else {
+            const displayLocation = locationLine || addressLine;
+            toggleSavedProperty(property, {
+                displayTitle: detailTitle,
+                displayLocation,
+            });
+        }
+        setInterestVersion((value) => value + 1);
+    };
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
@@ -502,6 +528,24 @@ const PropertyDetail = () => {
                             <p>Price</p>
                             <strong>{formatCurrency(property.price)}</strong>
                         </div>
+                        <div className="detail-interest-actions">
+                            <button
+                                type="button"
+                                className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
+                                onClick={() => handleToggleInterest('favorite')}
+                                aria-pressed={favoriteActive}
+                            >
+                                {favoriteActive ? 'Favorited' : 'Favorite'}
+                            </button>
+                            <button
+                                type="button"
+                                className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
+                                onClick={() => handleToggleInterest('saved')}
+                                aria-pressed={savedActive}
+                            >
+                                {savedActive ? 'Saved' : 'Save'}
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -586,19 +630,29 @@ const PropertyDetail = () => {
                         <div className="agent-grid">
                             {listingContact.name && <p>Manager: {listingContact.name}</p>}
                             {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
-                            {listingContact.phone && <p>Phone: {listingContact.phone}</p>}
+                            {managerPhoneDisplay && <p>Phone: {managerPhoneDisplay}</p>}
                             {managerWhatsAppDisplay && <p>WhatsApp: {managerWhatsAppDisplay}</p>}
                             {listingContact.email && <p>Email: {listingContact.email}</p>}
                         </div>
+                        {managerWhatsAppHref && (
+                            <div className="manager-whatsapp-banner">
+                                <strong>Manager WhatsApp:</strong> {managerWhatsAppDisplay}
+                            </div>
+                        )}
                         <div className="detail-contact-actions">
                             {managerWhatsAppHref && (
                                 <a
                                     href={managerWhatsAppHref}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="secondary-btn"
+                                    className="secondary-btn whatsapp-cta"
                                 >
                                     Chat on WhatsApp
+                                </a>
+                            )}
+                            {managerPhoneHref && (
+                                <a href={managerPhoneHref} className="secondary-btn">
+                                    Call Manager
                                 </a>
                             )}
                             {listingContact.email && (
