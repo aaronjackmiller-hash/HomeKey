@@ -151,6 +151,40 @@ const buildWhatsAppHref = (phone, title = 'this listing') => {
     return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
+const getDisplayWhatsApp = (contact = {}) => {
+    const raw = safeText(contact.whatsapp || contact.phone);
+    return raw;
+};
+
+const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
+
+const buildAmenities = (property = {}) => {
+    const haystack = String(property.description || '').toLowerCase();
+    const amenities = [];
+    const addAmenity = (label, condition) => {
+        if (!condition || amenities.includes(label)) return;
+        amenities.push(label);
+    };
+
+    addAmenity('Modern kitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
+    addAmenity('Air conditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
+    addAmenity('Balcony', hasAnyPattern(haystack, [/balcony/i, /מרפסת/]));
+    addAmenity('Secure parking', hasAnyPattern(haystack, [/parking/i, /חניה/]));
+    addAmenity('Safe room', hasAnyPattern(haystack, [/safe\s*room/i, /\bmamad\b/i, /ממד/]));
+    addAmenity('Elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
+    addAmenity('Renovated', hasAnyPattern(haystack, [/renovat/i, /משופצ/]));
+    addAmenity('Secure building', Boolean(property.buildingDetails?.name));
+
+    if (amenities.length === 0) {
+        if (property.type === 'rental') {
+            amenities.push('Modern kitchen', 'Air conditioning', 'Balcony');
+        } else {
+            amenities.push('Secure building', 'Modern kitchen', 'Balcony');
+        }
+    }
+    return amenities.slice(0, 4);
+};
+
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
@@ -283,7 +317,9 @@ const PropertyDetail = () => {
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
-    const managerWhatsAppHref = buildWhatsAppHref(listingContact.whatsapp || listingContact.phone, detailTitle);
+    const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
+    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle);
+    const amenities = buildAmenities(property);
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
