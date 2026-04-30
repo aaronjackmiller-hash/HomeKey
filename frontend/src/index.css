@@ -446,28 +446,31 @@ a {
 
 .yad2-logo-mask {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 5;
   pointer-events: none;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.18);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.55) 0%,
+    rgba(15, 23, 42, 0.38) 44%,
+    rgba(15, 23, 42, 0) 100%
+  );
 }
 
 .yad2-logo-mask--hero {
-  width: 92px;
-  height: 40px;
+  height: 58px;
 }
 
 .yad2-logo-mask--gallery {
-  width: 82px;
-  height: 36px;
+  height: 52px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .yad2-logo-mask--lightbox {
-  width: 92px;
-  height: 40px;
+  height: 64px;
 }
 
 .detail-hero-content {
@@ -516,42 +519,42 @@ a {
 
 .homekey-logo-badge {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 12px;
   z-index: 6;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   color: #0f172a;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.22);
-  padding: 8px 12px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.24);
+  padding: 6px 11px 6px 7px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
-.homekey-logo-mark {
-  width: 24px;
-  height: 24px;
+.homekey-logo-icon {
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
-  background: #0f172a;
-  color: #f8fafc;
+  background: linear-gradient(145deg, #0f766e, #0ea5a4);
+  color: #ecfeff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 900;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: uppercase;
 }
 
-.homekey-logo-text {
-  font-size: 0.84rem;
+.homekey-logo-wordmark {
+  font-size: 0.96rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: none;
 }
 
 .detail-type-pill {

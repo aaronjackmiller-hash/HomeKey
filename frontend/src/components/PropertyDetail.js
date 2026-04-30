@@ -454,8 +454,13 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <div className="homekey-logo-badge" aria-label="HomeKey logo">
-                        <span className="homekey-logo-mark">HK</span>
-                        <span className="homekey-logo-text">HomeKey</span>
+                        <span className="homekey-logo-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                                <path d="M4.8 11.2L12 5l7.2 6.2v7A1.8 1.8 0 0 1 17.4 20H6.6a1.8 1.8 0 0 1-1.8-1.8v-7Z" />
+                                <rect x="10.3" y="12.2" width="3.4" height="7.8" rx="0.7" />
+                            </svg>
+                        </span>
+                        <span className="homekey-logo-wordmark">HomeKey</span>
                     </div>
                     <div className="detail-hero-content">
                         <div className="detail-hero-main">
