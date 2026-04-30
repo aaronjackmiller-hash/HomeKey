@@ -364,7 +364,9 @@ const PropertyDetail = () => {
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
     const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
+    const managerPhoneDisplay = safeText(listingContact.phone);
     const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle);
+    const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
 
     const openImageViewer = (index) => {
@@ -586,19 +588,29 @@ const PropertyDetail = () => {
                         <div className="agent-grid">
                             {listingContact.name && <p>Manager: {listingContact.name}</p>}
                             {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
-                            {listingContact.phone && <p>Phone: {listingContact.phone}</p>}
+                            {managerPhoneDisplay && <p>Phone: {managerPhoneDisplay}</p>}
                             {managerWhatsAppDisplay && <p>WhatsApp: {managerWhatsAppDisplay}</p>}
                             {listingContact.email && <p>Email: {listingContact.email}</p>}
                         </div>
+                        {managerWhatsAppHref && (
+                            <div className="manager-whatsapp-banner">
+                                <strong>Manager WhatsApp:</strong> {managerWhatsAppDisplay}
+                            </div>
+                        )}
                         <div className="detail-contact-actions">
                             {managerWhatsAppHref && (
                                 <a
                                     href={managerWhatsAppHref}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="secondary-btn"
+                                    className="secondary-btn whatsapp-cta"
                                 >
                                     Chat on WhatsApp
+                                </a>
+                            )}
+                            {managerPhoneHref && (
+                                <a href={managerPhoneHref} className="secondary-btn">
+                                    Call Manager
                                 </a>
                             )}
                             {listingContact.email && (
