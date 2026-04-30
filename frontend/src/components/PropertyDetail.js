@@ -7,6 +7,7 @@ import {
     registerShowingAttendee,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 
 const formatCurrency = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -448,41 +449,13 @@ const PropertyDetail = () => {
                             }}
                         />
                         {isYad2ListingMedia && (
-                            <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
+                            <>
+                                <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
+                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero" />
+                            </>
                         )}
                     </div>
-                    <div className="homekey-logo-badge" aria-label="HomeKey logo">
-                        <svg className="homekey-logo-badge-svg" viewBox="0 0 240 220" role="img" aria-hidden="true" focusable="false">
-                            <defs>
-                                <linearGradient id="hkPlate" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#f8fafc" />
-                                    <stop offset="100%" stopColor="#dbe4ee" />
-                                </linearGradient>
-                                <linearGradient id="hkBorder" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stopColor="#e2e8f0" />
-                                    <stop offset="100%" stopColor="#94a3b8" />
-                                </linearGradient>
-                                <linearGradient id="hkInk" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stopColor="#1d4d8f" />
-                                    <stop offset="100%" stopColor="#0f274f" />
-                                </linearGradient>
-                            </defs>
-                            <rect x="6" y="6" width="228" height="208" rx="26" fill="url(#hkPlate)" stroke="url(#hkBorder)" strokeWidth="6" />
-                            <g fill="url(#hkInk)">
-                                <path d="M80 90 120 58l40 32v36h-15V99h-50v27H80V90Z" />
-                                <rect x="108" y="103" width="11" height="11" rx="1.5" />
-                                <rect x="122" y="103" width="11" height="11" rx="1.5" />
-                                <rect x="108" y="117" width="11" height="11" rx="1.5" />
-                                <rect x="122" y="117" width="11" height="11" rx="1.5" />
-                                <circle cx="88" cy="140" r="16" />
-                                <circle cx="84" cy="140" r="4.2" fill="#dbeafe" />
-                                <rect x="101" y="136" width="62" height="8" rx="4" />
-                                <polygon points="155,140 162,136 166,140 162,144" />
-                            </g>
-                            <text x="120" y="178" textAnchor="middle" fontSize="54" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" fill="url(#hkInk)">HomeKey</text>
-                            <text x="120" y="202" textAnchor="middle" fontSize="18" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" letterSpacing="1.2" fill="#1f3553">REAL ESTATE PLATFORM</text>
-                        </svg>
-                    </div>
+                    <HomeKeyLogoBadge className="homekey-logo-badge" />
                     <div className="detail-hero-content">
                         <div className="detail-hero-main">
                             <p className="detail-type-pill">{typeLabel}</p>
@@ -553,7 +526,10 @@ const PropertyDetail = () => {
                                     alt={`Property visual ${index + 2}`}
                                 />
                                 {isYad2ListingMedia && (
-                                    <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
+                                    <>
+                                        <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
+                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery" />
+                                    </>
                                 )}
                             </button>
                         ))}
@@ -753,43 +729,50 @@ const PropertyDetail = () => {
             </div>
             {selectedImageIndex != null && allImages[selectedImageIndex] && (
                 <div className="image-lightbox-backdrop" onClick={closeImageViewer}>
-                    <div className="image-lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
-                        <span>{selectedImageIndex + 1} / {allImages.length}</span>
-                        <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
-                    </div>
-                    <div className="image-lightbox-image-wrap" onClick={(e) => e.stopPropagation()}>
-                        <img
-                            className={isYad2ListingMedia ? 'yad2-image' : ''}
-                            src={allImages[selectedImageIndex]}
-                            alt={`Property image ${selectedImageIndex + 1}`}
-                        />
-                        {allImages.length > 1 && (
-                            <>
-                                <button
-                                    className="image-lightbox-nav prev"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        showPrevImage();
-                                    }}
-                                    type="button"
-                                >
-                                    ‹
-                                </button>
-                                <button
-                                    className="image-lightbox-nav next"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        showNextImage();
-                                    }}
-                                    type="button"
-                                >
-                                    ›
-                                </button>
-                            </>
-                        )}
-                        {isYad2ListingMedia && (
-                            <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
-                        )}
+                    <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
+                        <div className="image-lightbox-toolbar">
+                            <span>{selectedImageIndex + 1} / {allImages.length}</span>
+                            <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
+                        </div>
+                        <div className="image-lightbox-stage">
+                            <div className="image-lightbox-image-wrap">
+                                <img
+                                    className={isYad2ListingMedia ? 'yad2-image' : ''}
+                                    src={allImages[selectedImageIndex]}
+                                    alt={`Property image ${selectedImageIndex + 1}`}
+                                />
+                                {isYad2ListingMedia && (
+                                    <>
+                                        <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
+                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox" />
+                                    </>
+                                )}
+                            </div>
+                            {allImages.length > 1 && (
+                                <>
+                                    <button
+                                        className="image-lightbox-nav prev"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            showPrevImage();
+                                        }}
+                                        type="button"
+                                    >
+                                        ‹
+                                    </button>
+                                    <button
+                                        className="image-lightbox-nav next"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            showNextImage();
+                                        }}
+                                        type="button"
+                                    >
+                                        ›
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

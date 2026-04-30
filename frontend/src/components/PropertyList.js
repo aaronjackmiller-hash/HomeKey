@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
+import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -526,6 +527,7 @@ const PropertyList = () => {
           const propertyId = property._id || property.id;
           const isSample = typeof propertyId === 'string' && propertyId.startsWith('sample-');
           const canOpenDetail = Boolean(propertyId) && !isSample;
+          const isYad2Media = isYad2LikeListing(property);
           const key = propertyId || `property-${index}`;
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
@@ -547,7 +549,15 @@ const PropertyList = () => {
               onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
-              <img className="property-card-image" src={imageSrc} alt={displayTitle || 'Property listing'} />
+              <div className="property-card-image-wrap">
+                <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || 'Property listing'} />
+                {isYad2Media && (
+                  <>
+                    <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
+                    <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--card" />
+                  </>
+                )}
+              </div>
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                 {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
