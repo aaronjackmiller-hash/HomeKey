@@ -452,13 +452,18 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <div className="homekey-logo-badge" aria-label="HomeKey logo">
-                        <span className="homekey-logo-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
-                                <path d="M4.8 11.2L12 5l7.2 6.2v7A1.8 1.8 0 0 1 17.4 20H6.6a1.8 1.8 0 0 1-1.8-1.8v-7Z" />
-                                <rect x="10.3" y="12.2" width="3.4" height="7.8" rx="0.7" />
+                        <div className="homekey-logo-badge-mark" aria-hidden="true">
+                            <svg viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
+                                <path d="M10 30 32 12l22 18v20a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V30Z" />
+                                <rect x="27" y="34" width="10" height="20" rx="2" />
+                                <circle cx="46" cy="46" r="7.5" />
+                                <rect x="48.5" y="45.2" width="11" height="3.6" rx="1.8" />
                             </svg>
-                        </span>
-                        <span className="homekey-logo-wordmark">HomeKey</span>
+                        </div>
+                        <div className="homekey-logo-badge-text">
+                            <strong className="homekey-logo-wordmark">HomeKey</strong>
+                            <small className="homekey-logo-submark">Real Estate Platform</small>
+                        </div>
                     </div>
                     <div className="detail-hero-content">
                         <div className="detail-hero-main">
@@ -472,17 +477,24 @@ const PropertyDetail = () => {
                             <p className="detail-address detail-address--hero">
                                 {locationLine || addressLine || 'Address not provided'}
                             </p>
-                            <div className="detail-highlight-row">
+                            <div className="detail-highlight-row detail-highlight-row--framed">
                                 <span>
-                                    <strong aria-hidden="true">B</strong>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5V16H4V9.5Zm2.5-.5a.5.5 0 0 0-.5.5V14h12V9.5a.5.5 0 0 0-.5-.5h-11Z" />
+                                        <rect x="2" y="16" width="20" height="2" rx="1" />
+                                    </svg>
                                     {property.bedrooms ?? '—'} bed
                                 </span>
                                 <span>
-                                    <strong aria-hidden="true">T</strong>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M7 12.5V10a5 5 0 0 1 10 0v2.5a4.5 4.5 0 1 1-10 0Zm2 0a2.5 2.5 0 1 0 5 0V10a3 3 0 0 0-6 0v2.5Z" />
+                                    </svg>
                                     {property.bathrooms ?? '—'} bath
                                 </span>
                                 <span>
-                                    <strong aria-hidden="true">S</strong>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M4 4h6v2H6v4H4V4Zm10 0h6v6h-2V6h-4V4ZM4 14h2v4h4v2H4v-6Zm14 0h2v6h-6v-2h4v-4Z" />
+                                    </svg>
                                     {property.size ? `${property.size} sqm` : '—'}
                                 </span>
                             </div>
@@ -723,18 +735,15 @@ const PropertyDetail = () => {
             </div>
             {selectedImageIndex != null && allImages[selectedImageIndex] && (
                 <div className="image-lightbox-backdrop" onClick={closeImageViewer}>
-                    <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
-                        <div className="image-lightbox-toolbar">
-                            <span>{selectedImageIndex + 1} / {allImages.length}</span>
-                            <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
-                        </div>
-                        <div className="image-lightbox-stage">
-                    <div className="image-lightbox-image-wrap">
+                    <div className="image-lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
+                        <span>{selectedImageIndex + 1} / {allImages.length}</span>
+                        <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
+                    </div>
+                    <div className="image-lightbox-image-wrap" onClick={(e) => e.stopPropagation()}>
                         <img
                             className={isYad2ListingMedia ? 'yad2-image' : ''}
                             src={allImages[selectedImageIndex]}
                             alt={`Property image ${selectedImageIndex + 1}`}
-                            onClick={(e) => e.stopPropagation()}
                         />
                         {allImages.length > 1 && (
                             <>
@@ -763,8 +772,6 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
                         )}
-                    </div>
-                        </div>
                     </div>
                 </div>
             )}
