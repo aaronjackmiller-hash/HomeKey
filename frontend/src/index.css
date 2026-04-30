@@ -562,20 +562,20 @@ a {
 }
 
 .homekey-logo-lockup {
-  width: 132px;
-  min-height: 132px;
+  width: 102px;
+  min-height: 102px;
   background:
     radial-gradient(130% 90% at 20% 12%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0) 48%),
     radial-gradient(120% 86% at 80% 90%, rgba(148, 163, 184, 0.34) 0%, rgba(148, 163, 184, 0) 56%),
     linear-gradient(150deg, #f8fafc 0%, #dee5ef 30%, #b9c5d4 56%, #e8edf4 76%, #a6b2c2 100%);
-  border-radius: 20px;
+  border-radius: 16px;
   border: 2px solid rgba(226, 232, 240, 0.95);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.92),
     inset 0 -2px 0 rgba(71, 85, 105, 0.22),
     inset 0 0 0 2px rgba(100, 116, 139, 0.3),
     0 10px 22px rgba(2, 6, 23, 0.24);
-  padding: 7px;
+  padding: 5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -586,8 +586,8 @@ a {
 .homekey-logo-lockup::before {
   content: '';
   position: absolute;
-  inset: 5px;
-  border-radius: 16px;
+  inset: 4px;
+  border-radius: 13px;
   border: 1px solid rgba(148, 163, 184, 0.42);
   pointer-events: none;
 }
@@ -595,20 +595,20 @@ a {
 .homekey-logo-lockup::after {
   content: '';
   position: absolute;
-  top: 3px;
+  top: 2px;
   left: 8%;
   width: 84%;
-  height: 28%;
+  height: 24%;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0));
   pointer-events: none;
 }
 
 .homekey-logo-lockup--compact {
-  width: 102px;
-  min-height: 48px;
-  border-radius: 13px;
-  padding: 3px;
+  width: 76px;
+  min-height: 36px;
+  border-radius: 10px;
+  padding: 2px;
   border-width: 1.5px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -625,15 +625,15 @@ a {
 
 .image-corner-logo {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   z-index: 7;
   pointer-events: none;
 }
 
 .image-corner-logo--hero {
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
 }
 
 .image-corner-logo--gallery {
@@ -642,8 +642,8 @@ a {
 }
 
 .image-corner-logo--lightbox {
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
 }
 
 .image-corner-logo--card {
@@ -1323,14 +1323,14 @@ legend {
   }
 
   .homekey-logo-lockup {
-    width: 112px;
-    min-height: 112px;
-    border-radius: 17px;
+    width: 88px;
+    min-height: 88px;
+    border-radius: 14px;
   }
 
   .homekey-logo-lockup--compact {
-    width: 88px;
-    min-height: 42px;
-    border-radius: 11px;
+    width: 64px;
+    min-height: 31px;
+    border-radius: 8px;
   }
 }
