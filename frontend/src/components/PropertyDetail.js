@@ -232,10 +232,8 @@ const buildAmenities = (property = {}) => {
 const sanitizeImageSource = (url) => {
     const source = String(url || '').trim();
     if (!source) return '';
-    // Yad2 listing photos may contain top-left badges/logos. Crop top region from
-    // every listing image to consistently hide branding overlays regardless of host.
-    const separator = source.includes('?') ? '&' : '?';
-    return `${source}${separator}fit=crop&crop=entropy&crop-top=14&h=860`;
+    // Keep the original image dimensions so photos are not side-truncated.
+    return source;
 };
 
 const PropertyDetail = () => {
@@ -475,9 +473,18 @@ const PropertyDetail = () => {
                                 {locationLine || addressLine || 'Address not provided'}
                             </p>
                             <div className="detail-highlight-row">
-                                <span>{property.bedrooms ?? '—'} bed</span>
-                                <span>{property.bathrooms ?? '—'} bath</span>
-                                <span>{property.size ? `${property.size} sqm` : '—'}</span>
+                                <span>
+                                    <strong aria-hidden="true">B</strong>
+                                    {property.bedrooms ?? '—'} bed
+                                </span>
+                                <span>
+                                    <strong aria-hidden="true">T</strong>
+                                    {property.bathrooms ?? '—'} bath
+                                </span>
+                                <span>
+                                    <strong aria-hidden="true">S</strong>
+                                    {property.size ? `${property.size} sqm` : '—'}
+                                </span>
                             </div>
                         </div>
                         <section className="detail-amenities-panel" aria-label="Amenities">
@@ -722,30 +729,6 @@ const PropertyDetail = () => {
                             <button className="image-lightbox-close" onClick={closeImageViewer} type="button">Close</button>
                         </div>
                         <div className="image-lightbox-stage">
-                    {allImages.length > 1 && (
-                        <>
-                            <button
-                                className="image-lightbox-nav prev"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    showPrevImage();
-                                }}
-                                type="button"
-                            >
-                                ‹
-                            </button>
-                            <button
-                                className="image-lightbox-nav next"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    showNextImage();
-                                }}
-                                type="button"
-                            >
-                                ›
-                            </button>
-                        </>
-                    )}
                     <div className="image-lightbox-image-wrap">
                         <img
                             className={isYad2ListingMedia ? 'yad2-image' : ''}
@@ -753,6 +736,30 @@ const PropertyDetail = () => {
                             alt={`Property image ${selectedImageIndex + 1}`}
                             onClick={(e) => e.stopPropagation()}
                         />
+                        {allImages.length > 1 && (
+                            <>
+                                <button
+                                    className="image-lightbox-nav prev"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        showPrevImage();
+                                    }}
+                                    type="button"
+                                >
+                                    ‹
+                                </button>
+                                <button
+                                    className="image-lightbox-nav next"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        showNextImage();
+                                    }}
+                                    type="button"
+                                >
+                                    ›
+                                </button>
+                            </>
+                        )}
                         {isYad2ListingMedia && (
                             <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
                         )}
