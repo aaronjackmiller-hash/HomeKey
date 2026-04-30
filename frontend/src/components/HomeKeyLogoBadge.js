@@ -4,51 +4,61 @@ const HomeKeyLogoBadge = ({ compact = false, className = '', ariaLabel = 'HomeKe
   <div className={`homekey-logo-lockup ${compact ? 'homekey-logo-lockup--compact' : ''} ${className}`.trim()} aria-label={ariaLabel}>
     <svg
       className="homekey-logo-lockup-svg"
-      viewBox={compact ? '0 0 280 120' : '0 0 240 220'}
+      viewBox="0 0 256 256"
       role="img"
       aria-hidden="true"
       focusable="false"
     >
-      {compact ? (
-        <>
-          <rect x="5" y="5" width="270" height="110" rx="18" fill="#f8fafc" stroke="#9fb3c8" strokeWidth="4" />
-          <g transform="translate(22 18)">
-            <path d="M20 40 48 18l28 22v34H62V52H34v22H20V40Z" fill="#1f3f79" />
-            <rect x="43" y="56" width="10" height="10" rx="2" fill="#dbeafe" />
-            <circle cx="28" cy="84" r="11" fill="#1f3f79" />
-            <circle cx="25" cy="84" r="3" fill="#dbeafe" />
-            <rect x="39" y="81" width="44" height="6" rx="3" fill="#1f3f79" />
-            <polygon points="80,84 86,81 90,84 86,87" fill="#1f3f79" />
-          </g>
-          <text x="154" y="62" textAnchor="middle" fontSize="40" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="800" fill="#1f3f79">
-            HomeKey
-          </text>
-          <text x="154" y="86" textAnchor="middle" fontSize="14" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" letterSpacing="1.1" fill="#1f3553">
-            REAL ESTATE PLATFORM
-          </text>
-        </>
-      ) : (
-        <>
-          <rect x="6" y="6" width="228" height="208" rx="26" fill="#f8fafc" stroke="#9fb3c8" strokeWidth="6" />
-          <g fill="#1f3f79">
-            <path d="M80 90 120 58l40 32v36h-15V99h-50v27H80V90Z" />
-            <rect x="108" y="103" width="11" height="11" rx="1.5" fill="#dbeafe" />
-            <rect x="122" y="103" width="11" height="11" rx="1.5" fill="#dbeafe" />
-            <rect x="108" y="117" width="11" height="11" rx="1.5" fill="#dbeafe" />
-            <rect x="122" y="117" width="11" height="11" rx="1.5" fill="#dbeafe" />
-            <circle cx="88" cy="140" r="16" />
-            <circle cx="84" cy="140" r="4.2" fill="#dbeafe" />
-            <rect x="101" y="136" width="62" height="8" rx="4" />
-            <polygon points="155,140 162,136 166,140 162,144" />
-          </g>
-          <text x="120" y="178" textAnchor="middle" fontSize="54" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" fill="#1f3f79">
-            HomeKey
-          </text>
-          <text x="120" y="202" textAnchor="middle" fontSize="18" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" letterSpacing="1.2" fill="#1f3553">
-            REAL ESTATE PLATFORM
-          </text>
-        </>
-      )}
+      <defs>
+        <linearGradient id="hk-metal-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#f4f8fd" />
+          <stop offset="34%" stopColor="#ccd6e0" />
+          <stop offset="60%" stopColor="#edf2f7" />
+          <stop offset="100%" stopColor="#a6b3c1" />
+        </linearGradient>
+        <linearGradient id="hk-metal-sheen" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.58)" />
+          <stop offset="50%" stopColor="rgba(255,255,255,0.08)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.52)" />
+        </linearGradient>
+        <linearGradient id="hk-navy" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#2f4e86" />
+          <stop offset="100%" stopColor="#0f2c63" />
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="248" height="248" rx="36" fill="url(#hk-metal-bg)" stroke="#6d7f96" strokeWidth="3.2" />
+      <rect x="14" y="14" width="228" height="228" rx="28" fill="none" stroke="rgba(255,255,255,0.72)" strokeWidth="3" />
+      <rect x="14" y="14" width="228" height="228" rx="28" fill="none" stroke="rgba(80,95,113,0.26)" strokeWidth="2" />
+      <rect x="26" y="26" width="204" height="204" rx="22" fill="url(#hk-metal-sheen)" />
+
+      <g fill="url(#hk-navy)">
+        <path d="M83 102 127 68l46 34v40h-16v-30h-61v30H83v-40Z" />
+        <rect x="117" y="117" width="10" height="10" rx="1.6" fill="#d9e7ff" />
+        <rect x="131" y="117" width="10" height="10" rx="1.6" fill="#d9e7ff" />
+        <rect x="117" y="131" width="10" height="10" rx="1.6" fill="#d9e7ff" />
+        <rect x="131" y="131" width="10" height="10" rx="1.6" fill="#d9e7ff" />
+        <circle cx="92" cy="155" r="14" />
+        <circle cx="88" cy="155" r="3.5" fill="#d9e7ff" />
+        <rect x="106" y="151" width="62" height="8" rx="4" />
+        <polygon points="160,155 167,151 171,155 167,159" />
+      </g>
+
+      <text x="128" y="196" textAnchor="middle" fontSize="56" fontFamily="Inter, Segoe UI, Arial, sans-serif" fill="url(#hk-navy)">
+        <tspan fontWeight="800">Home</tspan>
+        <tspan fontWeight="500">Key</tspan>
+      </text>
+      <text
+        x="128"
+        y="217"
+        textAnchor="middle"
+        fontSize="17"
+        fontFamily="Inter, Segoe UI, Arial, sans-serif"
+        fontWeight="700"
+        letterSpacing="1"
+        fill="#1f355f"
+      >
+        REAL ESTATE PLATFORM
+      </text>
     </svg>
   </div>
 );
