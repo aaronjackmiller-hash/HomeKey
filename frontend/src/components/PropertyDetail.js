@@ -452,18 +452,36 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <div className="homekey-logo-badge" aria-label="HomeKey logo">
-                        <div className="homekey-logo-badge-mark" aria-hidden="true">
-                            <svg viewBox="0 0 64 64" role="img" aria-hidden="true" focusable="false">
-                                <path d="M10 30 32 12l22 18v20a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V30Z" />
-                                <rect x="27" y="34" width="10" height="20" rx="2" />
-                                <circle cx="46" cy="46" r="7.5" />
-                                <rect x="48.5" y="45.2" width="11" height="3.6" rx="1.8" />
-                            </svg>
-                        </div>
-                        <div className="homekey-logo-badge-text">
-                            <strong className="homekey-logo-wordmark">HomeKey</strong>
-                            <small className="homekey-logo-submark">Real Estate Platform</small>
-                        </div>
+                        <svg className="homekey-logo-badge-svg" viewBox="0 0 240 220" role="img" aria-hidden="true" focusable="false">
+                            <defs>
+                                <linearGradient id="hkPlate" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#f8fafc" />
+                                    <stop offset="100%" stopColor="#dbe4ee" />
+                                </linearGradient>
+                                <linearGradient id="hkBorder" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stopColor="#e2e8f0" />
+                                    <stop offset="100%" stopColor="#94a3b8" />
+                                </linearGradient>
+                                <linearGradient id="hkInk" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stopColor="#1d4d8f" />
+                                    <stop offset="100%" stopColor="#0f274f" />
+                                </linearGradient>
+                            </defs>
+                            <rect x="6" y="6" width="228" height="208" rx="26" fill="url(#hkPlate)" stroke="url(#hkBorder)" strokeWidth="6" />
+                            <g fill="url(#hkInk)">
+                                <path d="M80 90 120 58l40 32v36h-15V99h-50v27H80V90Z" />
+                                <rect x="108" y="103" width="11" height="11" rx="1.5" />
+                                <rect x="122" y="103" width="11" height="11" rx="1.5" />
+                                <rect x="108" y="117" width="11" height="11" rx="1.5" />
+                                <rect x="122" y="117" width="11" height="11" rx="1.5" />
+                                <circle cx="88" cy="140" r="16" />
+                                <circle cx="84" cy="140" r="4.2" fill="#dbeafe" />
+                                <rect x="101" y="136" width="62" height="8" rx="4" />
+                                <polygon points="155,140 162,136 166,140 162,144" />
+                            </g>
+                            <text x="120" y="178" textAnchor="middle" fontSize="54" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" fill="url(#hkInk)">HomeKey</text>
+                            <text x="120" y="202" textAnchor="middle" fontSize="18" fontFamily="Inter, Segoe UI, Arial, sans-serif" fontWeight="700" letterSpacing="1.2" fill="#1f3553">REAL ESTATE PLATFORM</text>
+                        </svg>
                     </div>
                     <div className="detail-hero-content">
                         <div className="detail-hero-main">

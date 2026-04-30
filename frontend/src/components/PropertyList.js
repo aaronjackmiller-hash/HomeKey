@@ -68,10 +68,46 @@ const dedupeCaseInsensitive = (values = []) => {
   });
 };
 
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const splitStreetAndNumber = (streetValue = '', explicitStreetNumber = '') => {
+  let street = safeText(streetValue);
+  let streetNumber = safeText(explicitStreetNumber);
+
+  if (!streetNumber) {
+    const leadingNumber = street.match(/^(\d+[a-zA-Zא-ת0-9\-\/]*)\s+(.+)$/);
+    if (leadingNumber) {
+      streetNumber = safeText(leadingNumber[1]);
+      street = safeText(leadingNumber[2]);
+    }
+  }
+
+  if (!streetNumber) {
+    const trailingNumber = street.match(/^(.+?)\s+(\d+[a-zA-Zא-ת0-9\-\/]*)$/);
+    if (trailingNumber) {
+      street = safeText(trailingNumber[1]);
+      streetNumber = safeText(trailingNumber[2]);
+    }
+  }
+
+  if (street && streetNumber) {
+    const escapedNumber = escapeRegex(streetNumber);
+    street = street
+      .replace(new RegExp(`^${escapedNumber}\\s+`, 'i'), '')
+      .replace(new RegExp(`\\s+${escapedNumber}$`, 'i'), '')
+      .trim();
+  }
+
+  return { street, streetNumber };
+};
+
+const normalizeStreetDisplay = (streetValue = '', explicitStreetNumber = '') => {
+  const { street, streetNumber } = splitStreetAndNumber(streetValue, explicitStreetNumber);
+  return [street, streetNumber].filter(Boolean).join(' ').trim();
+};
+
 const getAddressDisplay = (address = {}) => {
-  const streetName = safeText(address.street);
-  const streetNumber = safeText(address.streetNumber);
-  const street = dedupeCaseInsensitive([streetName, streetNumber]).join(' ');
+  const street = normalizeStreetDisplay(address.street, address.streetNumber);
   const city = safeText(address.city);
   const state = safeText(address.state);
   const zip = safeText(address.zip);
