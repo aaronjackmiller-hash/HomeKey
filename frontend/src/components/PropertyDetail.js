@@ -451,6 +451,10 @@ const PropertyDetail = () => {
         },
     ];
 
+    const hasManagerContactCta = Boolean(managerWhatsAppHref || managerPhoneHref || listingContact.email);
+
+    const shouldShowContactSection = listingContact.hasAny || Boolean(managerWhatsAppHref || managerPhoneHref);
+
     return (
         <div className="property-detail-page">
             <div className="detail-shell">
@@ -528,6 +532,33 @@ const PropertyDetail = () => {
                             <p>Price</p>
                             <strong>{formatCurrency(property.price)}</strong>
                         </div>
+                        {hasManagerContactCta && (
+                            <div className="hero-contact-strip">
+                                <p>Contact manager:</p>
+                                <div className="hero-contact-strip-actions">
+                                    {managerWhatsAppHref && (
+                                        <a
+                                            href={managerWhatsAppHref}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="secondary-btn whatsapp-cta"
+                                        >
+                                            WhatsApp Manager
+                                        </a>
+                                    )}
+                                    {managerPhoneHref && (
+                                        <a href={managerPhoneHref} className="secondary-btn">
+                                            Call
+                                        </a>
+                                    )}
+                                    {listingContact.email && (
+                                        <a href={`mailto:${listingContact.email}`} className="secondary-btn">
+                                            Message
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         <div className="detail-interest-actions">
                             <button
                                 type="button"
@@ -619,7 +650,7 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {listingContact.hasAny && (
+                {shouldShowContactSection && (
                     <section className="detail-section-card">
                         <div id="contact-manager-form" />
                         <h2>Contact Listing Manager</h2>

@@ -1143,6 +1143,33 @@ a {
   color: #0f766e;
 }
 
+.manager-whatsapp-banner {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+  font-weight: 700;
+}
+
+.detail-contact-missing-note {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.whatsapp-cta {
+  border-color: #22c55e;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.whatsapp-cta:hover {
+  border-color: #16a34a;
+  background: #dcfce7;
+}
+
 .detail-actions {
   margin-top: 4px;
   display: flex;
