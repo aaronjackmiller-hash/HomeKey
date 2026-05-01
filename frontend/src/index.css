@@ -125,6 +125,28 @@ a {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
 }
 
+.hero-banner-with-reference {
+  display: grid;
+  grid-template-columns: 1.1fr minmax(220px, 320px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.hero-banner-reference-wrap {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.hero-banner-reference {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.28);
+  object-fit: cover;
+}
+
 .hero-title {
   margin: 0 0 7px;
   font-size: 1.45rem;
@@ -685,6 +707,13 @@ a {
   height: auto;
 }
 
+.homekey-logo-lockup-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: inherit;
+}
+
 .image-corner-logo {
   position: absolute;
   top: 6px;
@@ -1114,6 +1143,33 @@ a {
   color: #0f766e;
 }
 
+.manager-whatsapp-banner {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+  font-weight: 700;
+}
+
+.detail-contact-missing-note {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.whatsapp-cta {
+  border-color: #22c55e;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.whatsapp-cta:hover {
+  border-color: #16a34a;
+  background: #dcfce7;
+}
+
 .detail-actions {
   margin-top: 4px;
   display: flex;
@@ -1389,6 +1445,18 @@ legend {
 
   .detail-hero-image {
     min-height: 210px;
+  }
+
+  .hero-banner-with-reference {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-banner-reference-wrap {
+    justify-content: flex-start;
+  }
+
+  .hero-banner-reference {
+    max-width: 280px;
   }
 }
 
