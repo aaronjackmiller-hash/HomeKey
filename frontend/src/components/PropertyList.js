@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
-import uploadedCoverFormatImage from '../assets/homekey-cover-format-uploaded.png';
+import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
   isSavedProperty,
@@ -151,98 +151,6 @@ const dedupeRepeatingPhrase = (value) => {
   }
   return text;
 };
-
-// Fallback sample properties shown when the database returns no results
-const SAMPLE_PROPERTIES = [
-  {
-    _id: 'sample-1',
-    title: 'Spacious 4-Room Apartment in Tel Aviv Center',
-    type: 'sale',
-    price: 4200000,
-    address: { city: 'Tel Aviv', state: 'Tel Aviv District' },
-    bedrooms: 3,
-    bathrooms: 2,
-    size: 110,
-    images: ['https://picsum.photos/seed/homekey1/800/600'],
-  },
-  {
-    _id: 'sample-2',
-    title: 'Modern Studio in Florentin',
-    type: 'rental',
-    price: 5500,
-    address: { city: 'Tel Aviv', state: 'Tel Aviv District' },
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 42,
-    images: ['https://picsum.photos/seed/homekey2/800/600'],
-  },
-  {
-    _id: 'sample-3',
-    title: 'Penthouse with Sea View — Haifa Carmel',
-    type: 'sale',
-    price: 3800000,
-    address: { city: 'Haifa', state: 'Haifa District' },
-    bedrooms: 4,
-    bathrooms: 3,
-    size: 195,
-    images: ['https://picsum.photos/seed/homekey3/800/600'],
-  },
-  {
-    _id: 'sample-4',
-    title: '3-Room Garden Apartment in Jerusalem — Rechavia',
-    type: 'sale',
-    price: 3200000,
-    address: { city: 'Jerusalem', state: 'Jerusalem District' },
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 85,
-    images: ['https://picsum.photos/seed/homekey4/800/600'],
-  },
-  {
-    _id: 'sample-5',
-    title: 'Luxury Rental — Herzliya Pituah Villa',
-    type: 'rental',
-    price: 35000,
-    address: { city: 'Herzliya', state: 'Center District' },
-    bedrooms: 6,
-    bathrooms: 4,
-    size: 420,
-    images: ['https://picsum.photos/seed/homekey5/800/600'],
-  },
-  {
-    _id: 'sample-6',
-    title: "Investor Special — 2-Room in Be'er Sheva",
-    type: 'sale',
-    price: 750000,
-    address: { city: "Be'er Sheva", state: 'South District' },
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 55,
-    images: ['https://picsum.photos/seed/homekey6/800/600'],
-  },
-  {
-    _id: 'sample-7',
-    title: "New-Build 5-Room in Ra'anana",
-    type: 'sale',
-    price: 3600000,
-    address: { city: "Ra'anana", state: 'Center District' },
-    bedrooms: 4,
-    bathrooms: 2,
-    size: 148,
-    images: ['https://picsum.photos/seed/homekey7/800/600'],
-  },
-  {
-    _id: 'sample-8',
-    title: 'Charming Old City Apartment — Jaffa Port',
-    type: 'rental',
-    price: 9500,
-    address: { city: 'Jaffa', state: 'Tel Aviv District' },
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 78,
-    images: ['https://picsum.photos/seed/homekey8/800/600'],
-  },
-];
 
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
@@ -563,8 +471,7 @@ const PropertyList = () => {
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
           const propertyId = property._id || property.id;
-          const isSample = typeof propertyId === 'string' && propertyId.startsWith('sample-');
-          const canOpenDetail = Boolean(propertyId) && !isSample;
+          const canOpenDetail = Boolean(propertyId);
           const isYad2Media = isYad2LikeListing(property);
           const key = propertyId || `property-${index}`;
           const favoriteActive = isFavoriteProperty(propertyId);
@@ -586,7 +493,7 @@ const PropertyList = () => {
             <div
               key={key}
               className={`property-card ${canOpenDetail ? 'is-clickable' : ''}`}
-              onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`)}
+              onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`, { previewProperty: property })}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
               <div className="property-card-image-wrap">
@@ -641,9 +548,6 @@ const PropertyList = () => {
           <div className="hero-banner-copy">
             <p className="hero-kicker">Beta Property Portal</p>
             <h1>Find your next home in Israel</h1>
-          </div>
-          <div className="hero-banner-reference">
-            <img src={uploadedCoverFormatImage} alt="HomeKey homepage reference layout" />
           </div>
         </div>
       </section>
