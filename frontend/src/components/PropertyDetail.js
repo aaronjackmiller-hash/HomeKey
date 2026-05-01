@@ -20,6 +20,11 @@ const formatCurrency = (value) => {
     return `₪${Number(value).toLocaleString()}`;
 };
 
+const formatTemplatePrice = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toLocaleString();
+};
+
 const formatDate = (value) => {
     if (!value) return '—';
     return new Date(value).toLocaleDateString();
@@ -451,9 +456,16 @@ const PropertyDetail = () => {
         },
     ];
 
-    const hasManagerContactCta = Boolean(managerWhatsAppHref || managerPhoneHref || listingContact.email);
-
     const shouldShowContactSection = listingContact.hasAny || Boolean(managerWhatsAppHref || managerPhoneHref);
+    const templateTypeLabel = property.type === 'rental' ? 'Rent' : 'Sale';
+    const templateTitle = [coverTitleStreet, coverTitleNumber].filter(Boolean).join(' ').trim() || detailTitle;
+    const templateLocation = (
+        safeText(property.address?.city)
+        || safeText(locationLine.split(',')[0])
+        || 'Israel'
+    ).toUpperCase();
+    const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
+    const templatePriceValue = formatTemplatePrice(property.price);
 
     return (
         <div className="property-detail-page">
@@ -486,99 +498,73 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <HomeKeyLogoBadge className="homekey-logo-badge" />
-                    <div className="detail-hero-content">
-                        <div className="detail-hero-main">
-                            <p className="detail-type-pill">{typeLabel}</p>
-                            <h1 className="detail-address-title">
-                                <span className="detail-address-title-street" dir="auto">{coverTitleStreet}</span>
-                                {coverTitleNumber && (
-                                    <span className="detail-address-title-number" dir="ltr">{coverTitleNumber}</span>
-                                )}
-                            </h1>
-                            <p className="detail-address detail-address--hero">
-                                {locationLine || addressLine || 'Address not provided'}
-                            </p>
-                            <div className="detail-highlight-row detail-highlight-row--framed">
-                                <span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5V16H4V9.5Zm2.5-.5a.5.5 0 0 0-.5.5V14h12V9.5a.5.5 0 0 0-.5-.5h-11Z" />
-                                        <rect x="2" y="16" width="20" height="2" rx="1" />
-                                    </svg>
-                                    {property.bedrooms ?? '—'} bed
-                                </span>
-                                <span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M7 12.5V10a5 5 0 0 1 10 0v2.5a4.5 4.5 0 1 1-10 0Zm2 0a2.5 2.5 0 1 0 5 0V10a3 3 0 0 0-6 0v2.5Z" />
-                                    </svg>
-                                    {property.bathrooms ?? '—'} bath
-                                </span>
-                                <span>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                        <path d="M4 4h6v2H6v4H4V4Zm10 0h6v6h-2V6h-4V4ZM4 14h2v4h4v2H4v-6Zm14 0h2v6h-6v-2h4v-4Z" />
-                                    </svg>
-                                    {property.size ? `${property.size} sqm` : '—'}
-                                </span>
+                    <div className="detail-hero-content detail-template-panel">
+                        <div className="detail-template-head">
+                            <span className="detail-template-type">{templateTypeLabel}</span>
+                            <h1 className="detail-template-title" dir="auto">{templateTitle}</h1>
+                            <p className="detail-template-location">{templateLocation}</p>
+                        </div>
+                        <div className="detail-template-metrics">
+                            <div className="detail-template-metric">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5V16H4V9.5Zm2.5-.5a.5.5 0 0 0-.5.5V14h12V9.5a.5.5 0 0 0-.5-.5h-11Z" />
+                                    <rect x="2" y="16" width="20" height="2" rx="1" />
+                                </svg>
+                                <span>{property.bedrooms ?? '—'} BED</span>
+                            </div>
+                            <div className="detail-template-metric">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M7 12.5V10a5 5 0 0 1 10 0v2.5a4.5 4.5 0 1 1-10 0Zm2 0a2.5 2.5 0 1 0 5 0V10a3 3 0 0 0-6 0v2.5Z" />
+                                </svg>
+                                <span>{property.bathrooms ?? '—'} BATH</span>
+                            </div>
+                            <div className="detail-template-metric">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M4 4h6v2H6v4H4V4Zm10 0h6v6h-2V6h-4V4ZM4 14h2v4h4v2H4v-6Zm14 0h2v6h-6v-2h4v-4Z" />
+                                </svg>
+                                <span>{property.size ? `${property.size} SQM` : '— SQM'}</span>
                             </div>
                         </div>
-                        <section className="detail-amenities-panel" aria-label="Amenities">
-                            <h3>Amenities</h3>
-                            <ul className="detail-amenities-list">
+                        <section className="detail-template-amenities" aria-label="Amenities">
+                            <h3>AMENITIES</h3>
+                            <ul>
                                 {amenities.map((amenity) => (
                                     <li key={amenity}>{amenity}</li>
                                 ))}
                             </ul>
                         </section>
-                        <div className="detail-price-box">
-                            <p>Price</p>
-                            <strong>{formatCurrency(property.price)}</strong>
-                        </div>
-                        {hasManagerContactCta && (
-                            <div className="hero-contact-strip">
-                                <p>Contact manager:</p>
-                                <div className="hero-contact-strip-actions">
-                                    {managerWhatsAppHref && (
-                                        <a
-                                            href={managerWhatsAppHref}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="secondary-btn whatsapp-cta"
-                                        >
-                                            WhatsApp Manager
-                                        </a>
-                                    )}
-                                    {managerPhoneHref && (
-                                        <a href={managerPhoneHref} className="secondary-btn">
-                                            Call
-                                        </a>
-                                    )}
-                                    {listingContact.email && (
-                                        <a href={`mailto:${listingContact.email}`} className="secondary-btn">
-                                            Message
-                                        </a>
-                                    )}
-                                </div>
+                        <div className="detail-template-price">
+                            <div className="detail-template-price-mark">
+                                <HomeKeyLogoBadge compact className="detail-template-price-logo" />
                             </div>
-                        )}
-                        <div className="detail-interest-actions">
-                            <button
-                                type="button"
-                                className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
-                                onClick={() => handleToggleInterest('favorite')}
-                                aria-pressed={favoriteActive}
-                            >
-                                {favoriteActive ? 'Favorited' : 'Favorite'}
-                            </button>
-                            <button
-                                type="button"
-                                className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
-                                onClick={() => handleToggleInterest('saved')}
-                                aria-pressed={savedActive}
-                            >
-                                {savedActive ? 'Saved' : 'Save'}
-                            </button>
+                            <div className="detail-template-price-copy">
+                                <p>PRICE</p>
+                                <strong>
+                                    {templatePriceValue}
+                                    {templatePriceSuffix && <span>{templatePriceSuffix}</span>}
+                                </strong>
+                            </div>
                         </div>
                     </div>
                 </section>
+                <div className="detail-interest-actions detail-interest-actions--standalone">
+                    <button
+                        type="button"
+                        className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
+                        onClick={() => handleToggleInterest('favorite')}
+                        aria-pressed={favoriteActive}
+                    >
+                        {favoriteActive ? 'Favorited' : 'Favorite'}
+                    </button>
+                    <button
+                        type="button"
+                        className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
+                        onClick={() => handleToggleInterest('saved')}
+                        aria-pressed={savedActive}
+                    >
+                        {savedActive ? 'Saved' : 'Save'}
+                    </button>
+                </div>
 
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
