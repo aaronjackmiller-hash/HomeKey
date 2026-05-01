@@ -20,6 +20,11 @@ const formatCurrency = (value) => {
     return `₪${Number(value).toLocaleString()}`;
 };
 
+const formatTemplatePrice = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toLocaleString();
+};
+
 const formatDate = (value) => {
     if (!value) return '—';
     return new Date(value).toLocaleDateString();
@@ -460,6 +465,7 @@ const PropertyDetail = () => {
         || 'Israel'
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
+    const templatePriceValue = formatTemplatePrice(property.price);
 
     return (
         <div className="property-detail-page">
@@ -492,7 +498,7 @@ const PropertyDetail = () => {
                         )}
                     </div>
                     <HomeKeyLogoBadge className="homekey-logo-badge" />
-                    <div className="detail-hero-content">
+                    <div className="detail-hero-content detail-template-panel">
                         <div className="detail-template-head">
                             <span className="detail-template-type">{templateTypeLabel}</span>
                             <h1 className="detail-template-title" dir="auto">{templateTitle}</h1>
@@ -534,7 +540,7 @@ const PropertyDetail = () => {
                             <div className="detail-template-price-copy">
                                 <p>PRICE</p>
                                 <strong>
-                                    {formatCurrency(property.price)}
+                                    {templatePriceValue}
                                     {templatePriceSuffix && <span>{templatePriceSuffix}</span>}
                                 </strong>
                             </div>

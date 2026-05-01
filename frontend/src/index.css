@@ -610,7 +610,7 @@ a {
 .detail-template-head {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .detail-template-type {
@@ -628,19 +628,21 @@ a {
 .detail-template-title {
   margin: 0;
   color: #f8fafc;
-  font-size: clamp(2rem, 3.2vw, 3rem);
-  line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-size: clamp(2.25rem, 3.35vw, 3.25rem);
+  line-height: 1.03;
+  font-weight: 900;
+  letter-spacing: 0.012em;
+  text-transform: uppercase;
 }
 
 .detail-template-location {
   margin: 0;
   color: #dbeafe;
-  font-size: 1.55rem;
+  font-size: 1.28rem;
   line-height: 1;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 
 .homekey-logo-badge {
@@ -763,7 +765,7 @@ a {
   border: none;
   border-right: 1px solid rgba(226, 232, 240, 0.25);
   padding: 11px 12px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: #f1f5f9;
   min-width: 110px;
   flex: 1;
@@ -798,7 +800,7 @@ a {
 
 .detail-template-amenities h3 {
   margin: 2px 0 8px;
-  font-size: 1.7rem;
+  font-size: 1.08rem;
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: #d7e5ff;
@@ -815,9 +817,9 @@ a {
 }
 
 .detail-template-amenities li {
-  font-size: 1.9rem;
+  font-size: 1.03rem;
   color: #eaf1ff;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .detail-template-price {
@@ -868,14 +870,14 @@ a {
   display: inline-flex;
   align-items: baseline;
   margin: 6px 0 0;
-  font-size: clamp(2.1rem, 4vw, 3.3rem);
+  font-size: clamp(2.2rem, 3.8vw, 3.15rem);
   font-weight: 800;
   letter-spacing: 0.01em;
   color: #f8fafc;
 }
 
 .detail-template-price-copy strong span {
-  font-size: 0.44em;
+  font-size: 0.38em;
   font-weight: 600;
   margin-left: 8px;
   color: #d4def3;
@@ -1458,23 +1460,23 @@ legend {
   }
 
   .detail-template-title {
-    font-size: clamp(1.55rem, 3.3vw, 2.2rem);
+    font-size: clamp(1.95rem, 4vw, 2.35rem);
   }
 
   .detail-template-location {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 
   .detail-template-amenities h3 {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
   }
 
   .detail-template-amenities li {
-    font-size: 1rem;
+    font-size: 0.93rem;
   }
 
   .detail-template-price-copy strong {
-    font-size: clamp(1.8rem, 3.4vw, 2.2rem);
+    font-size: clamp(1.75rem, 3.5vw, 2.2rem);
   }
 
   .hero-banner-with-reference {
@@ -1512,11 +1514,11 @@ legend {
   }
 
   .detail-template-title {
-    font-size: clamp(1.5rem, 8vw, 2rem);
+    font-size: clamp(1.55rem, 8vw, 2.15rem);
   }
 
   .detail-template-location {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
   }
 
   .detail-template-metric {
@@ -1531,11 +1533,11 @@ legend {
   }
 
   .detail-template-amenities h3 {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
   }
 
   .detail-template-amenities li {
-    font-size: 0.9rem;
+    font-size: 0.84rem;
   }
 
   .detail-template-price {
@@ -1549,7 +1551,7 @@ legend {
   }
 
   .detail-template-price-copy strong {
-    font-size: clamp(1.45rem, 8vw, 1.9rem);
+    font-size: clamp(1.4rem, 8vw, 1.82rem);
   }
 
   .homekey-logo-badge {
