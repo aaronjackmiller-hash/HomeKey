@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useHistory, useLocation } from 'react-router-dom';
 import {
     getProperty,
     deleteProperty,
@@ -8,12 +8,15 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
     isFavoriteProperty,
     isSavedProperty,
     toggleFavoriteProperty,
     toggleSavedProperty,
 } from '../utils/propertyInterest';
+
+const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
 const formatCurrency = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -248,9 +251,28 @@ const sanitizeImageSource = (url) => {
     return source;
 };
 
+const getPropertyId = (property) => {
+    if (!property || typeof property !== 'object') return '';
+    return String(property._id || property.id || '').trim();
+};
+
+const getCachedLiveListingById = (id) => {
+    if (!id || typeof window === 'undefined' || !window.localStorage) return null;
+    try {
+        const raw = window.localStorage.getItem(LIVE_LISTINGS_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return null;
+        return parsed.find((item) => getPropertyId(item) === id) || null;
+    } catch (_err) {
+        return null;
+    }
+};
+
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
+    const location = useLocation();
     const { isAuthenticated, user } = useAuth();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -277,11 +299,34 @@ const PropertyDetail = () => {
 
     useEffect(() => {
         const fetchProperty = async () => {
+            const normalizedId = String(id || '').trim();
+            const isSampleId = normalizedId.startsWith('sample-');
+            const previewProperty = location?.state?.previewProperty;
+            const previewId = getPropertyId(previewProperty);
+            const matchingPreviewProperty = previewId === normalizedId ? previewProperty : null;
+            const matchingSampleProperty = SAMPLE_PROPERTIES.find((item) => getPropertyId(item) === normalizedId) || null;
+            const matchingCachedProperty = getCachedLiveListingById(normalizedId);
+            const fallbackProperty = matchingPreviewProperty || matchingSampleProperty || matchingCachedProperty;
+
+            if (fallbackProperty) {
+                setProperty(fallbackProperty);
+            }
+
+            if (isSampleId && fallbackProperty) {
+                setLoading(false);
+                setError('');
+                return;
+            }
+
             try {
                 const result = await getProperty(id);
                 setProperty(result.data);
+                setError('');
             } catch (err) {
-                if (err.response?.status === 404) {
+                if (fallbackProperty) {
+                    // Keep rendering the fallback listing so users can still open detail template.
+                    setError('');
+                } else if (err.response?.status === 404) {
                     setError('Property not found.');
                 } else {
                     setError(err.response?.data?.message || 'Failed to load property. Please try again.');
@@ -291,7 +336,7 @@ const PropertyDetail = () => {
             }
         };
         fetchProperty();
-    }, [id]);
+    }, [id, location]);
 
     const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this listing?')) return;
