@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
-import uploadedCoverFormatImage from '../assets/homekey-cover-format-uploaded.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
@@ -549,9 +548,6 @@ const PropertyList = () => {
           <div className="hero-banner-copy">
             <p className="hero-kicker">Beta Property Portal</p>
             <h1>Find your next home in Israel</h1>
-          </div>
-          <div className="hero-banner-reference">
-            <img src={uploadedCoverFormatImage} alt="HomeKey homepage reference layout" />
           </div>
         </div>
       </section>
