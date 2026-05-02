@@ -559,7 +559,7 @@ a {
 }
 
 .yad2-logo-mask--lightbox {
-  height: 102px;
+  height: 144px;
 }
 
 .yad2-logo-mask--card {
@@ -587,8 +587,10 @@ a {
 }
 
 .yad2-logo-mask--lightbox::after {
-  width: 136px;
-  height: 58px;
+  top: 4px;
+  right: 4px;
+  width: 168px;
+  height: 72px;
 }
 
 .yad2-logo-mask--card::after {
@@ -739,6 +741,18 @@ a {
   width: 58px;
   height: 40px;
   min-height: 40px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
+  width: 72px;
+  height: 50px;
+  min-height: 50px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--lightbox {
+  width: 88px;
+  height: 60px;
+  min-height: 60px;
 }
 
 .detail-template-metrics {
@@ -914,6 +928,11 @@ a {
   display: block;
 }
 
+.detail-gallery-image-media {
+  position: relative;
+  display: block;
+}
+
 .image-lightbox-backdrop {
   position: fixed;
   inset: 0;
@@ -982,6 +1001,14 @@ a {
   border-radius: 0;
 }
 
+.lightbox-rendered-image {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .image-lightbox-image-wrap {
   position: relative;
   width: 100vw;
@@ -990,6 +1017,42 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.image-lightbox-image-media {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image-media img {
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image-media .yad2-logo-mask {
+  left: auto;
+  right: 0;
+  width: min(28%, 228px);
+  height: min(28%, 188px);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.86) 0%,
+    rgba(15, 23, 42, 0.56) 58%,
+    rgba(15, 23, 42, 0.08) 100%
+  );
+}
+
+.image-lightbox-image-media .yad2-logo-mask::after {
+  top: 2px;
+  right: 2px;
+  width: min(88%, 176px);
+  height: min(52%, 82px);
+  background: rgba(15, 23, 42, 0.84);
+  box-shadow: 0 4px 20px rgba(2, 6, 23, 0.56);
 }
 
 .image-lightbox-nav {
