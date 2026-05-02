@@ -501,7 +501,7 @@ const PropertyList = () => {
                 {isYad2Media && (
                   <>
                     <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
-                    <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--card" />
+                    <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--cover image-corner-logo--card" />
                   </>
                 )}
               </div>

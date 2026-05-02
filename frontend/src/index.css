@@ -549,21 +549,21 @@ a {
 }
 
 .yad2-logo-mask--hero {
-  height: 72px;
+  height: 92px;
 }
 
 .yad2-logo-mask--gallery {
-  height: 66px;
+  height: 86px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
 
 .yad2-logo-mask--lightbox {
-  height: 82px;
+  height: 102px;
 }
 
 .yad2-logo-mask--card {
-  height: 64px;
+  height: 84px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
 }
@@ -571,31 +571,31 @@ a {
 .yad2-logo-mask::after {
   content: '';
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 96px;
-  height: 42px;
+  top: 8px;
+  right: 8px;
+  width: 128px;
+  height: 56px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.58);
-  backdrop-filter: blur(8px) saturate(0.78);
-  box-shadow: 0 3px 14px rgba(2, 6, 23, 0.38);
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(10px) saturate(0.7);
+  box-shadow: 0 4px 18px rgba(2, 6, 23, 0.5);
 }
 
 .yad2-logo-mask--gallery::after {
-  width: 90px;
-  height: 38px;
+  width: 124px;
+  height: 54px;
 }
 
 .yad2-logo-mask--lightbox::after {
-  width: 104px;
-  height: 44px;
+  width: 136px;
+  height: 58px;
 }
 
 .yad2-logo-mask--card::after {
-  top: 8px;
-  right: 8px;
-  width: 88px;
-  height: 36px;
+  top: 6px;
+  right: 6px;
+  width: 118px;
+  height: 50px;
 }
 
 .detail-hero-content {
@@ -728,6 +728,17 @@ a {
 .image-corner-logo--card {
   top: 3px;
   right: 3px;
+}
+
+.image-corner-logo.yad2-obscure-logo {
+  top: 2px;
+  right: 2px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo {
+  width: 58px;
+  height: 40px;
+  min-height: 40px;
 }
 
 .detail-template-metrics {
@@ -1557,6 +1568,12 @@ legend {
     height: 20px;
     min-height: 20px;
     border-radius: 0;
+  }
+
+  .homekey-logo-lockup--compact.yad2-obscure-logo {
+    width: 46px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .property-interest-summary {

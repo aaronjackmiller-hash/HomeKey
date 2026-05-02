@@ -538,7 +538,7 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <>
                                 <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero" />
+                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo" />
                             </>
                         )}
                     </div>
@@ -634,7 +634,7 @@ const PropertyDetail = () => {
                                 {isYad2ListingMedia && (
                                     <>
                                         <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery" />
+                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery yad2-obscure-logo" />
                                     </>
                                 )}
                             </button>
@@ -860,7 +860,7 @@ const PropertyDetail = () => {
                                 {isYad2ListingMedia && (
                                     <>
                                         <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
-                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox" />
+                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox yad2-obscure-logo" />
                                     </>
                                 )}
                             </div>
