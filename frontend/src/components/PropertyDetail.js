@@ -538,12 +538,12 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <>
                                 <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo yad2-obscure-logo--hero" />
+                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo yad2-obscure-logo--hero detail-template-logo-clean" />
                             </>
                         )}
                     </div>
                     {selectedImageIndex == null && (
-                        <HomeKeyLogoBadge className="homekey-logo-badge" />
+                        <HomeKeyLogoBadge className="homekey-logo-badge detail-template-logo-clean" />
                     )}
                     <div className="detail-hero-content detail-template-panel">
                         <div className="detail-template-head">
@@ -591,7 +591,7 @@ const PropertyDetail = () => {
                         </section>
                         <div className="detail-template-price">
                             <div className="detail-template-price-mark">
-                                <HomeKeyLogoBadge compact className="detail-template-price-logo" />
+                                <HomeKeyLogoBadge compact className="detail-template-price-logo detail-template-logo-fill" />
                             </div>
                             <div className="detail-template-price-copy">
                                 <p>PRICE</p>
