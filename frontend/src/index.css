@@ -563,7 +563,7 @@ a {
 }
 
 .yad2-logo-mask--card {
-  height: 84px;
+  height: 64px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
 }
@@ -594,10 +594,7 @@ a {
 }
 
 .yad2-logo-mask--card::after {
-  top: 6px;
-  right: 6px;
-  width: 118px;
-  height: 50px;
+  display: none;
 }
 
 .yad2-logo-mask--hero::after {
