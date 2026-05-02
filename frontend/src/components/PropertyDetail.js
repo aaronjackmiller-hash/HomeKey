@@ -864,7 +864,6 @@ const PropertyDetail = () => {
                                     />
                                     {isYad2ListingMedia && (
                                         <>
-                                            <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
                                             <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox yad2-obscure-logo yad2-obscure-logo--lightbox" />
                                         </>
                                     )}
