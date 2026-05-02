@@ -1035,25 +1035,25 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
   max-width: 100%;
   max-height: 100%;
 }
 
 .image-lightbox-image-media img {
+  display: block;
   width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 100vw;
+  height: calc(100vh - 72px);
+  max-height: calc(100vh - 72px);
+  object-fit: contain;
 }
 
 .image-lightbox-image-media .yad2-logo-mask {
   top: 0;
   left: auto;
   right: 0;
-  width: min(35vw, 220px);
-  height: min(25vh, 120px);
+  width: min(40%, 220px);
+  height: min(32%, 128px);
   background: linear-gradient(
     180deg,
     rgba(15, 23, 42, 0.94) 0%,
