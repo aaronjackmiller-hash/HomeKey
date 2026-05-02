@@ -549,7 +549,7 @@ a {
 }
 
 .yad2-logo-mask--hero {
-  height: 92px;
+  height: 126px;
 }
 
 .yad2-logo-mask--gallery {
@@ -598,6 +598,15 @@ a {
   right: 6px;
   width: 118px;
   height: 50px;
+}
+
+.yad2-logo-mask--hero::after {
+  top: 2px;
+  right: 2px;
+  width: 188px;
+  height: 84px;
+  background: rgba(15, 23, 42, 0.84);
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.62);
 }
 
 .detail-hero-content {
@@ -749,10 +758,22 @@ a {
   min-height: 50px;
 }
 
+.homekey-logo-lockup--compact.yad2-obscure-logo--hero {
+  width: 96px;
+  height: 66px;
+  min-height: 66px;
+}
+
 .homekey-logo-lockup--compact.yad2-obscure-logo--lightbox {
   width: 88px;
   height: 60px;
   min-height: 60px;
+}
+
+.homekey-logo-lockup--compact.image-corner-logo--hero.yad2-obscure-logo {
+  width: 96px;
+  height: 66px;
+  min-height: 66px;
 }
 
 .detail-template-metrics {
