@@ -755,9 +755,9 @@ a {
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--lightbox {
-  width: 78px;
-  height: 54px;
-  min-height: 54px;
+  width: 92px;
+  height: 64px;
+  min-height: 64px;
 }
 
 .homekey-logo-lockup--compact.image-corner-logo--hero.yad2-obscure-logo {
@@ -1068,11 +1068,15 @@ a {
   top: 2px;
   right: 2px;
   z-index: 10;
+  width: 92px;
+  height: 64px;
+  min-height: 64px;
 }
 
 .image-lightbox-image-media .homekey-logo-lockup-image {
-  object-fit: contain;
-  transform: none;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.14);
 }
 
 .image-lightbox-nav {
