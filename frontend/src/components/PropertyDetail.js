@@ -554,20 +554,29 @@ const PropertyDetail = () => {
                         <div className="detail-template-metrics">
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5V16H4V9.5Zm2.5-.5a.5.5 0 0 0-.5.5V14h12V9.5a.5.5 0 0 0-.5-.5h-11Z" />
-                                    <rect x="2" y="16" width="20" height="2" rx="1" />
+                                    <path d="M3 12.5V8.8a1.8 1.8 0 0 1 1.8-1.8h14.4A1.8 1.8 0 0 1 21 8.8v3.7" />
+                                    <path d="M3 12.5h18V17H3z" />
+                                    <path d="M6 9.5h4.8V12H6z" />
+                                    <path d="M13.2 9.5H18V12h-4.8z" />
+                                    <path d="M4 17v2M20 17v2" />
                                 </svg>
                                 <span>{property.bedrooms ?? '—'} BED</span>
                             </div>
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M7 12.5V10a5 5 0 0 1 10 0v2.5a4.5 4.5 0 1 1-10 0Zm2 0a2.5 2.5 0 1 0 5 0V10a3 3 0 0 0-6 0v2.5Z" />
+                                    <path d="M5 12h14v4.4A3.6 3.6 0 0 1 15.4 20H8.6A3.6 3.6 0 0 1 5 16.4V12Z" />
+                                    <path d="M8 12V8.8A2.8 2.8 0 0 1 10.8 6h1.5a1.7 1.7 0 1 1 0 3.4h-1" />
+                                    <path d="M7 20v1.5M17 20v1.5" />
+                                    <path d="M16.8 9.2l1.7 1.7M18.5 9.2l-1.7 1.7" />
                                 </svg>
                                 <span>{property.bathrooms ?? '—'} BATH</span>
                             </div>
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M4 4h6v2H6v4H4V4Zm10 0h6v6h-2V6h-4V4ZM4 14h2v4h4v2H4v-6Zm14 0h2v6h-6v-2h4v-4Z" />
+                                    <path d="M4 4h7v3h3V4h6v16h-6v-4h-4v4H4z" />
+                                    <path d="M11 4v5h3" />
+                                    <path d="M10 16v-3h4" />
+                                    <path d="M6.2 9.4h2M6.2 12h2" />
                                 </svg>
                                 <span>{property.size ? `${property.size} SQM` : '— SQM'}</span>
                             </div>
@@ -587,8 +596,9 @@ const PropertyDetail = () => {
                             <div className="detail-template-price-copy">
                                 <p>PRICE</p>
                                 <strong>
+                                    <span className="detail-template-price-currency">₪</span>
                                     {templatePriceValue}
-                                    {templatePriceSuffix && <span>{templatePriceSuffix}</span>}
+                                    {templatePriceSuffix && <span className="detail-template-price-suffix">{templatePriceSuffix}</span>}
                                 </strong>
                             </div>
                         </div>

@@ -643,9 +643,9 @@ a {
 .detail-template-location {
   margin: 0;
   color: #dbeafe;
-  font-size: 1.28rem;
+  font-size: 1.48rem;
   line-height: 1;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
 }
@@ -781,14 +781,14 @@ a {
   background: transparent;
   border: none;
   border-right: 1px solid rgba(226, 232, 240, 0.25);
-  padding: 11px 12px;
-  font-size: 0.82rem;
+  padding: 13px 12px 10px;
+  font-size: 0.92rem;
   color: #f1f5f9;
   min-width: 110px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   align-items: center;
   text-align: center;
   text-transform: uppercase;
@@ -800,11 +800,11 @@ a {
 }
 
 .detail-template-metric svg {
-  width: 24px;
-  height: 24px;
+  width: 50px;
+  height: 50px;
   fill: none;
   stroke: #f8fafc;
-  stroke-width: 1.65;
+  stroke-width: 1.45;
 }
 
 .detail-template-amenities {
@@ -816,8 +816,8 @@ a {
 }
 
 .detail-template-amenities h3 {
-  margin: 2px 0 8px;
-  font-size: 1.08rem;
+  margin: 4px 0 10px;
+  font-size: 1.28rem;
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: #d7e5ff;
@@ -834,9 +834,9 @@ a {
 }
 
 .detail-template-amenities li {
-  font-size: 1.03rem;
+  font-size: 1.16rem;
   color: #eaf1ff;
-  line-height: 1.25;
+  line-height: 1.32;
 }
 
 .detail-template-price {
@@ -848,7 +848,7 @@ a {
   border: 1px solid rgba(226, 232, 240, 0.38);
   overflow: hidden;
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 118px 1fr;
   min-height: 94px;
 }
 
@@ -859,19 +859,22 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 8px;
 }
 
 .detail-template-price-logo.homekey-logo-lockup {
-  width: 30px;
-  height: 22px;
-  min-height: 22px;
+  width: 92px;
+  height: 76px;
+  min-height: 76px;
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .detail-template-price-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0 18px;
 }
 
 .detail-template-price-copy p {
@@ -888,14 +891,22 @@ a {
   display: inline-flex;
   align-items: baseline;
   margin: 6px 0 0;
-  font-size: clamp(2.2rem, 3.8vw, 3.15rem);
+  font-size: clamp(2.45rem, 4.2vw, 3.5rem);
   font-weight: 800;
   letter-spacing: 0.01em;
   color: #f8fafc;
 }
 
-.detail-template-price-copy strong span {
-  font-size: 0.38em;
+.detail-template-price-currency {
+  font-size: 0.52em;
+  font-weight: 700;
+  margin-right: 8px;
+  margin-left: 0;
+  color: #d4def3;
+}
+
+.detail-template-price-suffix {
+  font-size: 0.42em;
   font-weight: 600;
   margin-left: 8px;
   color: #d4def3;
