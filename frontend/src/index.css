@@ -1739,7 +1739,7 @@ legend {
   min-height: 94px;
   border-radius: 4px;
   overflow: hidden;
-  background: rgba(7, 16, 34, 0.5);
+  background: transparent;
 }
 
 .property-list-page .hero-banner-logo .homekey-logo-lockup-image {
