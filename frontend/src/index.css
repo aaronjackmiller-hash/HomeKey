@@ -549,21 +549,21 @@ a {
 }
 
 .yad2-logo-mask--hero {
-  height: 72px;
+  height: 126px;
 }
 
 .yad2-logo-mask--gallery {
-  height: 66px;
+  height: 86px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
 }
 
 .yad2-logo-mask--lightbox {
-  height: 82px;
+  height: 144px;
 }
 
 .yad2-logo-mask--card {
-  height: 64px;
+  height: 84px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
 }
@@ -571,31 +571,42 @@ a {
 .yad2-logo-mask::after {
   content: '';
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 96px;
-  height: 42px;
+  top: 8px;
+  right: 8px;
+  width: 128px;
+  height: 56px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.58);
-  backdrop-filter: blur(8px) saturate(0.78);
-  box-shadow: 0 3px 14px rgba(2, 6, 23, 0.38);
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(10px) saturate(0.7);
+  box-shadow: 0 4px 18px rgba(2, 6, 23, 0.5);
 }
 
 .yad2-logo-mask--gallery::after {
-  width: 90px;
-  height: 38px;
+  width: 124px;
+  height: 54px;
 }
 
 .yad2-logo-mask--lightbox::after {
-  width: 104px;
-  height: 44px;
+  top: 4px;
+  right: 4px;
+  width: 168px;
+  height: 72px;
 }
 
 .yad2-logo-mask--card::after {
-  top: 8px;
-  right: 8px;
-  width: 88px;
-  height: 36px;
+  top: 6px;
+  right: 6px;
+  width: 118px;
+  height: 50px;
+}
+
+.yad2-logo-mask--hero::after {
+  top: 2px;
+  right: 2px;
+  width: 188px;
+  height: 84px;
+  background: rgba(15, 23, 42, 0.84);
+  box-shadow: 0 6px 22px rgba(2, 6, 23, 0.62);
 }
 
 .detail-hero-content {
@@ -728,6 +739,41 @@ a {
 .image-corner-logo--card {
   top: 3px;
   right: 3px;
+}
+
+.image-corner-logo.yad2-obscure-logo {
+  top: 2px;
+  right: 2px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo {
+  width: 58px;
+  height: 40px;
+  min-height: 40px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
+  width: 72px;
+  height: 50px;
+  min-height: 50px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--hero {
+  width: 96px;
+  height: 66px;
+  min-height: 66px;
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--lightbox {
+  width: 88px;
+  height: 60px;
+  min-height: 60px;
+}
+
+.homekey-logo-lockup--compact.image-corner-logo--hero.yad2-obscure-logo {
+  width: 96px;
+  height: 66px;
+  min-height: 66px;
 }
 
 .detail-template-metrics {
@@ -903,6 +949,11 @@ a {
   display: block;
 }
 
+.detail-gallery-image-media {
+  position: relative;
+  display: block;
+}
+
 .image-lightbox-backdrop {
   position: fixed;
   inset: 0;
@@ -971,6 +1022,14 @@ a {
   border-radius: 0;
 }
 
+.lightbox-rendered-image {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .image-lightbox-image-wrap {
   position: relative;
   width: 100vw;
@@ -979,6 +1038,42 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.image-lightbox-image-media {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image-media img {
+  width: 100%;
+  height: 100%;
+}
+
+.image-lightbox-image-media .yad2-logo-mask {
+  left: auto;
+  right: 0;
+  width: min(28%, 228px);
+  height: min(28%, 188px);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.86) 0%,
+    rgba(15, 23, 42, 0.56) 58%,
+    rgba(15, 23, 42, 0.08) 100%
+  );
+}
+
+.image-lightbox-image-media .yad2-logo-mask::after {
+  top: 2px;
+  right: 2px;
+  width: min(88%, 176px);
+  height: min(52%, 82px);
+  background: rgba(15, 23, 42, 0.84);
+  box-shadow: 0 4px 20px rgba(2, 6, 23, 0.56);
 }
 
 .image-lightbox-nav {
@@ -1557,6 +1652,12 @@ legend {
     height: 20px;
     min-height: 20px;
     border-radius: 0;
+  }
+
+  .homekey-logo-lockup--compact.yad2-obscure-logo {
+    width: 46px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .property-interest-summary {

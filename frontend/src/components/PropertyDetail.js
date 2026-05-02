@@ -538,7 +538,7 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <>
                                 <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero" />
+                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo yad2-obscure-logo--hero" />
                             </>
                         )}
                     </div>
@@ -626,17 +626,19 @@ const PropertyDetail = () => {
                                     }
                                 }}
                             >
-                                <img
-                                    className={isYad2ListingMedia ? 'yad2-image' : ''}
-                                    src={image}
-                                    alt={`Property visual ${index + 2}`}
-                                />
-                                {isYad2ListingMedia && (
-                                    <>
-                                        <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery" />
-                                    </>
-                                )}
+                                <span className="detail-gallery-image-media">
+                                    <img
+                                        className={isYad2ListingMedia ? 'yad2-image' : ''}
+                                        src={image}
+                                        alt={`Property visual ${index + 2}`}
+                                    />
+                                    {isYad2ListingMedia && (
+                                        <>
+                                            <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
+                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery yad2-obscure-logo yad2-obscure-logo--secondary" />
+                                        </>
+                                    )}
+                                </span>
                             </button>
                         ))}
                     </section>
@@ -852,17 +854,19 @@ const PropertyDetail = () => {
                         </div>
                         <div className="image-lightbox-stage">
                             <div className="image-lightbox-image-wrap">
-                                <img
-                                    className={isYad2ListingMedia ? 'yad2-image' : ''}
-                                    src={allImages[selectedImageIndex]}
-                                    alt={`Property image ${selectedImageIndex + 1}`}
-                                />
-                                {isYad2ListingMedia && (
-                                    <>
-                                        <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
-                                        <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox" />
-                                    </>
-                                )}
+                                <span className="image-lightbox-image-media">
+                                    <img
+                                        className={isYad2ListingMedia ? 'yad2-image lightbox-rendered-image' : 'lightbox-rendered-image'}
+                                        src={allImages[selectedImageIndex]}
+                                        alt={`Property image ${selectedImageIndex + 1}`}
+                                    />
+                                    {isYad2ListingMedia && (
+                                        <>
+                                            <span className="yad2-logo-mask yad2-logo-mask--lightbox" aria-hidden="true" />
+                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox yad2-obscure-logo yad2-obscure-logo--lightbox" />
+                                        </>
+                                    )}
+                                </span>
                             </div>
                             {allImages.length > 1 && (
                                 <>
