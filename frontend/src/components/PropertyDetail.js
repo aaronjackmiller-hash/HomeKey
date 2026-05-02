@@ -542,7 +542,9 @@ const PropertyDetail = () => {
                             </>
                         )}
                     </div>
-                    <HomeKeyLogoBadge className="homekey-logo-badge" />
+                    {selectedImageIndex == null && (
+                        <HomeKeyLogoBadge className="homekey-logo-badge" />
+                    )}
                     <div className="detail-hero-content detail-template-panel">
                         <div className="detail-template-head">
                             <span className="detail-template-type">{templateTypeLabel}</span>
