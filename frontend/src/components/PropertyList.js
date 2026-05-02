@@ -543,57 +543,60 @@ const PropertyList = () => {
 
   return (
     <div className="property-list-page">
-      <section className="hero-banner">
-        <div className="hero-banner-grid">
-          <div className="hero-banner-copy">
-            <p className="hero-kicker">Beta Property Portal</p>
-            <h1>Find your next home in Israel</h1>
+      <div className="homepage-hero-shell">
+        <section className="hero-banner">
+          <div className="hero-banner-grid">
+            <div className="hero-banner-copy">
+              <p className="hero-kicker">Beta Property Portal</p>
+              <h1>Find your next home in Israel</h1>
+            </div>
+            <HomeKeyLogoBadge className="hero-banner-logo" />
           </div>
+        </section>
+
+        <section className="search-panel">
+          <form className="search-form" onSubmit={handleSearch}>
+            <div className="input-field search-input">
+              <label>City</label>
+              <input
+                type="text"
+                placeholder="e.g. Tel Aviv"
+                value={cityInput}
+                onChange={handleCityChange}
+              />
+            </div>
+            <div className="input-field search-input">
+              <label>Min Price (₪)</label>
+              <input
+                type="number"
+                placeholder="0"
+                min="0"
+                value={minPriceInput}
+                onChange={handleMinPriceChange}
+              />
+            </div>
+            <div className="input-field search-input">
+              <label>Max Price (₪)</label>
+              <input
+                type="number"
+                placeholder="Any"
+                min="0"
+                value={maxPriceInput}
+                onChange={handleMaxPriceChange}
+              />
+            </div>
+            <button type="submit" className="primary-btn search-btn">Search</button>
+            <button type="button" onClick={handleClear} className="secondary-btn search-btn">
+              Clear
+            </button>
+          </form>
+        </section>
+
+        <div className='tabs pill-tabs'>
+          <button className={filter === 'all' ? 'active-tab' : ''} onClick={() => setFilter('all')}>All</button>
+          <button className={filter === 'rental' ? 'active-tab' : ''} onClick={() => setFilter('rental')}>Rental</button>
+          <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
         </div>
-      </section>
-
-      <section className="search-panel">
-        <form className="search-form" onSubmit={handleSearch}>
-          <div className="input-field search-input">
-            <label>City</label>
-            <input
-              type="text"
-              placeholder="e.g. Tel Aviv"
-              value={cityInput}
-              onChange={handleCityChange}
-            />
-          </div>
-          <div className="input-field search-input">
-            <label>Min Price (₪)</label>
-            <input
-              type="number"
-              placeholder="0"
-              min="0"
-              value={minPriceInput}
-              onChange={handleMinPriceChange}
-            />
-          </div>
-          <div className="input-field search-input">
-            <label>Max Price (₪)</label>
-            <input
-              type="number"
-              placeholder="Any"
-              min="0"
-              value={maxPriceInput}
-              onChange={handleMaxPriceChange}
-            />
-          </div>
-          <button type="submit" className="primary-btn search-btn">Search</button>
-          <button type="button" onClick={handleClear} className="secondary-btn search-btn">
-            Clear
-          </button>
-        </form>
-      </section>
-
-      <div className='tabs pill-tabs'>
-        <button className={filter === 'all' ? 'active-tab' : ''} onClick={() => setFilter('all')}>All</button>
-        <button className={filter === 'rental' ? 'active-tab' : ''} onClick={() => setFilter('rental')}>Rental</button>
-        <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
       </div>
       <div className="property-interest-toolbar">
         <button

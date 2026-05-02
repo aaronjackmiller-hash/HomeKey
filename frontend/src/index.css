@@ -1665,48 +1665,84 @@ legend {
   }
 }
 
-/* Final homepage mockup overrides (scoped to listing page only) */
+/* Homepage exact hero composition */
 .property-list-page {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 14px 20px 28px;
+  padding: 10px 10px 28px;
 }
 
 .property-list-page .hero-banner {
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: linear-gradient(130deg, #0d1a30 0%, #0f2342 52%, #122849 100%);
-  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.2);
-  padding: 12px 18px;
-  margin: 8px 0 14px;
+  position: relative;
+  min-height: 380px;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background-image:
+    linear-gradient(180deg, rgba(8, 15, 35, 0.42) 0%, rgba(8, 15, 35, 0.08) 56%, rgba(8, 15, 35, 0) 100%),
+    url("https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=1600&q=80");
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
 }
 
 .property-list-page .hero-banner-grid {
-  display: flex;
-  align-items: center;
+  display: block;
 }
 
 .property-list-page .hero-banner-copy {
-  width: 100%;
+  position: relative;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 10px;
+  padding: 10px 14px 12px;
+  max-width: 620px;
 }
 
 .property-list-page .hero-kicker {
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   color: #dbeafe;
   font-size: 0.96rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
+  font-weight: 700;
 }
 
 .property-list-page .hero-banner h1 {
   margin: 0;
-  font-size: clamp(2.2rem, 3vw, 3.05rem);
-  line-height: 1.04;
+  color: #ffffff;
+  font-size: clamp(2.1rem, 3vw, 3.08rem);
+  line-height: 1.02;
   letter-spacing: 0.01em;
   font-weight: 800;
 }
 
+.property-list-page .hero-banner-logo {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-4%);
+  z-index: 3;
+  width: 136px;
+  height: 94px;
+  min-height: 94px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(7, 16, 34, 0.5);
+}
+
+.property-list-page .hero-banner-logo .homekey-logo-lockup-image {
+  transform: scale(1.03);
+}
+
 .property-list-page .search-panel {
-  margin: 0 0 10px;
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  margin: 0;
+  z-index: 2;
 }
 
 .property-list-page .search-form {
@@ -1714,8 +1750,11 @@ legend {
   grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
   align-items: end;
   gap: 8px;
-  padding: 10px;
-  border-radius: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
 }
 
 .property-list-page .search-input {
@@ -1728,32 +1767,36 @@ legend {
 }
 
 .property-list-page .search-form .input-field input {
-  height: 42px;
+  height: 40px;
   padding: 8px 10px;
   font-size: 1rem;
 }
 
 .property-list-page .search-btn {
-  min-width: 94px;
-  height: 42px;
-  padding: 9px 14px;
+  min-width: 92px;
+  height: 40px;
+  padding: 8px 14px;
 }
 
 .property-list-page .tabs {
-  margin: 8px 0 10px;
+  margin: -8px 0 10px;
+  position: relative;
+  z-index: 4;
 }
 
 .property-list-page .tabs button {
-  padding: 5px 14px;
+  padding: 4px 13px;
   border-color: #c7d2e2;
   color: #334155;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .property-list-page .tabs button.active-tab {
   background: #0e8a88;
   border-color: #0e8a88;
+  color: #ffffff;
 }
 
 .property-list-page .pill-tabs {
@@ -1765,17 +1808,9 @@ legend {
 }
 
 .property-list-page .property-interest-toolbar .secondary-btn {
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 8px 14px;
-  font-size: 0.92rem;
-  color: #1f3d70;
-  border-color: #bfccdf;
-}
-
-.property-list-page .property-interest-toolbar .secondary-btn.active-interest-filter {
-  background: #e6fffb;
-  border-color: #14b8a6;
-  color: #0f766e;
+  font-size: 0.9rem;
 }
 
 .property-list-page .property-interest-summary {
@@ -1851,6 +1886,12 @@ legend {
 }
 
 @media (max-width: 1200px) {
+  .property-list-page .hero-banner-logo {
+    left: auto;
+    right: 14px;
+    transform: none;
+  }
+
   .property-list-page .property-card-title {
     font-size: 1.65rem;
   }
@@ -1861,6 +1902,10 @@ legend {
 }
 
 @media (max-width: 980px) {
+  .property-list-page .hero-banner {
+    min-height: 430px;
+  }
+
   .property-list-page .search-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1868,12 +1913,16 @@ legend {
 
 @media (max-width: 560px) {
   .property-list-page {
-    padding: 10px 10px 20px;
+    padding: 10px 8px 20px;
   }
 
   .property-list-page .hero-banner {
-    padding: 12px;
-    margin-bottom: 10px;
+    min-height: 470px;
+    padding: 10px;
+  }
+
+  .property-list-page .hero-banner-copy {
+    padding: 9px 10px 10px;
   }
 
   .property-list-page .hero-kicker {
@@ -1882,7 +1931,15 @@ legend {
   }
 
   .property-list-page .hero-banner h1 {
-    font-size: clamp(1.7rem, 8.2vw, 2.2rem);
+    font-size: clamp(1.65rem, 8vw, 2.08rem);
+  }
+
+  .property-list-page .hero-banner-logo {
+    width: 108px;
+    height: 76px;
+    min-height: 76px;
+    right: 10px;
+    top: 8px;
   }
 
   .property-list-page .search-form {
@@ -1891,6 +1948,10 @@ legend {
 
   .property-list-page .search-btn {
     width: 100%;
+  }
+
+  .property-list-page .tabs {
+    margin-top: -2px;
   }
 
   .property-list-page .property-card-title {
