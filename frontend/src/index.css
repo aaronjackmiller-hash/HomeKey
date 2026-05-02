@@ -755,9 +755,9 @@ a {
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--lightbox {
-  width: 88px;
-  height: 60px;
-  min-height: 60px;
+  width: 68px;
+  height: 46px;
+  min-height: 46px;
 }
 
 .homekey-logo-lockup--compact.image-corner-logo--hero.yad2-obscure-logo {
@@ -1049,22 +1049,12 @@ a {
 }
 
 .image-lightbox-image-media .yad2-logo-mask {
-  top: 0;
-  left: auto;
-  right: 0;
-  width: min(40%, 220px);
-  height: min(32%, 128px);
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.94) 0%,
-    rgba(15, 23, 42, 0.66) 58%,
-    rgba(15, 23, 42, 0.16) 100%
-  );
+  display: none;
 }
 
 .image-lightbox-image-media .image-corner-logo--lightbox {
-  top: 2px;
-  right: 2px;
+  top: 1px;
+  right: 1px;
 }
 
 .image-lightbox-nav {
