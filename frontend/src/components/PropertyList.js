@@ -17,6 +17,7 @@ const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
 const SEARCH_DEBOUNCE_MS = 400;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
+const ROOM_OPTIONS = ['', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6+'];
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -154,15 +155,32 @@ const dedupeRepeatingPhrase = (value) => {
   return text;
 };
 
+const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
+  const selected = safeText(roomsSelection);
+  if (!selected) return true;
+  const bedrooms = Number(bedroomsValue);
+  if (Number.isNaN(bedrooms)) return false;
+  if (selected.endsWith('+')) {
+    const minRooms = Number(selected.replace('+', ''));
+    if (Number.isNaN(minRooms)) return true;
+    return bedrooms >= minRooms;
+  }
+  const exactRooms = Number(selected);
+  if (Number.isNaN(exactRooms)) return true;
+  return bedrooms === exactRooms;
+};
+
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
   // Local input values update instantly so typing is never interrupted
   const [cityInput, setCityInput] = useState('');
+  const [roomsInput, setRoomsInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
   // Debounced search values that actually trigger the API call
   const [citySearch, setCitySearch] = useState('');
+  const [roomsSearch, setRoomsSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -193,6 +211,10 @@ const PropertyList = () => {
     debounceRef.current = setTimeout(() => setCitySearch(val), SEARCH_DEBOUNCE_MS);
   };
 
+  const handleRoomsChange = (e) => {
+    setRoomsInput(e.target.value);
+  };
+
   const handleMinPriceChange = (e) => {
     const val = e.target.value;
     setMinPriceInput(val);
@@ -210,9 +232,11 @@ const PropertyList = () => {
   const handleClear = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCityInput('');
+    setRoomsInput('');
     setMinPriceInput('');
     setMaxPriceInput('');
     setCitySearch('');
+    setRoomsSearch('');
     setMinPrice('');
     setMaxPrice('');
     setFilter('all');
@@ -285,6 +309,7 @@ const PropertyList = () => {
         const params = { source: 'live-yad2' };
         if (filter !== 'all') params.type = filter;
         if (citySearch.trim()) params.city = citySearch.trim();
+        if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
         if (maxPrice !== '') params.maxPrice = maxPrice;
         const hasUserFilters = Object.keys(params).length > 1;
@@ -359,13 +384,14 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, citySearch, minPrice, maxPrice, retryCount]);
+  }, [filter, citySearch, roomsSearch, minPrice, maxPrice, retryCount]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     // Flush any pending debounce immediately on explicit Search button click
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCitySearch(cityInput);
+    setRoomsSearch(roomsInput);
     setMinPrice(minPriceInput);
     setMaxPrice(maxPriceInput);
   };
@@ -399,6 +425,9 @@ const PropertyList = () => {
       if (citySearch.trim()) {
         const q = citySearch.trim().toLowerCase();
         samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
+      }
+      if (roomsSearch.trim()) {
+        samples = samples.filter((p) => matchesRoomsSelection(p.bedrooms, roomsSearch));
       }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
@@ -574,6 +603,16 @@ const PropertyList = () => {
                 value={cityInput}
                 onChange={handleCityChange}
               />
+            </div>
+            <div className="input-field search-input rooms-input">
+              <label>Rooms</label>
+              <select value={roomsInput} onChange={handleRoomsChange}>
+                {ROOM_OPTIONS.map((optionValue) => (
+                  <option key={optionValue || 'any'} value={optionValue}>
+                    {optionValue || 'Any'}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="input-field search-input">
               <label>Min Price (₪)</label>
