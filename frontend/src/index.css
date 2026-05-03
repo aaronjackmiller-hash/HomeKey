@@ -1679,17 +1679,17 @@ legend {
 .property-list-page {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 10px 10px 28px;
+  padding: 8px 8px 28px;
 }
 
 .property-list-page .hero-banner {
   position: relative;
-  min-height: 380px;
+  min-height: 352px;
   border-radius: 0;
   border: none;
   box-shadow: none;
-  margin: 0 0 14px;
-  padding: 12px 14px;
+  margin: 0 0 8px;
+  padding: 10px 12px;
   background-image:
     linear-gradient(180deg, rgba(8, 15, 35, 0.42) 0%, rgba(8, 15, 35, 0.08) 56%, rgba(8, 15, 35, 0) 100%),
     url("https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=1600&q=80");
@@ -1706,44 +1706,44 @@ legend {
   position: relative;
   z-index: 2;
   background: rgba(15, 23, 42, 0.9);
-  border-radius: 10px;
-  padding: 10px 14px 12px;
-  max-width: 620px;
+  border-radius: 8px;
+  padding: 8px 12px 10px;
+  max-width: 540px;
 }
 
 .property-list-page .hero-kicker {
   margin: 0 0 2px;
   color: #dbeafe;
-  font-size: 0.96rem;
-  letter-spacing: 0.18em;
+  font-size: 0.9rem;
+  letter-spacing: 0.16em;
   font-weight: 700;
 }
 
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2.1rem, 3vw, 3.08rem);
-  line-height: 1.02;
+  font-size: clamp(1.95rem, 2.65vw, 2.7rem);
+  line-height: 1.06;
   letter-spacing: 0.01em;
   font-weight: 800;
 }
 
 .property-list-page .hero-banner-logo {
   position: absolute;
-  top: 8px;
+  top: 4px;
   left: 50%;
-  transform: translateX(-4%);
+  transform: translateX(0%);
   z-index: 3;
-  width: 136px;
-  height: 94px;
-  min-height: 94px;
+  width: 144px;
+  height: 100px;
+  min-height: 100px;
   border-radius: 4px;
   overflow: hidden;
   background: transparent;
 }
 
 .property-list-page .hero-banner-logo .homekey-logo-lockup-image {
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 .property-list-page .search-panel {
@@ -1756,7 +1756,7 @@ legend {
   grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
   align-items: end;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(203, 213, 225, 0.95);
@@ -1768,24 +1768,24 @@ legend {
 }
 
 .property-list-page .search-form .input-field label {
-  margin-bottom: 5px;
-  font-size: 0.9rem;
+  margin-bottom: 4px;
+  font-size: 0.86rem;
 }
 
 .property-list-page .search-form .input-field input {
-  height: 40px;
+  height: 38px;
   padding: 8px 10px;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .property-list-page .search-btn {
   min-width: 92px;
-  height: 40px;
-  padding: 8px 14px;
+  height: 38px;
+  padding: 7px 14px;
 }
 
 .property-list-page .tabs {
-  margin: 0 0 10px;
+  margin: 0 0 6px;
   position: relative;
   z-index: 4;
 }
