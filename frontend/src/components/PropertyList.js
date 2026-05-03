@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
@@ -207,6 +207,13 @@ const PropertyList = () => {
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const [interestVersion, setInterestVersion] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [circleSelection, setCircleSelection] = useState({
+    active: false,
+    propertyIds: [],
+    radiusMeters: 0,
+    center: null,
+  });
+  const [clearCircleSignal, setClearCircleSignal] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const debounceRef = useRef(null);
@@ -253,6 +260,7 @@ const PropertyList = () => {
     setMinPrice('');
     setMaxPrice('');
     setFilter('all');
+    setClearCircleSignal((value) => value + 1);
   };
 
   const loadLiveSyncStatus = async () => {
@@ -459,7 +467,36 @@ const PropertyList = () => {
     return displayProperties.filter((property) => property && typeof property === 'object');
   };
 
-  const displayProperties = getDisplayProperties();
+  const mapSourceProperties = getDisplayProperties();
+  const circlePropertyIdSet = useMemo(
+    () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
+    [circleSelection.propertyIds]
+  );
+  const displayProperties = useMemo(() => {
+    if (!circleSelection.active) return mapSourceProperties;
+    return mapSourceProperties.filter((property) => {
+      const propertyId = property && (property._id || property.id);
+      return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
+    });
+  }, [circleSelection.active, circlePropertyIdSet, mapSourceProperties]);
+
+  const handleCircleSelectionChange = useCallback((selection) => {
+    if (!selection || typeof selection !== 'object') {
+      setCircleSelection({
+        active: false,
+        propertyIds: [],
+        radiusMeters: 0,
+        center: null,
+      });
+      return;
+    }
+    setCircleSelection({
+      active: Boolean(selection.active),
+      propertyIds: Array.isArray(selection.propertyIds) ? selection.propertyIds : [],
+      radiusMeters: Number(selection.radiusMeters) || 0,
+      center: selection.center || null,
+    });
+  }, []);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -697,9 +734,13 @@ const PropertyList = () => {
       <section className="google-listings-map-card" aria-label="Apartment location map">
         <header className="google-listings-map-header">
           <h2>Apartment Locations</h2>
-          <p>View where available apartments are located across Israel.</p>
+          <p>View where available apartments are located and draw a circle to filter the search area.</p>
         </header>
-        <GoogleListingsMap properties={loading ? [] : displayProperties} />
+        <GoogleListingsMap
+          properties={loading ? [] : mapSourceProperties}
+          onCircleSelectionChange={handleCircleSelectionChange}
+          clearSignal={clearCircleSignal}
+        />
       </section>
       {renderResults()}
     </div>
