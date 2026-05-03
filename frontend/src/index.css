@@ -1684,7 +1684,7 @@ legend {
 
 .property-list-page .hero-banner {
   position: relative;
-  min-height: 356px;
+  min-height: 352px;
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -1708,7 +1708,7 @@ legend {
   background: rgba(15, 23, 42, 0.9);
   border-radius: 8px;
   padding: 8px 12px 10px;
-  max-width: 560px;
+  max-width: 540px;
 }
 
 .property-list-page .hero-kicker {
@@ -1722,7 +1722,7 @@ legend {
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2rem, 2.8vw, 2.8rem);
+  font-size: clamp(1.95rem, 2.65vw, 2.7rem);
   line-height: 1.06;
   letter-spacing: 0.01em;
   font-weight: 800;
@@ -1730,13 +1730,13 @@ legend {
 
 .property-list-page .hero-banner-logo {
   position: absolute;
-  top: 6px;
+  top: 4px;
   left: 50%;
-  transform: translateX(1%);
+  transform: translateX(0%);
   z-index: 3;
-  width: 138px;
-  height: 96px;
-  min-height: 96px;
+  width: 144px;
+  height: 100px;
+  min-height: 100px;
   border-radius: 4px;
   overflow: hidden;
   background: transparent;
@@ -1785,7 +1785,7 @@ legend {
 }
 
 .property-list-page .tabs {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   position: relative;
   z-index: 4;
 }
