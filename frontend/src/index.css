@@ -1787,7 +1787,7 @@ legend {
 
 .property-list-page .search-form {
   display: grid;
-  grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(260px, 1.5fr) auto auto;
   align-items: end;
   gap: 8px;
   padding: 8px 10px;
@@ -1798,6 +1798,10 @@ legend {
 }
 
 .property-list-page .search-input {
+  min-width: 0;
+}
+
+.property-list-page .price-slider-field {
   min-width: 0;
 }
 
@@ -1816,6 +1820,112 @@ legend {
   min-width: 92px;
   height: 36px;
   padding: 8px 14px;
+}
+
+.property-list-page .price-slider-values {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.property-list-page .price-slider-value {
+  flex: 1 1 0;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0 10px;
+}
+
+.property-list-page .price-slider-separator {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.property-list-page .price-slider-track-wrap {
+  position: relative;
+  height: 26px;
+}
+
+.property-list-page .price-slider-track-wrap::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: #d6dce5;
+  transform: translateY(-50%);
+}
+
+.property-list-page .price-slider-track-wrap::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: var(--min-price-percent);
+  right: calc(100% - var(--max-price-percent));
+  height: 4px;
+  border-radius: 999px;
+  background: #0e8a88;
+  transform: translateY(-50%);
+}
+
+.property-list-page .price-slider {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 26px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.property-list-page .price-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+
+.property-list-page .price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  background: #0e8a88;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.28);
+  margin-top: -8px;
+  cursor: pointer;
+}
+
+.property-list-page .price-slider::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+
+.property-list-page .price-slider::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+  background: #0e8a88;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.28);
+  cursor: pointer;
 }
 
 .property-list-page .tabs {

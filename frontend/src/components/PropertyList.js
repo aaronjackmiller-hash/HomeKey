@@ -17,6 +17,9 @@ const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
 const SEARCH_DEBOUNCE_MS = 400;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
+const PRICE_SLIDER_MIN = 0;
+const PRICE_SLIDER_MAX = 20000;
+const PRICE_SLIDER_STEP = 500;
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -154,13 +157,25 @@ const dedupeRepeatingPhrase = (value) => {
   return text;
 };
 
+const clampPriceValue = (value) => {
+  const asNumber = Number(value);
+  if (Number.isNaN(asNumber)) return PRICE_SLIDER_MIN;
+  return Math.min(PRICE_SLIDER_MAX, Math.max(PRICE_SLIDER_MIN, asNumber));
+};
+
+const formatPriceSliderLabel = (value, isUpper = false) => {
+  const normalized = clampPriceValue(value);
+  if (isUpper && normalized >= PRICE_SLIDER_MAX) return `₪ ${normalized.toLocaleString()}+`;
+  return `₪ ${normalized.toLocaleString()}`;
+};
+
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
   // Local input values update instantly so typing is never interrupted
   const [cityInput, setCityInput] = useState('');
-  const [minPriceInput, setMinPriceInput] = useState('');
-  const [maxPriceInput, setMaxPriceInput] = useState('');
+  const [minPriceInput, setMinPriceInput] = useState(PRICE_SLIDER_MIN);
+  const [maxPriceInput, setMaxPriceInput] = useState(PRICE_SLIDER_MAX);
   // Debounced search values that actually trigger the API call
   const [citySearch, setCitySearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -193,25 +208,23 @@ const PropertyList = () => {
     debounceRef.current = setTimeout(() => setCitySearch(val), SEARCH_DEBOUNCE_MS);
   };
 
-  const handleMinPriceChange = (e) => {
-    const val = e.target.value;
-    setMinPriceInput(val);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setMinPrice(val), SEARCH_DEBOUNCE_MS);
+  const handleMinPriceSliderChange = (e) => {
+    const nextValue = clampPriceValue(e.target.value);
+    const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
+    setMinPriceInput(Math.min(nextValue, maxAllowedMin));
   };
 
-  const handleMaxPriceChange = (e) => {
-    const val = e.target.value;
-    setMaxPriceInput(val);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setMaxPrice(val), SEARCH_DEBOUNCE_MS);
+  const handleMaxPriceSliderChange = (e) => {
+    const nextValue = clampPriceValue(e.target.value);
+    const minAllowedMax = Math.min(PRICE_SLIDER_MAX, minPriceInput + PRICE_SLIDER_STEP);
+    setMaxPriceInput(Math.max(nextValue, minAllowedMax));
   };
 
   const handleClear = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCityInput('');
-    setMinPriceInput('');
-    setMaxPriceInput('');
+    setMinPriceInput(PRICE_SLIDER_MIN);
+    setMaxPriceInput(PRICE_SLIDER_MAX);
     setCitySearch('');
     setMinPrice('');
     setMaxPrice('');
@@ -366,8 +379,8 @@ const PropertyList = () => {
     // Flush any pending debounce immediately on explicit Search button click
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCitySearch(cityInput);
-    setMinPrice(minPriceInput);
-    setMaxPrice(maxPriceInput);
+    setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
+    setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
   };
 
   const handleToggleInterest = (event, mode, property) => {
@@ -418,6 +431,9 @@ const PropertyList = () => {
   };
 
   const displayProperties = getDisplayProperties();
+  const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
+  const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
+  const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
 
   // Decide what to render in the results area
   const renderResults = () => {
@@ -575,25 +591,41 @@ const PropertyList = () => {
                 onChange={handleCityChange}
               />
             </div>
-            <div className="input-field search-input">
-              <label>Min Price (₪)</label>
-              <input
-                type="number"
-                placeholder="0"
-                min="0"
-                value={minPriceInput}
-                onChange={handleMinPriceChange}
-              />
-            </div>
-            <div className="input-field search-input">
-              <label>Max Price (₪)</label>
-              <input
-                type="number"
-                placeholder="Any"
-                min="0"
-                value={maxPriceInput}
-                onChange={handleMaxPriceChange}
-              />
+            <div className="input-field search-input price-slider-field">
+              <label>Price Range (₪)</label>
+              <div className="price-slider-values" aria-hidden="true">
+                <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
+                <span className="price-slider-separator">—</span>
+                <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
+              </div>
+              <div
+                className="price-slider-track-wrap"
+                style={{
+                  '--min-price-percent': `${minSliderPercent}%`,
+                  '--max-price-percent': `${maxSliderPercent}%`,
+                }}
+              >
+                <input
+                  type="range"
+                  min={PRICE_SLIDER_MIN}
+                  max={PRICE_SLIDER_MAX}
+                  step={PRICE_SLIDER_STEP}
+                  value={minPriceInput}
+                  onChange={handleMinPriceSliderChange}
+                  className="price-slider price-slider--min"
+                  aria-label="Minimum price"
+                />
+                <input
+                  type="range"
+                  min={PRICE_SLIDER_MIN}
+                  max={PRICE_SLIDER_MAX}
+                  step={PRICE_SLIDER_STEP}
+                  value={maxPriceInput}
+                  onChange={handleMaxPriceSliderChange}
+                  className="price-slider price-slider--max"
+                  aria-label="Maximum price"
+                />
+              </div>
             </div>
             <button type="submit" className="primary-btn search-btn">Search</button>
             <button type="button" onClick={handleClear} className="secondary-btn search-btn">
