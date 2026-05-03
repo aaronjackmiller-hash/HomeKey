@@ -1777,9 +1777,10 @@ legend {
 
 .property-list-page .search-panel {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 14px;
+  left: 14px;
+  right: auto;
+  bottom: 34px;
+  width: min(980px, calc(100% - 28px));
   margin: 0;
   z-index: 2;
 }
@@ -1789,7 +1790,7 @@ legend {
   grid-template-columns: minmax(150px, 1.2fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto;
   align-items: end;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(203, 213, 225, 0.95);
@@ -1806,21 +1807,23 @@ legend {
 }
 
 .property-list-page .search-form .input-field input {
-  height: 40px;
+  height: 36px;
   padding: 8px 10px;
   font-size: 1rem;
 }
 
 .property-list-page .search-btn {
   min-width: 92px;
-  height: 40px;
+  height: 36px;
   padding: 8px 14px;
 }
 
 .property-list-page .tabs {
-  margin: -8px 0 10px;
-  position: relative;
-  z-index: 4;
+  position: absolute;
+  left: 14px;
+  bottom: 8px;
+  margin: 0;
+  z-index: 3;
 }
 
 .property-list-page .tabs button {
@@ -1939,6 +1942,18 @@ legend {
     min-height: 430px;
   }
 
+  .property-list-page .search-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 40px;
+    width: auto;
+  }
+
+  .property-list-page .tabs {
+    left: 12px;
+    bottom: 8px;
+  }
+
   .property-list-page .search-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1982,12 +1997,17 @@ legend {
     grid-template-columns: 1fr;
   }
 
+  .property-list-page .search-panel {
+    bottom: 42px;
+  }
+
   .property-list-page .search-btn {
     width: 100%;
   }
 
   .property-list-page .tabs {
-    margin-top: -2px;
+    left: 10px;
+    bottom: 6px;
   }
 
   .property-list-page .property-card-title {
