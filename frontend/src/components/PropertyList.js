@@ -547,8 +547,10 @@ const PropertyList = () => {
         <section className="hero-banner">
           <div className="hero-banner-grid">
             <div className="hero-banner-copy">
-              <p className="hero-kicker">Beta Property Portal</p>
-              <h1>Find your next home in Israel</h1>
+              <div className="hero-banner-copy-text">
+                <p className="hero-kicker">Beta Property Portal</p>
+                <h1>Find your next home in Israel</h1>
+              </div>
               <HomeKeyLogoBadge className="hero-banner-logo" />
             </div>
           </div>
