@@ -1816,6 +1816,12 @@ legend {
   font-size: 1rem;
 }
 
+.property-list-page .search-form .input-field select {
+  height: 36px;
+  padding: 8px 10px;
+  font-size: 1rem;
+}
+
 .property-list-page .search-btn {
   min-width: 92px;
   height: 36px;
