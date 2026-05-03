@@ -118,6 +118,24 @@ const isRealScrapeOnlyMode = () =>
 const isRealScrapedExternalId = (value) =>
     typeof value === 'string' && /^[a-z0-9]{6,}$/i.test(value);
 
+const toBedroomRangeFromRoomsQuery = (roomsQuery) => {
+    const normalized = String(roomsQuery || '').trim();
+    if (!normalized) return null;
+    if (normalized.endsWith('+')) {
+        const minRooms = Number(normalized.slice(0, -1));
+        if (Number.isNaN(minRooms)) return null;
+        return {
+            $gte: Math.max(0, minRooms - 1),
+        };
+    }
+    const exactRooms = Number(normalized);
+    if (Number.isNaN(exactRooms)) return null;
+    return {
+        $gte: Math.max(0, exactRooms - 1),
+        $lt: exactRooms + 0.5,
+    };
+};
+
 // @desc    Get all properties
 // @route   GET /api/properties
 // @access  Public
@@ -153,18 +171,8 @@ const getAllProperties = async (req, res) => {
             if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
         }
         if (req.query.rooms) {
-            const roomsQuery = String(req.query.rooms).trim();
-            if (roomsQuery.endsWith('+')) {
-                const minRooms = Number(roomsQuery.slice(0, -1));
-                if (!Number.isNaN(minRooms)) {
-                    filter.bedrooms = { $gte: minRooms };
-                }
-            } else {
-                const exactRooms = Number(roomsQuery);
-                if (!Number.isNaN(exactRooms)) {
-                    filter.bedrooms = exactRooms;
-                }
-            }
+            const bedroomRangeFilter = toBedroomRangeFromRoomsQuery(req.query.rooms);
+            if (bedroomRangeFilter) filter.bedrooms = bedroomRangeFilter;
         }
 
         // Mongoose will handle the connection queue automatically
