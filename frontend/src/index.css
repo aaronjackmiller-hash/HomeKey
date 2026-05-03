@@ -1722,10 +1722,13 @@ legend {
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2.1rem, 3vw, 3.08rem);
+  font-size: clamp(2rem, 2.65vw, 2.82rem);
   line-height: 1.02;
   letter-spacing: 0.01em;
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
 }
 
 .property-list-page .hero-banner-logo {
