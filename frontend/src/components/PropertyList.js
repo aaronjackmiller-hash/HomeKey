@@ -181,14 +181,18 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   if (!selected) return true;
   const bedrooms = Number(bedroomsValue);
   if (Number.isNaN(bedrooms)) return false;
+  const EPSILON = 0.001;
+  const almostEqual = (left, right) => Math.abs(left - right) < EPSILON;
   if (selected.endsWith('+')) {
     const minRooms = Number(selected.replace('+', ''));
     if (Number.isNaN(minRooms)) return true;
-    return bedrooms >= minRooms;
+    // Imported data can store either "rooms" or "bedrooms" in the bedrooms field.
+    // Treat X+ rooms as matching both >= X bedrooms and >= (X - 1) bedrooms.
+    return bedrooms >= Math.max(0, minRooms - 1);
   }
-  const exactRooms = Number(selected);
-  if (Number.isNaN(exactRooms)) return true;
-  return bedrooms === exactRooms;
+  const selectedRooms = Number(selected);
+  if (Number.isNaN(selectedRooms)) return true;
+  return almostEqual(bedrooms, selectedRooms) || almostEqual(bedrooms, Math.max(0, selectedRooms - 1));
 };
 
 const PropertyList = () => {
@@ -462,7 +466,18 @@ const PropertyList = () => {
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
       displayProperties = samples;
     } else {
-      displayProperties = properties;
+      // Keep filters functional even when data is served from local cache fallback.
+      displayProperties = [...properties];
+      if (filter !== 'all') displayProperties = displayProperties.filter((p) => p?.type === filter);
+      if (citySearch.trim()) {
+        const q = citySearch.trim().toLowerCase();
+        displayProperties = displayProperties.filter((p) => p?.address?.city?.toLowerCase().includes(q));
+      }
+      if (roomsSearch.trim()) {
+        displayProperties = displayProperties.filter((p) => matchesRoomsSelection(p?.bedrooms, roomsSearch));
+      }
+      if (minPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) >= Number(minPrice));
+      if (maxPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) <= Number(maxPrice));
     }
 
     if (favoritesOnly) {
