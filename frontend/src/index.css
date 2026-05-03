@@ -1705,10 +1705,19 @@ legend {
 .property-list-page .hero-banner-copy {
   position: relative;
   z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   background: rgba(15, 23, 42, 0.9);
   border-radius: 10px;
   padding: 10px 14px 12px;
-  max-width: 620px;
+  max-width: 760px;
+}
+
+.property-list-page .hero-banner-copy-text {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .property-list-page .hero-kicker {
@@ -1722,7 +1731,7 @@ legend {
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2rem, 2.65vw, 2.82rem);
+  font-size: clamp(1.95rem, 2.45vw, 2.58rem);
   line-height: 1.02;
   letter-spacing: 0.01em;
   font-weight: 800;
@@ -1732,21 +1741,22 @@ legend {
 }
 
 .property-list-page .hero-banner-logo {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-4%);
-  z-index: 3;
-  width: 136px;
-  height: 94px;
-  min-height: 94px;
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  z-index: 2;
+  flex: 0 0 auto;
+  width: 122px;
+  height: 84px;
+  min-height: 84px;
   border-radius: 4px;
   overflow: hidden;
   background: rgba(7, 16, 34, 0.5);
 }
 
 .property-list-page .hero-banner-logo .homekey-logo-lockup-image {
-  transform: scale(1.03);
+  transform: scale(1.01);
 }
 
 .property-list-page .search-panel {
@@ -1899,12 +1909,6 @@ legend {
 }
 
 @media (max-width: 1200px) {
-  .property-list-page .hero-banner-logo {
-    left: auto;
-    right: 14px;
-    transform: none;
-  }
-
   .property-list-page .property-card-title {
     font-size: 1.65rem;
   }
@@ -1936,6 +1940,7 @@ legend {
 
   .property-list-page .hero-banner-copy {
     padding: 9px 10px 10px;
+    gap: 10px;
   }
 
   .property-list-page .hero-kicker {
@@ -1948,11 +1953,9 @@ legend {
   }
 
   .property-list-page .hero-banner-logo {
-    width: 108px;
-    height: 76px;
-    min-height: 76px;
-    right: 10px;
-    top: 8px;
+    width: 94px;
+    height: 66px;
+    min-height: 66px;
   }
 
   .property-list-page .search-form {
