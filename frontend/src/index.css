@@ -1762,7 +1762,7 @@ legend {
 .property-list-page .hero-banner-logo .homekey-logo-lockup-image {
   width: 100%;
   height: 100%;
-  object-fit: fill;
+  object-fit: contain;
   object-position: center;
   transform: none;
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
-import heroStripLogo from '../assets/homekey-logo-strip-tight.png';
+import heroStripLogo from '../assets/homekey-logo-uploaded-clean.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
