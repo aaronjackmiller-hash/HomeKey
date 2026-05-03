@@ -4,6 +4,8 @@ const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
+const MIN_CIRCLE_RADIUS_METERS = 80;
+const EARTH_RADIUS_METERS = 6371000;
 
 let googleMapsLoadPromise;
 
@@ -86,17 +88,114 @@ const geocodeAddress = (geocoder, address) => new Promise((resolve) => {
   });
 });
 
-const GoogleListingsMap = ({ properties = [] }) => {
+const toRadians = (value) => (Number(value) * Math.PI) / 180;
+
+const getDistanceMeters = (startPoint, endPoint) => {
+  if (!startPoint || !endPoint) return Infinity;
+  const lat1 = Number(startPoint.lat);
+  const lng1 = Number(startPoint.lng);
+  const lat2 = Number(endPoint.lat);
+  const lng2 = Number(endPoint.lng);
+  if ([lat1, lng1, lat2, lng2].some((value) => Number.isNaN(value))) return Infinity;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
   const infoWindowRef = useRef(null);
-  const markersRef = useRef([]);
+  const markerEntriesRef = useRef([]);
   const geocodeCacheRef = useRef(readGeocodeCache());
+  const drawListenersRef = useRef([]);
+  const activeCircleRef = useRef(null);
+  const draftCircleRef = useRef(null);
+  const drawStartRef = useRef(null);
+  const clearSignalInitializedRef = useRef(false);
   const [mapError, setMapError] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const [markerCount, setMarkerCount] = useState(0);
+  const [totalMarkerCount, setTotalMarkerCount] = useState(0);
+  const [drawMode, setDrawMode] = useState(false);
+  const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+
+  const emitCircleSelection = (nextSelection) => {
+    if (typeof onCircleSelectionChange === 'function') {
+      onCircleSelectionChange(nextSelection);
+    }
+  };
+
+  const clearDrawListeners = () => {
+    drawListenersRef.current.forEach((listener) => {
+      if (!listener) return;
+      if (typeof listener.remove === 'function') listener.remove();
+      else if (window.google && window.google.maps && window.google.maps.event) {
+        window.google.maps.event.removeListener(listener);
+      }
+    });
+    drawListenersRef.current = [];
+  };
+
+  const removeDraftCircle = () => {
+    if (draftCircleRef.current) {
+      draftCircleRef.current.setMap(null);
+      draftCircleRef.current = null;
+    }
+    drawStartRef.current = null;
+  };
+
+  const applyCircleFilter = () => {
+    const activeCircle = activeCircleRef.current;
+    const center = activeCircle && activeCircle.getCenter ? activeCircle.getCenter() : null;
+    const radiusMeters = activeCircle && typeof activeCircle.getRadius === 'function'
+      ? Number(activeCircle.getRadius())
+      : 0;
+    const hasAreaFilter = Boolean(activeCircle && center && radiusMeters > 0);
+    const centerPoint = hasAreaFilter ? { lat: center.lat(), lng: center.lng() } : null;
+    const selectedPropertyIds = [];
+    let visibleMarkers = 0;
+
+    markerEntriesRef.current.forEach((entry) => {
+      const isVisible = !hasAreaFilter
+        || getDistanceMeters(entry.coords, centerPoint) <= radiusMeters;
+      entry.marker.setVisible(isVisible);
+      if (isVisible) {
+        visibleMarkers += 1;
+        selectedPropertyIds.push(entry.propertyId);
+      }
+    });
+
+    setMarkerCount(visibleMarkers);
+    setTotalMarkerCount(markerEntriesRef.current.length);
+    setCircleRadiusMeters(hasAreaFilter ? radiusMeters : 0);
+    emitCircleSelection({
+      active: hasAreaFilter,
+      propertyIds: selectedPropertyIds,
+      radiusMeters: hasAreaFilter ? radiusMeters : 0,
+      center: centerPoint,
+    });
+  };
+
+  const clearCircleFilter = () => {
+    removeDraftCircle();
+    if (activeCircleRef.current) {
+      if (window.google && window.google.maps && window.google.maps.event) {
+        window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
+      }
+      activeCircleRef.current.setMap(null);
+      activeCircleRef.current = null;
+    }
+    setDrawMode(false);
+    if (mapRef.current) {
+      mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+    }
+    applyCircleFilter();
+  };
 
   const propertiesWithAddress = useMemo(() => properties
     .map((property) => ({
@@ -105,6 +204,15 @@ const GoogleListingsMap = ({ properties = [] }) => {
       addressQuery: toAddressQuery(property),
     }))
     .filter((item) => item.property && item.propertyId && item.addressQuery), [properties]);
+
+  useEffect(() => {
+    emitCircleSelection({
+      active: false,
+      propertyIds: [],
+      radiusMeters: 0,
+      center: null,
+    });
+  }, []);
 
   useEffect(() => {
     if (!apiKey) return;
@@ -141,9 +249,10 @@ const GoogleListingsMap = ({ properties = [] }) => {
 
     let cancelled = false;
 
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
+    markerEntriesRef.current.forEach((entry) => entry.marker.setMap(null));
+    markerEntriesRef.current = [];
     setMarkerCount(0);
+    setTotalMarkerCount(0);
 
     const mapsApi = window.google.maps;
     const map = mapRef.current;
@@ -188,15 +297,19 @@ const GoogleListingsMap = ({ properties = [] }) => {
           infoWindow.open(map, marker);
         });
 
-        markersRef.current.push(marker);
+        markerEntriesRef.current.push({
+          marker,
+          propertyId: String(item.propertyId),
+          coords,
+        });
         bounds.extend(coords);
         placed += 1;
       }
 
       if (cacheChanged) writeGeocodeCache(geocodeCacheRef.current);
 
-      if (placed === 1 && markersRef.current[0]) {
-        map.setCenter(markersRef.current[0].getPosition());
+      if (placed === 1 && markerEntriesRef.current[0]) {
+        map.setCenter(markerEntriesRef.current[0].marker.getPosition());
         map.setZoom(13);
       } else if (placed > 1) {
         map.fitBounds(bounds, 42);
@@ -205,17 +318,111 @@ const GoogleListingsMap = ({ properties = [] }) => {
         map.setZoom(10);
       }
 
-      setMarkerCount(placed);
+      applyCircleFilter();
     };
 
     updateMarkers();
 
     return () => {
       cancelled = true;
-      markersRef.current.forEach((marker) => marker.setMap(null));
-      markersRef.current = [];
+      markerEntriesRef.current.forEach((entry) => entry.marker.setMap(null));
+      markerEntriesRef.current = [];
     };
   }, [mapReady, propertiesWithAddress]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
+    const mapsApi = window.google.maps;
+    clearDrawListeners();
+    if (!drawMode) {
+      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      return undefined;
+    }
+
+    mapRef.current.setOptions({ draggableCursor: 'crosshair', draggable: false });
+
+    const onMouseDown = mapsApi.event.addListener(mapRef.current, 'mousedown', (event) => {
+      if (!event || !event.latLng) return;
+      removeDraftCircle();
+      drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+      draftCircleRef.current = new mapsApi.Circle({
+        map: mapRef.current,
+        center: event.latLng,
+        radius: MIN_CIRCLE_RADIUS_METERS,
+        strokeColor: '#0e8a88',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#0e8a88',
+        fillOpacity: 0.12,
+        clickable: false,
+      });
+    });
+
+    const onMouseMove = mapsApi.event.addListener(mapRef.current, 'mousemove', (event) => {
+      if (!drawStartRef.current || !draftCircleRef.current || !event || !event.latLng) return;
+      const radiusMeters = getDistanceMeters(drawStartRef.current, {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+      });
+      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
+    });
+
+    const onMouseUp = mapsApi.event.addListener(mapRef.current, 'mouseup', () => {
+      if (!draftCircleRef.current) return;
+      if (activeCircleRef.current) {
+        mapsApi.event.clearInstanceListeners(activeCircleRef.current);
+        activeCircleRef.current.setMap(null);
+      }
+      activeCircleRef.current = draftCircleRef.current;
+      draftCircleRef.current = null;
+      drawStartRef.current = null;
+
+      activeCircleRef.current.setOptions({
+        editable: true,
+        draggable: true,
+        fillOpacity: 0.16,
+      });
+      mapsApi.event.addListener(activeCircleRef.current, 'radius_changed', applyCircleFilter);
+      mapsApi.event.addListener(activeCircleRef.current, 'center_changed', applyCircleFilter);
+
+      setDrawMode(false);
+      mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      applyCircleFilter();
+    });
+
+    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp];
+
+    return () => {
+      clearDrawListeners();
+      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+    };
+  }, [drawMode, mapReady]);
+
+  useEffect(() => {
+    if (!clearSignalInitializedRef.current) {
+      clearSignalInitializedRef.current = true;
+      return;
+    }
+    clearCircleFilter();
+  }, [clearSignal]);
+
+  useEffect(() => () => {
+    clearDrawListeners();
+    removeDraftCircle();
+    if (activeCircleRef.current) {
+      if (window.google && window.google.maps && window.google.maps.event) {
+        window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
+      }
+      activeCircleRef.current.setMap(null);
+      activeCircleRef.current = null;
+    }
+    emitCircleSelection({
+      active: false,
+      propertyIds: [],
+      radiusMeters: 0,
+      center: null,
+    });
+  }, []);
 
   if (!apiKey) {
     return (
@@ -232,10 +439,29 @@ const GoogleListingsMap = ({ properties = [] }) => {
   return (
     <div className="google-listings-map-shell">
       <div ref={mapContainerRef} className="google-listings-map-canvas" />
+      <div className="google-listings-map-toolbar">
+        <button
+          type="button"
+          className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
+          onClick={() => setDrawMode((value) => !value)}
+        >
+          {drawMode ? 'Drawing mode on (drag on map)' : 'Draw search circle'}
+        </button>
+        <button
+          type="button"
+          className="secondary-btn map-draw-btn"
+          onClick={clearCircleFilter}
+          disabled={!drawMode && !activeCircleRef.current}
+        >
+          Clear area
+        </button>
+      </div>
       <p className="google-listings-map-caption">
-        {markerCount > 0
-          ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
-          : 'Map is ready. Matching listing markers will appear as addresses resolve.'}
+        {circleRadiusMeters > 0
+          ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
+          : markerCount > 0
+            ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
+            : 'Map is ready. Matching listing markers will appear as addresses resolve.'}
       </p>
     </div>
   );

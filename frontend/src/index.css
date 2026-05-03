@@ -2041,6 +2041,27 @@ legend {
   padding: 0;
 }
 
+.property-list-page .google-listings-map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.property-list-page .map-draw-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+.property-list-page .map-draw-btn.is-active {
+  border-color: #0e8a88;
+  background: #e6fffb;
+  color: #0f766e;
+}
+
 .property-list-page .google-listings-map-canvas {
   width: 100%;
   height: 360px;
