@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
-import heroStripLogo from '../assets/Strip with Proper Logo.png';
+import heroStripLogo from '../assets/Logo Only for the Strip.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
