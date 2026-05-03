@@ -1779,7 +1779,7 @@ legend {
   position: absolute;
   left: 14px;
   right: auto;
-  bottom: 26px;
+  bottom: 22px;
   width: min(980px, calc(100% - 28px));
   margin: 0;
   z-index: 2;
@@ -1821,7 +1821,7 @@ legend {
 .property-list-page .tabs {
   position: absolute;
   left: 14px;
-  bottom: 2px;
+  bottom: 0;
   margin: 0;
   z-index: 3;
 }
@@ -1945,13 +1945,13 @@ legend {
   .property-list-page .search-panel {
     left: 12px;
     right: 12px;
-    bottom: 30px;
+    bottom: 24px;
     width: auto;
   }
 
   .property-list-page .tabs {
     left: 12px;
-    bottom: 2px;
+    bottom: 0;
   }
 
   .property-list-page .search-form {
@@ -1998,7 +1998,7 @@ legend {
   }
 
   .property-list-page .search-panel {
-    bottom: 30px;
+    bottom: 24px;
   }
 
   .property-list-page .search-btn {
@@ -2007,7 +2007,7 @@ legend {
 
   .property-list-page .tabs {
     left: 10px;
-    bottom: 2px;
+    bottom: 0;
   }
 
   .property-list-page .property-card-title {
