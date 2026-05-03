@@ -170,6 +170,12 @@ const formatPriceSliderLabel = (value, isUpper = false) => {
   return `₪ ${normalized.toLocaleString()}`;
 };
 
+const getPriceSummaryLabel = (minValue, maxValue) => {
+  const minLabel = formatPriceSliderLabel(minValue);
+  const maxLabel = formatPriceSliderLabel(maxValue, true);
+  return `${minLabel} - ${maxLabel}`;
+};
+
 const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const selected = safeText(roomsSelection);
   if (!selected) return true;
@@ -207,6 +213,7 @@ const PropertyList = () => {
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const [interestVersion, setInterestVersion] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [priceExpanded, setPriceExpanded] = useState(false);
   const [circleSelection, setCircleSelection] = useState({
     active: false,
     propertyIds: [],
@@ -259,6 +266,7 @@ const PropertyList = () => {
     setRoomsSearch('');
     setMinPrice('');
     setMaxPrice('');
+    setPriceExpanded(false);
     setFilter('all');
     setClearCircleSignal((value) => value + 1);
   };
@@ -668,39 +676,51 @@ const PropertyList = () => {
               </select>
             </div>
             <div className="input-field search-input price-slider-field">
-              <label>Price Range (₪)</label>
-              <div className="price-slider-values" aria-hidden="true">
-                <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
-                <span className="price-slider-separator">—</span>
-                <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
-              </div>
-              <div
-                className="price-slider-track-wrap"
-                style={{
-                  '--min-price-percent': `${minSliderPercent}%`,
-                  '--max-price-percent': `${maxSliderPercent}%`,
-                }}
+              <label>Price</label>
+              <button
+                type="button"
+                className="price-selector-toggle"
+                onClick={() => setPriceExpanded((value) => !value)}
+                aria-expanded={priceExpanded}
+                aria-controls="price-slider-panel"
               >
-                <input
-                  type="range"
-                  min={PRICE_SLIDER_MIN}
-                  max={PRICE_SLIDER_MAX}
-                  step={PRICE_SLIDER_STEP}
-                  value={minPriceInput}
-                  onChange={handleMinPriceSliderChange}
-                  className="price-slider price-slider--min"
-                  aria-label="Minimum price"
-                />
-                <input
-                  type="range"
-                  min={PRICE_SLIDER_MIN}
-                  max={PRICE_SLIDER_MAX}
-                  step={PRICE_SLIDER_STEP}
-                  value={maxPriceInput}
-                  onChange={handleMaxPriceSliderChange}
-                  className="price-slider price-slider--max"
-                  aria-label="Maximum price"
-                />
+                <span className="price-selector-toggle-text">{getPriceSummaryLabel(minPriceInput, maxPriceInput)}</span>
+                <span className="price-selector-toggle-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
+              </button>
+              <div id="price-slider-panel" className={`price-slider-panel ${priceExpanded ? 'is-open' : ''}`}>
+                <div className="price-slider-values" aria-hidden="true">
+                  <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
+                  <span className="price-slider-separator">—</span>
+                  <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
+                </div>
+                <div
+                  className="price-slider-track-wrap"
+                  style={{
+                    '--min-price-percent': `${minSliderPercent}%`,
+                    '--max-price-percent': `${maxSliderPercent}%`,
+                  }}
+                >
+                  <input
+                    type="range"
+                    min={PRICE_SLIDER_MIN}
+                    max={PRICE_SLIDER_MAX}
+                    step={PRICE_SLIDER_STEP}
+                    value={minPriceInput}
+                    onChange={handleMinPriceSliderChange}
+                    className="price-slider price-slider--min"
+                    aria-label="Minimum price"
+                  />
+                  <input
+                    type="range"
+                    min={PRICE_SLIDER_MIN}
+                    max={PRICE_SLIDER_MAX}
+                    step={PRICE_SLIDER_STEP}
+                    value={maxPriceInput}
+                    onChange={handleMaxPriceSliderChange}
+                    className="price-slider price-slider--max"
+                    aria-label="Maximum price"
+                  />
+                </div>
               </div>
             </div>
             <button type="submit" className="primary-btn search-btn">Search</button>
