@@ -1706,7 +1706,7 @@ legend {
   position: relative;
   z-index: 2;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 12px;
   background: rgba(15, 23, 42, 0.9);
