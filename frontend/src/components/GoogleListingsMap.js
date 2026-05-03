@@ -6,6 +6,7 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
+const MARKER_IMAGE_SIZE = 42;
 
 let googleMapsLoadPromise;
 
@@ -103,6 +104,19 @@ const getDistanceMeters = (startPoint, endPoint) => {
     + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
+
+const getMarkerImageUrl = (property, propertyId) => {
+  const propertyImages = property && Array.isArray(property.images) ? property.images : [];
+  const firstImage = propertyImages.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
+  if (firstImage) return firstImage.trim();
+  return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/120/120`;
+};
+
+const createPhotoMarkerIcon = (mapsApi, imageUrl) => ({
+  url: imageUrl,
+  scaledSize: new mapsApi.Size(MARKER_IMAGE_SIZE, MARKER_IMAGE_SIZE),
+  anchor: new mapsApi.Point(MARKER_IMAGE_SIZE / 2, MARKER_IMAGE_SIZE / 2),
+});
 
 const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -283,16 +297,25 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           map,
           position: coords,
           title: safeText(item.property.title) || item.addressQuery,
+          icon: createPhotoMarkerIcon(
+            mapsApi,
+            getMarkerImageUrl(item.property, item.propertyId)
+          ),
         });
 
         marker.addListener('click', () => {
           const title = safeText(item.property.title) || 'Property listing';
           const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
+          const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
           const safeTitle = escapeHtml(title);
           const safeAddress = escapeHtml(item.addressQuery);
           const safePrice = escapeHtml(price);
+          const safeImageUrl = escapeHtml(markerImageUrl);
           infoWindow.setContent(
-            `<div style="min-width:180px"><strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span></div>`
+            `<div style="min-width:220px">
+              <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
+              <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
+            </div>`
           );
           infoWindow.open(map, marker);
         });
