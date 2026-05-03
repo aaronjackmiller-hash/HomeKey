@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import heroStripLogo from '../assets/homekey-logo-uploaded-clean.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
@@ -551,7 +552,9 @@ const PropertyList = () => {
                 <p className="hero-kicker">Beta Property Portal</p>
                 <h1>Find your next home in Israel</h1>
               </div>
-              <HomeKeyLogoBadge className="hero-banner-logo" />
+              <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
+                <img className="homekey-logo-lockup-image" src={heroStripLogo} alt="HomeKey logo" />
+              </div>
             </div>
           </div>
         </section>
