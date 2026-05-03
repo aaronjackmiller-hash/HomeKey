@@ -1805,6 +1805,37 @@ legend {
   min-width: 0;
 }
 
+.property-list-page .price-selector-toggle {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.property-list-page .price-selector-toggle-caret {
+  color: #64748b;
+  font-size: 0.76rem;
+  margin-left: 10px;
+}
+
+.property-list-page .price-slider-panel {
+  display: none;
+  margin-top: 8px;
+}
+
+.property-list-page .price-slider-panel.is-open {
+  display: block;
+}
+
 .property-list-page .search-form .input-field label {
   margin-bottom: 5px;
   font-size: 0.9rem;
