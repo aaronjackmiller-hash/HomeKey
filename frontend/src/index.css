@@ -1735,7 +1735,7 @@ legend {
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.52rem, 2vw, 1.92rem);
+  font-size: clamp(1.72rem, 2.35vw, 2.18rem);
   line-height: 1.04;
   letter-spacing: 0.01em;
   font-weight: 800;
