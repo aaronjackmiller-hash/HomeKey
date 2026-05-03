@@ -1708,11 +1708,11 @@ legend {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   background: rgba(15, 23, 42, 0.9);
   border-radius: 10px;
-  padding: 10px 14px 12px;
-  max-width: 760px;
+  padding: 10px 12px 12px;
+  max-width: 900px;
 }
 
 .property-list-page .hero-banner-copy-text {
@@ -1731,13 +1731,12 @@ legend {
 .property-list-page .hero-banner h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.95rem, 2.45vw, 2.58rem);
+  font-size: clamp(1.75rem, 2.2vw, 2.28rem);
   line-height: 1.02;
   letter-spacing: 0.01em;
   font-weight: 800;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
+  overflow: visible;
 }
 
 .property-list-page .hero-banner-logo {
@@ -1747,9 +1746,9 @@ legend {
   transform: none;
   z-index: 2;
   flex: 0 0 auto;
-  width: 122px;
-  height: 84px;
-  min-height: 84px;
+  width: 110px;
+  height: 74px;
+  min-height: 74px;
   border-radius: 4px;
   overflow: hidden;
   background: rgba(7, 16, 34, 0.5);
