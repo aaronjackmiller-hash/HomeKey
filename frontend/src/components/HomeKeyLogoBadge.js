@@ -1,5 +1,5 @@
 import React from 'react';
-import uploadedHomeKeyLogo from '../assets/homekey-logo-no-frame.png';
+import uploadedHomeKeyLogo from '../assets/homekey-logo-uploaded-clean.png';
 
 const HomeKeyLogoBadge = ({ compact = false, className = '', ariaLabel = 'HomeKey logo' }) => (
   <div className={`homekey-logo-lockup ${compact ? 'homekey-logo-lockup--compact' : ''} ${className}`.trim()} aria-label={ariaLabel}>
