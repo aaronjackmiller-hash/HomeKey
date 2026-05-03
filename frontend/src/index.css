@@ -1682,6 +1682,10 @@ legend {
   padding: 10px 10px 28px;
 }
 
+.property-list-page .homepage-hero-shell {
+  position: relative;
+}
+
 .property-list-page .hero-banner {
   position: relative;
   min-height: 380px;
