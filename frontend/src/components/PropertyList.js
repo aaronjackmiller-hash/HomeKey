@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import GoogleListingsMap from './GoogleListingsMap';
 import heroStripLogo from '../assets/Logo Only for the Strip.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
@@ -388,6 +389,35 @@ const PropertyList = () => {
   const interestSummary = getInterestSummary();
   const favoritesCount = interestSummary.favoriteIds.length;
   const savedCount = interestSummary.savedIds.length;
+  const favoriteIdSet = new Set(interestSummary.favoriteIds);
+
+  const getDisplayProperties = () => {
+    let displayProperties;
+    if (dbIsEmpty) {
+      let samples = [...SAMPLE_PROPERTIES];
+      if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
+      if (citySearch.trim()) {
+        const q = citySearch.trim().toLowerCase();
+        samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
+      }
+      if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
+      if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
+      displayProperties = samples;
+    } else {
+      displayProperties = properties;
+    }
+
+    if (favoritesOnly) {
+      displayProperties = displayProperties.filter((property) => {
+        const propertyId = property && (property._id || property.id);
+        return propertyId ? favoriteIdSet.has(String(propertyId)) : false;
+      });
+    }
+
+    return displayProperties.filter((property) => property && typeof property === 'object');
+  };
+
+  const displayProperties = getDisplayProperties();
 
   // Decide what to render in the results area
   const renderResults = () => {
@@ -410,31 +440,6 @@ const PropertyList = () => {
           </button>
         </div>
       );
-    }
-
-    // When the database is empty, filter the local SAMPLE_PROPERTIES to match
-      // whatever type/city/price filters the user has active so searches still work.
-    let displayProperties;
-    if (dbIsEmpty) {
-      let samples = [...SAMPLE_PROPERTIES];
-      if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
-      if (citySearch.trim()) {
-        const q = citySearch.trim().toLowerCase();
-        samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
-      }
-      if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
-      if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
-      displayProperties = samples;
-    } else {
-      displayProperties = properties;
-    }
-
-    if (favoritesOnly) {
-      const favoriteIdSet = new Set(interestSummary.favoriteIds);
-      displayProperties = displayProperties.filter((property) => {
-        const propertyId = property && (property._id || property.id);
-        return propertyId ? favoriteIdSet.has(String(propertyId)) : false;
-      });
     }
 
     return (
@@ -618,6 +623,13 @@ const PropertyList = () => {
           <span>Saved file: {savedCount}</span>
         </div>
       </div>
+      <section className="google-listings-map-card" aria-label="Apartment location map">
+        <header className="google-listings-map-header">
+          <h2>Apartment Locations</h2>
+          <p>View where available apartments are located across Israel.</p>
+        </header>
+        <GoogleListingsMap properties={loading ? [] : displayProperties} />
+      </section>
       {renderResults()}
     </div>
   );
