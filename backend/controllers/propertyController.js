@@ -152,6 +152,20 @@ const getAllProperties = async (req, res) => {
             if (req.query.minPrice) filter.price.$gte = Number(req.query.minPrice);
             if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
         }
+        if (req.query.rooms) {
+            const roomsQuery = String(req.query.rooms).trim();
+            if (roomsQuery.endsWith('+')) {
+                const minRooms = Number(roomsQuery.slice(0, -1));
+                if (!Number.isNaN(minRooms)) {
+                    filter.bedrooms = { $gte: minRooms };
+                }
+            } else {
+                const exactRooms = Number(roomsQuery);
+                if (!Number.isNaN(exactRooms)) {
+                    filter.bedrooms = exactRooms;
+                }
+            }
+        }
 
         // Mongoose will handle the connection queue automatically
         const properties = await Property.find(filter)

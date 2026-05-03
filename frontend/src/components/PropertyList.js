@@ -20,6 +20,7 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const ROOM_OPTIONS = ['', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6+'];
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -169,15 +170,32 @@ const formatPriceSliderLabel = (value, isUpper = false) => {
   return `₪ ${normalized.toLocaleString()}`;
 };
 
+const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
+  const selected = safeText(roomsSelection);
+  if (!selected) return true;
+  const bedrooms = Number(bedroomsValue);
+  if (Number.isNaN(bedrooms)) return false;
+  if (selected.endsWith('+')) {
+    const minRooms = Number(selected.replace('+', ''));
+    if (Number.isNaN(minRooms)) return true;
+    return bedrooms >= minRooms;
+  }
+  const exactRooms = Number(selected);
+  if (Number.isNaN(exactRooms)) return true;
+  return bedrooms === exactRooms;
+};
+
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
   // Local input values update instantly so typing is never interrupted
   const [cityInput, setCityInput] = useState('');
+  const [roomsInput, setRoomsInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState(PRICE_SLIDER_MIN);
   const [maxPriceInput, setMaxPriceInput] = useState(PRICE_SLIDER_MAX);
   // Debounced search values that actually trigger the API call
   const [citySearch, setCitySearch] = useState('');
+  const [roomsSearch, setRoomsSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -208,6 +226,10 @@ const PropertyList = () => {
     debounceRef.current = setTimeout(() => setCitySearch(val), SEARCH_DEBOUNCE_MS);
   };
 
+  const handleRoomsChange = (e) => {
+    setRoomsInput(e.target.value);
+  };
+
   const handleMinPriceSliderChange = (e) => {
     const nextValue = clampPriceValue(e.target.value);
     const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
@@ -223,9 +245,11 @@ const PropertyList = () => {
   const handleClear = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCityInput('');
+    setRoomsInput('');
     setMinPriceInput(PRICE_SLIDER_MIN);
     setMaxPriceInput(PRICE_SLIDER_MAX);
     setCitySearch('');
+    setRoomsSearch('');
     setMinPrice('');
     setMaxPrice('');
     setFilter('all');
@@ -298,6 +322,7 @@ const PropertyList = () => {
         const params = { source: 'live-yad2' };
         if (filter !== 'all') params.type = filter;
         if (citySearch.trim()) params.city = citySearch.trim();
+        if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
         if (maxPrice !== '') params.maxPrice = maxPrice;
         const hasUserFilters = Object.keys(params).length > 1;
@@ -372,13 +397,14 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, citySearch, minPrice, maxPrice, retryCount]);
+  }, [filter, citySearch, roomsSearch, minPrice, maxPrice, retryCount]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     // Flush any pending debounce immediately on explicit Search button click
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setCitySearch(cityInput);
+    setRoomsSearch(roomsInput);
     setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
     setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
   };
@@ -412,6 +438,9 @@ const PropertyList = () => {
       if (citySearch.trim()) {
         const q = citySearch.trim().toLowerCase();
         samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
+      }
+      if (roomsSearch.trim()) {
+        samples = samples.filter((p) => matchesRoomsSelection(p.bedrooms, roomsSearch));
       }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
@@ -590,6 +619,16 @@ const PropertyList = () => {
                 value={cityInput}
                 onChange={handleCityChange}
               />
+            </div>
+            <div className="input-field search-input rooms-input">
+              <label>Rooms</label>
+              <select value={roomsInput} onChange={handleRoomsChange}>
+                {ROOM_OPTIONS.map((optionValue) => (
+                  <option key={optionValue || 'any'} value={optionValue}>
+                    {optionValue || 'Any'}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="input-field search-input price-slider-field">
               <label>Price Range (₪)</label>
