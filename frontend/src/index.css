@@ -1864,6 +1864,60 @@ legend {
   color: #0f172a;
 }
 
+.property-list-page .google-listings-map-card {
+  margin: 0 0 14px;
+  border: 1px solid #d5dfeb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.property-list-page .google-listings-map-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.property-list-page .google-listings-map-header h2 {
+  margin: 0;
+  font-size: 1.06rem;
+  color: #0f172a;
+}
+
+.property-list-page .google-listings-map-header p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.property-list-page .google-listings-map-shell {
+  padding: 0;
+}
+
+.property-list-page .google-listings-map-canvas {
+  width: 100%;
+  height: 360px;
+  background: #e2e8f0;
+}
+
+.property-list-page .google-listings-map-caption {
+  margin: 0;
+  padding: 10px 12px;
+  color: #475569;
+  font-size: 0.88rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.property-list-page .google-listings-map-note {
+  margin: 0;
+  padding: 14px;
+  color: #334155;
+  font-size: 0.92rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
 .property-list-page .container {
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 14px;
@@ -1957,6 +2011,10 @@ legend {
   .property-list-page .search-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .property-list-page .google-listings-map-canvas {
+    height: 320px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -2016,5 +2074,9 @@ legend {
 
   .property-list-page .property-card-price {
     font-size: 1.45rem;
+  }
+
+  .property-list-page .google-listings-map-canvas {
+    height: 270px;
   }
 }

@@ -81,6 +81,22 @@ npm install
 npm start                  # runs on port 3000
 ```
 
+### Google Maps Platform on homepage (listing locations)
+
+To show apartment markers on the HomeKey homepage map, provide a browser key:
+
+- `REACT_APP_GOOGLE_MAPS_API_KEY=<your_google_maps_javascript_api_key>`
+
+Recommended Google Cloud setup:
+
+1. Enable **Maps JavaScript API** and **Geocoding API** in your Google Cloud project.
+2. Create a browser API key and restrict it by HTTP referrer (your local and Render domains).
+3. Add the key:
+   - local dev: `frontend/.env.local`
+   - Render Blueprint: add `REACT_APP_GOOGLE_MAPS_API_KEY` in `render.yaml` / service env vars.
+
+The homepage map geocodes listing addresses and caches resolved coordinates in browser local storage for faster reloads.
+
 ---
 
 ## 📁 Project Structure
