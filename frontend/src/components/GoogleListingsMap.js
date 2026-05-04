@@ -371,14 +371,19 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           const title = safeText(item.property.title) || 'Property listing';
           const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
           const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
+          const listingPath = `/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
           const safeTitle = escapeHtml(title);
           const safeAddress = escapeHtml(item.addressQuery);
           const safePrice = escapeHtml(price);
           const safeImageUrl = escapeHtml(markerImageUrl);
+          const safeListingPath = escapeHtml(listingPath);
           infoWindow.setContent(
             `<div style="min-width:220px">
               <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
               <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
+              <div style="margin-top:10px;">
+                <a href="${safeListingPath}" style="display:inline-block;padding:6px 10px;border-radius:8px;border:1px solid #0e8a88;background:#0e8a88;color:#ffffff;text-decoration:none;font-weight:600;">View full listing</a>
+              </div>
             </div>`
           );
           infoWindow.open(map, marker);
