@@ -7,8 +7,10 @@ const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
-const OVERLAP_BUCKET_DECIMALS = 4;
-const OVERLAP_SPREAD_METERS = 10;
+const METERS_PER_DEGREE_LAT = 111320;
+const EARTH_METERS_PER_PIXEL_EQUATOR = 156543.03392;
+const OVERLAP_BUCKET_PIXELS = 22;
+const OVERLAP_SPREAD_PIXELS = 24;
 const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
@@ -146,13 +148,32 @@ const getDistanceMeters = (startPoint, endPoint) => {
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const applyMarkerOverlapOffset = (coords, overlapIndex) => {
+const getMetersPerPixel = (lat, mapZoom) => {
+  const zoom = Number.isFinite(mapZoom) ? Number(mapZoom) : 10;
+  const safeCosLat = Math.max(0.2, Math.cos(toRadians(lat)));
+  return (EARTH_METERS_PER_PIXEL_EQUATOR * safeCosLat) / (2 ** zoom);
+};
+
+const getOverlapBucketKey = (coords, mapZoom) => {
+  if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return '';
+  const metersPerPixel = getMetersPerPixel(coords.lat, mapZoom);
+  const bucketMeters = Math.max(1, OVERLAP_BUCKET_PIXELS * metersPerPixel);
+  const safeCosLat = Math.max(0.2, Math.cos(toRadians(coords.lat)));
+  const latStep = bucketMeters / METERS_PER_DEGREE_LAT;
+  const lngStep = bucketMeters / (METERS_PER_DEGREE_LAT * safeCosLat);
+  const latBucket = Math.floor(coords.lat / Math.max(latStep, 1e-7));
+  const lngBucket = Math.floor(coords.lng / Math.max(lngStep, 1e-7));
+  return `${latBucket}:${lngBucket}`;
+};
+
+const applyMarkerOverlapOffset = (coords, overlapIndex, mapZoom) => {
   if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng) || overlapIndex <= 0) {
     return coords;
   }
   const angleRadians = overlapIndex * 2.399963229728653; // golden angle for radial spacing
-  const ringIndex = Math.floor(Math.sqrt(overlapIndex));
-  const radiusMeters = OVERLAP_SPREAD_METERS * ringIndex;
+  const metersPerPixel = getMetersPerPixel(coords.lat, mapZoom);
+  const radiusPixels = OVERLAP_SPREAD_PIXELS * Math.sqrt(overlapIndex);
+  const radiusMeters = radiusPixels * metersPerPixel;
   const dLat = (radiusMeters * Math.cos(angleRadians)) / EARTH_RADIUS_METERS;
   const safeCosLat = Math.max(0.2, Math.cos(toRadians(coords.lat)));
   const dLng = (radiusMeters * Math.sin(angleRadians)) / (EARTH_RADIUS_METERS * safeCosLat);
@@ -379,6 +400,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       let placed = 0;
       let cacheChanged = false;
       const overlapBuckets = new Map();
+      const mapZoom = Number(map.getZoom && map.getZoom()) || 10;
 
       for (const item of markerInputs) {
         if (cancelled) return;
@@ -395,10 +417,10 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         }
 
         const isHousePinPreset = markerPreset.markerMode === 'house';
-        const overlapKey = `${coords.lat.toFixed(OVERLAP_BUCKET_DECIMALS)}:${coords.lng.toFixed(OVERLAP_BUCKET_DECIMALS)}`;
+        const overlapKey = getOverlapBucketKey(coords, mapZoom);
         const overlapIndex = overlapBuckets.get(overlapKey) || 0;
         overlapBuckets.set(overlapKey, overlapIndex + 1);
-        const markerCoords = applyMarkerOverlapOffset(coords, overlapIndex);
+        const markerCoords = applyMarkerOverlapOffset(coords, overlapIndex, mapZoom);
 
         const frameMarker = isHousePinPreset
           ? null
