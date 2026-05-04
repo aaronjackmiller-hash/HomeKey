@@ -194,6 +194,16 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   return almostEqual(bedrooms, selectedRooms) || almostEqual(bedrooms, Math.max(0, selectedRooms - 1));
 };
 
+const areStringArraysEqual = (left = [], right = []) => {
+  if (left === right) return true;
+  if (!Array.isArray(left) || !Array.isArray(right)) return false;
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (String(left[index]) !== String(right[index])) return false;
+  }
+  return true;
+};
+
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -444,7 +454,11 @@ const PropertyList = () => {
   const interestSummary = getInterestSummary();
   const favoritesCount = interestSummary.favoriteIds.length;
   const savedCount = interestSummary.savedIds.length;
-  const favoriteIdSet = new Set(interestSummary.favoriteIds);
+  const favoriteIdsKey = (interestSummary.favoriteIds || []).map((id) => String(id)).join('|');
+  const favoriteIdSet = useMemo(
+    () => new Set((interestSummary.favoriteIds || []).map((id) => String(id))),
+    [favoriteIdsKey]
+  );
 
   const mapSourceProperties = useMemo(() => {
     let displayProperties;
@@ -498,20 +512,34 @@ const PropertyList = () => {
   }, [circleSelection.active, circlePropertyIdSet, mapSourceProperties]);
 
   const handleCircleSelectionChange = useCallback((selection) => {
-    if (!selection || typeof selection !== 'object') {
-      setCircleSelection({
+    const nextSelection = (!selection || typeof selection !== 'object')
+      ? {
         active: false,
         propertyIds: [],
         radiusMeters: 0,
         center: null,
-      });
-      return;
-    }
-    setCircleSelection({
-      active: Boolean(selection.active),
-      propertyIds: Array.isArray(selection.propertyIds) ? selection.propertyIds : [],
-      radiusMeters: Number(selection.radiusMeters) || 0,
-      center: selection.center || null,
+      }
+      : {
+        active: Boolean(selection.active),
+        propertyIds: Array.isArray(selection.propertyIds) ? selection.propertyIds : [],
+        radiusMeters: Number(selection.radiusMeters) || 0,
+        center: selection.center || null,
+      };
+
+    setCircleSelection((previousSelection) => {
+      const prevCenter = previousSelection && previousSelection.center ? previousSelection.center : null;
+      const nextCenter = nextSelection.center;
+      const sameCenter = (!prevCenter && !nextCenter)
+        || (prevCenter && nextCenter && prevCenter.lat === nextCenter.lat && prevCenter.lng === nextCenter.lng);
+      if (
+        previousSelection.active === nextSelection.active
+        && previousSelection.radiusMeters === nextSelection.radiusMeters
+        && sameCenter
+        && areStringArraysEqual(previousSelection.propertyIds, nextSelection.propertyIds)
+      ) {
+        return previousSelection;
+      }
+      return nextSelection;
     });
   }, []);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
