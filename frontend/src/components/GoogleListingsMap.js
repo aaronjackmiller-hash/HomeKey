@@ -9,8 +9,9 @@ const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
 const METERS_PER_DEGREE_LAT = 111320;
 const EARTH_METERS_PER_PIXEL_EQUATOR = 156543.03392;
-const OVERLAP_BUCKET_PIXELS = 22;
 const OVERLAP_SPREAD_PIXELS = 24;
+const MIN_MARKER_SEPARATION_PIXELS = 18;
+const MAX_OVERLAP_SHIFT_ATTEMPTS = 40;
 const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
@@ -154,18 +155,6 @@ const getMetersPerPixel = (lat, mapZoom) => {
   return (EARTH_METERS_PER_PIXEL_EQUATOR * safeCosLat) / (2 ** zoom);
 };
 
-const getOverlapBucketKey = (coords, mapZoom) => {
-  if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return '';
-  const metersPerPixel = getMetersPerPixel(coords.lat, mapZoom);
-  const bucketMeters = Math.max(1, OVERLAP_BUCKET_PIXELS * metersPerPixel);
-  const safeCosLat = Math.max(0.2, Math.cos(toRadians(coords.lat)));
-  const latStep = bucketMeters / METERS_PER_DEGREE_LAT;
-  const lngStep = bucketMeters / (METERS_PER_DEGREE_LAT * safeCosLat);
-  const latBucket = Math.floor(coords.lat / Math.max(latStep, 1e-7));
-  const lngBucket = Math.floor(coords.lng / Math.max(lngStep, 1e-7));
-  return `${latBucket}:${lngBucket}`;
-};
-
 const applyMarkerOverlapOffset = (coords, overlapIndex, mapZoom) => {
   if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng) || overlapIndex <= 0) {
     return coords;
@@ -181,6 +170,23 @@ const applyMarkerOverlapOffset = (coords, overlapIndex, mapZoom) => {
     lat: coords.lat + ((dLat * 180) / Math.PI),
     lng: coords.lng + ((dLng * 180) / Math.PI),
   };
+};
+
+const getMarkerCollisionFreeCoords = (coords, placedCoords, mapZoom) => {
+  if (!coords || !Array.isArray(placedCoords) || placedCoords.length === 0) return coords;
+  const minSeparationMeters = Math.max(2, MIN_MARKER_SEPARATION_PIXELS * getMetersPerPixel(coords.lat, mapZoom));
+  const intersectsAny = (candidate) => placedCoords.some(
+    (placed) => getDistanceMeters(candidate, placed) < minSeparationMeters
+  );
+  if (!intersectsAny(coords)) return coords;
+
+  let fallbackCandidate = coords;
+  for (let attempt = 1; attempt <= MAX_OVERLAP_SHIFT_ATTEMPTS; attempt += 1) {
+    const candidate = applyMarkerOverlapOffset(coords, attempt, mapZoom);
+    fallbackCandidate = candidate;
+    if (!intersectsAny(candidate)) return candidate;
+  }
+  return fallbackCandidate;
 };
 
 const getMarkerImageUrl = (property, propertyId) => {
@@ -399,8 +405,8 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       const bounds = new mapsApi.LatLngBounds();
       let placed = 0;
       let cacheChanged = false;
-      const overlapBuckets = new Map();
       const mapZoom = Number(map.getZoom && map.getZoom()) || 10;
+      const placedMarkerCoords = [];
 
       for (const item of markerInputs) {
         if (cancelled) return;
@@ -417,10 +423,8 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         }
 
         const isHousePinPreset = markerPreset.markerMode === 'house';
-        const overlapKey = getOverlapBucketKey(coords, mapZoom);
-        const overlapIndex = overlapBuckets.get(overlapKey) || 0;
-        overlapBuckets.set(overlapKey, overlapIndex + 1);
-        const markerCoords = applyMarkerOverlapOffset(coords, overlapIndex, mapZoom);
+        const markerCoords = getMarkerCollisionFreeCoords(coords, placedMarkerCoords, mapZoom);
+        placedMarkerCoords.push(markerCoords);
 
         const frameMarker = isHousePinPreset
           ? null
