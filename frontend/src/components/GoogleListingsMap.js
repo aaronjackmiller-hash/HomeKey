@@ -7,6 +7,8 @@ const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
+const OVERLAP_BUCKET_DECIMALS = 4;
+const OVERLAP_SPREAD_METERS = 10;
 const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
@@ -142,6 +144,22 @@ const getDistanceMeters = (startPoint, endPoint) => {
   const a = Math.sin(dLat / 2) ** 2
     + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const applyMarkerOverlapOffset = (coords, overlapIndex) => {
+  if (!coords || !Number.isFinite(coords.lat) || !Number.isFinite(coords.lng) || overlapIndex <= 0) {
+    return coords;
+  }
+  const angleRadians = overlapIndex * 2.399963229728653; // golden angle for radial spacing
+  const ringIndex = Math.floor(Math.sqrt(overlapIndex));
+  const radiusMeters = OVERLAP_SPREAD_METERS * ringIndex;
+  const dLat = (radiusMeters * Math.cos(angleRadians)) / EARTH_RADIUS_METERS;
+  const safeCosLat = Math.max(0.2, Math.cos(toRadians(coords.lat)));
+  const dLng = (radiusMeters * Math.sin(angleRadians)) / (EARTH_RADIUS_METERS * safeCosLat);
+  return {
+    lat: coords.lat + ((dLat * 180) / Math.PI),
+    lng: coords.lng + ((dLng * 180) / Math.PI),
+  };
 };
 
 const getMarkerImageUrl = (property, propertyId) => {
@@ -360,6 +378,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       const bounds = new mapsApi.LatLngBounds();
       let placed = 0;
       let cacheChanged = false;
+      const overlapBuckets = new Map();
 
       for (const item of markerInputs) {
         if (cancelled) return;
@@ -376,11 +395,16 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         }
 
         const isHousePinPreset = markerPreset.markerMode === 'house';
+        const overlapKey = `${coords.lat.toFixed(OVERLAP_BUCKET_DECIMALS)}:${coords.lng.toFixed(OVERLAP_BUCKET_DECIMALS)}`;
+        const overlapIndex = overlapBuckets.get(overlapKey) || 0;
+        overlapBuckets.set(overlapKey, overlapIndex + 1);
+        const markerCoords = applyMarkerOverlapOffset(coords, overlapIndex);
+
         const frameMarker = isHousePinPreset
           ? null
           : new mapsApi.Marker({
             map,
-            position: coords,
+            position: markerCoords,
             icon: createPhotoMarkerFrameIcon(mapsApi, markerPreset),
             clickable: false,
             zIndex: 1,
@@ -397,7 +421,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
 
         const marker = new mapsApi.Marker({
           map,
-          position: coords,
+          position: markerCoords,
           title: safeText(item.property.title) || item.addressQuery,
           icon: markerIcon,
           zIndex: 2,
@@ -430,9 +454,9 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           marker,
           frameMarker,
           propertyId: String(item.propertyId),
-          coords,
+          coords: markerCoords,
         });
-        bounds.extend(coords);
+        bounds.extend(markerCoords);
         placed += 1;
       }
 
