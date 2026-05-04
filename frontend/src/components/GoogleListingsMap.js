@@ -368,6 +368,10 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         });
 
         marker.addListener('click', () => {
+          if (item.propertyId) {
+            window.location.assign(`/properties/${encodeURIComponent(String(item.propertyId))}`);
+            return;
+          }
           const title = safeText(item.property.title) || 'Property listing';
           const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
           const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
