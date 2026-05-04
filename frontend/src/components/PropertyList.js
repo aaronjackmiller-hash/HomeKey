@@ -442,7 +442,7 @@ const PropertyList = () => {
   const savedCount = interestSummary.savedIds.length;
   const favoriteIdSet = new Set(interestSummary.favoriteIds);
 
-  const getDisplayProperties = () => {
+  const mapSourceProperties = useMemo(() => {
     let displayProperties;
     if (dbIsEmpty) {
       let samples = [...SAMPLE_PROPERTIES];
@@ -480,9 +480,7 @@ const PropertyList = () => {
     }
 
     return displayProperties.filter((property) => property && typeof property === 'object');
-  };
-
-  const mapSourceProperties = getDisplayProperties();
+  }, [dbIsEmpty, filter, citySearch, roomsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
