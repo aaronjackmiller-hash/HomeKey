@@ -176,16 +176,34 @@ const createHousePinIcon = (mapsApi, preset) => {
   const pinColor = preset.pinColor || '#0e8a88';
   const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
   const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M12 2L1 10.5H5V22H19V10.5H23L12 2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
-      <rect x="9" y="15.5" width="6" height="6.5" fill="${homeStrokeColor}" rx="0.5"/>
-    </svg>
-  `;
+
+  // Build geometry proportional to the icon size so the house fills the
+  // entire icon area.  Using a viewBox that matches the icon dimensions
+  // avoids the letterboxing that occurred when a square 24×24 viewBox was
+  // displayed in a portrait rectangle (the SVG default preserveAspectRatio
+  // "xMidYMid meet" would shrink the 24×24 content to fit the narrower
+  // 19-pixel width, leaving the house occupying only ~70 % of the icon
+  // height and making the roof too small to see clearly).
+  const cx = iconWidth / 2;
+  const roofTop = 1;
+  const eaveY = Math.round(iconHeight * 0.40);    // eave at ~40 % of height
+  const wallLeft = Math.round(iconWidth * 0.16);  // left wall at ~16 % of width
+  const wallRight = Math.round(iconWidth * 0.84); // right wall at ~84 % of width
+  const doorW = Math.round(iconWidth * 0.32);
+  const doorH = Math.round(iconHeight * 0.30);
+  const doorX = Math.round(cx - doorW / 2);
+  const doorY = iconHeight - doorH;
+
+  // House path: peak → left eave tip → left wall top → bottom-left →
+  //             bottom-right → right wall top → right eave tip → (close)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
+    <path d="M${cx} ${roofTop} L0 ${eaveY} H${wallLeft} V${iconHeight} H${wallRight} V${eaveY} H${iconWidth} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+    <rect x="${doorX}" y="${doorY}" width="${doorW}" height="${doorH}" fill="${homeStrokeColor}" rx="0.5"/>
+  </svg>`;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new mapsApi.Size(iconWidth, iconHeight),
-    anchor: new mapsApi.Point(iconWidth / 2, iconHeight),
+    anchor: new mapsApi.Point(cx, iconHeight),
   };
 };
 
