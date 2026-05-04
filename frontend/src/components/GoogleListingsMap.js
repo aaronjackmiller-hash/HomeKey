@@ -11,8 +11,8 @@ const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
     markerMode: 'house',
-    iconWidth: 34,
-    iconHeight: 46,
+    iconWidth: 22,
+    iconHeight: 30,
     pinColor: '#0e8a88',
     pinStrokeColor: '#0f766e',
     homeColor: '#ffffff',
@@ -20,36 +20,36 @@ const MARKER_STYLE_PRESETS = {
   },
   minimal: {
     label: 'Minimal',
-    markerMode: 'photo',
-    imageSize: 26,
-    frameDiameter: 36,
-    frameStrokePx: 1.8,
-    frameStrokeColor: '#94a3b8',
-    frameFillColor: '#ffffff',
-    frameFillOpacity: 0.96,
+    markerMode: 'house',
+    iconWidth: 18,
+    iconHeight: 24,
+    pinColor: '#94a3b8',
+    pinStrokeColor: '#64748b',
+    homeColor: '#ffffff',
+    homeStrokeColor: '#334155',
   },
   medium: {
     label: 'Medium',
-    markerMode: 'photo',
-    imageSize: 34,
-    frameDiameter: 46,
-    frameStrokePx: 2.5,
-    frameStrokeColor: '#0e8a88',
-    frameFillColor: '#ffffff',
-    frameFillOpacity: 0.98,
+    markerMode: 'house',
+    iconWidth: 22,
+    iconHeight: 30,
+    pinColor: '#0e8a88',
+    pinStrokeColor: '#0f766e',
+    homeColor: '#ffffff',
+    homeStrokeColor: '#0f172a',
   },
   bold: {
     label: 'Bold',
-    markerMode: 'photo',
-    imageSize: 40,
-    frameDiameter: 54,
-    frameStrokePx: 3.4,
-    frameStrokeColor: '#0f766e',
-    frameFillColor: '#ecfeff',
-    frameFillOpacity: 1,
+    markerMode: 'house',
+    iconWidth: 26,
+    iconHeight: 36,
+    pinColor: '#0f766e',
+    pinStrokeColor: '#0f172a',
+    homeColor: '#ecfeff',
+    homeStrokeColor: '#082f49',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'house';
+const DEFAULT_MARKER_PRESET_KEY = 'medium';
 
 let googleMapsLoadPromise;
 
@@ -175,25 +175,25 @@ const createPhotoMarkerFrameIcon = (mapsApi, preset) => ({
 });
 
 const createHousePinIcon = (mapsApi, preset) => {
-  const iconWidth = Number(preset.iconWidth) || 34;
-  const iconHeight = Number(preset.iconHeight) || 46;
+  const iconWidth = Number(preset.iconWidth) || 22;
+  const iconHeight = Number(preset.iconHeight) || 30;
   const pinColor = preset.pinColor || '#0e8a88';
   const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
   const homeColor = preset.homeColor || '#ffffff';
   const homeStrokeColor = preset.homeStrokeColor || '#0f172a';
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48">
-      <path d="M18 1.5C9.44 1.5 2.5 8.44 2.5 17c0 10.81 11.55 23.84 14.09 26.58.77.82 2.05.82 2.82 0C21.95 40.84 33.5 27.81 33.5 17 33.5 8.44 26.56 1.5 18 1.5Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.5"/>
-      <circle cx="18" cy="17" r="9.25" fill="${homeColor}" />
-      <path d="M11.5 19.2 18 13.9l6.5 5.3" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M13.2 18.8V24.3h9.6v-5.5" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M17 24.3v-3.2h2v3.2" fill="none" stroke="${homeStrokeColor}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44">
+      <path d="M18 2.2C10.3 2.2 4.1 8.4 4.1 16.1c0 9.5 9.4 20.1 12.8 23.7.6.7 1.6.7 2.2 0 3.4-3.6 12.8-14.2 12.8-23.7C31.9 8.4 25.7 2.2 18 2.2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.5"/>
+      <circle cx="18" cy="16.1" r="8.1" fill="${homeColor}" />
+      <path d="M12.5 17.6 18 13l5.5 4.6" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M14.1 17.3v5.1h7.8v-5.1" fill="none" stroke="${homeStrokeColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 22.4v-2.9h2v2.9" fill="none" stroke="${homeStrokeColor}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   `;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new mapsApi.Size(iconWidth, iconHeight),
-    anchor: new mapsApi.Point(iconWidth / 2, iconHeight),
+    anchor: new mapsApi.Point(iconWidth / 2, iconHeight - 1),
   };
 };
 
