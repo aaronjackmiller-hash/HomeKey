@@ -527,6 +527,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       drawStartRef.current = null;
 
       activeCircleRef.current.setOptions({
+        clickable: true,
         editable: true,
         draggable: true,
         fillOpacity: 0.16,
