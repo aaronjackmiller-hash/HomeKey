@@ -226,6 +226,7 @@ const PropertyList = () => {
   const [clearCircleSignal, setClearCircleSignal] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
+  const cityInputRef = useRef(null);
   const history = useHistory();
 
   // Clear any pending auto-retry timers
@@ -257,6 +258,7 @@ const PropertyList = () => {
 
   const handleClear = () => {
     setCityInput('');
+    if (cityInputRef.current) cityInputRef.current.value = '';
     setRoomsInput('');
     setMinPriceInput(PRICE_SLIDER_MIN);
     setMaxPriceInput(PRICE_SLIDER_MAX);
@@ -415,7 +417,9 @@ const PropertyList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCitySearch(cityInput);
+    const nextCityValue = cityInputRef.current ? cityInputRef.current.value : cityInput;
+    setCityInput(nextCityValue);
+    setCitySearch(nextCityValue);
     setRoomsSearch(roomsInput);
     setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
     setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
@@ -666,9 +670,11 @@ const PropertyList = () => {
             <div className="input-field search-input">
               <label>City</label>
               <input
+                ref={cityInputRef}
                 type="text"
                 placeholder="e.g. Tel Aviv"
-                value={cityInput}
+                defaultValue={cityInput}
+                onInput={handleCityChange}
                 onChange={handleCityChange}
                 autoComplete="off"
               />
