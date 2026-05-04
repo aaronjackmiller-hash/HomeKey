@@ -6,10 +6,37 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
-const MARKER_IMAGE_SIZE = 34;
-const MARKER_FRAME_DIAMETER = 46;
-const MARKER_FRAME_STROKE_PX = 2.5;
 const PAN_STEP_PX = 130;
+const MARKER_STYLE_PRESETS = {
+  minimal: {
+    label: 'Minimal',
+    imageSize: 26,
+    frameDiameter: 36,
+    frameStrokePx: 1.8,
+    frameStrokeColor: '#94a3b8',
+    frameFillColor: '#ffffff',
+    frameFillOpacity: 0.96,
+  },
+  medium: {
+    label: 'Medium',
+    imageSize: 34,
+    frameDiameter: 46,
+    frameStrokePx: 2.5,
+    frameStrokeColor: '#0e8a88',
+    frameFillColor: '#ffffff',
+    frameFillOpacity: 0.98,
+  },
+  bold: {
+    label: 'Bold',
+    imageSize: 40,
+    frameDiameter: 54,
+    frameStrokePx: 3.4,
+    frameStrokeColor: '#0f766e',
+    frameFillColor: '#ecfeff',
+    frameFillOpacity: 1,
+  },
+};
+const DEFAULT_MARKER_PRESET_KEY = 'medium';
 
 let googleMapsLoadPromise;
 
@@ -115,20 +142,23 @@ const getMarkerImageUrl = (property, propertyId) => {
   return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/120/120`;
 };
 
-const createPhotoMarkerIcon = (mapsApi, imageUrl) => ({
+const getMarkerStylePreset = (presetKey) =>
+  MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
+
+const createPhotoMarkerIcon = (mapsApi, imageUrl, preset) => ({
   url: imageUrl,
-  scaledSize: new mapsApi.Size(MARKER_IMAGE_SIZE, MARKER_IMAGE_SIZE),
-  anchor: new mapsApi.Point(MARKER_IMAGE_SIZE / 2, MARKER_IMAGE_SIZE / 2),
+  scaledSize: new mapsApi.Size(preset.imageSize, preset.imageSize),
+  anchor: new mapsApi.Point(preset.imageSize / 2, preset.imageSize / 2),
 });
 
-const createPhotoMarkerFrameIcon = (mapsApi) => ({
+const createPhotoMarkerFrameIcon = (mapsApi, preset) => ({
   path: mapsApi.SymbolPath.CIRCLE,
-  scale: MARKER_FRAME_DIAMETER / 2,
-  fillColor: '#ffffff',
-  fillOpacity: 0.98,
-  strokeColor: '#0e8a88',
+  scale: preset.frameDiameter / 2,
+  fillColor: preset.frameFillColor,
+  fillOpacity: preset.frameFillOpacity,
+  strokeColor: preset.frameStrokeColor,
   strokeOpacity: 1,
-  strokeWeight: MARKER_FRAME_STROKE_PX,
+  strokeWeight: preset.frameStrokePx,
 });
 
 const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
@@ -150,6 +180,8 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [markerPresetKey, setMarkerPresetKey] = useState(DEFAULT_MARKER_PRESET_KEY);
+  const markerPreset = getMarkerStylePreset(markerPresetKey);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -316,7 +348,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         const frameMarker = new mapsApi.Marker({
           map,
           position: coords,
-          icon: createPhotoMarkerFrameIcon(mapsApi),
+          icon: createPhotoMarkerFrameIcon(mapsApi, markerPreset),
           clickable: false,
           zIndex: 1,
           optimized: true,
@@ -328,7 +360,8 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           title: safeText(item.property.title) || item.addressQuery,
           icon: createPhotoMarkerIcon(
             mapsApi,
-            getMarkerImageUrl(item.property, item.propertyId)
+            getMarkerImageUrl(item.property, item.propertyId),
+            markerPreset
           ),
           zIndex: 2,
           optimized: true,
@@ -386,7 +419,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       });
       markerEntriesRef.current = [];
     };
-  }, [mapReady, propertiesWithAddress]);
+  }, [mapReady, propertiesWithAddress, markerPresetKey]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
@@ -554,6 +587,19 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
         >
           Clear area
         </button>
+        <div className="map-marker-presets" role="group" aria-label="Map marker style presets">
+          {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, presetConfig]) => (
+            <button
+              key={presetKey}
+              type="button"
+              className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
+              onClick={() => setMarkerPresetKey(presetKey)}
+              aria-pressed={markerPresetKey === presetKey}
+            >
+              {presetConfig.label}
+            </button>
+          ))}
+        </div>
       </div>
       <p className="google-listings-map-caption">
         {circleRadiusMeters > 0
