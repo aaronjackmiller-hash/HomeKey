@@ -371,14 +371,19 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           const title = safeText(item.property.title) || 'Property listing';
           const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
           const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
+          const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
           const safeTitle = escapeHtml(title);
           const safeAddress = escapeHtml(item.addressQuery);
           const safePrice = escapeHtml(price);
           const safeImageUrl = escapeHtml(markerImageUrl);
+          const safeListingHref = escapeHtml(listingHref);
           infoWindow.setContent(
             `<div style="min-width:220px">
-              <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
-              <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
+              <a href="${safeListingHref}" style="display:block;color:inherit;text-decoration:none;">
+                <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
+                <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
+                <div style="margin-top:8px;color:#0e8a88;font-weight:700;">View full listing ›</div>
+              </a>
             </div>`
           );
           infoWindow.open(map, marker);
