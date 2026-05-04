@@ -9,6 +9,7 @@ const EARTH_RADIUS_METERS = 6371000;
 const MARKER_IMAGE_SIZE = 34;
 const MARKER_FRAME_DIAMETER = 46;
 const MARKER_FRAME_STROKE_PX = 2.5;
+const PAN_STEP_PX = 130;
 
 let googleMapsLoadPromise;
 
@@ -255,6 +256,9 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
+            keyboardShortcuts: true,
+            gestureHandling: 'greedy',
+            cameraControl: false,
           });
           geocoderRef.current = new mapsApi.Geocoder();
           infoWindowRef.current = new mapsApi.InfoWindow();
@@ -490,9 +494,50 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
     return <div className="google-listings-map-note">{mapError}</div>;
   }
 
+  const panMapBy = (x, y) => {
+    if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
+    mapRef.current.panBy(x, y);
+  };
+
   return (
     <div className="google-listings-map-shell">
-      <div ref={mapContainerRef} className="google-listings-map-canvas" />
+      <div className="google-listings-map-canvas-wrap">
+        <div ref={mapContainerRef} className="google-listings-map-canvas" />
+        <div className="google-listings-map-pan-controls" aria-label="Pan map">
+          <button
+            type="button"
+            className="google-listings-map-pan-btn up"
+            onClick={() => panMapBy(0, -PAN_STEP_PX)}
+            aria-label="Pan up"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            className="google-listings-map-pan-btn left"
+            onClick={() => panMapBy(-PAN_STEP_PX, 0)}
+            aria-label="Pan left"
+          >
+            ◀
+          </button>
+          <button
+            type="button"
+            className="google-listings-map-pan-btn right"
+            onClick={() => panMapBy(PAN_STEP_PX, 0)}
+            aria-label="Pan right"
+          >
+            ▶
+          </button>
+          <button
+            type="button"
+            className="google-listings-map-pan-btn down"
+            onClick={() => panMapBy(0, PAN_STEP_PX)}
+            aria-label="Pan down"
+          >
+            ▼
+          </button>
+        </div>
+      </div>
       <div className="google-listings-map-toolbar">
         <button
           type="button"
