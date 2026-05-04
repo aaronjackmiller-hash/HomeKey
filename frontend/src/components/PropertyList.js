@@ -15,7 +15,6 @@ import {
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
-const SEARCH_DEBOUNCE_MS = 400;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
@@ -227,7 +226,6 @@ const PropertyList = () => {
   const [clearCircleSignal, setClearCircleSignal] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
-  const debounceRef = useRef(null);
   const history = useHistory();
 
   // Clear any pending auto-retry timers
@@ -236,12 +234,9 @@ const PropertyList = () => {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
   };
 
-  // Debounce input changes so the API is not called on every keystroke
+  // Keep city input fully responsive while search executes on explicit submit.
   const handleCityChange = (e) => {
-    const val = e.target.value;
-    setCityInput(val);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setCitySearch(val), SEARCH_DEBOUNCE_MS);
+    setCityInput(e.target.value);
   };
 
   const handleRoomsChange = (e) => {
@@ -261,7 +256,6 @@ const PropertyList = () => {
   };
 
   const handleClear = () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
     setCityInput('');
     setRoomsInput('');
     setMinPriceInput(PRICE_SLIDER_MIN);
@@ -421,8 +415,6 @@ const PropertyList = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Flush any pending debounce immediately on explicit Search button click
-    if (debounceRef.current) clearTimeout(debounceRef.current);
     setCitySearch(cityInput);
     setRoomsSearch(roomsInput);
     setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
@@ -678,6 +670,7 @@ const PropertyList = () => {
                 placeholder="e.g. Tel Aviv"
                 value={cityInput}
                 onChange={handleCityChange}
+                autoComplete="off"
               />
             </div>
             <div className="input-field search-input rooms-input">
