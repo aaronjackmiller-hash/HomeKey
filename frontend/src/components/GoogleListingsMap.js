@@ -8,8 +8,19 @@ const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
 const MARKER_STYLE_PRESETS = {
+  house: {
+    label: 'House Pins',
+    markerMode: 'house',
+    iconWidth: 34,
+    iconHeight: 46,
+    pinColor: '#0e8a88',
+    pinStrokeColor: '#0f766e',
+    homeColor: '#ffffff',
+    homeStrokeColor: '#0f172a',
+  },
   minimal: {
     label: 'Minimal',
+    markerMode: 'photo',
     imageSize: 26,
     frameDiameter: 36,
     frameStrokePx: 1.8,
@@ -19,6 +30,7 @@ const MARKER_STYLE_PRESETS = {
   },
   medium: {
     label: 'Medium',
+    markerMode: 'photo',
     imageSize: 34,
     frameDiameter: 46,
     frameStrokePx: 2.5,
@@ -28,6 +40,7 @@ const MARKER_STYLE_PRESETS = {
   },
   bold: {
     label: 'Bold',
+    markerMode: 'photo',
     imageSize: 40,
     frameDiameter: 54,
     frameStrokePx: 3.4,
@@ -36,7 +49,7 @@ const MARKER_STYLE_PRESETS = {
     frameFillOpacity: 1,
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'medium';
+const DEFAULT_MARKER_PRESET_KEY = 'house';
 
 let googleMapsLoadPromise;
 
@@ -160,6 +173,29 @@ const createPhotoMarkerFrameIcon = (mapsApi, preset) => ({
   strokeOpacity: 1,
   strokeWeight: preset.frameStrokePx,
 });
+
+const createHousePinIcon = (mapsApi, preset) => {
+  const iconWidth = Number(preset.iconWidth) || 34;
+  const iconHeight = Number(preset.iconHeight) || 46;
+  const pinColor = preset.pinColor || '#0e8a88';
+  const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
+  const homeColor = preset.homeColor || '#ffffff';
+  const homeStrokeColor = preset.homeStrokeColor || '#0f172a';
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48">
+      <path d="M18 1.5C9.44 1.5 2.5 8.44 2.5 17c0 10.81 11.55 23.84 14.09 26.58.77.82 2.05.82 2.82 0C21.95 40.84 33.5 27.81 33.5 17 33.5 8.44 26.56 1.5 18 1.5Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.5"/>
+      <circle cx="18" cy="17" r="9.25" fill="${homeColor}" />
+      <path d="M11.5 19.2 18 13.9l6.5 5.3" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13.2 18.8V24.3h9.6v-5.5" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M17 24.3v-3.2h2v3.2" fill="none" stroke="${homeStrokeColor}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new mapsApi.Size(iconWidth, iconHeight),
+    anchor: new mapsApi.Point(iconWidth / 2, iconHeight),
+  };
+};
 
 const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
@@ -345,24 +381,31 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           await new Promise((resolve) => setTimeout(resolve, 80));
         }
 
-        const frameMarker = new mapsApi.Marker({
-          map,
-          position: coords,
-          icon: createPhotoMarkerFrameIcon(mapsApi, markerPreset),
-          clickable: false,
-          zIndex: 1,
-          optimized: true,
-        });
+        const isHousePinPreset = markerPreset.markerMode === 'house';
+        const frameMarker = isHousePinPreset
+          ? null
+          : new mapsApi.Marker({
+            map,
+            position: coords,
+            icon: createPhotoMarkerFrameIcon(mapsApi, markerPreset),
+            clickable: false,
+            zIndex: 1,
+            optimized: true,
+          });
+
+        const markerIcon = isHousePinPreset
+          ? createHousePinIcon(mapsApi, markerPreset)
+          : createPhotoMarkerIcon(
+            mapsApi,
+            getMarkerImageUrl(item.property, item.propertyId),
+            markerPreset
+          );
 
         const marker = new mapsApi.Marker({
           map,
           position: coords,
           title: safeText(item.property.title) || item.addressQuery,
-          icon: createPhotoMarkerIcon(
-            mapsApi,
-            getMarkerImageUrl(item.property, item.propertyId),
-            markerPreset
-          ),
+          icon: markerIcon,
           zIndex: 2,
           optimized: true,
         });
