@@ -11,42 +11,38 @@ const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
     markerMode: 'house',
-    iconWidth: 22,
-    iconHeight: 30,
+    iconWidth: 19,
+    iconHeight: 27,
     pinColor: '#0e8a88',
     pinStrokeColor: '#0f766e',
-    homeColor: '#ffffff',
-    homeStrokeColor: '#0f172a',
+    homeStrokeColor: '#ffffff',
   },
   minimal: {
     label: 'Minimal',
     markerMode: 'house',
-    iconWidth: 18,
-    iconHeight: 24,
+    iconWidth: 16,
+    iconHeight: 23,
     pinColor: '#94a3b8',
     pinStrokeColor: '#64748b',
-    homeColor: '#ffffff',
-    homeStrokeColor: '#334155',
+    homeStrokeColor: '#ffffff',
   },
   medium: {
     label: 'Medium',
     markerMode: 'house',
-    iconWidth: 22,
-    iconHeight: 30,
+    iconWidth: 19,
+    iconHeight: 27,
     pinColor: '#0e8a88',
     pinStrokeColor: '#0f766e',
-    homeColor: '#ffffff',
-    homeStrokeColor: '#0f172a',
+    homeStrokeColor: '#ffffff',
   },
   bold: {
     label: 'Bold',
     markerMode: 'house',
-    iconWidth: 26,
-    iconHeight: 36,
+    iconWidth: 22,
+    iconHeight: 31,
     pinColor: '#0f766e',
     pinStrokeColor: '#0f172a',
-    homeColor: '#ecfeff',
-    homeStrokeColor: '#082f49',
+    homeStrokeColor: '#ecfeff',
   },
 };
 const DEFAULT_MARKER_PRESET_KEY = 'medium';
@@ -175,19 +171,17 @@ const createPhotoMarkerFrameIcon = (mapsApi, preset) => ({
 });
 
 const createHousePinIcon = (mapsApi, preset) => {
-  const iconWidth = Number(preset.iconWidth) || 22;
-  const iconHeight = Number(preset.iconHeight) || 30;
+  const iconWidth = Number(preset.iconWidth) || 19;
+  const iconHeight = Number(preset.iconHeight) || 27;
   const pinColor = preset.pinColor || '#0e8a88';
   const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
-  const homeColor = preset.homeColor || '#ffffff';
-  const homeStrokeColor = preset.homeStrokeColor || '#0f172a';
+  const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44">
-      <path d="M18 2.2C10.3 2.2 4.1 8.4 4.1 16.1c0 9.5 9.4 20.1 12.8 23.7.6.7 1.6.7 2.2 0 3.4-3.6 12.8-14.2 12.8-23.7C31.9 8.4 25.7 2.2 18 2.2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.5"/>
-      <circle cx="18" cy="16.1" r="8.1" fill="${homeColor}" />
-      <path d="M12.5 17.6 18 13l5.5 4.6" fill="none" stroke="${homeStrokeColor}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M14.1 17.3v5.1h7.8v-5.1" fill="none" stroke="${homeStrokeColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M17 22.4v-2.9h2v2.9" fill="none" stroke="${homeStrokeColor}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32">
+      <path d="M12 1.2C6.03 1.2 1.2 6.03 1.2 12c0 7.63 8.28 16.98 9.93 18.76.47.52 1.27.52 1.74 0C14.52 28.98 22.8 19.63 22.8 12 22.8 6.03 17.97 1.2 12 1.2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.4"/>
+      <path d="M7.55 13.4 12 9.75l4.45 3.65" fill="none" stroke="${homeStrokeColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M8.75 13.15v4.75h6.5v-4.75" fill="none" stroke="${homeStrokeColor}" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M11.2 17.9v-2.45h1.6v2.45" fill="none" stroke="${homeStrokeColor}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   `;
   return {
