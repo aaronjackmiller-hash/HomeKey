@@ -6,6 +6,9 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
+const MARKER_IMAGE_SIZE = 34;
+const MARKER_FRAME_DIAMETER = 46;
+const MARKER_FRAME_STROKE_PX = 2.5;
 
 let googleMapsLoadPromise;
 
@@ -104,6 +107,29 @@ const getDistanceMeters = (startPoint, endPoint) => {
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
+const getMarkerImageUrl = (property, propertyId) => {
+  const propertyImages = property && Array.isArray(property.images) ? property.images : [];
+  const firstImage = propertyImages.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
+  if (firstImage) return firstImage.trim();
+  return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/120/120`;
+};
+
+const createPhotoMarkerIcon = (mapsApi, imageUrl) => ({
+  url: imageUrl,
+  scaledSize: new mapsApi.Size(MARKER_IMAGE_SIZE, MARKER_IMAGE_SIZE),
+  anchor: new mapsApi.Point(MARKER_IMAGE_SIZE / 2, MARKER_IMAGE_SIZE / 2),
+});
+
+const createPhotoMarkerFrameIcon = (mapsApi) => ({
+  path: mapsApi.SymbolPath.CIRCLE,
+  scale: MARKER_FRAME_DIAMETER / 2,
+  fillColor: '#ffffff',
+  fillOpacity: 0.98,
+  strokeColor: '#0e8a88',
+  strokeOpacity: 1,
+  strokeWeight: MARKER_FRAME_STROKE_PX,
+});
+
 const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
@@ -164,6 +190,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       const isVisible = !hasAreaFilter
         || getDistanceMeters(entry.coords, centerPoint) <= radiusMeters;
       entry.marker.setVisible(isVisible);
+      if (entry.frameMarker) entry.frameMarker.setVisible(isVisible);
       if (isVisible) {
         visibleMarkers += 1;
         selectedPropertyIds.push(entry.propertyId);
@@ -249,7 +276,10 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
 
     let cancelled = false;
 
-    markerEntriesRef.current.forEach((entry) => entry.marker.setMap(null));
+    markerEntriesRef.current.forEach((entry) => {
+      entry.marker.setMap(null);
+      if (entry.frameMarker) entry.frameMarker.setMap(null);
+    });
     markerEntriesRef.current = [];
     setMarkerCount(0);
     setTotalMarkerCount(0);
@@ -279,26 +309,47 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
           await new Promise((resolve) => setTimeout(resolve, 80));
         }
 
+        const frameMarker = new mapsApi.Marker({
+          map,
+          position: coords,
+          icon: createPhotoMarkerFrameIcon(mapsApi),
+          clickable: false,
+          zIndex: 1,
+          optimized: true,
+        });
+
         const marker = new mapsApi.Marker({
           map,
           position: coords,
           title: safeText(item.property.title) || item.addressQuery,
+          icon: createPhotoMarkerIcon(
+            mapsApi,
+            getMarkerImageUrl(item.property, item.propertyId)
+          ),
+          zIndex: 2,
+          optimized: true,
         });
 
         marker.addListener('click', () => {
           const title = safeText(item.property.title) || 'Property listing';
           const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
+          const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
           const safeTitle = escapeHtml(title);
           const safeAddress = escapeHtml(item.addressQuery);
           const safePrice = escapeHtml(price);
+          const safeImageUrl = escapeHtml(markerImageUrl);
           infoWindow.setContent(
-            `<div style="min-width:180px"><strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span></div>`
+            `<div style="min-width:220px">
+              <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
+              <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
+            </div>`
           );
           infoWindow.open(map, marker);
         });
 
         markerEntriesRef.current.push({
           marker,
+          frameMarker,
           propertyId: String(item.propertyId),
           coords,
         });
@@ -325,7 +376,10 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
 
     return () => {
       cancelled = true;
-      markerEntriesRef.current.forEach((entry) => entry.marker.setMap(null));
+      markerEntriesRef.current.forEach((entry) => {
+        entry.marker.setMap(null);
+        if (entry.frameMarker) entry.frameMarker.setMap(null);
+      });
       markerEntriesRef.current = [];
     };
   }, [mapReady, propertiesWithAddress]);
