@@ -177,17 +177,15 @@ const createHousePinIcon = (mapsApi, preset) => {
   const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
   const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32">
-      <path d="M12 1.2C6.03 1.2 1.2 6.03 1.2 12c0 7.63 8.28 16.98 9.93 18.76.47.52 1.27.52 1.74 0C14.52 28.98 22.8 19.63 22.8 12 22.8 6.03 17.97 1.2 12 1.2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1.4"/>
-      <path d="M7.55 13.4 12 9.75l4.45 3.65" fill="none" stroke="${homeStrokeColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M8.75 13.15v4.75h6.5v-4.75" fill="none" stroke="${homeStrokeColor}" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M11.2 17.9v-2.45h1.6v2.45" fill="none" stroke="${homeStrokeColor}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M12 2L1 10.5H5V22H19V10.5H23L12 2Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+      <rect x="9" y="15.5" width="6" height="6.5" fill="${homeStrokeColor}" rx="0.5"/>
     </svg>
   `;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new mapsApi.Size(iconWidth, iconHeight),
-    anchor: new mapsApi.Point(iconWidth / 2, iconHeight - 1),
+    anchor: new mapsApi.Point(iconWidth / 2, iconHeight),
   };
 };
 
