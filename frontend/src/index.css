@@ -1080,9 +1080,9 @@ a {
 }
 
 .image-lightbox-image-media .homekey-logo-lockup-image {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  transform: scale(1.14);
+  transform: none;
 }
 
 .image-lightbox-nav {
