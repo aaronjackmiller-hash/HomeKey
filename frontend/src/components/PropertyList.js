@@ -5,10 +5,6 @@ import HomeKeyLogoBadge, { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
-  isFavoriteProperty,
-  isSavedProperty,
-  toggleFavoriteProperty,
-  toggleSavedProperty,
   getInterestSummary,
 } from '../utils/propertyInterest';
 
@@ -23,6 +19,22 @@ const ROOM_OPTIONS = ['', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
   return `₪${Number(value).toLocaleString()}`;
+};
+
+const normalizePhoneForLinks = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const cleaned = raw.replace(/[^\d+]/g, '');
+  if (!cleaned) return '';
+  if (cleaned.startsWith('+')) return cleaned.slice(1);
+  if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
+  return cleaned;
+};
+
+const buildWhatsAppHref = (phone, title = 'this listing') => {
+  const normalizedPhone = normalizePhoneForLinks(phone);
+  if (!normalizedPhone) return '';
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
 };
 
 const formatTimestamp = (isoValue) => {
@@ -130,6 +142,27 @@ const getAddressDisplay = (address = {}) => {
   return { street, fullAddress, locationLine: locationParts.join(', ') };
 };
 
+const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
+  const externalContact = property.externalContact && typeof property.externalContact === 'object'
+    ? property.externalContact
+    : {};
+  const directContact = property.contact && typeof property.contact === 'object'
+    ? property.contact
+    : {};
+  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+    ? property.agent
+    : {};
+  const rawPhone = safeText(
+    externalContact.whatsapp
+      || directContact.whatsapp
+      || agentContact.whatsapp
+      || externalContact.phone
+      || directContact.phone
+      || agentContact.phone
+  );
+  return buildWhatsAppHref(rawPhone, title);
+};
+
 const removeYad2ImageLogo = (url, sourceType = '') => {
   const source = String(url || '').trim();
   if (!source) return source;
@@ -223,7 +256,6 @@ const PropertyList = () => {
   const [liveSyncStatus, setLiveSyncStatus] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
-  const [interestVersion, setInterestVersion] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [priceExpanded, setPriceExpanded] = useState(false);
   const [circleSelection, setCircleSelection] = useState({
@@ -455,22 +487,6 @@ const PropertyList = () => {
     setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
   };
 
-  const handleToggleInterest = (event, mode, property) => {
-    event.stopPropagation();
-    event.preventDefault();
-    if (!property || typeof property !== 'object') return;
-    const propertyId = property._id || property.id;
-    if (!propertyId) return;
-    if (mode === 'favorite') {
-      toggleFavoriteProperty(property);
-    } else {
-      toggleSavedProperty(property);
-    }
-    setInterestVersion((value) => value + 1);
-  };
-
-  // Recompute summary when local interest toggles change.
-  void interestVersion;
   const interestSummary = getInterestSummary();
   const favoritesCount = interestSummary.favoriteIds.length;
   const savedCount = interestSummary.savedIds.length;
@@ -627,8 +643,6 @@ const PropertyList = () => {
           const canOpenDetail = Boolean(propertyId);
           const isYad2Media = isYad2LikeListing(property);
           const key = propertyId || `property-${index}`;
-          const favoriteActive = isFavoriteProperty(propertyId);
-          const savedActive = isSavedProperty(propertyId);
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
@@ -642,11 +656,16 @@ const PropertyList = () => {
             && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
           );
           const monthly = property.financialDetails?.totalMonthlyPayment;
+          const cardWhatsAppHref = getPropertyWhatsAppHref(property, displayTitle);
+          const openPropertyDetail = () => {
+            if (!canOpenDetail) return;
+            history.push(`/properties/${propertyId}`, { previewProperty: property });
+          };
           return (
             <div
               key={key}
               className={`property-card ${canOpenDetail ? 'is-clickable' : ''}`}
-              onClick={() => canOpenDetail && history.push(`/properties/${propertyId}`, { previewProperty: property })}
+              onClick={openPropertyDetail}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
               <div className="property-card-image-wrap">
@@ -661,28 +680,61 @@ const PropertyList = () => {
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                 {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
-                <div className="property-interest-actions">
+                <p className="property-card-price">{formatCurrency(property.price)}</p>
+                <div className="property-card-stats" aria-label="Property highlights">
+                  <span className="property-card-stat">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 12.4V8.9A1.9 1.9 0 0 1 4.9 7h14.2A1.9 1.9 0 0 1 21 8.9v3.5" />
+                      <path d="M3 12.4h18V17H3z" />
+                      <path d="M6 10h4.8v2.4H6z" />
+                      <path d="M13.2 10H18v2.4h-4.8z" />
+                      <path d="M4.2 17v1.8M19.8 17v1.8" />
+                    </svg>
+                    <span>{property.bedrooms ?? '—'} Beds</span>
+                  </span>
+                  <span className="property-card-stat">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M5 12h14v4.4A3.6 3.6 0 0 1 15.4 20H8.6A3.6 3.6 0 0 1 5 16.4V12Z" />
+                      <path d="M8 12V8.8A2.8 2.8 0 0 1 10.8 6h1.6a1.6 1.6 0 0 1 0 3.2h-1" />
+                      <path d="M7.2 20v1.4M16.8 20v1.4" />
+                      <path d="M16.8 9.3l1.6 1.6M18.4 9.3l-1.6 1.6" />
+                    </svg>
+                    <span>{property.bathrooms ?? '—'} Baths</span>
+                  </span>
+                  <span className="property-card-stat">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M4 4h7v3h3V4h6v16h-6v-4h-4v4H4z" />
+                      <path d="M11 4v5h3" />
+                      <path d="M10 16v-3h4" />
+                    </svg>
+                    <span>{property.size ?? '—'} sqm</span>
+                  </span>
+                </div>
+                <div className="property-card-actions">
                   <button
                     type="button"
-                    className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
-                    onClick={(event) => handleToggleInterest(event, 'favorite', property)}
-                    aria-pressed={favoriteActive}
+                    className="property-card-action-btn property-card-action-btn--outline"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openPropertyDetail();
+                    }}
+                    disabled={!canOpenDetail}
                   >
-                    {favoriteActive ? 'Favorited' : 'Favorite'}
+                    View Details
                   </button>
                   <button
                     type="button"
-                    className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
-                    onClick={(event) => handleToggleInterest(event, 'saved', property)}
-                    aria-pressed={savedActive}
+                    className="property-card-action-btn property-card-action-btn--charcoal"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (!cardWhatsAppHref || typeof window === 'undefined') return;
+                      window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                    }}
+                    disabled={!cardWhatsAppHref}
                   >
-                    {savedActive ? 'Saved' : 'Save'}
+                    WhatsApp Agent
                   </button>
                 </div>
-                <p className="property-card-price">{formatCurrency(property.price)}</p>
-                <p className="property-card-stats">
-                  {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
-                </p>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
                 )}

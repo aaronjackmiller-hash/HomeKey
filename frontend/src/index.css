@@ -430,7 +430,9 @@ a {
 
 .property-card-price {
   margin: 0 0 8px;
-  font-size: 1.15rem;
+  font-size: 1.48rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--hk-brand-charcoal);
 }
 
@@ -450,9 +452,86 @@ a {
 }
 
 .property-card-stats {
-  margin: 0;
-  font-size: 0.92rem;
-  color: #334155;
+  margin: 0 0 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.property-card-stat {
+  min-height: 42px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.property-card-stat svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.property-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.property-card-action-btn {
+  flex: 1 1 0;
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.property-card-action-btn--outline {
+  border: 1px solid #1f2937;
+  background: #ffffff;
+  color: #111827;
+}
+
+.property-card-action-btn--outline:hover {
+  background: #f8fafc;
+}
+
+.property-card-action-btn--charcoal {
+  border: 1px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.property-card-action-btn--charcoal:hover {
+  border-color: #000000;
+  background: #000000;
+}
+
+.property-card-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.property-card-action-btn:disabled:hover {
+  border-color: inherit;
+  background: inherit;
 }
 
 .property-interest-actions {
@@ -2219,6 +2298,7 @@ legend {
 }
 
 .property-list-page .property-card {
+  background: #ffffff;
   border-color: #d5dfeb;
   border-radius: var(--hk-radius-container);
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
@@ -2234,41 +2314,44 @@ legend {
 }
 
 .property-list-page .property-card-body {
-  padding: 11px 12px 12px;
+  padding: 12px;
 }
 
 .property-list-page .property-card-title {
-  margin: 0 0 8px;
-  font-size: 2rem;
-  line-height: 1.15;
+  margin: 0 0 6px;
+  font-size: 1.22rem;
+  line-height: 1.2;
 }
 
 .property-list-page .property-card-location {
-  display: none;
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 0.88rem;
+  min-height: 18px;
 }
 
 .property-list-page .property-card-price {
-  margin: 0 0 6px;
-  font-size: 1.95rem;
+  margin: 0 0 10px;
+  font-size: 1.78rem;
   color: var(--hk-brand-charcoal);
-  font-weight: 700;
-}
-
-.property-list-page .property-interest-actions {
-  margin: 0 0 8px;
-}
-
-.property-list-page .property-interest-btn {
-  border-color: #c6d5e8;
-  color: #1f4f8d;
-  background: #ffffff;
-  padding: 5px 13px;
-  font-size: 0.9rem;
+  font-weight: 900;
 }
 
 .property-list-page .property-card-stats {
-  margin: 0;
-  font-size: 0.96rem;
+  margin: 0 0 12px;
+}
+
+.property-list-page .property-card-stat {
+  min-height: 44px;
+  font-size: 0.8rem;
+}
+
+.property-list-page .property-card-action-btn {
+  min-height: 40px;
+  font-size: 0.86rem;
+}
+
+.property-list-page .property-card-stats {
   color: #223a59;
 }
 
@@ -2278,11 +2361,11 @@ legend {
 
 @media (max-width: 1200px) {
   .property-list-page .property-card-title {
-    font-size: 1.65rem;
+    font-size: 1.15rem;
   }
 
   .property-list-page .property-card-price {
-    font-size: 1.5rem;
+    font-size: 1.55rem;
   }
 }
 
@@ -2379,11 +2462,20 @@ legend {
   }
 
   .property-list-page .property-card-title {
-    font-size: 1.5rem;
+    font-size: 1.08rem;
   }
 
   .property-list-page .property-card-price {
-    font-size: 1.45rem;
+    font-size: 1.4rem;
+  }
+
+  .property-list-page .property-card-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .property-list-page .property-card-stat {
+    justify-content: flex-start;
+    padding-left: 10px;
   }
 
   .property-list-page .google-listings-map-canvas {
