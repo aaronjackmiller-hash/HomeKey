@@ -272,6 +272,8 @@ const PropertyList = () => {
   const history = useHistory();
   const [isListScrolling, setIsListScrolling] = useState(false);
   const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
+  const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
+  const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -546,6 +548,19 @@ const PropertyList = () => {
       return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
     });
   }, [circleSelection.active, circlePropertyIdSet, mapSourceProperties]);
+  const mobileWhatsAppHref = useMemo(() => {
+    for (const property of mapSourceProperties) {
+      if (!property || typeof property !== 'object') continue;
+      const { street } = getAddressDisplay(property.address || {});
+      const displayTitle =
+        sanitizeReadableText(property, street)
+        || sanitizeReadableText(property, property.title)
+        || 'this listing';
+      const whatsappHref = getPropertyWhatsAppHref(property, displayTitle);
+      if (whatsappHref) return whatsappHref;
+    }
+    return '';
+  }, [mapSourceProperties]);
 
   const handleCircleSelectionChange = useCallback((selection) => {
     const nextSelection = (!selection || typeof selection !== 'object')
@@ -885,26 +900,54 @@ const PropertyList = () => {
               properties={loading ? [] : mapSourceProperties}
               onCircleSelectionChange={handleCircleSelectionChange}
               clearSignal={clearCircleSignal}
+              drawModeToggleSignal={drawModeToggleSignal}
+              onDrawModeChange={setIsMapDrawModeActive}
             />
           </section>
         </div>
       </section>
-      <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
+      <div className="mobile-thumb-zone-controls" aria-label="Thumb-zone map controls">
         <button
           type="button"
-          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
-          onClick={() => setMobileDiscoveryView('map')}
-          aria-pressed={mobileDiscoveryView === 'map'}
+          className="mobile-thumb-zone-fab mobile-thumb-zone-fab--whatsapp"
+          onClick={() => {
+            if (!mobileWhatsAppHref || typeof window === 'undefined') return;
+            window.open(mobileWhatsAppHref, '_blank', 'noopener,noreferrer');
+          }}
+          disabled={!mobileWhatsAppHref}
+          aria-label="Open WhatsApp chat for a listing"
         >
-          Map View
+          WA
         </button>
+        <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
+          <button
+            type="button"
+            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
+            onClick={() => setMobileDiscoveryView('map')}
+            aria-pressed={mobileDiscoveryView === 'map'}
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
+            onClick={() => setMobileDiscoveryView('list')}
+            aria-pressed={mobileDiscoveryView === 'list'}
+          >
+            List
+          </button>
+        </div>
         <button
           type="button"
-          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
-          onClick={() => setMobileDiscoveryView('list')}
-          aria-pressed={mobileDiscoveryView === 'list'}
+          className={`mobile-thumb-zone-fab mobile-thumb-zone-fab--draw ${isMapDrawModeActive ? 'is-active' : ''}`}
+          onClick={() => {
+            setMobileDiscoveryView('map');
+            setDrawModeToggleSignal((value) => value + 1);
+          }}
+          aria-label="Toggle draw mode on map"
+          aria-pressed={isMapDrawModeActive}
         >
-          List View
+          Draw
         </button>
       </div>
     </div>
