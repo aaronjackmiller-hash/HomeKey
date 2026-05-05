@@ -1,36 +1,27 @@
 import React from 'react';
-import { Link, useHistory } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 
 const Navbar = () => {
-  const { isAuthenticated, user, logout } = useAuth();
-  const history = useHistory();
-
-  const handleLogout = () => {
-    logout();
-    history.push('/login');
-  };
-
   return (
-    <nav className="site-nav">
-      <div className="site-nav__inner">
-        <Link to="/" className="site-nav__brand">HomeKey</Link>
-        <div className="site-nav__links">
-          {isAuthenticated ? (
-            <>
-              <Link to="/add-listing" className="site-nav__link">Add Listing</Link>
-              <Link to="/admin/import-yad2" className="site-nav__link">Import Yad2</Link>
-              <span className="site-nav__welcome">Hi, {user?.name || 'Agent'}</span>
-              <button onClick={handleLogout} className="site-nav__link site-nav__button" type="button">
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="site-nav__link">Sign In</Link>
-              <Link to="/register" className="site-nav__link site-nav__link--cta">Register</Link>
-            </>
-          )}
+    <nav className="premium-header" aria-label="Primary navigation">
+      <div className="premium-header__inner">
+        <Link to="/" className="premium-header__brand" aria-label="HomeKey home">
+          <HomeKeyLogoBadge compact className="premium-header__logo" ariaLabel="HomeKey H-with-keyhole logo" />
+        </Link>
+
+        <div className="premium-header__links">
+          <Link to="/" className="premium-header__link">Buy</Link>
+          <Link to="/" className="premium-header__link">Rent</Link>
+          <Link to="/" className="premium-header__link">Neighborhoods</Link>
+        </div>
+
+        <div className="premium-header__actions">
+          <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
+            <span className="premium-header__flag" aria-hidden="true">🇮🇱</span>
+            <span className="premium-header__language-text">EN</span>
+          </button>
+          <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
         </div>
       </div>
     </nav>
