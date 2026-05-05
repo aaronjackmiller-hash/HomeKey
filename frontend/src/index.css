@@ -2023,6 +2023,33 @@ legend {
   align-items: start;
 }
 
+.minimalist-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.minimalist-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.minimalist-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.minimalist-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.minimalist-scrollbar.is-scrolling {
+  scrollbar-color: rgba(148, 163, 184, 0.85) transparent;
+}
+
+.minimalist-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.85);
+}
+
 .desktop-discovery-list-column {
   min-width: 0;
   max-height: calc(100vh - 146px);
