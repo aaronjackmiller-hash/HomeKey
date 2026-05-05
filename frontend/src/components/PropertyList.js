@@ -14,7 +14,6 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
-const ROOM_OPTIONS = ['', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6+'];
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -241,7 +240,6 @@ const PropertyList = () => {
   const [filter, setFilter] = useState('all');
   // Local input values update instantly so typing is never interrupted
   const [cityInput, setCityInput] = useState('');
-  const [roomsInput, setRoomsInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState(PRICE_SLIDER_MIN);
   const [maxPriceInput, setMaxPriceInput] = useState(PRICE_SLIDER_MAX);
   // Debounced search values that actually trigger the API call
@@ -286,10 +284,6 @@ const PropertyList = () => {
     setCityInput(e.target.value);
   };
 
-  const handleRoomsChange = (e) => {
-    setRoomsInput(e.target.value);
-  };
-
   const handleMinPriceSliderChange = (e) => {
     const nextValue = clampPriceValue(e.target.value);
     const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
@@ -305,7 +299,6 @@ const PropertyList = () => {
   const handleClear = () => {
     setCityInput('');
     if (cityInputRef.current) cityInputRef.current.value = '';
-    setRoomsInput('');
     setMinPriceInput(PRICE_SLIDER_MIN);
     setMaxPriceInput(PRICE_SLIDER_MAX);
     setCitySearch('');
@@ -484,7 +477,7 @@ const PropertyList = () => {
     const nextCityValue = cityInputRef.current ? cityInputRef.current.value : cityInput;
     setCityInput(nextCityValue);
     setCitySearch(nextCityValue);
-    setRoomsSearch(roomsInput);
+    setRoomsSearch('');
     setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
     setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
   };
@@ -763,106 +756,6 @@ const PropertyList = () => {
 
   return (
     <div className="property-list-page">
-      <div className="homepage-hero-shell">
-        <section className="hero-banner">
-          <div className="hero-banner-grid">
-            <div className="hero-banner-copy">
-              <div className="hero-banner-copy-text">
-                <p className="hero-kicker">Beta Property Portal</p>
-                <h1>Find your next home in Israel</h1>
-              </div>
-              <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
-                <img className="homekey-logo-lockup-image" src={HOMEKEY_LOGO_SRC} alt="HomeKey logo" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="search-panel">
-          <form className="search-form" onSubmit={handleSearch}>
-            <div className="input-field search-input">
-              <label>City</label>
-              <input
-                ref={cityInputRef}
-                type="text"
-                placeholder="e.g. Tel Aviv"
-                defaultValue={cityInput}
-                onInput={handleCityChange}
-                onChange={handleCityChange}
-                autoComplete="off"
-              />
-            </div>
-            <div className="input-field search-input rooms-input">
-              <label>Rooms</label>
-              <select value={roomsInput} onChange={handleRoomsChange}>
-                {ROOM_OPTIONS.map((optionValue) => (
-                  <option key={optionValue || 'any'} value={optionValue}>
-                    {optionValue || 'Any'}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="input-field search-input price-slider-field">
-              <label>Price</label>
-              <button
-                type="button"
-                className="price-selector-toggle"
-                onClick={() => setPriceExpanded((value) => !value)}
-                aria-expanded={priceExpanded}
-                aria-controls="price-slider-panel"
-              >
-                <span className="price-selector-toggle-text">{getPriceSummaryLabel(minPriceInput, maxPriceInput)}</span>
-                <span className="price-selector-toggle-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
-              </button>
-              <div id="price-slider-panel" className={`price-slider-panel ${priceExpanded ? 'is-open' : ''}`}>
-                <div className="price-slider-values" aria-hidden="true">
-                  <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
-                  <span className="price-slider-separator">—</span>
-                  <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
-                </div>
-                <div
-                  className="price-slider-track-wrap"
-                  style={{
-                    '--min-price-percent': `${minSliderPercent}%`,
-                    '--max-price-percent': `${maxSliderPercent}%`,
-                  }}
-                >
-                  <input
-                    type="range"
-                    min={PRICE_SLIDER_MIN}
-                    max={PRICE_SLIDER_MAX}
-                    step={PRICE_SLIDER_STEP}
-                    value={minPriceInput}
-                    onChange={handleMinPriceSliderChange}
-                    className="price-slider price-slider--min"
-                    aria-label="Minimum price"
-                  />
-                  <input
-                    type="range"
-                    min={PRICE_SLIDER_MIN}
-                    max={PRICE_SLIDER_MAX}
-                    step={PRICE_SLIDER_STEP}
-                    value={maxPriceInput}
-                    onChange={handleMaxPriceSliderChange}
-                    className="price-slider price-slider--max"
-                    aria-label="Maximum price"
-                  />
-                </div>
-              </div>
-            </div>
-            <button type="submit" className="primary-btn search-btn">Search</button>
-            <button type="button" onClick={handleClear} className="secondary-btn search-btn">
-              Clear
-            </button>
-          </form>
-        </section>
-
-        <div className='tabs pill-tabs'>
-          <button className={filter === 'all' ? 'active-tab' : ''} onClick={() => setFilter('all')}>All</button>
-          <button className={filter === 'rental' ? 'active-tab' : ''} onClick={() => setFilter('rental')}>Rental</button>
-          <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
-        </div>
-      </div>
       <section
         className={`desktop-discovery-layout ${mobileDiscoveryView === 'list' ? 'mobile-list-active' : 'mobile-map-active'}`}
         aria-label="Listings and map layout"
@@ -871,6 +764,102 @@ const PropertyList = () => {
           className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
           onScroll={handleListScroll}
         >
+          <div className="homepage-hero-shell">
+            <section className="hero-banner">
+              <div className="hero-banner-grid">
+                <div className="hero-banner-copy">
+                  <div className="hero-banner-copy-text">
+                    <h1>Find Your Next Home in Israel.</h1>
+                  </div>
+                  <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
+                    <img className="homekey-logo-lockup-image" src={HOMEKEY_LOGO_SRC} alt="HomeKey logo" />
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section className="search-panel">
+              <form className="search-form" onSubmit={handleSearch}>
+                <div className="input-field search-input">
+                  <label>Location/City</label>
+                  <input
+                    ref={cityInputRef}
+                    type="text"
+                    placeholder="Location/City"
+                    defaultValue={cityInput}
+                    onInput={handleCityChange}
+                    onChange={handleCityChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="input-field search-input">
+                  <label>Property Type</label>
+                  <select value={filter} onChange={(event) => setFilter(event.target.value)}>
+                    <option value="all">Property Type</option>
+                    <option value="rental">Rent</option>
+                    <option value="sale">For Sale</option>
+                  </select>
+                </div>
+                <div className="input-field search-input price-slider-field">
+                  <label>Budget Range</label>
+                  <button
+                    type="button"
+                    className="price-selector-toggle"
+                    onClick={() => setPriceExpanded((value) => !value)}
+                    aria-expanded={priceExpanded}
+                    aria-controls="price-slider-panel"
+                  >
+                    <span className="price-selector-toggle-text">{getPriceSummaryLabel(minPriceInput, maxPriceInput)}</span>
+                    <span className="price-selector-toggle-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
+                  </button>
+                  <div id="price-slider-panel" className={`price-slider-panel ${priceExpanded ? 'is-open' : ''}`}>
+                    <div className="price-slider-values" aria-hidden="true">
+                      <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
+                      <span className="price-slider-separator">—</span>
+                      <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
+                    </div>
+                    <div
+                      className="price-slider-track-wrap"
+                      style={{
+                        '--min-price-percent': `${minSliderPercent}%`,
+                        '--max-price-percent': `${maxSliderPercent}%`,
+                      }}
+                    >
+                      <input
+                        type="range"
+                        min={PRICE_SLIDER_MIN}
+                        max={PRICE_SLIDER_MAX}
+                        step={PRICE_SLIDER_STEP}
+                        value={minPriceInput}
+                        onChange={handleMinPriceSliderChange}
+                        className="price-slider price-slider--min"
+                        aria-label="Minimum price"
+                      />
+                      <input
+                        type="range"
+                        min={PRICE_SLIDER_MIN}
+                        max={PRICE_SLIDER_MAX}
+                        step={PRICE_SLIDER_STEP}
+                        value={maxPriceInput}
+                        onChange={handleMaxPriceSliderChange}
+                        className="price-slider price-slider--max"
+                        aria-label="Maximum price"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" className="primary-btn search-btn">Search</button>
+                <button type="button" onClick={handleClear} className="secondary-btn search-btn">
+                  Clear
+                </button>
+              </form>
+            </section>
+            <div className="reference-chip-row" aria-label="Featured collections">
+              <span className="reference-chip is-active">Verified Listings</span>
+              <span className="reference-chip">New Developments</span>
+              <span className="reference-chip">Immediate Entry</span>
+              <span className="reference-chip">Pet Friendly</span>
+            </div>
+          </div>
           <div className="property-interest-toolbar">
             <button
               type="button"
