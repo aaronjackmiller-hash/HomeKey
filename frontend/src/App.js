@@ -29,7 +29,7 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Navbar />
-        <main style={{ padding: '20px' }}>
+        <main className="app-main">
           <Switch>
             <Route exact path="/" component={PropertyList} />
             <Route path="/properties/:id" component={PropertyDetail} />
