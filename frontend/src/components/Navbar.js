@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -14,7 +15,10 @@ const Navbar = () => {
   return (
     <nav className="site-nav">
       <div className="site-nav__inner">
-        <Link to="/" className="site-nav__brand">HomeKey</Link>
+        <Link to="/" className="site-nav__brand" aria-label="HomeKey">
+          <img src={HOMEKEY_LOGO_SRC} alt="HomeKey logo" className="site-nav__brand-logo" />
+          <span className="site-nav__brand-wordmark">HomeKey</span>
+        </Link>
         <div className="site-nav__links">
           {isAuthenticated ? (
             <>

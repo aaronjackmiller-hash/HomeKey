@@ -233,6 +233,7 @@ const PropertyList = () => {
     center: null,
   });
   const [clearCircleSignal, setClearCircleSignal] = useState(0);
+  const [mobileDiscoveryView, setMobileDiscoveryView] = useState('list');
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const cityInputRef = useRef(null);
@@ -659,9 +660,30 @@ const PropertyList = () => {
                   </button>
                 </div>
                 <p className="property-card-price">{formatCurrency(property.price)}</p>
-                <p className="property-card-stats">
-                  {property.bedrooms ?? '—'} bed • {property.bathrooms ?? '—'} bath • {property.size ?? '—'} sqm
-                </p>
+                <div className="property-card-stats" aria-label="Listing highlights">
+                  <span className="property-stat-pill">
+                    <svg className="property-stat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 12.2V8.8a1.8 1.8 0 0 1 1.8-1.8h14.4A1.8 1.8 0 0 1 21 8.8v3.4" />
+                      <path d="M3 12.2h18V17H3z" />
+                      <path d="M4.2 17v2M19.8 17v2" />
+                    </svg>
+                    <span>{property.bedrooms ?? '—'} bed</span>
+                  </span>
+                  <span className="property-stat-pill">
+                    <svg className="property-stat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M5 12h14v4.4A3.6 3.6 0 0 1 15.4 20H8.6A3.6 3.6 0 0 1 5 16.4V12Z" />
+                      <path d="M8 12V8.8A2.8 2.8 0 0 1 10.8 6h1.5a1.7 1.7 0 1 1 0 3.4h-1" />
+                    </svg>
+                    <span>{property.bathrooms ?? '—'} bath</span>
+                  </span>
+                  <span className="property-stat-pill">
+                    <svg className="property-stat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M4 4h7v3h3V4h6v16h-6v-4h-4v4H4z" />
+                      <path d="M11 4v5h3" />
+                    </svg>
+                    <span>{property.size ?? '—'} sqm</span>
+                  </span>
+                </div>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
                 )}
@@ -790,7 +812,10 @@ const PropertyList = () => {
           <span>Saved file: {savedCount}</span>
         </div>
       </div>
-      <section className="google-listings-map-card" aria-label="Apartment location map">
+      <section
+        className={`google-listings-map-card layered-discovery-panel ${mobileDiscoveryView === 'map' ? 'is-mobile-active' : ''}`}
+        aria-label="Apartment location map"
+      >
         <header className="google-listings-map-header">
           <h2>Apartment Locations</h2>
           <p>View where available apartments are located and draw a circle to filter the search area.</p>
@@ -801,7 +826,30 @@ const PropertyList = () => {
           clearSignal={clearCircleSignal}
         />
       </section>
-      {renderResults()}
+      <section
+        className={`layered-discovery-panel layered-discovery-list ${mobileDiscoveryView === 'list' ? 'is-mobile-active' : ''}`}
+        aria-label="Apartment listings"
+      >
+        {renderResults()}
+      </section>
+      <div className="mobile-discovery-toggle" role="group" aria-label="Mobile view mode">
+        <button
+          type="button"
+          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
+          onClick={() => setMobileDiscoveryView('map')}
+          aria-pressed={mobileDiscoveryView === 'map'}
+        >
+          Map
+        </button>
+        <button
+          type="button"
+          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
+          onClick={() => setMobileDiscoveryView('list')}
+          aria-pressed={mobileDiscoveryView === 'list'}
+        >
+          List
+        </button>
+      </div>
     </div>
   );
 };

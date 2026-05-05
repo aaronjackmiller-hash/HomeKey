@@ -7,8 +7,8 @@
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f2f5f9;
-  color: #1f2937;
+  background: #f4f1ea;
+  color: #1f2329;
 }
 
 main {
@@ -25,8 +25,8 @@ a {
   display: flex;
   justify-content: center;
   padding: 0 20px;
-  background: linear-gradient(135deg, #0f766e, #0ea5a4);
-  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.22);
+  background: #1f2329;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -44,9 +44,23 @@ a {
 .site-nav__brand {
   color: #ffffff;
   text-decoration: none;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.12rem;
+  font-weight: 800;
   letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.site-nav__brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.site-nav__brand-text {
+  display: inline-block;
 }
 
 .site-nav__links {
@@ -71,13 +85,13 @@ a {
 }
 
 .site-nav__link--cta {
-  background: #ffffff;
-  color: #0f766e;
+  background: #f4f1ea;
+  color: #1f2329;
 }
 
 .site-nav__link--cta:hover {
-  background: #ecfdf5;
-  color: #0f766e;
+  background: #ffffff;
+  color: #1f2329;
 }
 
 .site-nav__welcome {
@@ -1713,7 +1727,7 @@ legend {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(31, 35, 41, 0.92);
   border-radius: 10px;
   padding: 10px 14px;
   max-width: 980px;
@@ -1726,7 +1740,7 @@ legend {
 
 .property-list-page .hero-kicker {
   margin: 0 0 2px;
-  color: #dbeafe;
+  color: #e5e7eb;
   font-size: 0.96rem;
   letter-spacing: 0.18em;
   font-weight: 700;
@@ -1792,8 +1806,8 @@ legend {
   gap: 8px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(203, 213, 225, 0.95);
+  background: rgba(244, 241, 234, 0.98);
+  border: 1px solid rgba(203, 199, 188, 0.95);
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
 }
 
@@ -1986,8 +2000,8 @@ legend {
 }
 
 .property-list-page .tabs button.active-tab {
-  background: #0e8a88;
-  border-color: #0e8a88;
+  background: #1f2329;
+  border-color: #1f2329;
   color: #ffffff;
 }
 
@@ -2016,9 +2030,9 @@ legend {
 
 .property-list-page .google-listings-map-card {
   margin: 0 0 14px;
-  border: 1px solid #d5dfeb;
+  border: 1px solid #d1cdc1;
   border-radius: 14px;
-  background: #ffffff;
+  background: #f7f4ec;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
   overflow: hidden;
 }
@@ -2037,7 +2051,7 @@ legend {
 .property-list-page .google-listings-map-header p {
   margin: 4px 0 0;
   font-size: 0.9rem;
-  color: #475569;
+  color: #44403c;
 }
 
 .property-list-page .google-listings-map-shell {
@@ -2050,7 +2064,7 @@ legend {
   gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid #e2e8f0;
-  background: #ffffff;
+  background: #f7f4ec;
 }
 
 .property-list-page .map-draw-btn {
@@ -2079,8 +2093,8 @@ legend {
 }
 
 .property-list-page .map-marker-preset-btn.is-active {
-  border-color: #0f766e;
-  background: #0f766e;
+  border-color: #1f2329;
+  background: #1f2329;
   color: #ffffff;
 }
 
@@ -2093,10 +2107,10 @@ legend {
 .property-list-page .google-listings-map-caption {
   margin: 0;
   padding: 10px 12px;
-  color: #475569;
+  color: #44403c;
   font-size: 0.88rem;
   border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: #f1ede3;
 }
 
 .property-list-page .google-listings-map-note {
@@ -2114,9 +2128,10 @@ legend {
 }
 
 .property-list-page .property-card {
-  border-color: #d5dfeb;
+  border-color: #d8d2c4;
   border-radius: 14px;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  background: #fdfbf6;
 }
 
 .property-list-page .property-card:hover {
@@ -2134,8 +2149,9 @@ legend {
 
 .property-list-page .property-card-title {
   margin: 0 0 8px;
-  font-size: 2rem;
+  font-size: 1.24rem;
   line-height: 1.15;
+  color: #1f2329;
 }
 
 .property-list-page .property-card-location {
@@ -2143,9 +2159,9 @@ legend {
 }
 
 .property-list-page .property-card-price {
-  margin: 0 0 6px;
-  font-size: 1.95rem;
-  color: #0f9f92;
+  margin: 0 0 10px;
+  font-size: 1.42rem;
+  color: #1f2329;
   font-weight: 700;
 }
 
@@ -2163,8 +2179,37 @@ legend {
 
 .property-list-page .property-card-stats {
   margin: 0;
-  font-size: 0.96rem;
-  color: #223a59;
+  font-size: 0.9rem;
+  color: #1f2329;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.property-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid #d8d2c4;
+  padding: 4px 10px;
+  background: #f4f1ea;
+}
+
+.property-stat-icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #374151;
+  stroke-width: 1.7;
+}
+
+.layered-discovery-panel {
+  display: block;
+}
+
+.mobile-discovery-toggle {
+  display: none;
 }
 
 .property-list-page .property-card-extra {
@@ -2259,14 +2304,62 @@ legend {
   }
 
   .property-list-page .property-card-title {
-    font-size: 1.5rem;
+    font-size: 1.06rem;
   }
 
   .property-list-page .property-card-price {
-    font-size: 1.45rem;
+    font-size: 1.22rem;
   }
 
   .property-list-page .google-listings-map-canvas {
     height: 270px;
+  }
+
+  .property-list-page .homepage-hero-shell {
+    margin-bottom: 6px;
+  }
+
+  .property-list-page .layered-discovery-panel {
+    display: none;
+  }
+
+  .property-list-page .layered-discovery-panel.is-mobile-active {
+    display: block;
+  }
+
+  .property-list-page .mobile-discovery-toggle {
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    border: 1px solid #2a2f37;
+    background: rgba(31, 35, 41, 0.95);
+    padding: 4px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.3);
+  }
+
+  .property-list-page .mobile-discovery-toggle-btn {
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #f8fafc;
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .property-list-page .mobile-discovery-toggle-btn.is-active {
+    background: #f4f1ea;
+    color: #1f2329;
+  }
+
+  .property-list-page .layered-discovery-list {
+    padding-bottom: 72px;
   }
 }
