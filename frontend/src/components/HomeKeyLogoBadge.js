@@ -1,5 +1,5 @@
 import React from 'react';
-import uploadedHomeKeyLogo from '../assets/homekey-logo-uploaded-clean.png';
+import uploadedHomeKeyLogo from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
 
 export const HOMEKEY_LOGO_SRC = uploadedHomeKeyLogo;
 
