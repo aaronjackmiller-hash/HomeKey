@@ -775,33 +775,41 @@ const PropertyList = () => {
           <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
         </div>
       </div>
-      <div className="property-interest-toolbar">
-        <button
-          type="button"
-          className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
-          onClick={() => setFavoritesOnly((value) => !value)}
-        >
-          {favoritesOnly ? 'Show All Listings' : 'Show Favorites Only'}
-        </button>
-      </div>
-      <div className="property-interest-summary" aria-live="polite">
-        <div className="property-interest-summary-counts">
-          <span>Favorites: {favoritesCount}</span>
-          <span>Saved file: {savedCount}</span>
+      <section className="desktop-discovery-layout" aria-label="Listings and map layout">
+        <div className="desktop-discovery-list-column">
+          <div className="property-interest-toolbar">
+            <button
+              type="button"
+              className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
+              onClick={() => setFavoritesOnly((value) => !value)}
+            >
+              {favoritesOnly ? 'Show All Listings' : 'Show Favorites Only'}
+            </button>
+          </div>
+          <div className="property-interest-summary" aria-live="polite">
+            <div className="property-interest-summary-counts">
+              <span>Favorites: {favoritesCount}</span>
+              <span>Saved file: {savedCount}</span>
+            </div>
+          </div>
+          <div className="desktop-discovery-list-scroll">
+            {renderResults()}
+          </div>
         </div>
-      </div>
-      <section className="google-listings-map-card" aria-label="Apartment location map">
-        <header className="google-listings-map-header">
-          <h2>Apartment Locations</h2>
-          <p>View where available apartments are located and draw a circle to filter the search area.</p>
-        </header>
-        <GoogleListingsMap
-          properties={loading ? [] : mapSourceProperties}
-          onCircleSelectionChange={handleCircleSelectionChange}
-          clearSignal={clearCircleSignal}
-        />
+        <div className="desktop-discovery-map-column">
+          <section className="google-listings-map-card" aria-label="Apartment location map">
+            <header className="google-listings-map-header">
+              <h2>Apartment Locations</h2>
+              <p>View where available apartments are located and draw a circle to filter the search area.</p>
+            </header>
+            <GoogleListingsMap
+              properties={loading ? [] : mapSourceProperties}
+              onCircleSelectionChange={handleCircleSelectionChange}
+              clearSignal={clearCircleSignal}
+            />
+          </section>
+        </div>
       </section>
-      {renderResults()}
     </div>
   );
 };

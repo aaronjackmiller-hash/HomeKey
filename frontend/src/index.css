@@ -2016,13 +2016,35 @@ legend {
   margin: 0 0 10px;
 }
 
+.desktop-discovery-layout {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  gap: 14px;
+  align-items: start;
+}
+
+.desktop-discovery-list-column {
+  min-width: 0;
+  max-height: calc(100vh - 146px);
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #ddd6c8;
+  border-radius: var(--hk-radius-container);
+  background: var(--hk-brand-cream);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.desktop-discovery-map-column {
+  min-width: 0;
+}
+
 .property-list-page .property-interest-summary-counts {
   gap: 12px;
   color: #0f172a;
 }
 
 .property-list-page .google-listings-map-card {
-  margin: 0 0 14px;
+  margin: 0;
   border: 1px solid #d5dfeb;
   border-radius: var(--hk-radius-container);
   background: var(--hk-brand-cream);
@@ -2120,6 +2142,10 @@ legend {
   gap: 14px;
 }
 
+.desktop-discovery-list-column .container {
+  grid-template-columns: 1fr;
+}
+
 .property-list-page .property-card {
   border-color: #d5dfeb;
   border-radius: var(--hk-radius-container);
@@ -2189,6 +2215,21 @@ legend {
 }
 
 @media (max-width: 980px) {
+  .desktop-discovery-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .desktop-discovery-list-column {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
   .property-list-page .hero-banner {
     min-height: 430px;
   }
