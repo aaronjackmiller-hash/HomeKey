@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
-import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import HomeKeyLogoBadge, { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
-import heroStripLogo from '../assets/Logo Only for the Strip.png';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   isFavoriteProperty,
@@ -685,7 +684,7 @@ const PropertyList = () => {
                 <h1>Find your next home in Israel</h1>
               </div>
               <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
-                <img className="homekey-logo-lockup-image" src={heroStripLogo} alt="HomeKey logo" />
+                <img className="homekey-logo-lockup-image" src={HOMEKEY_LOGO_SRC} alt="HomeKey logo" />
               </div>
             </div>
           </div>
