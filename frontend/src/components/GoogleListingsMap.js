@@ -207,7 +207,13 @@ const createHousePinIcon = (mapsApi, preset) => {
   };
 };
 
-const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSignal = 0 }) => {
+const GoogleListingsMap = ({
+  properties = [],
+  onCircleSelectionChange,
+  clearSignal = 0,
+  drawModeToggleSignal = 0,
+  onDrawModeChange,
+}) => {
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -219,6 +225,7 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
   const activeCircleRef = useRef(null);
   const draftCircleRef = useRef(null);
   const drawStartRef = useRef(null);
+  const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
   const [mapError, setMapError] = useState('');
   const [mapReady, setMapReady] = useState(false);
@@ -310,6 +317,18 @@ const GoogleListingsMap = ({ properties = [], onCircleSelectionChange, clearSign
       addressQuery: toAddressQuery(property),
     }))
     .filter((item) => item.property && item.propertyId && item.addressQuery), [properties]);
+
+  useEffect(() => {
+    if (typeof onDrawModeChange === 'function') {
+      onDrawModeChange(drawMode);
+    }
+  }, [drawMode, onDrawModeChange]);
+
+  useEffect(() => {
+    if (drawModeToggleSignal === drawToggleSignalRef.current) return;
+    drawToggleSignalRef.current = drawModeToggleSignal;
+    setDrawMode((value) => !value);
+  }, [drawModeToggleSignal]);
 
   useEffect(() => {
     emitCircleSelection({
