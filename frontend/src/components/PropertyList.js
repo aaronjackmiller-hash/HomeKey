@@ -239,6 +239,7 @@ const PropertyList = () => {
   const cityInputRef = useRef(null);
   const history = useHistory();
   const [isListScrolling, setIsListScrolling] = useState(false);
+  const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -795,7 +796,10 @@ const PropertyList = () => {
           <button className={filter === 'sale' ? 'active-tab' : ''} onClick={() => setFilter('sale')}>For Sale</button>
         </div>
       </div>
-      <section className="desktop-discovery-layout" aria-label="Listings and map layout">
+      <section
+        className={`desktop-discovery-layout ${mobileDiscoveryView === 'list' ? 'mobile-list-active' : 'mobile-map-active'}`}
+        aria-label="Listings and map layout"
+      >
         <div
           className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
           onScroll={handleListScroll}
@@ -833,6 +837,24 @@ const PropertyList = () => {
           </section>
         </div>
       </section>
+      <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
+        <button
+          type="button"
+          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
+          onClick={() => setMobileDiscoveryView('map')}
+          aria-pressed={mobileDiscoveryView === 'map'}
+        >
+          Map View
+        </button>
+        <button
+          type="button"
+          className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
+          onClick={() => setMobileDiscoveryView('list')}
+          aria-pressed={mobileDiscoveryView === 'list'}
+        >
+          List View
+        </button>
+      </div>
     </div>
   );
 };
