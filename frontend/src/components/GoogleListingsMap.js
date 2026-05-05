@@ -655,7 +655,7 @@ const GoogleListingsMap = ({
           className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
           onClick={() => setDrawMode((value) => !value)}
         >
-          {drawMode ? 'Drawing mode on (drag on map)' : 'Draw search circle'}
+          {drawMode ? 'Draw Mode' : 'Draw search circle'}
         </button>
         <button
           type="button"
