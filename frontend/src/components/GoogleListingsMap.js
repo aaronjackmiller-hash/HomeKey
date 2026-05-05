@@ -13,8 +13,8 @@ const MARKER_STYLE_PRESETS = {
     markerMode: 'house',
     iconWidth: 19,
     iconHeight: 27,
-    pinColor: '#2563eb',
-    pinStrokeColor: '#1d4ed8',
+    pinColor: '#2D3E50',
+    pinStrokeColor: '#233242',
     homeStrokeColor: '#ffffff',
   },
   minimal: {
@@ -31,8 +31,8 @@ const MARKER_STYLE_PRESETS = {
     markerMode: 'house',
     iconWidth: 19,
     iconHeight: 27,
-    pinColor: '#2563eb',
-    pinStrokeColor: '#1d4ed8',
+    pinColor: '#2D3E50',
+    pinStrokeColor: '#233242',
     homeStrokeColor: '#ffffff',
   },
   bold: {
@@ -40,9 +40,9 @@ const MARKER_STYLE_PRESETS = {
     markerMode: 'house',
     iconWidth: 22,
     iconHeight: 31,
-    pinColor: '#1d4ed8',
-    pinStrokeColor: '#1e3a8a',
-    homeStrokeColor: '#dbeafe',
+    pinColor: '#2D3E50',
+    pinStrokeColor: '#1f2b38',
+    homeStrokeColor: '#f8fbff',
   },
 };
 const DEFAULT_MARKER_PRESET_KEY = 'medium';
