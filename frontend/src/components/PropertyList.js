@@ -235,8 +235,10 @@ const PropertyList = () => {
   const [clearCircleSignal, setClearCircleSignal] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
+  const listScrollTimeoutRef = useRef(null);
   const cityInputRef = useRef(null);
   const history = useHistory();
+  const [isListScrolling, setIsListScrolling] = useState(false);
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -279,6 +281,17 @@ const PropertyList = () => {
     setFilter('all');
     setClearCircleSignal((value) => value + 1);
   };
+
+  const handleListScroll = useCallback(() => {
+    setIsListScrolling(true);
+    if (listScrollTimeoutRef.current) {
+      window.clearTimeout(listScrollTimeoutRef.current);
+    }
+    listScrollTimeoutRef.current = window.setTimeout(() => {
+      setIsListScrolling(false);
+      listScrollTimeoutRef.current = null;
+    }, 420);
+  }, []);
 
   const loadLiveSyncStatus = async () => {
     try {
@@ -423,6 +436,13 @@ const PropertyList = () => {
     fetchProperties();
     return clearTimers;
   }, [filter, citySearch, roomsSearch, minPrice, maxPrice, retryCount]);
+
+  useEffect(() => () => {
+    if (listScrollTimeoutRef.current) {
+      window.clearTimeout(listScrollTimeoutRef.current);
+      listScrollTimeoutRef.current = null;
+    }
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -776,7 +796,10 @@ const PropertyList = () => {
         </div>
       </div>
       <section className="desktop-discovery-layout" aria-label="Listings and map layout">
-        <div className="desktop-discovery-list-column">
+        <div
+          className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
+          onScroll={handleListScroll}
+        >
           <div className="property-interest-toolbar">
             <button
               type="button"
