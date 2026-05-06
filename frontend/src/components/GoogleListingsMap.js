@@ -10,39 +10,55 @@ const PAN_STEP_PX = 130;
 const MARKER_STYLE_PRESETS = {
   house: {
     label: 'House Pins',
-    markerMode: 'house',
-    iconWidth: 19,
-    iconHeight: 27,
-    pinColor: '#2D3E50',
-    pinStrokeColor: '#233242',
-    homeStrokeColor: '#ffffff',
+    markerMode: 'pricePin',
+    minWidth: 56,
+    pinHeight: 26,
+    pointerHeight: 10,
+    horizontalPadding: 10,
+    fontSize: 12,
+    fontWeight: 700,
+    pinColor: '#2563eb',
+    pinStrokeColor: '#1d4ed8',
+    textColor: '#ffffff',
   },
   minimal: {
     label: 'Minimal',
-    markerMode: 'house',
-    iconWidth: 16,
-    iconHeight: 23,
-    pinColor: '#93c5fd',
-    pinStrokeColor: '#60a5fa',
-    homeStrokeColor: '#ffffff',
+    markerMode: 'pricePin',
+    minWidth: 52,
+    pinHeight: 24,
+    pointerHeight: 9,
+    horizontalPadding: 8,
+    fontSize: 11,
+    fontWeight: 700,
+    pinColor: '#3b82f6',
+    pinStrokeColor: '#2563eb',
+    textColor: '#ffffff',
   },
   medium: {
     label: 'Medium',
-    markerMode: 'house',
-    iconWidth: 19,
-    iconHeight: 27,
-    pinColor: '#2D3E50',
-    pinStrokeColor: '#233242',
-    homeStrokeColor: '#ffffff',
+    markerMode: 'pricePin',
+    minWidth: 56,
+    pinHeight: 26,
+    pointerHeight: 10,
+    horizontalPadding: 10,
+    fontSize: 12,
+    fontWeight: 700,
+    pinColor: '#2563eb',
+    pinStrokeColor: '#1d4ed8',
+    textColor: '#ffffff',
   },
   bold: {
     label: 'Bold',
-    markerMode: 'house',
-    iconWidth: 22,
-    iconHeight: 31,
-    pinColor: '#2D3E50',
-    pinStrokeColor: '#1f2b38',
-    homeStrokeColor: '#f8fbff',
+    markerMode: 'pricePin',
+    minWidth: 62,
+    pinHeight: 28,
+    pointerHeight: 11,
+    horizontalPadding: 11,
+    fontSize: 13,
+    fontWeight: 800,
+    pinColor: '#1d4ed8',
+    pinStrokeColor: '#1e40af',
+    textColor: '#ffffff',
   },
 };
 const DEFAULT_MARKER_PRESET_KEY = 'medium';
@@ -154,56 +170,42 @@ const getMarkerImageUrl = (property, propertyId) => {
 const getMarkerStylePreset = (presetKey) =>
   MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
 
-const createPhotoMarkerIcon = (mapsApi, imageUrl, preset) => ({
-  url: imageUrl,
-  scaledSize: new mapsApi.Size(preset.imageSize, preset.imageSize),
-  anchor: new mapsApi.Point(preset.imageSize / 2, preset.imageSize / 2),
-});
+const formatMarkerPrice = (price) => {
+  const parsedPrice = Number(price);
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return 'N/A';
+  return `₪${parsedPrice.toLocaleString()}`;
+};
 
-const createPhotoMarkerFrameIcon = (mapsApi, preset) => ({
-  path: mapsApi.SymbolPath.CIRCLE,
-  scale: preset.frameDiameter / 2,
-  fillColor: preset.frameFillColor,
-  fillOpacity: preset.frameFillOpacity,
-  strokeColor: preset.frameStrokeColor,
-  strokeOpacity: 1,
-  strokeWeight: preset.frameStrokePx,
-});
+const createPricePinIcon = (mapsApi, preset, priceText) => {
+  const pinHeight = Number(preset.pinHeight) || 26;
+  const pointerHeight = Number(preset.pointerHeight) || 10;
+  const horizontalPadding = Number(preset.horizontalPadding) || 10;
+  const minWidth = Number(preset.minWidth) || 56;
+  const fontSize = Number(preset.fontSize) || 12;
+  const fontWeight = Number(preset.fontWeight) || 700;
+  const pinColor = preset.pinColor || '#2563eb';
+  const pinStrokeColor = preset.pinStrokeColor || '#1d4ed8';
+  const textColor = preset.textColor || '#ffffff';
+  const safePriceText = escapeHtml(priceText);
 
-const createHousePinIcon = (mapsApi, preset) => {
-  const iconWidth = Number(preset.iconWidth) || 19;
-  const iconHeight = Number(preset.iconHeight) || 27;
-  const pinColor = preset.pinColor || '#0e8a88';
-  const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
-  const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
+  const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
+  const bubbleWidth = Math.max(minWidth, estimatedTextWidth + (horizontalPadding * 2));
+  const totalHeight = pinHeight + pointerHeight;
+  const radius = Math.round(pinHeight / 2);
+  const centerX = bubbleWidth / 2;
+  const pointerHalfWidth = Math.max(5, Math.round(bubbleWidth * 0.12));
+  const textY = Math.round((pinHeight / 2) + (fontSize * 0.36));
 
-  // Build geometry proportional to the icon size so the house fills the
-  // entire icon area.  Using a viewBox that matches the icon dimensions
-  // avoids the letterboxing that occurred when a square 24×24 viewBox was
-  // displayed in a portrait rectangle (the SVG default preserveAspectRatio
-  // "xMidYMid meet" would shrink the 24×24 content to fit the narrower
-  // 19-pixel width, leaving the house occupying only ~70 % of the icon
-  // height and making the roof too small to see clearly).
-  const cx = iconWidth / 2;
-  const roofTop = 1;
-  const eaveY = Math.round(iconHeight * 0.40);    // eave at ~40 % of height
-  const wallLeft = Math.round(iconWidth * 0.16);  // left wall at ~16 % of width
-  const wallRight = Math.round(iconWidth * 0.84); // right wall at ~84 % of width
-  const doorW = Math.round(iconWidth * 0.32);
-  const doorH = Math.round(iconHeight * 0.30);
-  const doorX = Math.round(cx - doorW / 2);
-  const doorY = iconHeight - doorH;
-
-  // House path: peak → left eave tip → left wall top → bottom-left →
-  //             bottom-right → right wall top → right eave tip → (close)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
-    <path d="M${cx} ${roofTop} L0 ${eaveY} H${wallLeft} V${iconHeight} H${wallRight} V${eaveY} H${iconWidth} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
-    <rect x="${doorX}" y="${doorY}" width="${doorW}" height="${doorH}" fill="${homeStrokeColor}" rx="0.5"/>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bubbleWidth}" height="${totalHeight}" viewBox="0 0 ${bubbleWidth} ${totalHeight}" overflow="visible">
+    <rect x="0.5" y="0.5" width="${bubbleWidth - 1}" height="${pinHeight - 1}" rx="${radius}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1"/>
+    <path d="M${centerX - pointerHalfWidth} ${pinHeight - 1} L${centerX} ${totalHeight - 1} L${centerX + pointerHalfWidth} ${pinHeight - 1} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round"/>
+    <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
   </svg>`;
+
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new mapsApi.Size(iconWidth, iconHeight),
-    anchor: new mapsApi.Point(cx, iconHeight),
+    scaledSize: new mapsApi.Size(bubbleWidth, totalHeight),
+    anchor: new mapsApi.Point(centerX, totalHeight),
   };
 };
 
@@ -410,25 +412,11 @@ const GoogleListingsMap = ({
           await new Promise((resolve) => setTimeout(resolve, 80));
         }
 
-        const isHousePinPreset = markerPreset.markerMode === 'house';
-        const frameMarker = isHousePinPreset
-          ? null
-          : new mapsApi.Marker({
-            map,
-            position: coords,
-            icon: createPhotoMarkerFrameIcon(mapsApi, markerPreset),
-            clickable: false,
-            zIndex: 1,
-            optimized: true,
-          });
-
-        const markerIcon = isHousePinPreset
-          ? createHousePinIcon(mapsApi, markerPreset)
-          : createPhotoMarkerIcon(
-            mapsApi,
-            getMarkerImageUrl(item.property, item.propertyId),
-            markerPreset
-          );
+        const markerIcon = createPricePinIcon(
+          mapsApi,
+          markerPreset,
+          formatMarkerPrice(item.property.price)
+        );
 
         const marker = new mapsApi.Marker({
           map,
@@ -463,7 +451,7 @@ const GoogleListingsMap = ({
 
         markerEntriesRef.current.push({
           marker,
-          frameMarker,
+          frameMarker: null,
           propertyId: String(item.propertyId),
           coords,
         });
