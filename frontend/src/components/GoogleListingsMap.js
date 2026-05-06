@@ -600,34 +600,40 @@ const GoogleListingsMap = ({
 
   return (
     <div className="google-listings-map-shell">
-      <div className="google-listings-map-toolbar">
-        <button
-          type="button"
-          className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-          onClick={() => setDrawMode((value) => !value)}
-        >
-          {drawMode ? 'Draw Mode' : 'Draw search circle'}
-        </button>
-        <button
-          type="button"
-          className="secondary-btn map-draw-btn"
-          onClick={clearCircleFilter}
-          disabled={!drawMode && !activeCircleRef.current}
-        >
-          Clear area
-        </button>
-        <div className="map-marker-presets" role="group" aria-label="Map marker style presets">
-          {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, presetConfig]) => (
-            <button
-              key={presetKey}
-              type="button"
-              className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
-              onClick={() => setMarkerPresetKey(presetKey)}
-              aria-pressed={markerPresetKey === presetKey}
-            >
-              {presetConfig.label}
-            </button>
-          ))}
+      <div className="google-listings-map-overlay-info">
+        <header className="google-listings-map-header">
+          <h2>Apartment Locations</h2>
+          <p>View where available apartments are located and draw a circle to filter the search area.</p>
+        </header>
+        <div className="google-listings-map-toolbar">
+          <button
+            type="button"
+            className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
+            onClick={() => setDrawMode((value) => !value)}
+          >
+            {drawMode ? 'Draw Mode' : 'Draw search circle'}
+          </button>
+          <button
+            type="button"
+            className="secondary-btn map-draw-btn"
+            onClick={clearCircleFilter}
+            disabled={!drawMode && !activeCircleRef.current}
+          >
+            Clear area
+          </button>
+          <div className="map-marker-presets" role="group" aria-label="Map marker style presets">
+            {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, presetConfig]) => (
+              <button
+                key={presetKey}
+                type="button"
+                className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
+                onClick={() => setMarkerPresetKey(presetKey)}
+                aria-pressed={markerPresetKey === presetKey}
+              >
+                {presetConfig.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="google-listings-map-canvas-wrap">
