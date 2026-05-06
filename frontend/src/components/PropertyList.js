@@ -4,7 +4,7 @@ import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge, { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
-import heroBalconyImage from '../assets/homepage-hero-balcony.png';
+import heroBalconyImage from '../assets/Newest Homepage Photo.jpg';
 import {
   getInterestSummary,
 } from '../utils/propertyInterest';
