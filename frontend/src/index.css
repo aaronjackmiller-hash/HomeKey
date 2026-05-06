@@ -46,7 +46,7 @@ a {
 
 .premium-header__inner {
   width: 100%;
-  min-height: 78px;
+  min-height: 104px;
   margin: 0;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -88,9 +88,9 @@ a {
 }
 
 .premium-header__logo.homekey-logo-lockup {
-  width: clamp(180px, 19vw, 250px);
-  height: 74px;
-  min-height: 74px;
+  width: clamp(240px, 26vw, 360px);
+  height: 100px;
+  min-height: 100px;
   border-radius: 0;
 }
 
@@ -1723,15 +1723,15 @@ legend {
   }
 
   .premium-header__inner {
-    min-height: 68px;
+    min-height: 84px;
     grid-template-columns: auto 1fr auto;
     column-gap: 10px;
   }
 
   .premium-header__logo.homekey-logo-lockup {
-    width: 156px;
-    height: 58px;
-    min-height: 58px;
+    width: 200px;
+    height: 80px;
+    min-height: 80px;
   }
 
   .premium-header__brand-wordmark {
