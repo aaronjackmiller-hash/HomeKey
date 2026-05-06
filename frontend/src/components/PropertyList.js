@@ -912,10 +912,6 @@ const PropertyList = () => {
         </div>
         <div className="desktop-discovery-map-column">
           <section className="google-listings-map-card" aria-label="Apartment location map">
-            <header className="google-listings-map-header">
-              <h2>Apartment Locations</h2>
-              <p>View where available apartments are located and draw a circle to filter the search area.</p>
-            </header>
             <GoogleListingsMap
               properties={loading ? [] : mapSourceProperties}
               onCircleSelectionChange={handleCircleSelectionChange}
