@@ -14,6 +14,7 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=2400&q=80';
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -786,6 +787,13 @@ const PropertyList = () => {
         >
           <div className="homepage-hero-shell">
             <section className="hero-banner">
+              <img
+                className="hero-banner-background-image"
+                src={HERO_BACKGROUND_IMAGE}
+                alt=""
+                aria-hidden="true"
+              />
+              <div className="hero-banner-overlay" aria-hidden="true" />
               <div className="hero-banner-grid">
                 <div className="hero-banner-copy">
                   <div className="hero-banner-copy-text">
