@@ -88,14 +88,18 @@ a {
 }
 
 .premium-header__logo.homekey-logo-lockup {
-  width: clamp(240px, 26vw, 360px);
+  width: clamp(420px, 42vw, 560px);
   height: 100px;
   min-height: 100px;
   border-radius: 0;
+  justify-content: flex-start;
 }
 
 .premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
+  object-fit: contain;
   object-position: left center;
+  transform: scale(1.9);
+  transform-origin: left center;
 }
 
 .premium-header__links {
@@ -1729,9 +1733,13 @@ legend {
   }
 
   .premium-header__logo.homekey-logo-lockup {
-    width: 200px;
+    width: 300px;
     height: 80px;
     min-height: 80px;
+  }
+
+  .premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
+    transform: scale(1.55);
   }
 
   .premium-header__brand-wordmark {
