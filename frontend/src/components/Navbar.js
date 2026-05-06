@@ -21,7 +21,7 @@ const Navbar = () => {
 
         <div className="premium-header__actions">
           <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
-            <span className="premium-header__flag" aria-hidden="true">⇄</span>
+            <span className="premium-header__flag" aria-hidden="true">🇮🇱</span>
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
