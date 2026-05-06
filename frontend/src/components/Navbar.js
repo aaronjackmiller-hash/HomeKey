@@ -8,8 +8,7 @@ const Navbar = () => {
       <div className="premium-header__inner">
         <div className="premium-header__brand-cell">
           <Link to="/" className="premium-header__brand" aria-label="HomeKey home">
-            <HomeKeyLogoBadge compact className="premium-header__logo" ariaLabel="HomeKey H-with-keyhole logo" />
-            <span className="premium-header__brand-wordmark">HomeKey</span>
+            <HomeKeyLogoBadge className="premium-header__logo" ariaLabel="HomeKey logo" />
           </Link>
         </div>
 

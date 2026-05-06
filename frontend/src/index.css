@@ -46,7 +46,7 @@ a {
 
 .premium-header__inner {
   width: 100%;
-  min-height: 66px;
+  min-height: 104px;
   margin: 0;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -55,6 +55,8 @@ a {
 }
 
 .premium-header__brand-cell {
+  display: flex;
+  align-items: stretch;
   justify-self: start;
   min-width: 0;
 }
@@ -71,7 +73,8 @@ a {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
+  height: 100%;
   white-space: nowrap;
 }
 
@@ -84,12 +87,19 @@ a {
   color: #111111;
 }
 
-.premium-header__logo.homekey-logo-lockup,
-.premium-header__logo.homekey-logo-lockup--compact {
-  width: 22px;
-  height: 22px;
-  min-height: 22px;
+.premium-header__logo.homekey-logo-lockup {
+  width: clamp(420px, 42vw, 560px);
+  height: 100px;
+  min-height: 100px;
   border-radius: 0;
+  justify-content: flex-start;
+}
+
+.premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
+  object-fit: contain;
+  object-position: left center;
+  transform: scale(1.9);
+  transform-origin: left center;
 }
 
 .premium-header__links {
@@ -1717,9 +1727,19 @@ legend {
   }
 
   .premium-header__inner {
-    min-height: 64px;
+    min-height: 84px;
     grid-template-columns: auto 1fr auto;
     column-gap: 10px;
+  }
+
+  .premium-header__logo.homekey-logo-lockup {
+    width: 300px;
+    height: 80px;
+    min-height: 80px;
+  }
+
+  .premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
+    transform: scale(1.55);
   }
 
   .premium-header__brand-wordmark {
