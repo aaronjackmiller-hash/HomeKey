@@ -4,6 +4,7 @@ import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge, { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
+import heroBalconyImage from '../assets/homepage-hero-balcony.png';
 import {
   getInterestSummary,
 } from '../utils/propertyInterest';
@@ -14,7 +15,7 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
-const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=2400&q=80';
+const HERO_BACKGROUND_IMAGE = heroBalconyImage;
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
