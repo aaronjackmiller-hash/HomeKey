@@ -186,8 +186,9 @@ a {
 }
 
 .property-list-page {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .hero-banner {
@@ -1857,9 +1858,10 @@ legend {
 
 /* Homepage exact hero composition */
 .property-list-page {
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 10px 12px 24px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 8px 0 18px;
 }
 
 .property-list-page .homepage-hero-shell {
@@ -2490,7 +2492,7 @@ legend {
 
 @media (max-width: 767px) {
   .property-list-page {
-    padding: 8px 8px 102px;
+    padding: 8px 0 102px;
     background: #f4f5f9;
   }
 
