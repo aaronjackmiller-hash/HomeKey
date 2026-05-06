@@ -4,6 +4,7 @@ import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge, { HOMEKEY_LOGO_SRC } from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
+import heroBalconyImage from '../assets/homepage-hero-balcony.png';
 import {
   getInterestSummary,
 } from '../utils/propertyInterest';
@@ -14,10 +15,18 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const HERO_BACKGROUND_IMAGE = heroBalconyImage;
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
   return `₪${Number(value).toLocaleString()}`;
+};
+
+const formatCardPrice = (property = {}) => {
+  const asNumber = Number(property.price);
+  if (Number.isNaN(asNumber)) return 'Price unavailable';
+  const base = `${asNumber.toLocaleString()} ₪`;
+  return String(property.type || '').toLowerCase() === 'rental' ? `${base}/mo` : base;
 };
 
 const normalizePhoneForLinks = (value) => {
@@ -678,6 +687,19 @@ const PropertyList = () => {
             >
               <div className="property-card-image-wrap">
                 <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || 'Property listing'} />
+                <div className="property-card-top-tags">
+                  <span className="property-card-listing-badge">Verified Listing</span>
+                  <button
+                    type="button"
+                    className="property-card-favorite-btn"
+                    aria-label="Save listing"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    ♡
+                  </button>
+                </div>
                 {isYad2Media && (
                   <>
                     <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
@@ -688,7 +710,7 @@ const PropertyList = () => {
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                 {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
-                <p className="property-card-price">{formatCurrency(property.price)}</p>
+                <p className="property-card-price">{formatCardPrice(property)}</p>
                 <div className="property-card-stats" aria-label="Property highlights">
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -766,6 +788,13 @@ const PropertyList = () => {
         >
           <div className="homepage-hero-shell">
             <section className="hero-banner">
+              <img
+                className="hero-banner-background-image"
+                src={HERO_BACKGROUND_IMAGE}
+                alt=""
+                aria-hidden="true"
+              />
+              <div className="hero-banner-overlay" aria-hidden="true" />
               <div className="hero-banner-grid">
                 <div className="hero-banner-copy">
                   <div className="hero-banner-copy-text">
@@ -854,10 +883,12 @@ const PropertyList = () => {
               </form>
             </section>
             <div className="reference-chip-row" aria-label="Featured collections">
-              <span className="reference-chip is-active">Verified Listings</span>
+              <span className="reference-chip reference-chip--dark">Dynamic Search Hub</span>
               <span className="reference-chip">New Developments</span>
               <span className="reference-chip">Immediate Entry</span>
+              <span className="reference-chip is-active">Verified Listings</span>
               <span className="reference-chip">Pet Friendly</span>
+              <span className="reference-chip">Decision Hub</span>
             </div>
           </div>
           <div className="property-interest-toolbar">
@@ -911,19 +942,19 @@ const PropertyList = () => {
         <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
           <button
             type="button"
-            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
-            onClick={() => setMobileDiscoveryView('map')}
-            aria-pressed={mobileDiscoveryView === 'map'}
-          >
-            Map
-          </button>
-          <button
-            type="button"
             className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
             onClick={() => setMobileDiscoveryView('list')}
             aria-pressed={mobileDiscoveryView === 'list'}
           >
-            List
+            LIST VIEW
+          </button>
+          <button
+            type="button"
+            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
+            onClick={() => setMobileDiscoveryView('map')}
+            aria-pressed={mobileDiscoveryView === 'map'}
+          >
+            MAP VIEW
           </button>
         </div>
         <button
