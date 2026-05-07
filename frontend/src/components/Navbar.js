@@ -188,9 +188,8 @@ const Navbar = () => {
                     applySearch({ nextListingType });
                   }}
                 >
-                  <option value="sale">sale</option>
-                  <option value="rental">rent</option>
-                  <option value="all">all</option>
+                  <option value="rental">Rent</option>
+                  <option value="sale">Sale</option>
                 </select>
               </div>
             </div>
