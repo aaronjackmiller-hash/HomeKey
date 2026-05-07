@@ -788,25 +788,6 @@ const PropertyList = () => {
           onScroll={handleListScroll}
         >
           <div className="homepage-hero-shell">
-            <section className="hero-banner">
-              <img
-                className="hero-banner-background-image"
-                src={HERO_BACKGROUND_IMAGE}
-                alt=""
-                aria-hidden="true"
-              />
-              <div className="hero-banner-overlay" aria-hidden="true" />
-              <div className="hero-banner-grid">
-                <div className="hero-banner-copy">
-                  <div className="hero-banner-copy-text">
-                    <h1>Find Your Next Home in Israel.</h1>
-                  </div>
-                  <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
-                    <img className="homekey-logo-lockup-image" src={heroBannerLogo} alt="HomeKey logo" />
-                  </div>
-                </div>
-              </div>
-            </section>
             <section className="search-panel">
               <form className="search-form" onSubmit={handleSearch}>
                 <div className="input-field search-input">
@@ -882,6 +863,25 @@ const PropertyList = () => {
                   Clear
                 </button>
               </form>
+            </section>
+            <section className="hero-banner">
+              <img
+                className="hero-banner-background-image"
+                src={HERO_BACKGROUND_IMAGE}
+                alt=""
+                aria-hidden="true"
+              />
+              <div className="hero-banner-overlay" aria-hidden="true" />
+              <div className="hero-banner-grid">
+                <div className="hero-banner-copy">
+                  <div className="hero-banner-copy-text">
+                    <h1>Find Your Next Home in Israel.</h1>
+                  </div>
+                  <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
+                    <img className="homekey-logo-lockup-image" src={heroBannerLogo} alt="HomeKey logo" />
+                  </div>
+                </div>
+              </div>
             </section>
             <div className="reference-chip-row" aria-label="Featured collections">
               <span className="reference-chip reference-chip--dark">Dynamic Search Hub</span>
