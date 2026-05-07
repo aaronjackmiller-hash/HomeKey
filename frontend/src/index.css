@@ -1983,9 +1983,9 @@ legend {
 }
 
 .property-list-page .hero-banner-logo {
-  width: 48px;
-  height: 32px;
-  min-height: 32px;
+  width: clamp(96px, 11vw, 140px);
+  height: clamp(96px, 11vw, 140px);
+  min-height: clamp(96px, 11vw, 140px);
 }
 
 .property-list-page .search-panel {
