@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
@@ -15,7 +15,6 @@ const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
-const PRICE_SLIDER_STEP = 500;
 const HERO_BACKGROUND_IMAGE = heroBalconyImage;
 
 const formatCurrency = (value) => {
@@ -204,18 +203,6 @@ const clampPriceValue = (value) => {
   return Math.min(PRICE_SLIDER_MAX, Math.max(PRICE_SLIDER_MIN, asNumber));
 };
 
-const formatPriceSliderLabel = (value, isUpper = false) => {
-  const normalized = clampPriceValue(value);
-  if (isUpper && normalized >= PRICE_SLIDER_MAX) return `₪ ${normalized.toLocaleString()}+`;
-  return `₪ ${normalized.toLocaleString()}`;
-};
-
-const getPriceSummaryLabel = (minValue, maxValue) => {
-  const minLabel = formatPriceSliderLabel(minValue);
-  const maxLabel = formatPriceSliderLabel(maxValue, true);
-  return `${minLabel} - ${maxLabel}`;
-};
-
 const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const selected = safeText(roomsSelection);
   if (!selected) return true;
@@ -248,11 +235,6 @@ const areStringArraysEqual = (left = [], right = []) => {
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
-  // Local input values update instantly so typing is never interrupted
-  const [cityInput, setCityInput] = useState('');
-  const [minPriceInput, setMinPriceInput] = useState(PRICE_SLIDER_MIN);
-  const [maxPriceInput, setMaxPriceInput] = useState(PRICE_SLIDER_MAX);
-  // Debounced search values that actually trigger the API call
   const [citySearch, setCitySearch] = useState('');
   const [roomsSearch, setRoomsSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -265,19 +247,18 @@ const PropertyList = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [autoRetrySecondsLeft, setAutoRetrySecondsLeft] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [priceExpanded, setPriceExpanded] = useState(false);
   const [circleSelection, setCircleSelection] = useState({
     active: false,
     propertyIds: [],
     radiusMeters: 0,
     center: null,
   });
-  const [clearCircleSignal, setClearCircleSignal] = useState(0);
+  const [clearCircleSignal] = useState(0);
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const listScrollTimeoutRef = useRef(null);
-  const cityInputRef = useRef(null);
   const history = useHistory();
+  const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
   const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
   const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
@@ -287,37 +268,6 @@ const PropertyList = () => {
   const clearTimers = () => {
     if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-  };
-
-  // Keep city input fully responsive while search executes on explicit submit.
-  const handleCityChange = (e) => {
-    setCityInput(e.target.value);
-  };
-
-  const handleMinPriceSliderChange = (e) => {
-    const nextValue = clampPriceValue(e.target.value);
-    const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
-    setMinPriceInput(Math.min(nextValue, maxAllowedMin));
-  };
-
-  const handleMaxPriceSliderChange = (e) => {
-    const nextValue = clampPriceValue(e.target.value);
-    const minAllowedMax = Math.min(PRICE_SLIDER_MAX, minPriceInput + PRICE_SLIDER_STEP);
-    setMaxPriceInput(Math.max(nextValue, minAllowedMax));
-  };
-
-  const handleClear = () => {
-    setCityInput('');
-    if (cityInputRef.current) cityInputRef.current.value = '';
-    setMinPriceInput(PRICE_SLIDER_MIN);
-    setMaxPriceInput(PRICE_SLIDER_MAX);
-    setCitySearch('');
-    setRoomsSearch('');
-    setMinPrice('');
-    setMaxPrice('');
-    setPriceExpanded(false);
-    setFilter('all');
-    setClearCircleSignal((value) => value + 1);
   };
 
   const handleListScroll = useCallback(() => {
@@ -384,6 +334,34 @@ const PropertyList = () => {
     if (typeof pruned === 'number') summary.push(`Pruned: ${pruned}`);
     return summary.join(' • ');
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextCity = String(params.get('q') || '').trim();
+    const nextRooms = String(params.get('rooms') || '').trim();
+    const nextTypeRaw = String(params.get('type') || '').toLowerCase();
+    const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
+    const parseOptionalPrice = (rawValue) => {
+      if (rawValue == null || rawValue === '') return '';
+      const asNumber = Number(rawValue);
+      if (Number.isNaN(asNumber)) return '';
+      return String(clampPriceValue(asNumber));
+    };
+    let nextMinPrice = parseOptionalPrice(params.get('minPrice'));
+    let nextMaxPrice = parseOptionalPrice(params.get('maxPrice'));
+    if (nextMinPrice !== '' && nextMaxPrice !== '' && Number(nextMinPrice) > Number(nextMaxPrice)) {
+      const low = String(Math.min(Number(nextMinPrice), Number(nextMaxPrice)));
+      const high = String(Math.max(Number(nextMinPrice), Number(nextMaxPrice)));
+      nextMinPrice = low;
+      nextMaxPrice = high;
+    }
+
+    setCitySearch(nextCity);
+    setRoomsSearch(nextRooms);
+    setFilter(nextType);
+    setMinPrice(nextMinPrice);
+    setMaxPrice(nextMaxPrice);
+  }, [location.search]);
 
   useEffect(() => {
     clearTimers();
@@ -481,16 +459,6 @@ const PropertyList = () => {
       listScrollTimeoutRef.current = null;
     }
   }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const nextCityValue = cityInputRef.current ? cityInputRef.current.value : cityInput;
-    setCityInput(nextCityValue);
-    setCitySearch(nextCityValue);
-    setRoomsSearch('');
-    setMinPrice(minPriceInput > PRICE_SLIDER_MIN ? String(minPriceInput) : '');
-    setMaxPrice(maxPriceInput < PRICE_SLIDER_MAX ? String(maxPriceInput) : '');
-  };
 
   const interestSummary = getInterestSummary();
   const favoritesCount = interestSummary.favoriteIds.length;
@@ -596,10 +564,6 @@ const PropertyList = () => {
       return nextSelection;
     });
   }, []);
-  const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
-  const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
-  const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
-
   // Decide what to render in the results area
   const renderResults = () => {
     if (loading) {
@@ -806,82 +770,6 @@ const PropertyList = () => {
                   </div>
                 </div>
               </div>
-            </section>
-            <section className="search-panel">
-              <form className="search-form" onSubmit={handleSearch}>
-                <div className="input-field search-input">
-                  <label>Location/City</label>
-                  <input
-                    ref={cityInputRef}
-                    type="text"
-                    placeholder="Location/City"
-                    defaultValue={cityInput}
-                    onInput={handleCityChange}
-                    onChange={handleCityChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="input-field search-input">
-                  <label>Property Type</label>
-                  <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-                    <option value="all">Property Type</option>
-                    <option value="rental">Rent</option>
-                    <option value="sale">For Sale</option>
-                  </select>
-                </div>
-                <div className="input-field search-input price-slider-field">
-                  <label>Budget Range</label>
-                  <button
-                    type="button"
-                    className="price-selector-toggle"
-                    onClick={() => setPriceExpanded((value) => !value)}
-                    aria-expanded={priceExpanded}
-                    aria-controls="price-slider-panel"
-                  >
-                    <span className="price-selector-toggle-text">{getPriceSummaryLabel(minPriceInput, maxPriceInput)}</span>
-                    <span className="price-selector-toggle-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
-                  </button>
-                  <div id="price-slider-panel" className={`price-slider-panel ${priceExpanded ? 'is-open' : ''}`}>
-                    <div className="price-slider-values" aria-hidden="true">
-                      <span className="price-slider-value">{formatPriceSliderLabel(maxPriceInput, true)}</span>
-                      <span className="price-slider-separator">—</span>
-                      <span className="price-slider-value">{formatPriceSliderLabel(minPriceInput)}</span>
-                    </div>
-                    <div
-                      className="price-slider-track-wrap"
-                      style={{
-                        '--min-price-percent': `${minSliderPercent}%`,
-                        '--max-price-percent': `${maxSliderPercent}%`,
-                      }}
-                    >
-                      <input
-                        type="range"
-                        min={PRICE_SLIDER_MIN}
-                        max={PRICE_SLIDER_MAX}
-                        step={PRICE_SLIDER_STEP}
-                        value={minPriceInput}
-                        onChange={handleMinPriceSliderChange}
-                        className="price-slider price-slider--min"
-                        aria-label="Minimum price"
-                      />
-                      <input
-                        type="range"
-                        min={PRICE_SLIDER_MIN}
-                        max={PRICE_SLIDER_MAX}
-                        step={PRICE_SLIDER_STEP}
-                        value={maxPriceInput}
-                        onChange={handleMaxPriceSliderChange}
-                        className="price-slider price-slider--max"
-                        aria-label="Maximum price"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <button type="submit" className="primary-btn search-btn">Search</button>
-                <button type="button" onClick={handleClear} className="secondary-btn search-btn">
-                  Clear
-                </button>
-              </form>
             </section>
             <div className="reference-chip-row" aria-label="Featured collections">
               <span className="reference-chip reference-chip--dark">Dynamic Search Hub</span>
