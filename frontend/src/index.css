@@ -46,39 +46,42 @@ a {
 
 .premium-header__inner {
   width: 100%;
-  min-height: 104px;
+  min-height: 68px;
   margin: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: 20px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  column-gap: 14px;
 }
 
 .premium-header__brand-cell {
   display: flex;
-  align-items: center;
-  justify-self: center;
-  grid-column: 2;
+  align-items: stretch;
+  justify-self: start;
+  grid-column: 1;
   min-width: 0;
 }
 
 .premium-header__nav-cell {
-  justify-self: start;
-  grid-column: 1;
+  justify-self: center;
+  align-self: start;
+  grid-column: 2;
+  padding-top: 4px;
 }
 
 .premium-header__actions-cell {
   grid-column: 3;
   justify-self: end;
+  align-self: center;
 }
 
 .premium-header__brand {
   text-decoration: none;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 0;
-  height: 100%;
+  height: auto;
   white-space: nowrap;
 }
 
@@ -92,16 +95,16 @@ a {
 }
 
 .premium-header__logo.homekey-logo-lockup {
-  width: clamp(200px, 21vw, 300px);
-  height: clamp(46px, 4.8vw, 68px);
-  min-height: clamp(46px, 4.8vw, 68px);
+  width: clamp(236px, 24vw, 312px);
+  height: 68px;
+  min-height: 68px;
   border-radius: 0;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
   object-fit: contain;
-  object-position: center;
+  object-position: left center;
   transform: none;
 }
 
@@ -109,17 +112,17 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 22px;
 }
 
 .premium-header__link {
   text-decoration: none;
   color: var(--hk-brand-charcoal);
-  font-size: 1.01rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 600;
   letter-spacing: 0.005em;
   line-height: 1;
-  padding: 6px 0;
+  padding: 2px 0;
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s ease, color 0.2s ease;
   white-space: nowrap;
@@ -1733,14 +1736,17 @@ legend {
     min-height: 64px;
     grid-template-columns: 1fr auto 1fr;
     column-gap: 8px;
+    align-items: center;
   }
 
   .premium-header__brand-cell {
     grid-column: 2;
+    justify-self: center;
   }
 
   .premium-header__actions-cell {
     grid-column: 3;
+    align-self: center;
   }
 
   .premium-header__logo.homekey-logo-lockup {
