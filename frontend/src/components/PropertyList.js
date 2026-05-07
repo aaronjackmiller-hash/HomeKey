@@ -211,6 +211,25 @@ const formatPriceSliderLabel = (value, isUpper = false) => {
   return `₪ ${normalized.toLocaleString()}`;
 };
 
+const matchesHeaderKeyword = (property = {}, keyword = '') => {
+  const normalizedKeyword = safeText(keyword).toLowerCase();
+  if (!normalizedKeyword) return true;
+  const address = property.address && typeof property.address === 'object' ? property.address : {};
+  const searchableText = [
+    property.title,
+    property.description,
+    address.street,
+    address.streetNumber,
+    address.city,
+    address.state,
+    address.zip,
+  ]
+    .filter((value) => value != null)
+    .map((value) => String(value).trim().toLowerCase())
+    .join(' ');
+  return searchableText.includes(normalizedKeyword);
+};
+
 const getPriceSummaryLabel = (minValue, maxValue) => {
   const minLabel = formatPriceSliderLabel(minValue);
   const maxLabel = formatPriceSliderLabel(maxValue, true);
@@ -285,6 +304,7 @@ const PropertyList = () => {
   const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
   const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
   const [interestVersion, setInterestVersion] = useState(0);
+  const [headerKeyword, setHeaderKeyword] = useState('');
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -501,12 +521,7 @@ const PropertyList = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const queryValue = (urlParams.get('q') || '').trim();
-    setCityInput(queryValue);
-    setCitySearch(queryValue);
-    if (cityInputRef.current && cityInputRef.current.value !== queryValue) {
-      cityInputRef.current.value = queryValue;
-    }
+    setHeaderKeyword((urlParams.get('q') || '').trim());
   }, [location.search]);
 
   const handleSearch = (e) => {
@@ -565,8 +580,12 @@ const PropertyList = () => {
       });
     }
 
+    if (headerKeyword) {
+      displayProperties = displayProperties.filter((property) => matchesHeaderKeyword(property, headerKeyword));
+    }
+
     return displayProperties.filter((property) => property && typeof property === 'object');
-  }, [dbIsEmpty, filter, citySearch, roomsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
+  }, [dbIsEmpty, filter, citySearch, roomsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet, headerKeyword]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
