@@ -7,20 +7,9 @@ const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
+const BRAND_CHARCOAL = '#1A1A1A';
+const DESKTOP_MARKER_HOVER_SCALE = 1.08;
 const MARKER_STYLE_PRESETS = {
-  house: {
-    label: 'House Pins',
-    markerMode: 'pricePin',
-    minWidth: 56,
-    pinHeight: 26,
-    pointerHeight: 10,
-    horizontalPadding: 10,
-    fontSize: 12,
-    fontWeight: 700,
-    pinColor: '#2563eb',
-    pinStrokeColor: '#1d4ed8',
-    textColor: '#ffffff',
-  },
   minimal: {
     label: 'Minimal',
     markerMode: 'pricePin',
@@ -30,38 +19,12 @@ const MARKER_STYLE_PRESETS = {
     horizontalPadding: 8,
     fontSize: 11,
     fontWeight: 700,
-    pinColor: '#3b82f6',
-    pinStrokeColor: '#2563eb',
-    textColor: '#ffffff',
-  },
-  medium: {
-    label: 'Medium',
-    markerMode: 'pricePin',
-    minWidth: 56,
-    pinHeight: 26,
-    pointerHeight: 10,
-    horizontalPadding: 10,
-    fontSize: 12,
-    fontWeight: 700,
-    pinColor: '#2563eb',
-    pinStrokeColor: '#1d4ed8',
-    textColor: '#ffffff',
-  },
-  bold: {
-    label: 'Bold',
-    markerMode: 'pricePin',
-    minWidth: 62,
-    pinHeight: 28,
-    pointerHeight: 11,
-    horizontalPadding: 11,
-    fontSize: 13,
-    fontWeight: 800,
-    pinColor: '#1d4ed8',
-    pinStrokeColor: '#1e40af',
+    pinColor: BRAND_CHARCOAL,
+    pinStrokeColor: BRAND_CHARCOAL,
     textColor: '#ffffff',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'medium';
+const DEFAULT_MARKER_PRESET_KEY = 'minimal';
 
 let googleMapsLoadPromise;
 
@@ -176,7 +139,7 @@ const formatMarkerPrice = (price) => {
   return `₪${parsedPrice.toLocaleString()}`;
 };
 
-const createPricePinIcon = (mapsApi, preset, priceText) => {
+const createPricePinIcon = (mapsApi, preset, priceText, scale = 1) => {
   const pinHeight = Number(preset.pinHeight) || 26;
   const pointerHeight = Number(preset.pointerHeight) || 10;
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
@@ -202,10 +165,14 @@ const createPricePinIcon = (mapsApi, preset, priceText) => {
     <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
   </svg>`;
 
+  const safeScale = Number(scale) > 0 ? Number(scale) : 1;
+  const scaledWidth = bubbleWidth * safeScale;
+  const scaledHeight = totalHeight * safeScale;
+
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new mapsApi.Size(bubbleWidth, totalHeight),
-    anchor: new mapsApi.Point(centerX, totalHeight),
+    scaledSize: new mapsApi.Size(scaledWidth, scaledHeight),
+    anchor: new mapsApi.Point(centerX * safeScale, totalHeight * safeScale),
   };
 };
 
@@ -235,8 +202,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const [markerPresetKey, setMarkerPresetKey] = useState(DEFAULT_MARKER_PRESET_KEY);
-  const markerPreset = getMarkerStylePreset(markerPresetKey);
+  const markerPreset = getMarkerStylePreset(DEFAULT_MARKER_PRESET_KEY);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -392,6 +358,8 @@ const GoogleListingsMap = ({
     const geocoder = geocoderRef.current;
     const infoWindow = infoWindowRef.current;
     const markerInputs = propertiesWithAddress.slice(0, MAX_MARKERS);
+    const supportsDesktopHover = typeof window.matchMedia === 'function'
+      && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     const updateMarkers = async () => {
       const bounds = new mapsApi.LatLngBounds();
@@ -417,6 +385,14 @@ const GoogleListingsMap = ({
           markerPreset,
           formatMarkerPrice(item.property.price)
         );
+        const markerHoverIcon = supportsDesktopHover
+          ? createPricePinIcon(
+            mapsApi,
+            markerPreset,
+            formatMarkerPrice(item.property.price),
+            DESKTOP_MARKER_HOVER_SCALE
+          )
+          : null;
 
         const marker = new mapsApi.Marker({
           map,
@@ -448,6 +424,14 @@ const GoogleListingsMap = ({
           );
           infoWindow.open(map, marker);
         });
+        if (markerHoverIcon) {
+          marker.addListener('mouseover', () => {
+            marker.setIcon(markerHoverIcon);
+          });
+          marker.addListener('mouseout', () => {
+            marker.setIcon(markerIcon);
+          });
+        }
 
         markerEntriesRef.current.push({
           marker,
@@ -484,7 +468,7 @@ const GoogleListingsMap = ({
       });
       markerEntriesRef.current = [];
     };
-  }, [mapReady, propertiesWithAddress, markerPresetKey]);
+  }, [mapReady, propertiesWithAddress, markerPreset]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
@@ -621,19 +605,6 @@ const GoogleListingsMap = ({
           >
             Clear area
           </button>
-          <div className="map-marker-presets" role="group" aria-label="Map marker style presets">
-            {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, presetConfig]) => (
-              <button
-                key={presetKey}
-                type="button"
-                className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
-                onClick={() => setMarkerPresetKey(presetKey)}
-                aria-pressed={markerPresetKey === presetKey}
-              >
-                {presetConfig.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
       <div className="google-listings-map-canvas-wrap">
