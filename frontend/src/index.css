@@ -95,7 +95,7 @@ a {
 }
 
 .premium-header__logo.homekey-logo-lockup {
-  width: clamp(280px, 30vw, 420px);
+  width: clamp(340px, 38vw, 560px);
   height: 68px;
   min-height: 68px;
   border-radius: 0;
@@ -105,7 +105,7 @@ a {
 .premium-header__logo.homekey-logo-lockup .homekey-logo-lockup-image {
   object-fit: contain;
   object-position: left center;
-  transform: scale(2.05);
+  transform: scale(2.6);
   transform-origin: left center;
 }
 
