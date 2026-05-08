@@ -82,8 +82,8 @@ a {
 }
 
 .premium-header__brand-image {
-  width: clamp(210px, 20vw, 280px);
-  height: 58px;
+  width: clamp(273px, 26vw, 364px);
+  height: 75px;
   object-fit: contain;
   object-position: left center;
 }
@@ -1886,7 +1886,7 @@ legend {
   }
 
   .premium-header__brand-image {
-    width: clamp(190px, 22vw, 240px);
+    width: clamp(247px, 28.6vw, 312px);
   }
 }
 
@@ -1914,8 +1914,8 @@ legend {
   }
 
   .premium-header__brand-image {
-    width: clamp(180px, 45vw, 220px);
-    height: 44px;
+    width: clamp(234px, 58.5vw, 286px);
+    height: 57px;
   }
 
   .premium-header__search-row--top {
