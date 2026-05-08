@@ -403,6 +403,31 @@ a {
   white-space: nowrap;
 }
 
+.premium-header__likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.premium-header__likes-icon {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.premium-header__likes-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #7f1d1d;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
 .premium-header__language-toggle {
   border: none;
   background: transparent;
@@ -2607,19 +2632,36 @@ legend {
 }
 
 .property-list-page .property-card-favorite-btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  background: rgba(255, 255, 255, 0.92);
-  color: #111827;
-  font-size: 0.86rem;
+  border: none;
+  background: transparent;
   line-height: 1;
   cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .property-list-page .property-card-favorite-btn:hover {
-  background: #ffffff;
+  transform: scale(1.06);
+}
+
+.property-list-page .property-card-favorite-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #dc2626;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.8));
+}
+
+.property-list-page .property-card-favorite-btn.is-active svg {
+  fill: rgba(239, 68, 68, 0.9);
 }
 
 .property-list-page .property-card-body {
