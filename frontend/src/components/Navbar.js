@@ -61,7 +61,7 @@ const parseSearchFromLocation = (search = '') => {
   const city = params.get('q') || '';
   const rooms = params.get('rooms') || '';
   const baths = params.get('baths') || '';
-  const listingType = sanitizeListingType(params.get('type') || 'sale');
+  const listingType = sanitizeListingType(params.get('type') || 'rental');
   const allFilters = params.get('allFilters') || '';
   const minRaw = params.get('minPrice');
   const maxRaw = params.get('maxPrice');
