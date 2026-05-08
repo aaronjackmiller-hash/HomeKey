@@ -1,5 +1,5 @@
 import React from 'react';
-import hKeyholeLogo from '../assets/H Letter Logo Clear Background - Copy.png';
+import hKeyholeLogo from '../assets/h-letter-logo-transparent-fixed.png';
 
 export const HOMEKEY_LOGO_SRC = hKeyholeLogo;
 

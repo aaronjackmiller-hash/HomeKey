@@ -4,7 +4,7 @@ import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
-import heroBannerLogo from '../assets/H Letter Logo Clear Background - Copy.png';
+import heroBannerLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import heroBalconyImage from '../assets/Newest Homepage Photo.jpg';
 import {
   getInterestSummary,
