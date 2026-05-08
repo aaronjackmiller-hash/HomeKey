@@ -210,6 +210,7 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   if (Number.isNaN(bedrooms)) return false;
   const EPSILON = 0.001;
   const almostEqual = (left, right) => Math.abs(left - right) < EPSILON;
+  if (selected.toLowerCase() === 'studio') return bedrooms < 1;
   if (selected.endsWith('+')) {
     const minRooms = Number(selected.replace('+', ''));
     if (Number.isNaN(minRooms)) return true;
@@ -220,6 +221,23 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const selectedRooms = Number(selected);
   if (Number.isNaN(selectedRooms)) return true;
   return almostEqual(bedrooms, selectedRooms) || almostEqual(bedrooms, Math.max(0, selectedRooms - 1));
+};
+
+const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
+  const selected = safeText(bathroomsSelection);
+  if (!selected) return true;
+  const bathrooms = Number(bathroomsValue);
+  if (Number.isNaN(bathrooms)) return false;
+  const EPSILON = 0.001;
+  const almostEqual = (left, right) => Math.abs(left - right) < EPSILON;
+  if (selected.endsWith('+')) {
+    const minBathrooms = Number(selected.replace('+', ''));
+    if (Number.isNaN(minBathrooms)) return true;
+    return bathrooms >= minBathrooms;
+  }
+  const selectedBathrooms = Number(selected);
+  if (Number.isNaN(selectedBathrooms)) return true;
+  return almostEqual(bathrooms, selectedBathrooms);
 };
 
 const areStringArraysEqual = (left = [], right = []) => {
@@ -237,6 +255,7 @@ const PropertyList = () => {
   const [filter, setFilter] = useState('all');
   const [citySearch, setCitySearch] = useState('');
   const [roomsSearch, setRoomsSearch] = useState('');
+  const [bathsSearch, setBathsSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -339,6 +358,7 @@ const PropertyList = () => {
     const params = new URLSearchParams(location.search);
     const nextCity = String(params.get('q') || '').trim();
     const nextRooms = String(params.get('rooms') || '').trim();
+    const nextBaths = String(params.get('baths') || '').trim();
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
     const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
     const parseOptionalPrice = (rawValue) => {
@@ -358,6 +378,7 @@ const PropertyList = () => {
 
     setCitySearch(nextCity);
     setRoomsSearch(nextRooms);
+    setBathsSearch(nextBaths);
     setFilter(nextType);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
@@ -377,6 +398,7 @@ const PropertyList = () => {
         if (filter !== 'all') params.type = filter;
         if (citySearch.trim()) params.city = citySearch.trim();
         if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
+        if (bathsSearch.trim()) params.baths = bathsSearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
         if (maxPrice !== '') params.maxPrice = maxPrice;
         const hasUserFilters = Object.keys(params).length > 1;
@@ -451,7 +473,7 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, citySearch, roomsSearch, minPrice, maxPrice, retryCount]);
+  }, [filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, retryCount]);
 
   useEffect(() => () => {
     if (listScrollTimeoutRef.current) {
@@ -481,6 +503,9 @@ const PropertyList = () => {
       if (roomsSearch.trim()) {
         samples = samples.filter((p) => matchesRoomsSelection(p.bedrooms, roomsSearch));
       }
+      if (bathsSearch.trim()) {
+        samples = samples.filter((p) => matchesBathroomsSelection(p.bathrooms, bathsSearch));
+      }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
       displayProperties = samples;
@@ -495,6 +520,9 @@ const PropertyList = () => {
       if (roomsSearch.trim()) {
         displayProperties = displayProperties.filter((p) => matchesRoomsSelection(p?.bedrooms, roomsSearch));
       }
+      if (bathsSearch.trim()) {
+        displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(p?.bathrooms, bathsSearch));
+      }
       if (minPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) >= Number(minPrice));
       if (maxPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) <= Number(maxPrice));
     }
@@ -507,7 +535,7 @@ const PropertyList = () => {
     }
 
     return displayProperties.filter((property) => property && typeof property === 'object');
-  }, [dbIsEmpty, filter, citySearch, roomsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
+  }, [dbIsEmpty, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]

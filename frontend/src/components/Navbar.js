@@ -1,10 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const ROOM_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: 'studio', label: 'Studio' },
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4+', label: '4+' },
+];
+const BATH_OPTIONS = [
+  { value: '', label: 'Any' },
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3+', label: '3+' },
+];
 
 const clampPriceValue = (value) => {
   const asNumber = Number(value);
@@ -30,10 +44,23 @@ const sanitizeListingType = (rawValue) => {
   return 'all';
 };
 
+const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
+  const normalizedRooms = String(rooms || '').trim();
+  const normalizedBaths = String(baths || '').trim();
+  if (!normalizedRooms && !normalizedBaths) return 'Rooms/Baths';
+  const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
+  const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
+  const summaryParts = [];
+  if (roomOption) summaryParts.push(`Rooms: ${roomOption.label}`);
+  if (bathOption) summaryParts.push(`Baths: ${bathOption.label}`);
+  return summaryParts.join(' • ');
+};
+
 const parseSearchFromLocation = (search = '') => {
   const params = new URLSearchParams(search);
   const city = params.get('q') || '';
   const rooms = params.get('rooms') || '';
+  const baths = params.get('baths') || '';
   const listingType = sanitizeListingType(params.get('type') || 'sale');
   const allFilters = params.get('allFilters') || '';
   const minRaw = params.get('minPrice');
@@ -50,6 +77,7 @@ const parseSearchFromLocation = (search = '') => {
   return {
     city,
     rooms,
+    baths,
     listingType,
     allFilters,
     minPriceInput,
@@ -60,6 +88,7 @@ const parseSearchFromLocation = (search = '') => {
 const buildSearchQuery = ({
   city,
   rooms,
+  baths,
   listingType,
   allFilters,
   minPriceInput,
@@ -70,6 +99,8 @@ const buildSearchQuery = ({
   if (trimmedCity) params.set('q', trimmedCity);
   const trimmedRooms = String(rooms || '').trim();
   if (trimmedRooms) params.set('rooms', trimmedRooms);
+  const trimmedBaths = String(baths || '').trim();
+  if (trimmedBaths) params.set('baths', trimmedBaths);
   const normalizedType = sanitizeListingType(listingType);
   if (normalizedType !== 'all') params.set('type', normalizedType);
   const trimmedAllFilters = String(allFilters || '').trim();
@@ -89,11 +120,16 @@ const Navbar = () => {
   );
   const [city, setCity] = useState(parsedFromLocation.city);
   const [rooms, setRooms] = useState(parsedFromLocation.rooms);
+  const [baths, setBaths] = useState(parsedFromLocation.baths);
   const [listingType, setListingType] = useState(parsedFromLocation.listingType);
   const [allFilters, setAllFilters] = useState(parsedFromLocation.allFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [priceExpanded, setPriceExpanded] = useState(false);
+  const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
+  const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
+  const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
+  const roomsBathsRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -101,16 +137,41 @@ const Navbar = () => {
   useEffect(() => {
     setCity(parsedFromLocation.city);
     setRooms(parsedFromLocation.rooms);
+    setBaths(parsedFromLocation.baths);
     setListingType(parsedFromLocation.listingType);
     setAllFilters(parsedFromLocation.allFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
+    setRoomsDraft(parsedFromLocation.rooms);
+    setBathsDraft(parsedFromLocation.baths);
     setPriceExpanded(false);
+    setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
+
+  useEffect(() => {
+    if (!roomsBathsExpanded) return undefined;
+    const handlePointerDown = (event) => {
+      if (roomsBathsRef.current && !roomsBathsRef.current.contains(event.target)) {
+        setRoomsBathsExpanded(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setRoomsBathsExpanded(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [roomsBathsExpanded]);
 
   const applySearch = ({
     nextCity = city,
     nextRooms = rooms,
+    nextBaths = baths,
     nextListingType = listingType,
     nextAllFilters = allFilters,
     nextMinPriceInput = minPriceInput,
@@ -119,6 +180,7 @@ const Navbar = () => {
     const nextSearch = buildSearchQuery({
       city: nextCity,
       rooms: nextRooms,
+      baths: nextBaths,
       listingType: nextListingType,
       allFilters: nextAllFilters,
       minPriceInput: nextMinPriceInput,
@@ -151,9 +213,11 @@ const Navbar = () => {
     event.preventDefault();
     applySearch();
     setPriceExpanded(false);
+    setRoomsBathsExpanded(false);
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
+  const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel(rooms, baths);
 
   return (
     <nav className="premium-header" aria-label="Primary navigation">
@@ -199,7 +263,10 @@ const Navbar = () => {
                   id="header-search-price-toggle"
                   type="button"
                   className="premium-header__price-toggle"
-                  onClick={() => setPriceExpanded((value) => !value)}
+                  onClick={() => {
+                    setRoomsBathsExpanded(false);
+                    setPriceExpanded((value) => !value);
+                  }}
                   aria-expanded={priceExpanded}
                   aria-controls="header-price-slider-panel"
                 >
@@ -242,23 +309,90 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div className="premium-header__search-item premium-header__search-item--rooms">
-                <select
-                  id="header-search-rooms"
-                  value={rooms}
-                  onChange={(event) => {
-                    const nextRooms = event.target.value;
-                    setRooms(nextRooms);
-                    applySearch({ nextRooms });
+              <div className="premium-header__search-item premium-header__search-item--rooms" ref={roomsBathsRef}>
+                <button
+                  id="header-search-rooms-toggle"
+                  type="button"
+                  className="premium-header__rooms-toggle"
+                  onClick={() => {
+                    setPriceExpanded(false);
+                    setRoomsBathsExpanded((isExpanded) => {
+                      const nextExpanded = !isExpanded;
+                      if (nextExpanded) {
+                        setRoomsDraft(rooms);
+                        setBathsDraft(baths);
+                      }
+                      return nextExpanded;
+                    });
                   }}
+                  aria-expanded={roomsBathsExpanded}
+                  aria-controls="header-rooms-baths-panel"
                 >
-                  <option value="">Rooms/Baths</option>
-                  <option value="1">1+ Rooms</option>
-                  <option value="2">2+ Rooms</option>
-                  <option value="3">3+ Rooms</option>
-                  <option value="4">4+ Rooms</option>
-                  <option value="5+">5+ Rooms</option>
-                </select>
+                  <span>{roomsBathsSummaryLabel}</span>
+                  <span className="premium-header__price-caret" aria-hidden="true">{roomsBathsExpanded ? '▲' : '▼'}</span>
+                </button>
+                <div
+                  id="header-rooms-baths-panel"
+                  className={`premium-header__rooms-panel ${roomsBathsExpanded ? 'is-open' : ''}`}
+                >
+                  <div className="premium-header__rooms-section">
+                    <p className="premium-header__rooms-section-title">Rooms</p>
+                    <div className="premium-header__rooms-options-grid">
+                      {ROOM_OPTIONS.map((option) => (
+                        <button
+                          key={option.value || 'any-rooms'}
+                          type="button"
+                          className={`premium-header__chip-btn ${roomsDraft === option.value ? 'is-selected' : ''}`}
+                          onClick={() => setRoomsDraft(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="premium-header__rooms-section">
+                    <p className="premium-header__rooms-section-title">Bathrooms</p>
+                    <div className="premium-header__rooms-options-grid premium-header__rooms-options-grid--baths">
+                      {BATH_OPTIONS.map((option) => (
+                        <button
+                          key={option.value || 'any-baths'}
+                          type="button"
+                          className={`premium-header__chip-btn ${bathsDraft === option.value ? 'is-selected' : ''}`}
+                          onClick={() => setBathsDraft(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="premium-header__rooms-panel-actions">
+                    <button
+                      type="button"
+                      className="premium-header__rooms-clear-btn"
+                      onClick={() => {
+                        setRoomsDraft('');
+                        setBathsDraft('');
+                        setRooms('');
+                        setBaths('');
+                        applySearch({ nextRooms: '', nextBaths: '' });
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      className="premium-header__rooms-done-btn"
+                      onClick={() => {
+                        setRooms(roomsDraft);
+                        setBaths(bathsDraft);
+                        applySearch({ nextRooms: roomsDraft, nextBaths: bathsDraft });
+                        setRoomsBathsExpanded(false);
+                      }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="premium-header__search-item premium-header__search-item--all-filters">
                 <select

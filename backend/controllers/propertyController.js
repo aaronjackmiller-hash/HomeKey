@@ -121,6 +121,11 @@ const isRealScrapedExternalId = (value) =>
 const toBedroomRangeFromRoomsQuery = (roomsQuery) => {
     const normalized = String(roomsQuery || '').trim();
     if (!normalized) return null;
+    if (normalized.toLowerCase() === 'studio') {
+        return {
+            $lt: 1,
+        };
+    }
     if (normalized.endsWith('+')) {
         const minRooms = Number(normalized.slice(0, -1));
         if (Number.isNaN(minRooms)) return null;
@@ -133,6 +138,24 @@ const toBedroomRangeFromRoomsQuery = (roomsQuery) => {
     return {
         $gte: Math.max(0, exactRooms - 1),
         $lt: exactRooms + 0.5,
+    };
+};
+
+const toBathroomRangeFromQuery = (bathsQuery) => {
+    const normalized = String(bathsQuery || '').trim();
+    if (!normalized) return null;
+    if (normalized.endsWith('+')) {
+        const minBathrooms = Number(normalized.slice(0, -1));
+        if (Number.isNaN(minBathrooms)) return null;
+        return {
+            $gte: minBathrooms,
+        };
+    }
+    const exactBathrooms = Number(normalized);
+    if (Number.isNaN(exactBathrooms)) return null;
+    return {
+        $gte: exactBathrooms - 0.001,
+        $lt: exactBathrooms + 0.5,
     };
 };
 
@@ -173,6 +196,10 @@ const getAllProperties = async (req, res) => {
         if (req.query.rooms) {
             const bedroomRangeFilter = toBedroomRangeFromRoomsQuery(req.query.rooms);
             if (bedroomRangeFilter) filter.bedrooms = bedroomRangeFilter;
+        }
+        if (req.query.baths) {
+            const bathroomRangeFilter = toBathroomRangeFromQuery(req.query.baths);
+            if (bathroomRangeFilter) filter.bathrooms = bathroomRangeFilter;
         }
 
         // Mongoose will handle the connection queue automatically
