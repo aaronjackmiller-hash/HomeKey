@@ -1092,6 +1092,10 @@ a {
   right: 3px;
 }
 
+.image-corner-logo--card img {
+  mix-blend-mode: multiply;
+}
+
 .image-corner-logo.yad2-obscure-logo {
   top: 2px;
   right: 2px;
