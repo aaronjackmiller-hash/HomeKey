@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
-import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import heroBannerLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import heroBalconyImage from '../assets/Newest Homepage Photo.jpg';
 import {
   getInterestSummary,
+  incrementHeartClickCount,
+  toggleFavoriteProperty,
 } from '../utils/propertyInterest';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
@@ -282,6 +283,7 @@ const PropertyList = () => {
   const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
   const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
   const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
+  const [interestVersion, setInterestVersion] = useState(0);
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -482,7 +484,18 @@ const PropertyList = () => {
     }
   }, []);
 
-  const interestSummary = getInterestSummary();
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleInterestUpdated = () => {
+      setInterestVersion((value) => value + 1);
+    };
+    window.addEventListener('homekey:interest-updated', handleInterestUpdated);
+    return () => {
+      window.removeEventListener('homekey:interest-updated', handleInterestUpdated);
+    };
+  }, []);
+
+  const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const favoritesCount = interestSummary.favoriteIds.length;
   const savedCount = interestSummary.savedIds.length;
   const favoriteIdsKey = (interestSummary.favoriteIds || []).map((id) => String(id)).join('|');
@@ -652,6 +665,7 @@ const PropertyList = () => {
           const propertyId = property._id || property.id;
           const canOpenDetail = Boolean(propertyId);
           const isYad2Media = isYad2LikeListing(property);
+          const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;
           const key = propertyId || `property-${index}`;
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
@@ -684,19 +698,25 @@ const PropertyList = () => {
                   <span className="property-card-listing-badge">Verified Listing</span>
                   <button
                     type="button"
-                    className="property-card-favorite-btn"
-                    aria-label="Save listing"
+                    className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
+                    aria-label={isFavorite ? 'Remove favorite from listing' : 'Add favorite to listing'}
+                    aria-pressed={isFavorite}
                     onClick={(event) => {
                       event.stopPropagation();
+                      if (!propertyId) return;
+                      toggleFavoriteProperty(propertyId);
+                      incrementHeartClickCount();
+                      setInterestVersion((value) => value + 1);
                     }}
                   >
-                    ♡
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+                    </svg>
                   </button>
                 </div>
                 {isYad2Media && (
                   <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
                 )}
-                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--cover image-corner-logo--card" />
               </div>
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
