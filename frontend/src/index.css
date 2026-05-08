@@ -1096,6 +1096,12 @@ a {
   mix-blend-mode: multiply;
 }
 
+.homekey-logo-lockup--compact.image-corner-logo--card {
+  width: 58px;
+  height: 40px;
+  min-height: 40px;
+}
+
 .image-corner-logo.yad2-obscure-logo {
   top: 2px;
   right: 2px;
