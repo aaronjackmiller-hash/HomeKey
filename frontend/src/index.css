@@ -120,7 +120,8 @@ a {
 
 .premium-header__search-item input,
 .premium-header__search-item select,
-.premium-header__price-toggle {
+.premium-header__price-toggle,
+.premium-header__rooms-toggle {
   width: 100%;
   height: 28px;
   border: 1px solid #e2e8f0;
@@ -134,7 +135,8 @@ a {
 
 .premium-header__search-item input:focus,
 .premium-header__search-item select:focus,
-.premium-header__price-toggle:focus {
+.premium-header__price-toggle:focus,
+.premium-header__rooms-toggle:focus {
   outline: none;
   border-color: #113f67;
   box-shadow: 0 0 0 1px rgba(17, 63, 103, 0.16);
@@ -154,6 +156,15 @@ a {
 }
 
 .premium-header__price-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 400;
+  cursor: pointer;
+  text-align: left;
+}
+
+.premium-header__rooms-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -185,6 +196,104 @@ a {
 
 .premium-header__price-panel.is-open {
   display: block;
+}
+
+.premium-header__rooms-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  min-width: 320px;
+  border: 1px solid #d4dae5;
+  border-radius: 8px;
+  padding: 14px 14px 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+  z-index: 40;
+}
+
+.premium-header__rooms-panel.is-open {
+  display: block;
+}
+
+.premium-header__rooms-section + .premium-header__rooms-section {
+  margin-top: 12px;
+}
+
+.premium-header__rooms-section-title {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.premium-header__rooms-options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.premium-header__rooms-options-grid--baths .premium-header__chip-btn {
+  min-width: 74px;
+}
+
+.premium-header__chip-btn {
+  min-width: 48px;
+  min-height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.premium-header__chip-btn:hover {
+  border-color: #9ca3af;
+}
+
+.premium-header__chip-btn.is-selected {
+  border-color: #ef7f1a;
+  box-shadow: 0 0 0 1px rgba(239, 127, 26, 0.18);
+}
+
+.premium-header__rooms-panel-actions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.premium-header__rooms-clear-btn {
+  border: none;
+  background: transparent;
+  color: #0284c7;
+  font-size: 0.96rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.premium-header__rooms-done-btn {
+  min-height: 34px;
+  border: 1px solid #ef7f1a;
+  border-radius: 8px;
+  background: #ef7f1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.premium-header__rooms-done-btn:hover {
+  background: #d86c0d;
+  border-color: #d86c0d;
 }
 
 .premium-header__price-values {
@@ -1997,8 +2106,15 @@ legend {
 
   .premium-header__search-item input,
   .premium-header__search-item select,
-  .premium-header__price-toggle {
+  .premium-header__price-toggle,
+  .premium-header__rooms-toggle {
     height: 32px;
+  }
+
+  .premium-header__rooms-panel {
+    left: 0;
+    right: 0;
+    min-width: 0;
   }
 
   .property-detail-page {
