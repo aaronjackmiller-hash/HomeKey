@@ -83,8 +83,8 @@ a {
 
 .premium-header__brand-image {
   width: auto;
-  height: 70px;
-  max-width: clamp(320px, 34vw, 520px);
+  height: 62px;
+  max-width: clamp(300px, 30vw, 470px);
   object-fit: contain;
   object-position: left center;
 }
@@ -1887,8 +1887,8 @@ legend {
   }
 
   .premium-header__brand-image {
-    height: 64px;
-    max-width: clamp(280px, 32vw, 420px);
+    height: 58px;
+    max-width: clamp(270px, 30vw, 390px);
   }
 }
 
@@ -1916,8 +1916,8 @@ legend {
   }
 
   .premium-header__brand-image {
-    height: 50px;
-    max-width: clamp(220px, 58vw, 320px);
+    height: 46px;
+    max-width: clamp(210px, 55vw, 290px);
   }
 
   .premium-header__search-row--top {
