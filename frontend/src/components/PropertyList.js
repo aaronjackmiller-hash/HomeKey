@@ -666,11 +666,9 @@ const PropertyList = () => {
                   </button>
                 </div>
                 {isYad2Media && (
-                  <>
-                    <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
-                    <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--cover image-corner-logo--card" />
-                  </>
+                  <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
                 )}
+                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--cover image-corner-logo--card" />
               </div>
               <div className="property-card-body">
                 <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
