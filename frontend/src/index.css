@@ -2072,7 +2072,12 @@ legend {
   }
 
   .premium-header__likes-copy {
-    display: none;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+    font-size: 0.62rem;
+    line-height: 1;
   }
 
   .premium-header__search-cell {
