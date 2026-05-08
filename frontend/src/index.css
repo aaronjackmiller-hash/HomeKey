@@ -82,8 +82,9 @@ a {
 }
 
 .premium-header__brand-image {
-  width: clamp(210px, 20vw, 280px);
-  height: 58px;
+  width: auto;
+  height: 70px;
+  max-width: clamp(320px, 34vw, 520px);
   object-fit: contain;
   object-position: left center;
 }
@@ -1886,7 +1887,8 @@ legend {
   }
 
   .premium-header__brand-image {
-    width: clamp(190px, 22vw, 240px);
+    height: 64px;
+    max-width: clamp(280px, 32vw, 420px);
   }
 }
 
@@ -1914,8 +1916,8 @@ legend {
   }
 
   .premium-header__brand-image {
-    width: clamp(180px, 45vw, 220px);
-    height: 44px;
+    height: 50px;
+    max-width: clamp(220px, 58vw, 320px);
   }
 
   .premium-header__search-row--top {
