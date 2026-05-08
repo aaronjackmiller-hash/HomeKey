@@ -49,7 +49,7 @@ a {
   min-height: 102px;
   margin: 0;
   display: grid;
-  grid-template-columns: auto minmax(460px, 660px) auto;
+  grid-template-columns: auto minmax(460px, 660px) auto auto;
   align-items: center;
   column-gap: 14px;
   padding: 6px 0;
@@ -69,6 +69,10 @@ a {
 }
 
 .premium-header__actions-cell {
+  justify-self: end;
+}
+
+.premium-header__likes-cell {
   justify-self: end;
 }
 
@@ -1059,11 +1063,16 @@ a {
 }
 
 .yad2-logo-mask--card {
-  height: 0;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
-  background: none;
-  backdrop-filter: none;
+  top: 6px;
+  left: auto;
+  right: 6px;
+  width: 44px;
+  height: 30px;
+  z-index: 3;
+  border-radius: 9px;
+  background: linear-gradient(160deg, rgba(248, 250, 252, 0.97), rgba(241, 245, 249, 0.94));
+  backdrop-filter: blur(3px);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.24);
 }
 
 .yad2-logo-mask::after {
@@ -2029,7 +2038,7 @@ legend {
 
 @media (max-width: 1240px) {
   .premium-header__inner {
-    grid-template-columns: auto minmax(360px, 1fr) auto;
+    grid-template-columns: auto minmax(360px, 1fr) auto auto;
   }
 
   .premium-header__brand-image {
@@ -2044,7 +2053,7 @@ legend {
   }
 
   .premium-header__inner {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     row-gap: 6px;
   }
 
@@ -2053,6 +2062,16 @@ legend {
   }
 
   .premium-header__actions-cell {
+    display: none;
+  }
+
+  .premium-header__likes-cell {
+    display: inline-flex;
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  .premium-header__likes-copy {
     display: none;
   }
 
@@ -2643,6 +2662,8 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 6;
 }
 
 .property-list-page .property-card-favorite-btn:hover {
@@ -2662,6 +2683,7 @@ legend {
 
 .property-list-page .property-card-favorite-btn.is-active svg {
   fill: rgba(239, 68, 68, 0.9);
+  stroke: #b91c1c;
 }
 
 .property-list-page .property-card-body {
