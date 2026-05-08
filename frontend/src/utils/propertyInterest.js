@@ -1,6 +1,7 @@
 const FAVORITE_IDS_KEY = 'homekey:favorite-property-ids:v1';
 const SAVED_IDS_KEY = 'homekey:saved-property-ids:v1';
 const SAVED_FILE_KEY = 'homekey:saved-property-file:v1';
+const HEART_CLICK_COUNT_KEY = 'homekey:heart-click-count:v1';
 
 const getStorage = () => {
   if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -27,6 +28,11 @@ const writeJson = (key, value) => {
   } catch (_err) {
     // Ignore storage quota failures.
   }
+};
+
+const notifyInterestUpdated = () => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('homekey:interest-updated'));
 };
 
 const normalizePropertyId = (propertyOrId) => {
@@ -80,7 +86,23 @@ export const toggleFavoriteId = (propertyOrId) => {
   }
   const nextIds = Array.from(next);
   writeJson(FAVORITE_IDS_KEY, nextIds);
+  notifyInterestUpdated();
   return nextIds;
+};
+
+export const loadHeartClickCount = () => {
+  const parsed = Number(readJson(HEART_CLICK_COUNT_KEY, 0));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.floor(parsed);
+};
+
+export const incrementHeartClickCount = (step = 1) => {
+  const incrementBy = Number(step);
+  if (!Number.isFinite(incrementBy) || incrementBy <= 0) return loadHeartClickCount();
+  const nextCount = loadHeartClickCount() + Math.floor(incrementBy);
+  writeJson(HEART_CLICK_COUNT_KEY, nextCount);
+  notifyInterestUpdated();
+  return nextCount;
 };
 
 const buildSavedRecord = (property = {}, meta = {}) => {
@@ -136,6 +158,7 @@ export const toggleSavedProperty = (property = {}, meta = {}) => {
   const savedIds = Array.from(savedSet);
   writeJson(SAVED_IDS_KEY, savedIds);
   writeJson(SAVED_FILE_KEY, savedFile);
+  notifyInterestUpdated();
 
   return { saved, savedIds, savedFile };
 };
@@ -157,4 +180,5 @@ export const getInterestSummary = () => ({
   favoriteIds: loadFavoriteIds(),
   savedIds: loadSavedIds(),
   savedFile: loadSavedPropertyFile(),
+  heartClickCount: loadHeartClickCount(),
 });
