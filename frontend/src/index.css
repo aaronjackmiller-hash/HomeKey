@@ -616,6 +616,7 @@ a {
 
 .property-card-image-wrap {
   position: relative;
+  isolation: isolate;
 }
 
 .property-card-body {
@@ -1090,6 +1091,7 @@ a {
 .image-corner-logo--card {
   top: 3px;
   right: 3px;
+  mix-blend-mode: multiply;
 }
 
 .image-corner-logo--card img {
