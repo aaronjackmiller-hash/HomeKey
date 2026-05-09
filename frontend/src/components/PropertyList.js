@@ -251,6 +251,20 @@ const areStringArraysEqual = (left = [], right = []) => {
   return true;
 };
 
+const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
+  const favorites = [];
+  const others = [];
+  listings.forEach((property) => {
+    const propertyId = property && (property._id || property.id);
+    if (propertyId && favoriteIdSet.has(String(propertyId))) {
+      favorites.push(property);
+      return;
+    }
+    others.push(property);
+  });
+  return [...favorites, ...others];
+};
+
 const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -377,6 +391,7 @@ const PropertyList = () => {
       nextMinPrice = low;
       nextMaxPrice = high;
     }
+    const nextFavoritesOnly = params.get('liked') === '1';
 
     setCitySearch(nextCity);
     setRoomsSearch(nextRooms);
@@ -384,6 +399,7 @@ const PropertyList = () => {
     setFilter(nextType);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
+    setFavoritesOnly(nextFavoritesOnly);
   }, [location.search]);
 
   useEffect(() => {
@@ -554,12 +570,14 @@ const PropertyList = () => {
     [circleSelection.propertyIds]
   );
   const displayProperties = useMemo(() => {
-    if (!circleSelection.active) return mapSourceProperties;
-    return mapSourceProperties.filter((property) => {
-      const propertyId = property && (property._id || property.id);
-      return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
-    });
-  }, [circleSelection.active, circlePropertyIdSet, mapSourceProperties]);
+    const visibleProperties = !circleSelection.active
+      ? mapSourceProperties
+      : mapSourceProperties.filter((property) => {
+        const propertyId = property && (property._id || property.id);
+        return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
+      });
+    return prioritizeFavorites(visibleProperties, favoriteIdSet);
+  }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
   const mobileWhatsAppHref = useMemo(() => {
     for (const property of mapSourceProperties) {
       if (!property || typeof property !== 'object') continue;
@@ -830,7 +848,20 @@ const PropertyList = () => {
             <button
               type="button"
               className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
-              onClick={() => setFavoritesOnly((value) => !value)}
+              onClick={() => {
+                const params = new URLSearchParams(location.search);
+                const nextFavoritesOnly = !favoritesOnly;
+                if (nextFavoritesOnly) {
+                  params.set('liked', '1');
+                } else {
+                  params.delete('liked');
+                }
+                const nextSearch = params.toString();
+                history.replace({
+                  pathname: '/',
+                  search: nextSearch ? `?${nextSearch}` : '',
+                });
+              }}
             >
               {favoritesOnly ? 'Show All Listings' : 'Show Favorites Only'}
             </button>
