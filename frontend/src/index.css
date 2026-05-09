@@ -621,6 +621,25 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.premium-header__likes:hover {
+  background: #fee2e2;
+}
+
+.premium-header__likes:focus-visible {
+  outline: 1px solid #991b1b;
+  outline-offset: 1px;
+}
+
+.premium-header__likes.is-active {
+  background: #fee2e2;
 }
 
 .premium-header__likes-icon {

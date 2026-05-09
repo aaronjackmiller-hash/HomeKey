@@ -103,6 +103,7 @@ const parseSearchFromLocation = (search = '') => {
     featureFilters,
     minPriceInput,
     maxPriceInput,
+    likedOnly: params.get('liked') === '1',
   };
 };
 
@@ -116,6 +117,7 @@ const buildSearchQuery = ({
   featureFilters,
   minPriceInput,
   maxPriceInput,
+  likedOnly,
 }) => {
   const params = new URLSearchParams();
   const trimmedCity = String(city || '').trim();
@@ -140,6 +142,7 @@ const buildSearchQuery = ({
   }
   if (Number(minPriceInput) > PRICE_SLIDER_MIN) params.set('minPrice', String(minPriceInput));
   if (Number(maxPriceInput) < PRICE_SLIDER_MAX) params.set('maxPrice', String(maxPriceInput));
+  if (likedOnly) params.set('liked', '1');
   const serialized = params.toString();
   return serialized ? `?${serialized}` : '';
 };
@@ -160,6 +163,7 @@ const Navbar = () => {
   const [featureFilters, setFeatureFilters] = useState(parsedFromLocation.featureFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
+  const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
   const [priceExpanded, setPriceExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -182,6 +186,7 @@ const Navbar = () => {
     setFeatureFilters(parsedFromLocation.featureFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
+    setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
     setPriceExpanded(false);
@@ -250,6 +255,7 @@ const Navbar = () => {
     nextFeatureFilters = featureFilters,
     nextMinPriceInput = minPriceInput,
     nextMaxPriceInput = maxPriceInput,
+    nextLikedOnly = likedOnly,
   } = {}) => {
     const nextSearch = buildSearchQuery({
       city: nextCity,
@@ -261,6 +267,7 @@ const Navbar = () => {
       featureFilters: nextFeatureFilters,
       minPriceInput: nextMinPriceInput,
       maxPriceInput: nextMaxPriceInput,
+      likedOnly: nextLikedOnly,
     });
     if (location.pathname === '/' && location.search === nextSearch) return;
     history.replace({
@@ -330,7 +337,6 @@ const Navbar = () => {
   const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel(rooms, baths);
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const likedCount = (interestSummary.favoriteIds || []).length;
-  const heartClickCount = Number(interestSummary.heartClickCount) || 0;
 
   return (
     <nav className="premium-header" aria-label="Primary navigation">
@@ -551,19 +557,25 @@ const Navbar = () => {
         </div>
 
         <div className="premium-header__likes-cell">
-          <div
-            className="premium-header__likes"
+          <button
+            type="button"
+            className={`premium-header__likes ${likedOnly ? 'is-active' : ''}`}
+            onClick={() => {
+              const nextLikedOnly = !likedOnly;
+              setLikedOnly(nextLikedOnly);
+              applySearch({ nextLikedOnly });
+            }}
             aria-live="polite"
-            aria-label={`Liked apartments ${likedCount}. Total heart clicks ${heartClickCount}.`}
+            aria-label={`Liked apartments ${likedCount}. ${likedOnly ? 'Showing only liked apartments.' : 'Showing all apartments.'}`}
+            aria-pressed={likedOnly}
           >
             <svg className="premium-header__likes-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
             </svg>
             <div className="premium-header__likes-copy">
               <span>Liked {likedCount}</span>
-              <span>Clicks {heartClickCount}</span>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="premium-header__actions premium-header__actions-cell">
