@@ -484,7 +484,7 @@ const Navbar = () => {
               applySearch({ nextLikedOnly });
             }}
             aria-live="polite"
-            aria-label={`Liked apartments ${likedCount}. ${likedOnly ? 'Showing only liked apartments.' : 'Click to show only liked apartments.'}`}
+            aria-label={`Liked apartments ${likedCount}. ${likedOnly ? 'Showing only liked apartments.' : 'Showing all apartments.'}`}
             aria-pressed={likedOnly}
           >
             <svg className="premium-header__likes-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
