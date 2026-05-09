@@ -432,7 +432,7 @@ const Navbar = () => {
           </form>
         </div>
 
-        <div className="premium-header__actions premium-header__actions-cell">
+        <div className="premium-header__likes-cell">
           <div
             className="premium-header__likes"
             aria-live="polite"
@@ -446,6 +446,9 @@ const Navbar = () => {
               <span>Clicks {heartClickCount}</span>
             </div>
           </div>
+        </div>
+
+        <div className="premium-header__actions premium-header__actions-cell">
           <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
             <span className="premium-header__flag-icon" aria-hidden="true">
               <span className="premium-header__flag-star">✡</span>
