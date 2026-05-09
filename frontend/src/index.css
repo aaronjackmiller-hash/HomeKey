@@ -362,6 +362,15 @@ a {
 
 .filter-menu__feature-icon {
   color: #4b5563;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.64rem;
+  font-weight: 700;
 }
 
 .filter-menu__mamad-btn {
@@ -384,6 +393,7 @@ a {
 
 .filter-menu__mamad-icon {
   color: #111827;
+  font-size: 1.1rem;
   transition: transform 0.2s ease;
 }
 
