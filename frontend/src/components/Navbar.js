@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
+import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 
 const PRICE_SLIDER_MIN = 0;
@@ -128,10 +129,12 @@ const Navbar = () => {
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [priceExpanded, setPriceExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
   const roomsBathsRef = useRef(null);
+  const filtersRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -148,6 +151,7 @@ const Navbar = () => {
     setBathsDraft(parsedFromLocation.baths);
     setPriceExpanded(false);
     setRoomsBathsExpanded(false);
+    setFiltersExpanded(false);
   }, [parsedFromLocation]);
 
   useEffect(() => {
@@ -180,6 +184,26 @@ const Navbar = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [roomsBathsExpanded]);
+
+  useEffect(() => {
+    if (!filtersExpanded) return undefined;
+    const handlePointerDown = (event) => {
+      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
+        setFiltersExpanded(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setFiltersExpanded(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [filtersExpanded]);
 
   const applySearch = ({
     nextCity = city,
@@ -227,6 +251,7 @@ const Navbar = () => {
     applySearch();
     setPriceExpanded(false);
     setRoomsBathsExpanded(false);
+    setFiltersExpanded(false);
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
@@ -280,6 +305,7 @@ const Navbar = () => {
                   type="button"
                   className="premium-header__price-toggle"
                   onClick={() => {
+                    setFiltersExpanded(false);
                     setRoomsBathsExpanded(false);
                     setPriceExpanded((value) => !value);
                   }}
@@ -331,6 +357,7 @@ const Navbar = () => {
                   type="button"
                   className="premium-header__rooms-toggle"
                   onClick={() => {
+                    setFiltersExpanded(false);
                     setPriceExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
@@ -410,22 +437,31 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div className="premium-header__search-item premium-header__search-item--all-filters">
-                <select
-                  id="header-search-filter"
-                  value={allFilters}
-                  onChange={(event) => {
-                    const nextAllFilters = event.target.value;
-                    setAllFilters(nextAllFilters);
-                    applySearch({ nextAllFilters });
+              <div
+                className="premium-header__search-item premium-header__search-item--all-filters"
+                ref={filtersRef}
+              >
+                <button
+                  id="header-search-filter-toggle"
+                  type="button"
+                  className="premium-header__filters-toggle"
+                  onClick={() => {
+                    setPriceExpanded(false);
+                    setRoomsBathsExpanded(false);
+                    setFiltersExpanded((value) => !value);
                   }}
+                  aria-expanded={filtersExpanded}
+                  aria-controls="header-filters-panel"
                 >
-                  <option value="">All Filters</option>
-                  <option value="newest">Newest</option>
-                  <option value="verified">Verified</option>
-                  <option value="price-low-high">Price: Low to High</option>
-                  <option value="price-high-low">Price: High to Low</option>
-                </select>
+                  <span>All Filters</span>
+                  <span className="premium-header__price-caret" aria-hidden="true">{filtersExpanded ? '▲' : '▼'}</span>
+                </button>
+                <div
+                  id="header-filters-panel"
+                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
+                >
+                  <FilterMenu onClose={() => setFiltersExpanded(false)} />
+                </div>
               </div>
             </div>
             <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
