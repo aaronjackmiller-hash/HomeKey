@@ -21,6 +21,16 @@ const BATH_OPTIONS = [
   { value: '2', label: '2' },
   { value: '3+', label: '3+' },
 ];
+const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
+const FEATURE_FILTER_OPTIONS = [
+  'elevator',
+  'parking',
+  'pets',
+  'disabled-access',
+  'renovated',
+  'furnished',
+  'mamad',
+];
 
 const clampPriceValue = (value) => {
   const asNumber = Number(value);
@@ -65,6 +75,13 @@ const parseSearchFromLocation = (search = '') => {
   const baths = params.get('baths') || '';
   const listingType = sanitizeListingType(params.get('type') || 'rental');
   const allFilters = params.get('allFilters') || '';
+  const propertyCategory = params.get('propertyCategory') || '';
+  const normalizedPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(propertyCategory) ? propertyCategory : '';
+  const rawFeatures = String(params.get('features') || '');
+  const featureFilters = rawFeatures
+    .split(',')
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
   const minRaw = params.get('minPrice');
   const maxRaw = params.get('maxPrice');
   const hasMin = minRaw != null && minRaw !== '';
@@ -82,6 +99,8 @@ const parseSearchFromLocation = (search = '') => {
     baths,
     listingType,
     allFilters,
+    propertyCategory: normalizedPropertyCategory,
+    featureFilters,
     minPriceInput,
     maxPriceInput,
     likedOnly: params.get('liked') === '1',
@@ -94,6 +113,8 @@ const buildSearchQuery = ({
   baths,
   listingType,
   allFilters,
+  propertyCategory,
+  featureFilters,
   minPriceInput,
   maxPriceInput,
   likedOnly,
@@ -109,6 +130,16 @@ const buildSearchQuery = ({
   if (normalizedType !== 'all') params.set('type', normalizedType);
   const trimmedAllFilters = String(allFilters || '').trim();
   if (trimmedAllFilters) params.set('allFilters', trimmedAllFilters);
+  const normalizedPropertyCategory = String(propertyCategory || '').trim().toLowerCase();
+  if (PROPERTY_CATEGORY_OPTIONS.includes(normalizedPropertyCategory)) {
+    params.set('propertyCategory', normalizedPropertyCategory);
+  }
+  const normalizedFeatureFilters = (Array.isArray(featureFilters) ? featureFilters : [])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
+  if (normalizedFeatureFilters.length > 0) {
+    params.set('features', normalizedFeatureFilters.join(','));
+  }
   if (Number(minPriceInput) > PRICE_SLIDER_MIN) params.set('minPrice', String(minPriceInput));
   if (Number(maxPriceInput) < PRICE_SLIDER_MAX) params.set('maxPrice', String(maxPriceInput));
   if (likedOnly) params.set('liked', '1');
@@ -128,6 +159,8 @@ const Navbar = () => {
   const [baths, setBaths] = useState(parsedFromLocation.baths);
   const [listingType, setListingType] = useState(parsedFromLocation.listingType);
   const [allFilters, setAllFilters] = useState(parsedFromLocation.allFilters);
+  const [propertyCategory, setPropertyCategory] = useState(parsedFromLocation.propertyCategory);
+  const [featureFilters, setFeatureFilters] = useState(parsedFromLocation.featureFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
@@ -149,6 +182,8 @@ const Navbar = () => {
     setBaths(parsedFromLocation.baths);
     setListingType(parsedFromLocation.listingType);
     setAllFilters(parsedFromLocation.allFilters);
+    setPropertyCategory(parsedFromLocation.propertyCategory);
+    setFeatureFilters(parsedFromLocation.featureFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
     setLikedOnly(parsedFromLocation.likedOnly);
@@ -216,6 +251,8 @@ const Navbar = () => {
     nextBaths = baths,
     nextListingType = listingType,
     nextAllFilters = allFilters,
+    nextPropertyCategory = propertyCategory,
+    nextFeatureFilters = featureFilters,
     nextMinPriceInput = minPriceInput,
     nextMaxPriceInput = maxPriceInput,
     nextLikedOnly = likedOnly,
@@ -226,6 +263,8 @@ const Navbar = () => {
       baths: nextBaths,
       listingType: nextListingType,
       allFilters: nextAllFilters,
+      propertyCategory: nextPropertyCategory,
+      featureFilters: nextFeatureFilters,
       minPriceInput: nextMinPriceInput,
       maxPriceInput: nextMaxPriceInput,
       likedOnly: nextLikedOnly,
@@ -259,6 +298,39 @@ const Navbar = () => {
     setPriceExpanded(false);
     setRoomsBathsExpanded(false);
     setFiltersExpanded(false);
+  };
+
+  const handleFilterMenuMinPriceChange = (rawValue) => {
+    const normalizedRaw = String(rawValue || '').trim();
+    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(normalizedRaw);
+    const nextMinPriceInput = Math.min(parsedValue, maxPriceInput);
+    setMinPriceInput(nextMinPriceInput);
+    applySearch({ nextMinPriceInput });
+  };
+
+  const handleFilterMenuMaxPriceChange = (rawValue) => {
+    const normalizedRaw = String(rawValue || '').trim();
+    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MAX : clampPriceValue(normalizedRaw);
+    const nextMaxPriceInput = Math.max(parsedValue, minPriceInput);
+    setMaxPriceInput(nextMaxPriceInput);
+    applySearch({ nextMaxPriceInput });
+  };
+
+  const handleTogglePropertyCategory = (nextCategory) => {
+    const normalizedCategory = String(nextCategory || '').trim().toLowerCase();
+    const resolvedCategory = propertyCategory === normalizedCategory ? '' : normalizedCategory;
+    setPropertyCategory(resolvedCategory);
+    applySearch({ nextPropertyCategory: resolvedCategory });
+  };
+
+  const handleToggleFeatureFilter = (featureId) => {
+    const normalizedFeature = String(featureId || '').trim().toLowerCase();
+    if (!FEATURE_FILTER_OPTIONS.includes(normalizedFeature)) return;
+    const nextFeatureFilters = featureFilters.includes(normalizedFeature)
+      ? featureFilters.filter((value) => value !== normalizedFeature)
+      : [...featureFilters, normalizedFeature];
+    setFeatureFilters(nextFeatureFilters);
+    applySearch({ nextFeatureFilters });
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
@@ -466,7 +538,17 @@ const Navbar = () => {
                   id="header-filters-panel"
                   className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
                 >
-                  <FilterMenu onClose={() => setFiltersExpanded(false)} />
+                  <FilterMenu
+                    onClose={() => setFiltersExpanded(false)}
+                    minPrice={minPriceInput}
+                    maxPrice={maxPriceInput}
+                    propertyCategory={propertyCategory}
+                    selectedFeatures={featureFilters}
+                    onMinPriceChange={handleFilterMenuMinPriceChange}
+                    onMaxPriceChange={handleFilterMenuMaxPriceChange}
+                    onTogglePropertyCategory={handleTogglePropertyCategory}
+                    onToggleFeature={handleToggleFeatureFilter}
+                  />
                 </div>
               </div>
             </div>

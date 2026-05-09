@@ -337,6 +337,11 @@ a {
   color: #fff;
 }
 
+.filter-menu__chip.is-selected {
+  background: #111827;
+  color: #fff;
+}
+
 .filter-menu__features-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -358,6 +363,11 @@ a {
 
 .filter-menu__feature-card:hover {
   border-color: #111827;
+}
+
+.filter-menu__feature-card.is-selected {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.12);
 }
 
 .filter-menu__feature-icon {
@@ -389,6 +399,10 @@ a {
 
 .filter-menu__mamad-btn:hover {
   background: #f8fafc;
+}
+
+.filter-menu__mamad-btn.is-selected {
+  background: #f3f4f6;
 }
 
 .filter-menu__mamad-icon {
