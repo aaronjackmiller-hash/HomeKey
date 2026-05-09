@@ -2299,8 +2299,8 @@ legend {
 
 .property-list-page .hero-banner-logo {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0;
+  right: 0;
   width: clamp(96px, 11vw, 140px);
   height: clamp(96px, 11vw, 140px);
   min-height: clamp(96px, 11vw, 140px);
