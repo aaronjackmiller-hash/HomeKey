@@ -57,7 +57,7 @@ const formatCurrency = (value) => {
 const formatCardPrice = (property = {}) => {
   const asNumber = Number(property.price);
   if (Number.isNaN(asNumber)) return 'Price unavailable';
-  const base = `${asNumber.toLocaleString()} ₪`;
+  const base = `₪${asNumber.toLocaleString()}`;
   return String(property.type || '').toLowerCase() === 'rental' ? `${base}/mo` : base;
 };
 
@@ -981,28 +981,28 @@ const PropertyList = () => {
                 <div className="property-card-stats" aria-label="Property highlights">
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M3 12.4V8.9A1.9 1.9 0 0 1 4.9 7h14.2A1.9 1.9 0 0 1 21 8.9v3.5" />
-                      <path d="M3 12.4h18V17H3z" />
-                      <path d="M6 10h4.8v2.4H6z" />
-                      <path d="M13.2 10H18v2.4h-4.8z" />
-                      <path d="M4.2 17v1.8M19.8 17v1.8" />
+                      <path d="M3.5 12v5" />
+                      <path d="M20.5 12v5" />
+                      <path d="M3.5 14.5h17" />
+                      <path d="M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12" />
+                      <path d="M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
                     </svg>
                     <span>{bedroomCount ?? '—'} Beds</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M5 12h14v4.4A3.6 3.6 0 0 1 15.4 20H8.6A3.6 3.6 0 0 1 5 16.4V12Z" />
-                      <path d="M8 12V8.8A2.8 2.8 0 0 1 10.8 6h1.6a1.6 1.6 0 0 1 0 3.2h-1" />
-                      <path d="M7.2 20v1.4M16.8 20v1.4" />
-                      <path d="M16.8 9.3l1.6 1.6M18.4 9.3l-1.6 1.6" />
+                      <path d="M5 12h14v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" />
+                      <path d="M8 12V9.5A2.5 2.5 0 0 1 10.5 7h2A1.5 1.5 0 0 1 14 8.5v0A1.5 1.5 0 0 1 12.5 10H11" />
+                      <path d="M7.5 19v1.5M16.5 19v1.5" />
                     </svg>
                     <span>{bathroomCount ?? '—'} Baths</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M4 4h7v3h3V4h6v16h-6v-4h-4v4H4z" />
-                      <path d="M11 4v5h3" />
-                      <path d="M10 16v-3h4" />
+                      <path d="M5 5h5v2H7v3H5z" />
+                      <path d="M14 5h5v5h-2V7h-3z" />
+                      <path d="M5 14h2v3h3v2H5z" />
+                      <path d="M17 17v-3h2v5h-5v-2z" />
                     </svg>
                     <span>{property.size ?? '—'} sqm</span>
                   </span>
@@ -1137,24 +1137,29 @@ const PropertyList = () => {
           disabled={!mobileWhatsAppHref}
           aria-label="Open WhatsApp chat for a listing"
         >
-          WA
+          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 4.5a7.5 7.5 0 0 0-6.5 11.2L4.5 20l4.5-1A7.5 7.5 0 1 0 12 4.5Z" />
+              <path d="M9.4 9.2c.1-.2.3-.2.5-.2h.4c.2 0 .3.1.4.3l.7 1.7c.1.2 0 .4-.1.5l-.4.4c.5.9 1.2 1.6 2.1 2.1l.4-.4c.2-.1.3-.2.5-.1l1.7.7c.2.1.3.2.3.4v.4c0 .2-.1.4-.2.5-.4.4-1 .6-1.7.5-1.3-.2-2.6-.9-3.6-1.9s-1.7-2.3-1.9-3.6c-.1-.7.1-1.3.5-1.8Z" />
+            </svg>
+          </span>
         </button>
         <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
-          <button
-            type="button"
-            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
-            onClick={() => setMobileDiscoveryView('list')}
-            aria-pressed={mobileDiscoveryView === 'list'}
-          >
-            LIST VIEW
-          </button>
           <button
             type="button"
             className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
             onClick={() => setMobileDiscoveryView('map')}
             aria-pressed={mobileDiscoveryView === 'map'}
           >
-            MAP VIEW
+            Map View
+          </button>
+          <button
+            type="button"
+            className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'list' ? 'is-active' : ''}`}
+            onClick={() => setMobileDiscoveryView('list')}
+            aria-pressed={mobileDiscoveryView === 'list'}
+          >
+            List View
           </button>
         </div>
         <button
@@ -1167,7 +1172,12 @@ const PropertyList = () => {
           aria-label="Toggle draw mode on map"
           aria-pressed={isMapDrawModeActive}
         >
-          Draw
+          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M4 16.8 15.8 5a1.5 1.5 0 0 1 2.1 0l1.1 1.1a1.5 1.5 0 0 1 0 2.1L7.2 20H4z" />
+              <path d="M13.8 7 17 10.2" />
+            </svg>
+          </span>
         </button>
       </div>
     </div>
