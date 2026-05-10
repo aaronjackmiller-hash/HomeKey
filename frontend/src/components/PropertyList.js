@@ -26,6 +26,29 @@ const SUPPORTED_ALL_FILTERS = new Set([
   'mirpeset',
   'fitness-center',
 ]);
+const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
+const FEATURE_FILTER_OPTIONS = [
+  'elevator',
+  'parking',
+  'pets',
+  'disabled-access',
+  'renovated',
+  'furnished',
+  'mamad',
+];
+const PROPERTY_CATEGORY_KEYWORDS = {
+  apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
+  houses: ['house', 'villa', 'duplex', 'townhouse', 'cottage', 'home', 'בית', 'וילה', 'קוטג'],
+};
+const FEATURE_KEYWORDS = {
+  elevator: ['elevator', 'lift', 'מעלית'],
+  parking: ['parking', 'garage', 'carport', 'חניה', 'חניון'],
+  pets: ['pets', 'pet friendly', 'dog', 'cat', 'חיות מחמד'],
+  'disabled-access': ['accessible', 'wheelchair', 'disabled', 'נגיש', 'נכים'],
+  renovated: ['renovated', 'newly renovated', 'refurbished', 'משופץ'],
+  furnished: ['furnished', 'fully furnished', 'מרוהט'],
+  mamad: ['mamad', 'security room', 'safe room', 'ממד', 'ממ״ד'],
+};
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -367,6 +390,51 @@ const applyAllFilterOption = (listings = [], allFilter = '') => {
   return listings;
 };
 
+const buildPropertySearchText = (property = {}) => {
+  const values = [
+    property.title,
+    property.description,
+    property.featuresText,
+    property.externalSource,
+    property.status,
+    property?.address?.street,
+    property?.address?.streetNumber,
+    property?.address?.city,
+    property?.buildingDetails?.name,
+    property?.contact?.agency,
+    property?.details?.amenities,
+    property?.details?.features,
+    property?.buildingDetails?.amenities,
+    property?.amenities,
+    property?.features,
+  ];
+  return values
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => String(value || '').toLowerCase())
+    .join(' ');
+};
+
+const includesAnyKeyword = (searchText = '', keywords = []) => keywords.some((keyword) => searchText.includes(keyword));
+
+const matchesPropertyCategory = (property = {}, selectedCategory = '') => {
+  const category = String(selectedCategory || '').trim().toLowerCase();
+  if (!category) return true;
+  const keywords = PROPERTY_CATEGORY_KEYWORDS[category];
+  if (!keywords || keywords.length === 0) return true;
+  return includesAnyKeyword(buildPropertySearchText(property), keywords);
+};
+
+const matchesSelectedFeatures = (property = {}, selectedFeatures = []) => {
+  const normalizedFeatures = Array.isArray(selectedFeatures) ? selectedFeatures : [];
+  if (normalizedFeatures.length === 0) return true;
+  const searchText = buildPropertySearchText(property);
+  return normalizedFeatures.every((feature) => {
+    const keywords = FEATURE_KEYWORDS[String(feature || '').trim().toLowerCase()] || [];
+    if (keywords.length === 0) return true;
+    return includesAnyKeyword(searchText, keywords);
+  });
+};
+
 const areStringArraysEqual = (left = [], right = []) => {
   if (left === right) return true;
   if (!Array.isArray(left) || !Array.isArray(right)) return false;
@@ -398,6 +466,8 @@ const PropertyList = () => {
   const [roomsSearch, setRoomsSearch] = useState('');
   const [bathsSearch, setBathsSearch] = useState('');
   const [allFilters, setAllFilters] = useState('');
+  const [propertyCategorySearch, setPropertyCategorySearch] = useState('');
+  const [featureSearch, setFeatureSearch] = useState([]);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -503,6 +573,14 @@ const PropertyList = () => {
     const nextRooms = String(params.get('rooms') || '').trim();
     const nextBaths = String(params.get('baths') || '').trim();
     const nextAllFilters = normalizeAllFiltersValue(params.get('allFilters'));
+    const nextPropertyCategoryRaw = String(params.get('propertyCategory') || '').toLowerCase().trim();
+    const nextPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(nextPropertyCategoryRaw)
+      ? nextPropertyCategoryRaw
+      : '';
+    const nextFeatureSearch = String(params.get('features') || '')
+      .split(',')
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
     const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
     const parseOptionalPrice = (rawValue) => {
@@ -525,6 +603,8 @@ const PropertyList = () => {
     setRoomsSearch(nextRooms);
     setBathsSearch(nextBaths);
     setAllFilters(nextAllFilters);
+    setPropertyCategorySearch(nextPropertyCategory);
+    setFeatureSearch(nextFeatureSearch);
     setFilter(nextType);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
@@ -664,6 +744,12 @@ const PropertyList = () => {
       if (bathsSearch.trim()) {
         samples = samples.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
+      if (propertyCategorySearch) {
+        samples = samples.filter((p) => matchesPropertyCategory(p, propertyCategorySearch));
+      }
+      if (featureSearch.length > 0) {
+        samples = samples.filter((p) => matchesSelectedFeatures(p, featureSearch));
+      }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
       displayProperties = samples;
@@ -681,6 +767,12 @@ const PropertyList = () => {
       if (bathsSearch.trim()) {
         displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
+      if (propertyCategorySearch) {
+        displayProperties = displayProperties.filter((p) => matchesPropertyCategory(p, propertyCategorySearch));
+      }
+      if (featureSearch.length > 0) {
+        displayProperties = displayProperties.filter((p) => matchesSelectedFeatures(p, featureSearch));
+      }
       if (minPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) >= Number(minPrice));
       if (maxPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) <= Number(maxPrice));
     }
@@ -695,7 +787,21 @@ const PropertyList = () => {
     displayProperties = applyAllFilterOption(displayProperties, allFilters);
 
     return displayProperties.filter((property) => property && typeof property === 'object');
-  }, [allFilters, dbIsEmpty, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
+  }, [
+    allFilters,
+    dbIsEmpty,
+    filter,
+    citySearch,
+    roomsSearch,
+    bathsSearch,
+    propertyCategorySearch,
+    featureSearch,
+    minPrice,
+    maxPrice,
+    properties,
+    favoritesOnly,
+    favoriteIdSet,
+  ]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]

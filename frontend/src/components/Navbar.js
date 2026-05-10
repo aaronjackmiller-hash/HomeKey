@@ -1,20 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
+import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
-const ALL_FILTER_OPTIONS = [
-  { value: '', label: 'All Filters' },
-  { value: 'newest', label: 'Newest' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'price-low-high', label: 'Price: Low to High' },
-  { value: 'price-high-low', label: 'Price: High to Low' },
-  { value: 'mirpeset', label: 'Mirpeset (Balcony)' },
-  { value: 'fitness-center', label: 'Fitness Center' },
-];
 const ROOM_OPTIONS = [
   { value: '', label: 'Any' },
   { value: 'studio', label: 'Studio' },
@@ -28,6 +20,16 @@ const BATH_OPTIONS = [
   { value: '1', label: '1' },
   { value: '2', label: '2' },
   { value: '3+', label: '3+' },
+];
+const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
+const FEATURE_FILTER_OPTIONS = [
+  'elevator',
+  'parking',
+  'pets',
+  'disabled-access',
+  'renovated',
+  'furnished',
+  'mamad',
 ];
 
 const clampPriceValue = (value) => {
@@ -72,7 +74,13 @@ const parseSearchFromLocation = (search = '') => {
   const rooms = params.get('rooms') || '';
   const baths = params.get('baths') || '';
   const listingType = sanitizeListingType(params.get('type') || 'rental');
-  const allFilters = params.get('allFilters') || '';
+  const propertyCategory = params.get('propertyCategory') || '';
+  const normalizedPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(propertyCategory) ? propertyCategory : '';
+  const rawFeatures = String(params.get('features') || '');
+  const featureFilters = rawFeatures
+    .split(',')
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
   const minRaw = params.get('minPrice');
   const maxRaw = params.get('maxPrice');
   const hasMin = minRaw != null && minRaw !== '';
@@ -89,7 +97,8 @@ const parseSearchFromLocation = (search = '') => {
     rooms,
     baths,
     listingType,
-    allFilters,
+    propertyCategory: normalizedPropertyCategory,
+    featureFilters,
     minPriceInput,
     maxPriceInput,
     likedOnly: params.get('liked') === '1',
@@ -101,7 +110,8 @@ const buildSearchQuery = ({
   rooms,
   baths,
   listingType,
-  allFilters,
+  propertyCategory,
+  featureFilters,
   minPriceInput,
   maxPriceInput,
   likedOnly,
@@ -115,8 +125,16 @@ const buildSearchQuery = ({
   if (trimmedBaths) params.set('baths', trimmedBaths);
   const normalizedType = sanitizeListingType(listingType);
   if (normalizedType !== 'all') params.set('type', normalizedType);
-  const trimmedAllFilters = String(allFilters || '').trim();
-  if (trimmedAllFilters) params.set('allFilters', trimmedAllFilters);
+  const normalizedPropertyCategory = String(propertyCategory || '').trim().toLowerCase();
+  if (PROPERTY_CATEGORY_OPTIONS.includes(normalizedPropertyCategory)) {
+    params.set('propertyCategory', normalizedPropertyCategory);
+  }
+  const normalizedFeatureFilters = (Array.isArray(featureFilters) ? featureFilters : [])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
+  if (normalizedFeatureFilters.length > 0) {
+    params.set('features', normalizedFeatureFilters.join(','));
+  }
   if (Number(minPriceInput) > PRICE_SLIDER_MIN) params.set('minPrice', String(minPriceInput));
   if (Number(maxPriceInput) < PRICE_SLIDER_MAX) params.set('maxPrice', String(maxPriceInput));
   if (likedOnly) params.set('liked', '1');
@@ -135,17 +153,20 @@ const Navbar = () => {
   const [rooms, setRooms] = useState(parsedFromLocation.rooms);
   const [baths, setBaths] = useState(parsedFromLocation.baths);
   const [listingType, setListingType] = useState(parsedFromLocation.listingType);
-  const [allFilters, setAllFilters] = useState(parsedFromLocation.allFilters);
+  const [propertyCategory, setPropertyCategory] = useState(parsedFromLocation.propertyCategory);
+  const [featureFilters, setFeatureFilters] = useState(parsedFromLocation.featureFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [isPriceDragging, setIsPriceDragging] = useState(false);
   const [activePriceHandle, setActivePriceHandle] = useState('');
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
   const roomsBathsRef = useRef(null);
+  const filtersRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
@@ -157,7 +178,8 @@ const Navbar = () => {
     setRooms(parsedFromLocation.rooms);
     setBaths(parsedFromLocation.baths);
     setListingType(parsedFromLocation.listingType);
-    setAllFilters(parsedFromLocation.allFilters);
+    setPropertyCategory(parsedFromLocation.propertyCategory);
+    setFeatureFilters(parsedFromLocation.featureFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
     minPriceDraftRef.current = parsedFromLocation.minPriceInput;
@@ -167,6 +189,7 @@ const Navbar = () => {
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
+    setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
 
@@ -201,12 +224,33 @@ const Navbar = () => {
     };
   }, [roomsBathsExpanded]);
 
+  useEffect(() => {
+    if (!filtersExpanded) return undefined;
+    const handlePointerDown = (event) => {
+      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
+        setFiltersExpanded(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setFiltersExpanded(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [filtersExpanded]);
+
   const applySearch = ({
     nextCity = city,
     nextRooms = rooms,
     nextBaths = baths,
     nextListingType = listingType,
-    nextAllFilters = allFilters,
+    nextPropertyCategory = propertyCategory,
+    nextFeatureFilters = featureFilters,
     nextMinPriceInput = minPriceInput,
     nextMaxPriceInput = maxPriceInput,
     nextLikedOnly = likedOnly,
@@ -216,7 +260,8 @@ const Navbar = () => {
       rooms: nextRooms,
       baths: nextBaths,
       listingType: nextListingType,
-      allFilters: nextAllFilters,
+      propertyCategory: nextPropertyCategory,
+      featureFilters: nextFeatureFilters,
       minPriceInput: nextMinPriceInput,
       maxPriceInput: nextMaxPriceInput,
       likedOnly: nextLikedOnly,
@@ -265,7 +310,44 @@ const Navbar = () => {
   const handleHeaderSearchSubmit = (event) => {
     event.preventDefault();
     applySearch();
+    setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
+  };
+
+  const handleFilterMenuMinPriceChange = (rawValue) => {
+    const normalizedRaw = String(rawValue || '').trim();
+    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(normalizedRaw);
+    const nextMinPriceInput = Math.min(parsedValue, maxPriceInput);
+    setMinPriceInput(nextMinPriceInput);
+    minPriceDraftRef.current = nextMinPriceInput;
+    applySearch({ nextMinPriceInput });
+  };
+
+  const handleFilterMenuMaxPriceChange = (rawValue) => {
+    const normalizedRaw = String(rawValue || '').trim();
+    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MAX : clampPriceValue(normalizedRaw);
+    const nextMaxPriceInput = Math.max(parsedValue, minPriceInput);
+    setMaxPriceInput(nextMaxPriceInput);
+    maxPriceDraftRef.current = nextMaxPriceInput;
+    applySearch({ nextMaxPriceInput });
+  };
+
+  const handleTogglePropertyCategory = (nextCategory) => {
+    const normalizedCategory = String(nextCategory || '').trim().toLowerCase();
+    if (!PROPERTY_CATEGORY_OPTIONS.includes(normalizedCategory)) return;
+    const resolvedCategory = propertyCategory === normalizedCategory ? '' : normalizedCategory;
+    setPropertyCategory(resolvedCategory);
+    applySearch({ nextPropertyCategory: resolvedCategory });
+  };
+
+  const handleToggleFeatureFilter = (featureId) => {
+    const normalizedFeature = String(featureId || '').trim().toLowerCase();
+    if (!FEATURE_FILTER_OPTIONS.includes(normalizedFeature)) return;
+    const nextFeatureFilters = featureFilters.includes(normalizedFeature)
+      ? featureFilters.filter((value) => value !== normalizedFeature)
+      : [...featureFilters, normalizedFeature];
+    setFeatureFilters(nextFeatureFilters);
+    applySearch({ nextFeatureFilters });
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
@@ -377,6 +459,7 @@ const Navbar = () => {
                   type="button"
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
+                    setFiltersExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
                       if (nextExpanded) {
@@ -455,21 +538,40 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div className="premium-header__search-item premium-header__search-item--all-filters">
-                <select
-                  id="header-search-filter"
-                  className={allFilters ? 'is-active' : ''}
-                  value={allFilters}
-                  onChange={(event) => {
-                    const nextAllFilters = event.target.value;
-                    setAllFilters(nextAllFilters);
-                    applySearch({ nextAllFilters });
+              <div
+                className="premium-header__search-item premium-header__search-item--all-filters"
+                ref={filtersRef}
+              >
+                <button
+                  id="header-search-filter-toggle"
+                  type="button"
+                  className={`premium-header__filters-toggle ${propertyCategory || featureFilters.length > 0 ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setRoomsBathsExpanded(false);
+                    setFiltersExpanded((value) => !value);
                   }}
+                  aria-expanded={filtersExpanded}
+                  aria-controls="header-filters-panel"
                 >
-                  {ALL_FILTER_OPTIONS.map((option) => (
-                    <option key={option.value || 'all-filters'} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                  <span>All Filters</span>
+                  <span className="premium-header__price-caret" aria-hidden="true">{filtersExpanded ? '▲' : '▼'}</span>
+                </button>
+                <div
+                  id="header-filters-panel"
+                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
+                >
+                  <FilterMenu
+                    onClose={() => setFiltersExpanded(false)}
+                    minPrice={minPriceInput}
+                    maxPrice={maxPriceInput}
+                    propertyCategory={propertyCategory}
+                    selectedFeatures={featureFilters}
+                    onMinPriceChange={handleFilterMenuMinPriceChange}
+                    onMaxPriceChange={handleFilterMenuMaxPriceChange}
+                    onTogglePropertyCategory={handleTogglePropertyCategory}
+                    onToggleFeature={handleToggleFeatureFilter}
+                  />
+                </div>
               </div>
             </div>
             <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
