@@ -3106,24 +3106,46 @@ legend {
   right: 10px;
   z-index: 8;
   width: min(360px, calc(100% - 20px));
-  border: 1px solid rgba(148, 163, 184, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--hk-radius-container);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
   overflow: hidden;
 }
 
 .property-list-page .google-listings-map-header h2 {
   margin: 0;
   font-size: 0.95rem;
-  color: #111827;
+  color: #1a1a1a;
 }
 
 .property-list-page .google-listings-map-header p {
   margin: 4px 0 0;
   font-size: 0.74rem;
-  color: #475569;
+  color: #1a1a1a;
   line-height: 1.3;
+}
+
+.property-list-page .google-listings-map-header p strong {
+  font-weight: 700;
+}
+
+.property-list-page .google-listings-map-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.property-list-page .google-listings-map-collapse-btn {
+  min-height: 24px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.65);
 }
 
 .property-list-page .google-listings-map-shell {
@@ -3154,7 +3176,7 @@ legend {
   flex-wrap: nowrap;
   gap: 6px;
   padding: 8px 10px;
-  border-top: 1px solid #d5dce8;
+  border-top: 1px solid rgba(148, 163, 184, 0.45);
   background: transparent;
   overflow-x: auto;
 }
@@ -3166,6 +3188,9 @@ legend {
   font-size: 0.72rem;
   white-space: nowrap;
   border-radius: 8px;
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.68);
+  border-color: rgba(148, 163, 184, 0.7);
 }
 
 .property-list-page .map-draw-btn.is-active {
@@ -3325,18 +3350,25 @@ legend {
   }
 
   .property-list-page .google-listings-map-overlay-info {
-    top: 10px;
-    right: 10px;
-    width: min(330px, calc(100% - 20px));
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    width: auto;
     border-radius: 10px;
   }
 
+  .property-list-page .google-listings-map-overlay-info.is-collapsed {
+    right: auto;
+    width: auto;
+    max-width: calc(100% - 16px);
+  }
+
   .property-list-page .google-listings-map-header h2 {
-    color: #111827;
+    color: #1a1a1a;
   }
 
   .property-list-page .google-listings-map-header p {
-    color: #475569;
+    color: #1a1a1a;
   }
 
   .property-list-page .google-listings-map-toolbar {
