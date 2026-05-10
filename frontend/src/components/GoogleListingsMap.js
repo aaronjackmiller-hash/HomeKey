@@ -10,6 +10,26 @@ const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.08;
+const MAP_SILVER_STYLES = [
+  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+  { featureType: 'administrative.land_parcel', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e5e5e5' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { featureType: 'transit.line', elementType: 'geometry', stylers: [{ color: '#e5e5e5' }] },
+  { featureType: 'transit.station', elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#d6dde5' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#8f9aa5' }] },
+];
 const MARKER_STYLE_PRESETS = {
   medium: {
     label: 'Medium',
@@ -360,6 +380,7 @@ const GoogleListingsMap = ({
             keyboardShortcuts: true,
             gestureHandling: 'greedy',
             cameraControl: false,
+            styles: MAP_SILVER_STYLES,
           });
           geocoderRef.current = new mapsApi.Geocoder();
           infoWindowRef.current = new mapsApi.InfoWindow();
