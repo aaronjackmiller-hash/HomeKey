@@ -10,7 +10,7 @@ const FEATURE_ITEMS = [
 ];
 
 const FilterMenu = ({
-  onClose,
+  onClearAllFilters,
   minPrice,
   maxPrice,
   propertyCategory,
@@ -27,8 +27,8 @@ const FilterMenu = ({
     <div className="filter-menu">
       <div className="filter-menu__header">
         <h2 className="filter-menu__title">Filters</h2>
-        <button type="button" className="filter-menu__cancel" onClick={onClose}>
-          Cancel
+        <button type="button" className="filter-menu__cancel" onClick={onClearAllFilters}>
+          Clear All Filters
         </button>
       </div>
 
@@ -50,8 +50,8 @@ const FilterMenu = ({
             <input
               id="filter-menu-max-price"
               type="number"
-              placeholder="₪ 2,200"
-              value={normalizedMax < 20000 ? normalizedMax : ''}
+              placeholder="No Max"
+              value={normalizedMax > 0 ? normalizedMax : ''}
               onChange={(event) => onMaxPriceChange(event.target.value)}
             />
           </div>
@@ -116,7 +116,7 @@ const FeatureCard = ({ icon, label, isSelected, onClick }) => (
 );
 
 FilterMenu.defaultProps = {
-  onClose: () => {},
+  onClearAllFilters: () => {},
   minPrice: 0,
   maxPrice: 20000,
   propertyCategory: '',

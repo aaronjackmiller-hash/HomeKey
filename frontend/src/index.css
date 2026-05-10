@@ -148,7 +148,8 @@ a {
 .premium-header__search-item input.is-active,
 .premium-header__search-item select.is-active,
 .premium-header__price-toggle.is-active,
-.premium-header__rooms-toggle.is-active {
+.premium-header__rooms-toggle.is-active,
+.premium-header__filters-toggle.is-active {
   border-color: #5ba76a;
   background: #dff5e3;
   color: #0f5132;
@@ -216,7 +217,8 @@ a {
 }
 
 .premium-header__price-toggle.is-active .premium-header__price-caret,
-.premium-header__rooms-toggle.is-active .premium-header__price-caret {
+.premium-header__rooms-toggle.is-active .premium-header__price-caret,
+.premium-header__filters-toggle.is-active .premium-header__price-caret {
   color: #15803d;
 }
 
@@ -311,13 +313,14 @@ a {
 .filter-menu__cancel {
   border: none;
   background: transparent;
-  color: #6b7280;
+  color: #15803d;
   cursor: pointer;
   font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .filter-menu__cancel:hover {
-  color: #111827;
+  color: #166534;
 }
 
 .filter-menu__section {
@@ -362,22 +365,25 @@ a {
 }
 
 .filter-menu__chip {
-  border: 1px solid #111827;
+  border: 1px solid #d1d5db;
   border-radius: 10px;
   background: #fff;
   min-height: 38px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .filter-menu__chip:hover {
-  background: #111827;
-  color: #fff;
+  border-color: #5ba76a;
+  background: #eefbf1;
+  color: #14532d;
 }
 
 .filter-menu__chip.is-selected {
-  background: #111827;
-  color: #fff;
+  border-color: #5ba76a;
+  background: #dff5e3;
+  color: #0f5132;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.22);
 }
 
 .filter-menu__features-grid {
@@ -400,12 +406,21 @@ a {
 }
 
 .filter-menu__feature-card:hover {
-  border-color: #111827;
+  border-color: #5ba76a;
+  background: #f7fff8;
 }
 
 .filter-menu__feature-card.is-selected {
-  border-color: #111827;
-  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.12);
+  border-color: #5ba76a;
+  background: #dff5e3;
+  color: #0f5132;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.22);
+}
+
+.filter-menu__feature-card.is-selected .filter-menu__feature-icon {
+  color: #166534;
+  border-color: #86efac;
+  background: #f0fdf4;
 }
 
 .filter-menu__feature-icon {
@@ -427,7 +442,7 @@ a {
   align-items: center;
   justify-content: center;
   gap: 11px;
-  border: 2px solid #111827;
+  border: 1px solid #d1d5db;
   border-radius: 12px;
   padding: 14px 12px;
   background: #fff;
@@ -436,11 +451,14 @@ a {
 }
 
 .filter-menu__mamad-btn:hover {
-  background: #f8fafc;
+  border-color: #5ba76a;
+  background: #f7fff8;
 }
 
 .filter-menu__mamad-btn.is-selected {
-  background: #f3f4f6;
+  border-color: #5ba76a;
+  background: #dff5e3;
+  color: #0f5132;
 }
 
 .filter-menu__mamad-icon {
@@ -451,6 +469,10 @@ a {
 
 .filter-menu__mamad-btn:hover .filter-menu__mamad-icon {
   transform: scale(1.1);
+}
+
+.filter-menu__mamad-btn.is-selected .filter-menu__mamad-icon {
+  color: #166534;
 }
 
 .filter-menu__mamad-copy {
@@ -466,6 +488,10 @@ a {
 .filter-menu__mamad-copy span:last-child {
   font-size: 0.75rem;
   color: #6b7280;
+}
+
+.filter-menu__mamad-btn.is-selected .filter-menu__mamad-copy span:last-child {
+  color: #166534;
 }
 
 .premium-header__rooms-section + .premium-header__rooms-section {

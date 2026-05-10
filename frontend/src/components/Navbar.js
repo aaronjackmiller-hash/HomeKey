@@ -350,6 +350,22 @@ const Navbar = () => {
     applySearch({ nextFeatureFilters });
   };
 
+  const handleClearAllFilters = () => {
+    setPropertyCategory('');
+    setFeatureFilters([]);
+    setMinPriceInput(PRICE_SLIDER_MIN);
+    setMaxPriceInput(PRICE_SLIDER_MAX);
+    minPriceDraftRef.current = PRICE_SLIDER_MIN;
+    maxPriceDraftRef.current = PRICE_SLIDER_MAX;
+    setFiltersExpanded(false);
+    applySearch({
+      nextPropertyCategory: '',
+      nextFeatureFilters: [],
+      nextMinPriceInput: PRICE_SLIDER_MIN,
+      nextMaxPriceInput: PRICE_SLIDER_MAX,
+    });
+  };
+
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
   const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel(rooms, baths);
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
@@ -561,7 +577,7 @@ const Navbar = () => {
                   className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
                 >
                   <FilterMenu
-                    onClose={() => setFiltersExpanded(false)}
+                    onClearAllFilters={handleClearAllFilters}
                     minPrice={minPriceInput}
                     maxPrice={maxPriceInput}
                     propertyCategory={propertyCategory}
