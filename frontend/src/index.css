@@ -1249,14 +1249,23 @@ a {
 }
 
 .property-card-actions {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: 8px;
 }
 
 .property-card-action-btn {
-  flex: 1 1 0;
-  min-height: 38px;
+  width: 100%;
+  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 0.85rem;
@@ -2968,29 +2977,39 @@ legend {
 .property-list-page .reference-chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  align-items: center;
+}
+
+.property-list-page .reference-chip-label {
+  color: #111827;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .property-list-page .reference-chip {
   border: 1px solid #d6dbe5;
   border-radius: 999px;
   background: #ffffff;
-  color: #111827;
+  color: #1a1a1a;
   font-size: 0.7rem;
   font-weight: 600;
   line-height: 1;
-  padding: 5px 10px;
+  min-height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .property-list-page .reference-chip.is-active {
-  background: #f0f5fb;
-  border-color: #c9d6ea;
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #ffffff;
 }
 
-.property-list-page .reference-chip--dark {
-  background: #111827;
-  color: #ffffff;
-  border-color: #111827;
+.property-list-page .reference-chip:hover {
+  border-color: #1a1a1a;
 }
 
 .property-list-page .property-interest-toolbar,
@@ -3212,9 +3231,10 @@ legend {
 }
 
 .property-list-page .property-card-action-btn {
-  min-height: 28px;
+  min-height: 30px;
+  height: 30px;
   font-size: 0.62rem;
-  padding: 4px 6px;
+  padding: 4px 8px;
 }
 
 .property-list-page .property-card-extra {
