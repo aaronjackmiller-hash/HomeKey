@@ -1199,6 +1199,9 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 0.85rem;
