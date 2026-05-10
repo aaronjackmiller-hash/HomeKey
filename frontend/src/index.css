@@ -2621,7 +2621,13 @@ legend {
 .property-list-page .hero-banner-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(26, 26, 26, 0.2);
+  background: linear-gradient(
+    180deg,
+    rgba(7, 12, 20, 0.04) 0%,
+    rgba(7, 12, 20, 0.08) 48%,
+    rgba(7, 12, 20, 0.34) 74%,
+    rgba(7, 12, 20, 0.56) 100%
+  );
   z-index: 1;
 }
 
@@ -2654,11 +2660,18 @@ legend {
 
 .property-list-page .hero-banner-logo {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: clamp(96px, 11vw, 140px);
-  height: clamp(96px, 11vw, 140px);
-  min-height: clamp(96px, 11vw, 140px);
+  top: 12px;
+  right: 12px;
+  width: clamp(92px, 10vw, 132px);
+  height: clamp(92px, 10vw, 132px);
+  min-height: clamp(92px, 10vw, 132px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.property-list-page .hero-banner-logo .homekey-logo-lockup-image {
+  filter: brightness(0) invert(1);
+  object-fit: contain;
 }
 
 .property-list-page .search-panel {
