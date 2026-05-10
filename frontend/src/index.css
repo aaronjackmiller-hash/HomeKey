@@ -2614,13 +2614,16 @@ legend {
 
 .property-list-page .hero-banner-copy-text {
   min-width: 0;
+  max-width: min(100%, 420px);
 }
 
 .property-list-page .hero-banner h1 {
-  margin: 54px 0 0;
+  margin: 42px 0 0;
   color: #ffffff;
   font-family: "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(2rem, 2.6vw, 3rem);
+  font-size: clamp(1.55rem, 2.15vw, 2.45rem);
+  max-width: 14ch;
+  white-space: normal;
   line-height: 1.05;
   font-weight: 700;
   text-shadow: 0 8px 24px rgba(2, 6, 23, 0.65);
