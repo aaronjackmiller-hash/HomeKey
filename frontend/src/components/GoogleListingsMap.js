@@ -8,15 +8,29 @@ const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
+const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.08;
 const MARKER_STYLE_PRESETS = {
-  minimal: {
-    label: 'Minimal',
+  medium: {
+    label: 'Medium',
     markerMode: 'pricePin',
     minWidth: 52,
     pinHeight: 24,
     pointerHeight: 9,
     horizontalPadding: 8,
+    fontSize: 11,
+    fontWeight: 600,
+    pinColor: '#2b3440',
+    pinStrokeColor: '#2b3440',
+    textColor: '#ffffff',
+  },
+  bold: {
+    label: 'Bold',
+    markerMode: 'pricePin',
+    minWidth: 56,
+    pinHeight: 26,
+    pointerHeight: 10,
+    horizontalPadding: 9,
     fontSize: 11,
     fontWeight: 700,
     pinColor: BRAND_CHARCOAL,
@@ -24,7 +38,7 @@ const MARKER_STYLE_PRESETS = {
     textColor: '#ffffff',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'minimal';
+const DEFAULT_MARKER_PRESET_KEY = 'bold';
 
 let googleMapsLoadPromise;
 
@@ -202,7 +216,10 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const markerPreset = getMarkerStylePreset(DEFAULT_MARKER_PRESET_KEY);
+  const [markerPresetKey, setMarkerPresetKey] = useState(DEFAULT_MARKER_PRESET_KEY);
+  const [isMobileOverlay, setIsMobileOverlay] = useState(false);
+  const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
+  const markerPreset = getMarkerStylePreset(markerPresetKey);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -297,6 +314,25 @@ const GoogleListingsMap = ({
     drawToggleSignalRef.current = drawModeToggleSignal;
     setDrawMode((value) => !value);
   }, [drawModeToggleSignal]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+
+    const mediaQuery = window.matchMedia(MOBILE_OVERLAY_QUERY);
+    const syncOverlayMode = (eventLike) => {
+      const matches = Boolean(eventLike && eventLike.matches);
+      setIsMobileOverlay(matches);
+      setIsOverlayCollapsed(matches);
+    };
+
+    syncOverlayMode(mediaQuery);
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncOverlayMode);
+      return () => mediaQuery.removeEventListener('change', syncOverlayMode);
+    }
+    mediaQuery.addListener(syncOverlayMode);
+    return () => mediaQuery.removeListener(syncOverlayMode);
+  }, []);
 
   useEffect(() => {
     emitCircleSelection({
@@ -584,28 +620,59 @@ const GoogleListingsMap = ({
 
   return (
     <div className="google-listings-map-shell">
-      <div className="google-listings-map-overlay-info">
+      <div className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}>
         <header className="google-listings-map-header">
-          <h2>Apartment Locations</h2>
-          <p>View where available apartments are located and draw a circle to filter the search area.</p>
+          <div className="google-listings-map-header-top">
+            <h2>Apartment Locations</h2>
+            {isMobileOverlay ? (
+              <button
+                type="button"
+                className="secondary-btn google-listings-map-collapse-btn"
+                onClick={() => setIsOverlayCollapsed((value) => !value)}
+              >
+                {isOverlayCollapsed ? 'Expand' : 'Collapse'}
+              </button>
+            ) : null}
+          </div>
+          {!isOverlayCollapsed ? (
+            <p>
+              <strong>Find your perfect match.</strong>
+              {' '}
+              Draw a circle on the map to instantly filter the best apartments in your target zone!
+            </p>
+          ) : null}
         </header>
-        <div className="google-listings-map-toolbar">
-          <button
-            type="button"
-            className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-            onClick={() => setDrawMode((value) => !value)}
-          >
-            {drawMode ? 'Draw Mode' : 'Draw search circle'}
-          </button>
-          <button
-            type="button"
-            className="secondary-btn map-draw-btn"
-            onClick={clearCircleFilter}
-            disabled={!drawMode && !activeCircleRef.current}
-          >
-            Clear area
-          </button>
-        </div>
+        {!isOverlayCollapsed ? (
+          <div className="google-listings-map-toolbar">
+            <button
+              type="button"
+              className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
+              onClick={() => setDrawMode((value) => !value)}
+            >
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
+            </button>
+            <button
+              type="button"
+              className="secondary-btn map-draw-btn"
+              onClick={clearCircleFilter}
+              disabled={!drawMode && !activeCircleRef.current}
+            >
+              Clear Area
+            </button>
+            <div className="map-marker-presets" role="group" aria-label="Marker label style">
+              {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, preset]) => (
+                <button
+                  key={presetKey}
+                  type="button"
+                  className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
+                  onClick={() => setMarkerPresetKey(presetKey)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
       <div className="google-listings-map-canvas-wrap">
         <div ref={mapContainerRef} className="google-listings-map-canvas" />
