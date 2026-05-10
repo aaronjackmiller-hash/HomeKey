@@ -951,7 +951,12 @@ const PropertyList = () => {
               <div className="property-card-image-wrap">
                 <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || 'Property listing'} />
                 <div className="property-card-top-tags">
-                  <span className="property-card-listing-badge">Verified Listing</span>
+                  <span className="property-card-listing-badge">
+                    <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                      <path d="m2.2 6.4 2.2 2.3 5.4-5.4" />
+                    </svg>
+                    <span>Verified Listing</span>
+                  </span>
                   <button
                     type="button"
                     className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
@@ -975,9 +980,11 @@ const PropertyList = () => {
                 )}
               </div>
               <div className="property-card-body">
-                <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
-                {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
-                <p className="property-card-price">{formatCardPrice(property)}</p>
+                <div className="property-card-text-stack">
+                  <p className="property-card-price">{formatCardPrice(property)}</p>
+                  <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
+                  {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
+                </div>
                 <div className="property-card-stats" aria-label="Property highlights">
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
