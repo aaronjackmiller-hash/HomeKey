@@ -141,9 +141,10 @@ a {
 .premium-header__search-item select.is-active,
 .premium-header__price-toggle.is-active,
 .premium-header__rooms-toggle.is-active {
-  border-color: #86bf8d;
-  background: #ecfdf3;
-  color: #14532d;
+  border-color: #5ba76a;
+  background: #dff5e3;
+  color: #0f5132;
+  font-weight: 600;
 }
 
 .premium-header__search-item input:focus,
@@ -274,10 +275,10 @@ a {
 }
 
 .premium-header__chip-btn.is-selected {
-  border-color: #86bf8d;
-  background: #ecfdf3;
-  color: #14532d;
-  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.2);
+  border-color: #5ba76a;
+  background: #dff5e3;
+  color: #0f5132;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.26);
 }
 
 .premium-header__rooms-panel-actions {
