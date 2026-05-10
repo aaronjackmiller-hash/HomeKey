@@ -141,7 +141,6 @@ const Navbar = () => {
   const [isPriceDragging, setIsPriceDragging] = useState(false);
   const [activePriceHandle, setActivePriceHandle] = useState('');
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
-  const [priceExpanded, setPriceExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
@@ -168,7 +167,6 @@ const Navbar = () => {
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
-    setPriceExpanded(false);
     setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
 
@@ -267,7 +265,6 @@ const Navbar = () => {
   const handleHeaderSearchSubmit = (event) => {
     event.preventDefault();
     applySearch();
-    setPriceExpanded(false);
     setRoomsBathsExpanded(false);
   };
 
@@ -317,24 +314,14 @@ const Navbar = () => {
             </div>
             <div className="premium-header__search-row premium-header__search-row--bottom">
               <div className="premium-header__search-item premium-header__search-item--price">
-                <button
+                <div
                   id="header-search-price-toggle"
-                  type="button"
-                  className={`premium-header__price-toggle ${hasCustomPrice ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setRoomsBathsExpanded(false);
-                    if (priceExpanded || isPriceDragging) {
-                      handlePriceInteractionEnd();
-                    }
-                    setPriceExpanded((value) => !value);
-                  }}
-                  aria-expanded={priceExpanded}
-                  aria-controls="header-price-slider-panel"
+                  className={`premium-header__price-toggle premium-header__price-toggle--static ${hasCustomPrice ? 'is-active' : ''}`}
+                  aria-live="polite"
                 >
                   <span>{hasCustomPrice ? getPriceSummaryLabel(minPriceInput, maxPriceInput) : 'Price'}</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
-                </button>
-                <div id="header-price-slider-panel" className={`premium-header__price-panel ${priceExpanded ? 'is-open' : ''}`}>
+                </div>
+                <div id="header-price-slider-panel" className="premium-header__price-panel premium-header__price-panel--always-visible">
                   <div className="premium-header__price-values" aria-hidden="true">
                     <span>{formatPriceSliderLabel(minPriceInput)}</span>
                     <span>—</span>
@@ -390,7 +377,6 @@ const Navbar = () => {
                   type="button"
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
-                    setPriceExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
                       if (nextExpanded) {

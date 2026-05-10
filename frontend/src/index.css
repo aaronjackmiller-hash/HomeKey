@@ -122,6 +122,12 @@ a {
   position: relative;
 }
 
+.premium-header__search-item--price {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .premium-header__search-item input,
 .premium-header__search-item select,
 .premium-header__price-toggle,
@@ -178,6 +184,10 @@ a {
   text-align: left;
 }
 
+.premium-header__price-toggle--static {
+  cursor: default;
+}
+
 .premium-header__rooms-toggle {
   display: inline-flex;
   align-items: center;
@@ -215,6 +225,18 @@ a {
 
 .premium-header__price-panel.is-open {
   display: block;
+}
+
+.premium-header__price-panel--always-visible {
+  display: block;
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  box-shadow: none;
 }
 
 .premium-header__rooms-panel {
