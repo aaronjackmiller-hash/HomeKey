@@ -159,12 +159,14 @@ const Navbar = () => {
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [isPriceDragging, setIsPriceDragging] = useState(false);
   const [activePriceHandle, setActivePriceHandle] = useState('');
+  const [priceExpanded, setPriceExpanded] = useState(false);
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
+  const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
@@ -186,6 +188,7 @@ const Navbar = () => {
     maxPriceDraftRef.current = parsedFromLocation.maxPriceInput;
     setIsPriceDragging(false);
     setActivePriceHandle('');
+    setPriceExpanded(false);
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
@@ -203,6 +206,26 @@ const Navbar = () => {
       window.removeEventListener('homekey:interest-updated', handleInterestUpdated);
     };
   }, []);
+
+  useEffect(() => {
+    if (!priceExpanded) return undefined;
+    const handlePointerDown = (event) => {
+      if (priceRef.current && !priceRef.current.contains(event.target)) {
+        setPriceExpanded(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPriceExpanded(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [priceExpanded]);
 
   useEffect(() => {
     if (!roomsBathsExpanded) return undefined;
@@ -310,6 +333,7 @@ const Navbar = () => {
   const handleHeaderSearchSubmit = (event) => {
     event.preventDefault();
     applySearch();
+    setPriceExpanded(false);
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
   };
@@ -387,7 +411,7 @@ const Navbar = () => {
                 <input
                   id="header-search-query"
                   type="text"
-                  placeholder="Location"
+                  placeholder="Search city, neighborhood or listing"
                   className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
@@ -395,15 +419,27 @@ const Navbar = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="premium-header__search-segment premium-header__search-segment--price">
-                <div
+              <div className="premium-header__search-segment premium-header__search-segment--price" ref={priceRef}>
+                <button
                   id="header-search-price-toggle"
-                  className={`premium-header__price-toggle premium-header__price-toggle--static ${hasCustomPrice ? 'is-active' : ''}`}
+                  type="button"
+                  className={`premium-header__price-toggle ${hasCustomPrice ? 'is-active' : ''}`}
                   aria-live="polite"
+                  aria-expanded={priceExpanded}
+                  aria-controls="header-price-slider-panel"
+                  onClick={() => {
+                    setRoomsBathsExpanded(false);
+                    setFiltersExpanded(false);
+                    setPriceExpanded((isExpanded) => !isExpanded);
+                  }}
                 >
                   <span>{hasCustomPrice ? getPriceSummaryLabel(minPriceInput, maxPriceInput) : 'Price'}</span>
-                </div>
-                <div id="header-price-slider-panel" className="premium-header__price-panel premium-header__price-panel--always-visible">
+                  <span className="premium-header__price-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
+                </button>
+                <div
+                  id="header-price-slider-panel"
+                  className={`premium-header__price-panel ${priceExpanded ? 'is-open' : ''}`}
+                >
                   <div className="premium-header__price-values" aria-hidden="true">
                     <span>{formatPriceSliderLabel(minPriceInput)}</span>
                     <span>—</span>
@@ -459,6 +495,7 @@ const Navbar = () => {
                   type="button"
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
+                    setPriceExpanded(false);
                     setFiltersExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
@@ -538,31 +575,13 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="premium-header__search-controls">
-              <div className="premium-header__search-item premium-header__search-item--type">
-                <select
-                  id="header-search-type"
-                  value={listingType}
-                  onChange={(event) => {
-                    const nextListingType = event.target.value;
-                    setListingType(nextListingType);
-                    applySearch({ nextListingType });
-                  }}
-                >
-                  <option value="rental">Rent</option>
-                  <option value="sale">Sale</option>
-                </select>
-              </div>
-              <div
-                className="premium-header__search-item premium-header__search-item--all-filters"
-                ref={filtersRef}
-              >
+              <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                 <button
                   id="header-search-filter-toggle"
                   type="button"
                   className={`premium-header__filters-toggle ${propertyCategory || featureFilters.length > 0 ? 'is-active' : ''}`}
                   onClick={() => {
+                    setPriceExpanded(false);
                     setRoomsBathsExpanded(false);
                     setFiltersExpanded((value) => !value);
                   }}
