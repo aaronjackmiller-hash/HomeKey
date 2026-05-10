@@ -3,7 +3,6 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { getProperties, getPublicYad2SyncStatus } from '../services/api';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
-import heroBannerLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import {
   getInterestSummary,
   incrementHeartClickCount,
@@ -1074,9 +1073,7 @@ const PropertyList = () => {
                   <div className="hero-banner-copy-text">
                     <h1>Find Your Next Home in Israel.</h1>
                   </div>
-                  <div className="homekey-logo-lockup hero-banner-logo" aria-label="HomeKey logo">
-                    <img className="homekey-logo-lockup-image" src={heroBannerLogo} alt="HomeKey logo" />
-                  </div>
+                  <div className="hero-banner-logo" aria-hidden="true" />
                 </div>
               </div>
             </section>
