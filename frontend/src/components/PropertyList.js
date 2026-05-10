@@ -17,6 +17,15 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = heroBalconyImage;
+const SUPPORTED_ALL_FILTERS = new Set([
+  '',
+  'newest',
+  'verified',
+  'price-low-high',
+  'price-high-low',
+  'mirpeset',
+  'fitness-center',
+]);
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -259,6 +268,105 @@ const getBathroomCount = (property = {}) =>
     property.numberOfBathrooms
   );
 
+const normalizeAllFiltersValue = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return SUPPORTED_ALL_FILTERS.has(normalized) ? normalized : '';
+};
+
+const getPropertyAmenityText = (property = {}) => {
+  const address = property.address && typeof property.address === 'object' ? property.address : {};
+  const details = property.details && typeof property.details === 'object' ? property.details : {};
+  const buildingDetails = property.buildingDetails && typeof property.buildingDetails === 'object'
+    ? property.buildingDetails
+    : {};
+  const rawValues = [
+    property.title,
+    property.description,
+    property.featuresText,
+    property.bathroomText,
+    address.street,
+    address.city,
+    address.state,
+    details.amenities,
+    details.features,
+    buildingDetails.amenities,
+    property.amenities,
+    property.features,
+  ];
+  return rawValues
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+};
+
+const matchesAmenityFilter = (property = {}, amenityFilter = '') => {
+  const haystack = getPropertyAmenityText(property);
+  if (!haystack) return false;
+  if (amenityFilter === 'mirpeset') {
+    return /mirpeset|מרפסת|balcony/.test(haystack);
+  }
+  if (amenityFilter === 'fitness-center') {
+    return /fitness center|fitness-centre|gym|חדר כושר|מכון כושר/.test(haystack);
+  }
+  return true;
+};
+
+const getSortableTimestamp = (property = {}) => {
+  const candidates = [
+    property.createdAt,
+    property.updatedAt,
+    property?.dates?.listingDate,
+    property?.dates?.publishedAt,
+  ];
+  for (const candidate of candidates) {
+    const parsed = new Date(candidate);
+    const asMs = parsed.getTime();
+    if (!Number.isNaN(asMs)) return asMs;
+  }
+  return 0;
+};
+
+const applyAllFilterOption = (listings = [], allFilter = '') => {
+  const normalizedFilter = normalizeAllFiltersValue(allFilter);
+  if (!normalizedFilter) return listings;
+  if (normalizedFilter === 'mirpeset' || normalizedFilter === 'fitness-center') {
+    return listings.filter((property) => matchesAmenityFilter(property, normalizedFilter));
+  }
+  if (normalizedFilter === 'price-low-high') {
+    return [...listings].sort((left, right) => {
+      const leftPrice = Number(left?.price);
+      const rightPrice = Number(right?.price);
+      if (Number.isNaN(leftPrice) && Number.isNaN(rightPrice)) return 0;
+      if (Number.isNaN(leftPrice)) return 1;
+      if (Number.isNaN(rightPrice)) return -1;
+      return leftPrice - rightPrice;
+    });
+  }
+  if (normalizedFilter === 'price-high-low') {
+    return [...listings].sort((left, right) => {
+      const leftPrice = Number(left?.price);
+      const rightPrice = Number(right?.price);
+      if (Number.isNaN(leftPrice) && Number.isNaN(rightPrice)) return 0;
+      if (Number.isNaN(leftPrice)) return 1;
+      if (Number.isNaN(rightPrice)) return -1;
+      return rightPrice - leftPrice;
+    });
+  }
+  if (normalizedFilter === 'newest') {
+    return [...listings].sort((left, right) => getSortableTimestamp(right) - getSortableTimestamp(left));
+  }
+  if (normalizedFilter === 'verified') {
+    return [...listings].sort((left, right) => {
+      const leftVerified = Boolean(left?.verified || left?.isVerified || left?.status === 'active');
+      const rightVerified = Boolean(right?.verified || right?.isVerified || right?.status === 'active');
+      return Number(rightVerified) - Number(leftVerified);
+    });
+  }
+  return listings;
+};
+
 const areStringArraysEqual = (left = [], right = []) => {
   if (left === right) return true;
   if (!Array.isArray(left) || !Array.isArray(right)) return false;
@@ -289,6 +397,7 @@ const PropertyList = () => {
   const [citySearch, setCitySearch] = useState('');
   const [roomsSearch, setRoomsSearch] = useState('');
   const [bathsSearch, setBathsSearch] = useState('');
+  const [allFilters, setAllFilters] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -393,6 +502,7 @@ const PropertyList = () => {
     const nextCity = String(params.get('q') || '').trim();
     const nextRooms = String(params.get('rooms') || '').trim();
     const nextBaths = String(params.get('baths') || '').trim();
+    const nextAllFilters = normalizeAllFiltersValue(params.get('allFilters'));
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
     const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
     const parseOptionalPrice = (rawValue) => {
@@ -414,6 +524,7 @@ const PropertyList = () => {
     setCitySearch(nextCity);
     setRoomsSearch(nextRooms);
     setBathsSearch(nextBaths);
+    setAllFilters(nextAllFilters);
     setFilter(nextType);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
@@ -581,8 +692,10 @@ const PropertyList = () => {
       });
     }
 
+    displayProperties = applyAllFilterOption(displayProperties, allFilters);
+
     return displayProperties.filter((property) => property && typeof property === 'object');
-  }, [dbIsEmpty, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
+  }, [allFilters, dbIsEmpty, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]

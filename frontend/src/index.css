@@ -137,6 +137,15 @@ a {
   line-height: 1;
 }
 
+.premium-header__search-item input.is-active,
+.premium-header__search-item select.is-active,
+.premium-header__price-toggle.is-active,
+.premium-header__rooms-toggle.is-active {
+  border-color: #86bf8d;
+  background: #ecfdf3;
+  color: #14532d;
+}
+
 .premium-header__search-item input:focus,
 .premium-header__search-item select:focus,
 .premium-header__price-toggle:focus,
@@ -181,6 +190,11 @@ a {
   margin-left: 6px;
   color: #6b7280;
   font-size: 0.58rem;
+}
+
+.premium-header__price-toggle.is-active .premium-header__price-caret,
+.premium-header__rooms-toggle.is-active .premium-header__price-caret {
+  color: #15803d;
 }
 
 .premium-header__price-panel {
@@ -260,8 +274,10 @@ a {
 }
 
 .premium-header__chip-btn.is-selected {
-  border-color: #ef7f1a;
-  box-shadow: 0 0 0 1px rgba(239, 127, 26, 0.18);
+  border-color: #86bf8d;
+  background: #ecfdf3;
+  color: #14532d;
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.2);
 }
 
 .premium-header__rooms-panel-actions {

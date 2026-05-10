@@ -6,6 +6,15 @@ import { getInterestSummary } from '../utils/propertyInterest';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const ALL_FILTER_OPTIONS = [
+  { value: '', label: 'All Filters' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'price-low-high', label: 'Price: Low to High' },
+  { value: 'price-high-low', label: 'Price: High to Low' },
+  { value: 'mirpeset', label: 'Mirpeset (Balcony)' },
+  { value: 'fitness-center', label: 'Fitness Center' },
+];
 const ROOM_OPTIONS = [
   { value: '', label: 'Any' },
   { value: 'studio', label: 'Studio' },
@@ -284,6 +293,7 @@ const Navbar = () => {
                   id="header-search-query"
                   type="text"
                   placeholder="Search city, neighborhood or listing"
+                  className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
                   onBlur={(event) => applySearch({ nextCity: event.target.value })}
@@ -310,7 +320,7 @@ const Navbar = () => {
                 <button
                   id="header-search-price-toggle"
                   type="button"
-                  className="premium-header__price-toggle"
+                  className={`premium-header__price-toggle ${hasCustomPrice ? 'is-active' : ''}`}
                   onClick={() => {
                     setRoomsBathsExpanded(false);
                     if (priceExpanded || isPriceDragging) {
@@ -378,7 +388,7 @@ const Navbar = () => {
                 <button
                   id="header-search-rooms-toggle"
                   type="button"
-                  className="premium-header__rooms-toggle"
+                  className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
                     setPriceExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
@@ -442,7 +452,7 @@ const Navbar = () => {
                         applySearch({ nextRooms: '', nextBaths: '' });
                       }}
                     >
-                      Clear
+                      Clear All Selections
                     </button>
                     <button
                       type="button"
@@ -462,6 +472,7 @@ const Navbar = () => {
               <div className="premium-header__search-item premium-header__search-item--all-filters">
                 <select
                   id="header-search-filter"
+                  className={allFilters ? 'is-active' : ''}
                   value={allFilters}
                   onChange={(event) => {
                     const nextAllFilters = event.target.value;
@@ -469,11 +480,9 @@ const Navbar = () => {
                     applySearch({ nextAllFilters });
                   }}
                 >
-                  <option value="">All Filters</option>
-                  <option value="newest">Newest</option>
-                  <option value="verified">Verified</option>
-                  <option value="price-low-high">Price: Low to High</option>
-                  <option value="price-high-low">Price: High to Low</option>
+                  {ALL_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value || 'all-filters'} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
