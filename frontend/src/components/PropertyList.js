@@ -17,29 +17,15 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = heroBalconyImage;
-const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
-const FEATURE_FILTER_OPTIONS = [
-  'elevator',
-  'parking',
-  'pets',
-  'disabled-access',
-  'renovated',
-  'furnished',
-  'mamad',
-];
-const PROPERTY_CATEGORY_KEYWORDS = {
-  apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
-  houses: ['house', 'villa', 'duplex', 'townhouse', 'cottage', 'home', 'בית', 'וילה', 'קוטג'],
-};
-const FEATURE_KEYWORDS = {
-  elevator: ['elevator', 'lift', 'מעלית'],
-  parking: ['parking', 'garage', 'carport', 'חניה', 'חניון'],
-  pets: ['pets', 'pet friendly', 'dog', 'cat', 'חיות מחמד'],
-  'disabled-access': ['accessible', 'wheelchair', 'disabled', 'נגיש', 'נכים'],
-  renovated: ['renovated', 'newly renovated', 'refurbished', 'משופץ'],
-  furnished: ['furnished', 'fully furnished', 'מרוהט'],
-  mamad: ['mamad', 'security room', 'safe room', 'ממד', 'ממ״ד'],
-};
+const SUPPORTED_ALL_FILTERS = new Set([
+  '',
+  'newest',
+  'verified',
+  'price-low-high',
+  'price-high-low',
+  'mirpeset',
+  'fitness-center',
+]);
 
 const formatCurrency = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '—';
@@ -236,15 +222,13 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const almostEqual = (left, right) => Math.abs(left - right) < EPSILON;
   if (selected.toLowerCase() === 'studio') return bedrooms < 1;
   if (selected.endsWith('+')) {
-    const minRooms = Number(selected.replace('+', ''));
-    if (Number.isNaN(minRooms)) return true;
-    // Imported data can store either "rooms" or "bedrooms" in the bedrooms field.
-    // Treat X+ rooms as matching both >= X bedrooms and >= (X - 1) bedrooms.
-    return bedrooms >= Math.max(0, minRooms - 1);
+    const minBedrooms = Number(selected.replace('+', ''));
+    if (Number.isNaN(minBedrooms)) return true;
+    return bedrooms >= minBedrooms;
   }
-  const selectedRooms = Number(selected);
-  if (Number.isNaN(selectedRooms)) return true;
-  return almostEqual(bedrooms, selectedRooms) || almostEqual(bedrooms, Math.max(0, selectedRooms - 1));
+  const selectedBedrooms = Number(selected);
+  if (Number.isNaN(selectedBedrooms)) return true;
+  return almostEqual(bedrooms, selectedBedrooms);
 };
 
 const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
@@ -264,6 +248,125 @@ const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
   return almostEqual(bathrooms, selectedBathrooms);
 };
 
+const toNumericCount = (...values) => {
+  for (const value of values) {
+    if (value == null || value === '') continue;
+    const asNumber = Number(value);
+    if (!Number.isNaN(asNumber)) return asNumber;
+  }
+  return null;
+};
+
+const getBedroomCount = (property = {}) =>
+  toNumericCount(property.bedrooms, property.rooms, property.roomCount);
+
+const getBathroomCount = (property = {}) =>
+  toNumericCount(
+    property.bathrooms,
+    property.baths,
+    property.bathroomCount,
+    property.numberOfBathrooms
+  );
+
+const normalizeAllFiltersValue = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return SUPPORTED_ALL_FILTERS.has(normalized) ? normalized : '';
+};
+
+const getPropertyAmenityText = (property = {}) => {
+  const address = property.address && typeof property.address === 'object' ? property.address : {};
+  const details = property.details && typeof property.details === 'object' ? property.details : {};
+  const buildingDetails = property.buildingDetails && typeof property.buildingDetails === 'object'
+    ? property.buildingDetails
+    : {};
+  const rawValues = [
+    property.title,
+    property.description,
+    property.featuresText,
+    property.bathroomText,
+    address.street,
+    address.city,
+    address.state,
+    details.amenities,
+    details.features,
+    buildingDetails.amenities,
+    property.amenities,
+    property.features,
+  ];
+  return rawValues
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+};
+
+const matchesAmenityFilter = (property = {}, amenityFilter = '') => {
+  const haystack = getPropertyAmenityText(property);
+  if (!haystack) return false;
+  if (amenityFilter === 'mirpeset') {
+    return /mirpeset|מרפסת|balcony/.test(haystack);
+  }
+  if (amenityFilter === 'fitness-center') {
+    return /fitness center|fitness-centre|gym|חדר כושר|מכון כושר/.test(haystack);
+  }
+  return true;
+};
+
+const getSortableTimestamp = (property = {}) => {
+  const candidates = [
+    property.createdAt,
+    property.updatedAt,
+    property?.dates?.listingDate,
+    property?.dates?.publishedAt,
+  ];
+  for (const candidate of candidates) {
+    const parsed = new Date(candidate);
+    const asMs = parsed.getTime();
+    if (!Number.isNaN(asMs)) return asMs;
+  }
+  return 0;
+};
+
+const applyAllFilterOption = (listings = [], allFilter = '') => {
+  const normalizedFilter = normalizeAllFiltersValue(allFilter);
+  if (!normalizedFilter) return listings;
+  if (normalizedFilter === 'mirpeset' || normalizedFilter === 'fitness-center') {
+    return listings.filter((property) => matchesAmenityFilter(property, normalizedFilter));
+  }
+  if (normalizedFilter === 'price-low-high') {
+    return [...listings].sort((left, right) => {
+      const leftPrice = Number(left?.price);
+      const rightPrice = Number(right?.price);
+      if (Number.isNaN(leftPrice) && Number.isNaN(rightPrice)) return 0;
+      if (Number.isNaN(leftPrice)) return 1;
+      if (Number.isNaN(rightPrice)) return -1;
+      return leftPrice - rightPrice;
+    });
+  }
+  if (normalizedFilter === 'price-high-low') {
+    return [...listings].sort((left, right) => {
+      const leftPrice = Number(left?.price);
+      const rightPrice = Number(right?.price);
+      if (Number.isNaN(leftPrice) && Number.isNaN(rightPrice)) return 0;
+      if (Number.isNaN(leftPrice)) return 1;
+      if (Number.isNaN(rightPrice)) return -1;
+      return rightPrice - leftPrice;
+    });
+  }
+  if (normalizedFilter === 'newest') {
+    return [...listings].sort((left, right) => getSortableTimestamp(right) - getSortableTimestamp(left));
+  }
+  if (normalizedFilter === 'verified') {
+    return [...listings].sort((left, right) => {
+      const leftVerified = Boolean(left?.verified || left?.isVerified || left?.status === 'active');
+      const rightVerified = Boolean(right?.verified || right?.isVerified || right?.status === 'active');
+      return Number(rightVerified) - Number(leftVerified);
+    });
+  }
+  return listings;
+};
+
 const areStringArraysEqual = (left = [], right = []) => {
   if (left === right) return true;
   if (!Array.isArray(left) || !Array.isArray(right)) return false;
@@ -272,44 +375,6 @@ const areStringArraysEqual = (left = [], right = []) => {
     if (String(left[index]) !== String(right[index])) return false;
   }
   return true;
-};
-
-const buildPropertySearchText = (property = {}) => {
-  const values = [
-    property.title,
-    property.description,
-    property.externalSource,
-    property.status,
-    property?.address?.street,
-    property?.address?.streetNumber,
-    property?.address?.city,
-    property?.buildingDetails?.name,
-    property?.contact?.agency,
-  ];
-  return values
-    .map((value) => String(value || '').toLowerCase())
-    .join(' ');
-};
-
-const includesAnyKeyword = (searchText = '', keywords = []) => keywords.some((keyword) => searchText.includes(keyword));
-
-const matchesPropertyCategory = (property = {}, selectedCategory = '') => {
-  const category = String(selectedCategory || '').trim().toLowerCase();
-  if (!category) return true;
-  const keywords = PROPERTY_CATEGORY_KEYWORDS[category];
-  if (!keywords || keywords.length === 0) return true;
-  return includesAnyKeyword(buildPropertySearchText(property), keywords);
-};
-
-const matchesSelectedFeatures = (property = {}, selectedFeatures = []) => {
-  const normalizedFeatures = Array.isArray(selectedFeatures) ? selectedFeatures : [];
-  if (normalizedFeatures.length === 0) return true;
-  const searchText = buildPropertySearchText(property);
-  return normalizedFeatures.every((feature) => {
-    const keywords = FEATURE_KEYWORDS[String(feature || '').trim().toLowerCase()] || [];
-    if (keywords.length === 0) return true;
-    return includesAnyKeyword(searchText, keywords);
-  });
 };
 
 const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
@@ -332,8 +397,7 @@ const PropertyList = () => {
   const [citySearch, setCitySearch] = useState('');
   const [roomsSearch, setRoomsSearch] = useState('');
   const [bathsSearch, setBathsSearch] = useState('');
-  const [propertyCategorySearch, setPropertyCategorySearch] = useState('');
-  const [featureSearch, setFeatureSearch] = useState([]);
+  const [allFilters, setAllFilters] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -438,16 +502,9 @@ const PropertyList = () => {
     const nextCity = String(params.get('q') || '').trim();
     const nextRooms = String(params.get('rooms') || '').trim();
     const nextBaths = String(params.get('baths') || '').trim();
+    const nextAllFilters = normalizeAllFiltersValue(params.get('allFilters'));
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
     const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
-    const nextPropertyCategoryRaw = String(params.get('propertyCategory') || '').toLowerCase().trim();
-    const nextPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(nextPropertyCategoryRaw)
-      ? nextPropertyCategoryRaw
-      : '';
-    const nextFeatureSearch = String(params.get('features') || '')
-      .split(',')
-      .map((value) => String(value || '').trim().toLowerCase())
-      .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
     const parseOptionalPrice = (rawValue) => {
       if (rawValue == null || rawValue === '') return '';
       const asNumber = Number(rawValue);
@@ -467,8 +524,7 @@ const PropertyList = () => {
     setCitySearch(nextCity);
     setRoomsSearch(nextRooms);
     setBathsSearch(nextBaths);
-    setPropertyCategorySearch(nextPropertyCategory);
-    setFeatureSearch(nextFeatureSearch);
+    setAllFilters(nextAllFilters);
     setFilter(nextType);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
@@ -603,16 +659,10 @@ const PropertyList = () => {
         samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
       }
       if (roomsSearch.trim()) {
-        samples = samples.filter((p) => matchesRoomsSelection(p.bedrooms, roomsSearch));
+        samples = samples.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
       }
       if (bathsSearch.trim()) {
-        samples = samples.filter((p) => matchesBathroomsSelection(p.bathrooms, bathsSearch));
-      }
-      if (propertyCategorySearch) {
-        samples = samples.filter((p) => matchesPropertyCategory(p, propertyCategorySearch));
-      }
-      if (featureSearch.length > 0) {
-        samples = samples.filter((p) => matchesSelectedFeatures(p, featureSearch));
+        samples = samples.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
@@ -626,16 +676,10 @@ const PropertyList = () => {
         displayProperties = displayProperties.filter((p) => p?.address?.city?.toLowerCase().includes(q));
       }
       if (roomsSearch.trim()) {
-        displayProperties = displayProperties.filter((p) => matchesRoomsSelection(p?.bedrooms, roomsSearch));
+        displayProperties = displayProperties.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
       }
       if (bathsSearch.trim()) {
-        displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(p?.bathrooms, bathsSearch));
-      }
-      if (propertyCategorySearch) {
-        displayProperties = displayProperties.filter((p) => matchesPropertyCategory(p, propertyCategorySearch));
-      }
-      if (featureSearch.length > 0) {
-        displayProperties = displayProperties.filter((p) => matchesSelectedFeatures(p, featureSearch));
+        displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
       if (minPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) >= Number(minPrice));
       if (maxPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) <= Number(maxPrice));
@@ -648,21 +692,10 @@ const PropertyList = () => {
       });
     }
 
+    displayProperties = applyAllFilterOption(displayProperties, allFilters);
+
     return displayProperties.filter((property) => property && typeof property === 'object');
-  }, [
-    dbIsEmpty,
-    filter,
-    citySearch,
-    roomsSearch,
-    bathsSearch,
-    propertyCategorySearch,
-    featureSearch,
-    minPrice,
-    maxPrice,
-    properties,
-    favoritesOnly,
-    favoriteIdSet,
-  ]);
+  }, [allFilters, dbIsEmpty, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, properties, favoritesOnly, favoriteIdSet]);
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
@@ -788,6 +821,8 @@ const PropertyList = () => {
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address);
           const displayStreet = dedupeRepeatingPhrase(sanitizeReadableText(property, street));
+          const bedroomCount = getBedroomCount(property);
+          const bathroomCount = getBathroomCount(property);
           const titleFromData = sanitizeReadableText(property, property.title);
           const displayLocation = sanitizeReadableText(property, locationLine);
           const displayTitle = displayStreet || titleFromData || displayLocation || 'Property listing';
@@ -847,7 +882,7 @@ const PropertyList = () => {
                       <path d="M13.2 10H18v2.4h-4.8z" />
                       <path d="M4.2 17v1.8M19.8 17v1.8" />
                     </svg>
-                    <span>{property.bedrooms ?? '—'} Beds</span>
+                    <span>{bedroomCount ?? '—'} Beds</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -856,7 +891,7 @@ const PropertyList = () => {
                       <path d="M7.2 20v1.4M16.8 20v1.4" />
                       <path d="M16.8 9.3l1.6 1.6M18.4 9.3l-1.6 1.6" />
                     </svg>
-                    <span>{property.bathrooms ?? '—'} Baths</span>
+                    <span>{bathroomCount ?? '—'} Baths</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

@@ -1,12 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
-import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const ALL_FILTER_OPTIONS = [
+  { value: '', label: 'All Filters' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'price-low-high', label: 'Price: Low to High' },
+  { value: 'price-high-low', label: 'Price: High to Low' },
+  { value: 'mirpeset', label: 'Mirpeset (Balcony)' },
+  { value: 'fitness-center', label: 'Fitness Center' },
+];
 const ROOM_OPTIONS = [
   { value: '', label: 'Any' },
   { value: 'studio', label: 'Studio' },
@@ -20,16 +28,6 @@ const BATH_OPTIONS = [
   { value: '1', label: '1' },
   { value: '2', label: '2' },
   { value: '3+', label: '3+' },
-];
-const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
-const FEATURE_FILTER_OPTIONS = [
-  'elevator',
-  'parking',
-  'pets',
-  'disabled-access',
-  'renovated',
-  'furnished',
-  'mamad',
 ];
 
 const clampPriceValue = (value) => {
@@ -59,11 +57,11 @@ const sanitizeListingType = (rawValue) => {
 const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   const normalizedRooms = String(rooms || '').trim();
   const normalizedBaths = String(baths || '').trim();
-  if (!normalizedRooms && !normalizedBaths) return 'Rooms/Baths';
+  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms/Baths';
   const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
   const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
-  if (roomOption) summaryParts.push(`Rooms: ${roomOption.label}`);
+  if (roomOption) summaryParts.push(`Bedrooms: ${roomOption.label}`);
   if (bathOption) summaryParts.push(`Baths: ${bathOption.label}`);
   return summaryParts.join(' • ');
 };
@@ -75,13 +73,6 @@ const parseSearchFromLocation = (search = '') => {
   const baths = params.get('baths') || '';
   const listingType = sanitizeListingType(params.get('type') || 'rental');
   const allFilters = params.get('allFilters') || '';
-  const propertyCategory = params.get('propertyCategory') || '';
-  const normalizedPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(propertyCategory) ? propertyCategory : '';
-  const rawFeatures = String(params.get('features') || '');
-  const featureFilters = rawFeatures
-    .split(',')
-    .map((value) => String(value || '').trim().toLowerCase())
-    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
   const minRaw = params.get('minPrice');
   const maxRaw = params.get('maxPrice');
   const hasMin = minRaw != null && minRaw !== '';
@@ -99,8 +90,6 @@ const parseSearchFromLocation = (search = '') => {
     baths,
     listingType,
     allFilters,
-    propertyCategory: normalizedPropertyCategory,
-    featureFilters,
     minPriceInput,
     maxPriceInput,
     likedOnly: params.get('liked') === '1',
@@ -113,8 +102,6 @@ const buildSearchQuery = ({
   baths,
   listingType,
   allFilters,
-  propertyCategory,
-  featureFilters,
   minPriceInput,
   maxPriceInput,
   likedOnly,
@@ -130,16 +117,6 @@ const buildSearchQuery = ({
   if (normalizedType !== 'all') params.set('type', normalizedType);
   const trimmedAllFilters = String(allFilters || '').trim();
   if (trimmedAllFilters) params.set('allFilters', trimmedAllFilters);
-  const normalizedPropertyCategory = String(propertyCategory || '').trim().toLowerCase();
-  if (PROPERTY_CATEGORY_OPTIONS.includes(normalizedPropertyCategory)) {
-    params.set('propertyCategory', normalizedPropertyCategory);
-  }
-  const normalizedFeatureFilters = (Array.isArray(featureFilters) ? featureFilters : [])
-    .map((value) => String(value || '').trim().toLowerCase())
-    .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
-  if (normalizedFeatureFilters.length > 0) {
-    params.set('features', normalizedFeatureFilters.join(','));
-  }
   if (Number(minPriceInput) > PRICE_SLIDER_MIN) params.set('minPrice', String(minPriceInput));
   if (Number(maxPriceInput) < PRICE_SLIDER_MAX) params.set('maxPrice', String(maxPriceInput));
   if (likedOnly) params.set('liked', '1');
@@ -159,19 +136,18 @@ const Navbar = () => {
   const [baths, setBaths] = useState(parsedFromLocation.baths);
   const [listingType, setListingType] = useState(parsedFromLocation.listingType);
   const [allFilters, setAllFilters] = useState(parsedFromLocation.allFilters);
-  const [propertyCategory, setPropertyCategory] = useState(parsedFromLocation.propertyCategory);
-  const [featureFilters, setFeatureFilters] = useState(parsedFromLocation.featureFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
+  const [isPriceDragging, setIsPriceDragging] = useState(false);
+  const [activePriceHandle, setActivePriceHandle] = useState('');
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
-  const [priceExpanded, setPriceExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
   const roomsBathsRef = useRef(null);
-  const filtersRef = useRef(null);
+  const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
+  const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -182,16 +158,16 @@ const Navbar = () => {
     setBaths(parsedFromLocation.baths);
     setListingType(parsedFromLocation.listingType);
     setAllFilters(parsedFromLocation.allFilters);
-    setPropertyCategory(parsedFromLocation.propertyCategory);
-    setFeatureFilters(parsedFromLocation.featureFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
+    minPriceDraftRef.current = parsedFromLocation.minPriceInput;
+    maxPriceDraftRef.current = parsedFromLocation.maxPriceInput;
+    setIsPriceDragging(false);
+    setActivePriceHandle('');
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
-    setPriceExpanded(false);
     setRoomsBathsExpanded(false);
-    setFiltersExpanded(false);
   }, [parsedFromLocation]);
 
   useEffect(() => {
@@ -225,34 +201,12 @@ const Navbar = () => {
     };
   }, [roomsBathsExpanded]);
 
-  useEffect(() => {
-    if (!filtersExpanded) return undefined;
-    const handlePointerDown = (event) => {
-      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
-        setFiltersExpanded(false);
-      }
-    };
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setFiltersExpanded(false);
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [filtersExpanded]);
-
   const applySearch = ({
     nextCity = city,
     nextRooms = rooms,
     nextBaths = baths,
     nextListingType = listingType,
     nextAllFilters = allFilters,
-    nextPropertyCategory = propertyCategory,
-    nextFeatureFilters = featureFilters,
     nextMinPriceInput = minPriceInput,
     nextMaxPriceInput = maxPriceInput,
     nextLikedOnly = likedOnly,
@@ -263,8 +217,6 @@ const Navbar = () => {
       baths: nextBaths,
       listingType: nextListingType,
       allFilters: nextAllFilters,
-      propertyCategory: nextPropertyCategory,
-      featureFilters: nextFeatureFilters,
       minPriceInput: nextMinPriceInput,
       maxPriceInput: nextMaxPriceInput,
       likedOnly: nextLikedOnly,
@@ -281,7 +233,7 @@ const Navbar = () => {
     const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
     const nextMinPriceInput = Math.min(nextValue, maxAllowedMin);
     setMinPriceInput(nextMinPriceInput);
-    applySearch({ nextMinPriceInput });
+    minPriceDraftRef.current = nextMinPriceInput;
   };
 
   const handleMaxPriceSliderChange = (event) => {
@@ -289,48 +241,31 @@ const Navbar = () => {
     const minAllowedMax = Math.min(PRICE_SLIDER_MAX, minPriceInput + PRICE_SLIDER_STEP);
     const nextMaxPriceInput = Math.max(nextValue, minAllowedMax);
     setMaxPriceInput(nextMaxPriceInput);
-    applySearch({ nextMaxPriceInput });
+    maxPriceDraftRef.current = nextMaxPriceInput;
+  };
+
+  const handlePriceDragStart = (handle) => {
+    setIsPriceDragging(true);
+    setActivePriceHandle(handle);
+  };
+
+  const commitPriceSearch = () => {
+    applySearch({
+      nextMinPriceInput: minPriceDraftRef.current,
+      nextMaxPriceInput: maxPriceDraftRef.current,
+    });
+  };
+
+  const handlePriceInteractionEnd = () => {
+    setIsPriceDragging(false);
+    setActivePriceHandle('');
+    commitPriceSearch();
   };
 
   const handleHeaderSearchSubmit = (event) => {
     event.preventDefault();
     applySearch();
-    setPriceExpanded(false);
     setRoomsBathsExpanded(false);
-    setFiltersExpanded(false);
-  };
-
-  const handleFilterMenuMinPriceChange = (rawValue) => {
-    const normalizedRaw = String(rawValue || '').trim();
-    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(normalizedRaw);
-    const nextMinPriceInput = Math.min(parsedValue, maxPriceInput);
-    setMinPriceInput(nextMinPriceInput);
-    applySearch({ nextMinPriceInput });
-  };
-
-  const handleFilterMenuMaxPriceChange = (rawValue) => {
-    const normalizedRaw = String(rawValue || '').trim();
-    const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MAX : clampPriceValue(normalizedRaw);
-    const nextMaxPriceInput = Math.max(parsedValue, minPriceInput);
-    setMaxPriceInput(nextMaxPriceInput);
-    applySearch({ nextMaxPriceInput });
-  };
-
-  const handleTogglePropertyCategory = (nextCategory) => {
-    const normalizedCategory = String(nextCategory || '').trim().toLowerCase();
-    const resolvedCategory = propertyCategory === normalizedCategory ? '' : normalizedCategory;
-    setPropertyCategory(resolvedCategory);
-    applySearch({ nextPropertyCategory: resolvedCategory });
-  };
-
-  const handleToggleFeatureFilter = (featureId) => {
-    const normalizedFeature = String(featureId || '').trim().toLowerCase();
-    if (!FEATURE_FILTER_OPTIONS.includes(normalizedFeature)) return;
-    const nextFeatureFilters = featureFilters.includes(normalizedFeature)
-      ? featureFilters.filter((value) => value !== normalizedFeature)
-      : [...featureFilters, normalizedFeature];
-    setFeatureFilters(nextFeatureFilters);
-    applySearch({ nextFeatureFilters });
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
@@ -355,6 +290,7 @@ const Navbar = () => {
                   id="header-search-query"
                   type="text"
                   placeholder="Search city, neighborhood or listing"
+                  className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
                   onBlur={(event) => applySearch({ nextCity: event.target.value })}
@@ -378,22 +314,14 @@ const Navbar = () => {
             </div>
             <div className="premium-header__search-row premium-header__search-row--bottom">
               <div className="premium-header__search-item premium-header__search-item--price">
-                <button
+                <div
                   id="header-search-price-toggle"
-                  type="button"
-                  className="premium-header__price-toggle"
-                  onClick={() => {
-                    setFiltersExpanded(false);
-                    setRoomsBathsExpanded(false);
-                    setPriceExpanded((value) => !value);
-                  }}
-                  aria-expanded={priceExpanded}
-                  aria-controls="header-price-slider-panel"
+                  className={`premium-header__price-toggle premium-header__price-toggle--static ${hasCustomPrice ? 'is-active' : ''}`}
+                  aria-live="polite"
                 >
                   <span>{hasCustomPrice ? getPriceSummaryLabel(minPriceInput, maxPriceInput) : 'Price'}</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
-                </button>
-                <div id="header-price-slider-panel" className={`premium-header__price-panel ${priceExpanded ? 'is-open' : ''}`}>
+                </div>
+                <div id="header-price-slider-panel" className="premium-header__price-panel premium-header__price-panel--always-visible">
                   <div className="premium-header__price-values" aria-hidden="true">
                     <span>{formatPriceSliderLabel(minPriceInput)}</span>
                     <span>—</span>
@@ -413,7 +341,14 @@ const Navbar = () => {
                       step={PRICE_SLIDER_STEP}
                       value={minPriceInput}
                       onChange={handleMinPriceSliderChange}
-                      className="premium-header__price-slider premium-header__price-slider--min"
+                      onMouseDown={() => handlePriceDragStart('min')}
+                      onTouchStart={() => handlePriceDragStart('min')}
+                      onMouseUp={handlePriceInteractionEnd}
+                      onTouchEnd={handlePriceInteractionEnd}
+                      onTouchCancel={handlePriceInteractionEnd}
+                      onKeyUp={handlePriceInteractionEnd}
+                      onBlur={handlePriceInteractionEnd}
+                      className={`premium-header__price-slider premium-header__price-slider--min ${activePriceHandle === 'min' ? 'is-active' : ''}`}
                       aria-label="Minimum price"
                     />
                     <input
@@ -423,7 +358,14 @@ const Navbar = () => {
                       step={PRICE_SLIDER_STEP}
                       value={maxPriceInput}
                       onChange={handleMaxPriceSliderChange}
-                      className="premium-header__price-slider premium-header__price-slider--max"
+                      onMouseDown={() => handlePriceDragStart('max')}
+                      onTouchStart={() => handlePriceDragStart('max')}
+                      onMouseUp={handlePriceInteractionEnd}
+                      onTouchEnd={handlePriceInteractionEnd}
+                      onTouchCancel={handlePriceInteractionEnd}
+                      onKeyUp={handlePriceInteractionEnd}
+                      onBlur={handlePriceInteractionEnd}
+                      className={`premium-header__price-slider premium-header__price-slider--max ${activePriceHandle === 'max' ? 'is-active' : ''}`}
                       aria-label="Maximum price"
                     />
                   </div>
@@ -433,10 +375,8 @@ const Navbar = () => {
                 <button
                   id="header-search-rooms-toggle"
                   type="button"
-                  className="premium-header__rooms-toggle"
+                  className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
-                    setFiltersExpanded(false);
-                    setPriceExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
                       if (nextExpanded) {
@@ -457,7 +397,7 @@ const Navbar = () => {
                   className={`premium-header__rooms-panel ${roomsBathsExpanded ? 'is-open' : ''}`}
                 >
                   <div className="premium-header__rooms-section">
-                    <p className="premium-header__rooms-section-title">Rooms</p>
+                    <p className="premium-header__rooms-section-title">Bedrooms</p>
                     <div className="premium-header__rooms-options-grid">
                       {ROOM_OPTIONS.map((option) => (
                         <button
@@ -498,7 +438,7 @@ const Navbar = () => {
                         applySearch({ nextRooms: '', nextBaths: '' });
                       }}
                     >
-                      Clear
+                      Clear All Selections
                     </button>
                     <button
                       type="button"
@@ -515,41 +455,21 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div
-                className="premium-header__search-item premium-header__search-item--all-filters"
-                ref={filtersRef}
-              >
-                <button
-                  id="header-search-filter-toggle"
-                  type="button"
-                  className="premium-header__filters-toggle"
-                  onClick={() => {
-                    setPriceExpanded(false);
-                    setRoomsBathsExpanded(false);
-                    setFiltersExpanded((value) => !value);
+              <div className="premium-header__search-item premium-header__search-item--all-filters">
+                <select
+                  id="header-search-filter"
+                  className={allFilters ? 'is-active' : ''}
+                  value={allFilters}
+                  onChange={(event) => {
+                    const nextAllFilters = event.target.value;
+                    setAllFilters(nextAllFilters);
+                    applySearch({ nextAllFilters });
                   }}
-                  aria-expanded={filtersExpanded}
-                  aria-controls="header-filters-panel"
                 >
-                  <span>All Filters</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{filtersExpanded ? '▲' : '▼'}</span>
-                </button>
-                <div
-                  id="header-filters-panel"
-                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
-                >
-                  <FilterMenu
-                    onClose={() => setFiltersExpanded(false)}
-                    minPrice={minPriceInput}
-                    maxPrice={maxPriceInput}
-                    propertyCategory={propertyCategory}
-                    selectedFeatures={featureFilters}
-                    onMinPriceChange={handleFilterMenuMinPriceChange}
-                    onMaxPriceChange={handleFilterMenuMaxPriceChange}
-                    onTogglePropertyCategory={handleTogglePropertyCategory}
-                    onToggleFeature={handleToggleFeatureFilter}
-                  />
-                </div>
+                  {ALL_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value || 'all-filters'} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
