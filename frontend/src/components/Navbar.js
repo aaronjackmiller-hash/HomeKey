@@ -59,7 +59,7 @@ const sanitizeListingType = (rawValue) => {
 const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   const normalizedRooms = String(rooms || '').trim();
   const normalizedBaths = String(baths || '').trim();
-  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms/Baths';
+  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms';
   const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
   const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
@@ -382,12 +382,12 @@ const Navbar = () => {
 
         <div className="premium-header__search-cell">
           <form className="premium-header__search-form" onSubmit={handleHeaderSearchSubmit}>
-            <div className="premium-header__search-row premium-header__search-row--top">
-              <div className="premium-header__search-item premium-header__search-item--query">
+            <div className="premium-header__search-pill" role="group" aria-label="Property search">
+              <div className="premium-header__search-segment premium-header__search-segment--location">
                 <input
                   id="header-search-query"
                   type="text"
-                  placeholder="Search city, neighborhood or listing"
+                  placeholder="Location"
                   className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
@@ -395,23 +395,7 @@ const Navbar = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="premium-header__search-item premium-header__search-item--type">
-                <select
-                  id="header-search-type"
-                  value={listingType}
-                  onChange={(event) => {
-                    const nextListingType = event.target.value;
-                    setListingType(nextListingType);
-                    applySearch({ nextListingType });
-                  }}
-                >
-                  <option value="rental">Rent</option>
-                  <option value="sale">Sale</option>
-                </select>
-              </div>
-            </div>
-            <div className="premium-header__search-row premium-header__search-row--bottom">
-              <div className="premium-header__search-item premium-header__search-item--price">
+              <div className="premium-header__search-segment premium-header__search-segment--price">
                 <div
                   id="header-search-price-toggle"
                   className={`premium-header__price-toggle premium-header__price-toggle--static ${hasCustomPrice ? 'is-active' : ''}`}
@@ -469,7 +453,7 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
-              <div className="premium-header__search-item premium-header__search-item--rooms" ref={roomsBathsRef}>
+              <div className="premium-header__search-segment premium-header__search-segment--rooms" ref={roomsBathsRef}>
                 <button
                   id="header-search-rooms-toggle"
                   type="button"
@@ -553,6 +537,22 @@ const Navbar = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div className="premium-header__search-controls">
+              <div className="premium-header__search-item premium-header__search-item--type">
+                <select
+                  id="header-search-type"
+                  value={listingType}
+                  onChange={(event) => {
+                    const nextListingType = event.target.value;
+                    setListingType(nextListingType);
+                    applySearch({ nextListingType });
+                  }}
+                >
+                  <option value="rental">Rent</option>
+                  <option value="sale">Sale</option>
+                </select>
               </div>
               <div
                 className="premium-header__search-item premium-header__search-item--all-filters"
