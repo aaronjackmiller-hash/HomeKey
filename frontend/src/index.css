@@ -2660,17 +2660,19 @@ legend {
 
 .property-list-page .hero-banner-logo {
   position: absolute;
-  top: 20px;
-  right: 16px;
-  width: clamp(104px, 11vw, 150px);
-  height: clamp(104px, 11vw, 150px);
-  min-height: clamp(104px, 11vw, 150px);
+  top: clamp(18px, 2vw, 30px);
+  right: clamp(14px, 1.8vw, 22px);
+  width: clamp(112px, 12vw, 164px);
+  height: clamp(112px, 12vw, 164px);
+  min-height: clamp(112px, 12vw, 164px);
   pointer-events: none;
   z-index: 3;
   background-image: url("./assets/h-letter-logo-transparent-fixed.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
   opacity: 0.2;
   filter: brightness(0) saturate(0) invert(1) contrast(170%) drop-shadow(0 6px 16px rgba(7, 12, 20, 0.35));
 }
