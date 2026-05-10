@@ -129,6 +129,8 @@ const Navbar = () => {
   const [allFilters, setAllFilters] = useState(parsedFromLocation.allFilters);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
+  const [isPriceDragging, setIsPriceDragging] = useState(false);
+  const [activePriceHandle, setActivePriceHandle] = useState('');
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
   const [priceExpanded, setPriceExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
@@ -136,6 +138,8 @@ const Navbar = () => {
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
   const roomsBathsRef = useRef(null);
+  const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
+  const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -148,6 +152,10 @@ const Navbar = () => {
     setAllFilters(parsedFromLocation.allFilters);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
+    minPriceDraftRef.current = parsedFromLocation.minPriceInput;
+    maxPriceDraftRef.current = parsedFromLocation.maxPriceInput;
+    setIsPriceDragging(false);
+    setActivePriceHandle('');
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
@@ -218,7 +226,7 @@ const Navbar = () => {
     const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
     const nextMinPriceInput = Math.min(nextValue, maxAllowedMin);
     setMinPriceInput(nextMinPriceInput);
-    applySearch({ nextMinPriceInput });
+    minPriceDraftRef.current = nextMinPriceInput;
   };
 
   const handleMaxPriceSliderChange = (event) => {
@@ -226,7 +234,25 @@ const Navbar = () => {
     const minAllowedMax = Math.min(PRICE_SLIDER_MAX, minPriceInput + PRICE_SLIDER_STEP);
     const nextMaxPriceInput = Math.max(nextValue, minAllowedMax);
     setMaxPriceInput(nextMaxPriceInput);
-    applySearch({ nextMaxPriceInput });
+    maxPriceDraftRef.current = nextMaxPriceInput;
+  };
+
+  const handlePriceDragStart = (handle) => {
+    setIsPriceDragging(true);
+    setActivePriceHandle(handle);
+  };
+
+  const commitPriceSearch = () => {
+    applySearch({
+      nextMinPriceInput: minPriceDraftRef.current,
+      nextMaxPriceInput: maxPriceDraftRef.current,
+    });
+  };
+
+  const handlePriceInteractionEnd = () => {
+    setIsPriceDragging(false);
+    setActivePriceHandle('');
+    commitPriceSearch();
   };
 
   const handleHeaderSearchSubmit = (event) => {
@@ -287,6 +313,9 @@ const Navbar = () => {
                   className="premium-header__price-toggle"
                   onClick={() => {
                     setRoomsBathsExpanded(false);
+                    if (priceExpanded || isPriceDragging) {
+                      handlePriceInteractionEnd();
+                    }
                     setPriceExpanded((value) => !value);
                   }}
                   aria-expanded={priceExpanded}
@@ -315,7 +344,14 @@ const Navbar = () => {
                       step={PRICE_SLIDER_STEP}
                       value={minPriceInput}
                       onChange={handleMinPriceSliderChange}
-                      className="premium-header__price-slider premium-header__price-slider--min"
+                      onMouseDown={() => handlePriceDragStart('min')}
+                      onTouchStart={() => handlePriceDragStart('min')}
+                      onMouseUp={handlePriceInteractionEnd}
+                      onTouchEnd={handlePriceInteractionEnd}
+                      onTouchCancel={handlePriceInteractionEnd}
+                      onKeyUp={handlePriceInteractionEnd}
+                      onBlur={handlePriceInteractionEnd}
+                      className={`premium-header__price-slider premium-header__price-slider--min ${activePriceHandle === 'min' ? 'is-active' : ''}`}
                       aria-label="Minimum price"
                     />
                     <input
@@ -325,7 +361,14 @@ const Navbar = () => {
                       step={PRICE_SLIDER_STEP}
                       value={maxPriceInput}
                       onChange={handleMaxPriceSliderChange}
-                      className="premium-header__price-slider premium-header__price-slider--max"
+                      onMouseDown={() => handlePriceDragStart('max')}
+                      onTouchStart={() => handlePriceDragStart('max')}
+                      onMouseUp={handlePriceInteractionEnd}
+                      onTouchEnd={handlePriceInteractionEnd}
+                      onTouchCancel={handlePriceInteractionEnd}
+                      onKeyUp={handlePriceInteractionEnd}
+                      onBlur={handlePriceInteractionEnd}
+                      className={`premium-header__price-slider premium-header__price-slider--max ${activePriceHandle === 'max' ? 'is-active' : ''}`}
                       aria-label="Maximum price"
                     />
                   </div>
