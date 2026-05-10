@@ -213,15 +213,13 @@ const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const almostEqual = (left, right) => Math.abs(left - right) < EPSILON;
   if (selected.toLowerCase() === 'studio') return bedrooms < 1;
   if (selected.endsWith('+')) {
-    const minRooms = Number(selected.replace('+', ''));
-    if (Number.isNaN(minRooms)) return true;
-    // Imported data can store either "rooms" or "bedrooms" in the bedrooms field.
-    // Treat X+ rooms as matching both >= X bedrooms and >= (X - 1) bedrooms.
-    return bedrooms >= Math.max(0, minRooms - 1);
+    const minBedrooms = Number(selected.replace('+', ''));
+    if (Number.isNaN(minBedrooms)) return true;
+    return bedrooms >= minBedrooms;
   }
-  const selectedRooms = Number(selected);
-  if (Number.isNaN(selectedRooms)) return true;
-  return almostEqual(bedrooms, selectedRooms) || almostEqual(bedrooms, Math.max(0, selectedRooms - 1));
+  const selectedBedrooms = Number(selected);
+  if (Number.isNaN(selectedBedrooms)) return true;
+  return almostEqual(bedrooms, selectedBedrooms);
 };
 
 const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
@@ -240,6 +238,26 @@ const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
   if (Number.isNaN(selectedBathrooms)) return true;
   return almostEqual(bathrooms, selectedBathrooms);
 };
+
+const toNumericCount = (...values) => {
+  for (const value of values) {
+    if (value == null || value === '') continue;
+    const asNumber = Number(value);
+    if (!Number.isNaN(asNumber)) return asNumber;
+  }
+  return null;
+};
+
+const getBedroomCount = (property = {}) =>
+  toNumericCount(property.bedrooms, property.rooms, property.roomCount);
+
+const getBathroomCount = (property = {}) =>
+  toNumericCount(
+    property.bathrooms,
+    property.baths,
+    property.bathroomCount,
+    property.numberOfBathrooms
+  );
 
 const areStringArraysEqual = (left = [], right = []) => {
   if (left === right) return true;
@@ -530,10 +548,10 @@ const PropertyList = () => {
         samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
       }
       if (roomsSearch.trim()) {
-        samples = samples.filter((p) => matchesRoomsSelection(p.bedrooms, roomsSearch));
+        samples = samples.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
       }
       if (bathsSearch.trim()) {
-        samples = samples.filter((p) => matchesBathroomsSelection(p.bathrooms, bathsSearch));
+        samples = samples.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
       if (minPrice !== '') samples = samples.filter((p) => p.price >= Number(minPrice));
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
@@ -547,10 +565,10 @@ const PropertyList = () => {
         displayProperties = displayProperties.filter((p) => p?.address?.city?.toLowerCase().includes(q));
       }
       if (roomsSearch.trim()) {
-        displayProperties = displayProperties.filter((p) => matchesRoomsSelection(p?.bedrooms, roomsSearch));
+        displayProperties = displayProperties.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
       }
       if (bathsSearch.trim()) {
-        displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(p?.bathrooms, bathsSearch));
+        displayProperties = displayProperties.filter((p) => matchesBathroomsSelection(getBathroomCount(p), bathsSearch));
       }
       if (minPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) >= Number(minPrice));
       if (maxPrice !== '') displayProperties = displayProperties.filter((p) => Number(p?.price) <= Number(maxPrice));
@@ -690,6 +708,8 @@ const PropertyList = () => {
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address);
           const displayStreet = dedupeRepeatingPhrase(sanitizeReadableText(property, street));
+          const bedroomCount = getBedroomCount(property);
+          const bathroomCount = getBathroomCount(property);
           const titleFromData = sanitizeReadableText(property, property.title);
           const displayLocation = sanitizeReadableText(property, locationLine);
           const displayTitle = displayStreet || titleFromData || displayLocation || 'Property listing';
@@ -749,7 +769,7 @@ const PropertyList = () => {
                       <path d="M13.2 10H18v2.4h-4.8z" />
                       <path d="M4.2 17v1.8M19.8 17v1.8" />
                     </svg>
-                    <span>{property.bedrooms ?? '—'} Beds</span>
+                    <span>{bedroomCount ?? '—'} Beds</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -758,7 +778,7 @@ const PropertyList = () => {
                       <path d="M7.2 20v1.4M16.8 20v1.4" />
                       <path d="M16.8 9.3l1.6 1.6M18.4 9.3l-1.6 1.6" />
                     </svg>
-                    <span>{property.bathrooms ?? '—'} Baths</span>
+                    <span>{bathroomCount ?? '—'} Baths</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

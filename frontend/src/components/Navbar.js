@@ -48,11 +48,11 @@ const sanitizeListingType = (rawValue) => {
 const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   const normalizedRooms = String(rooms || '').trim();
   const normalizedBaths = String(baths || '').trim();
-  if (!normalizedRooms && !normalizedBaths) return 'Rooms/Baths';
+  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms/Baths';
   const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
   const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
-  if (roomOption) summaryParts.push(`Rooms: ${roomOption.label}`);
+  if (roomOption) summaryParts.push(`Bedrooms: ${roomOption.label}`);
   if (bathOption) summaryParts.push(`Baths: ${bathOption.label}`);
   return summaryParts.join(' • ');
 };
@@ -358,7 +358,7 @@ const Navbar = () => {
                   className={`premium-header__rooms-panel ${roomsBathsExpanded ? 'is-open' : ''}`}
                 >
                   <div className="premium-header__rooms-section">
-                    <p className="premium-header__rooms-section-title">Rooms</p>
+                    <p className="premium-header__rooms-section-title">Bedrooms</p>
                     <div className="premium-header__rooms-options-grid">
                       {ROOM_OPTIONS.map((option) => (
                         <button
