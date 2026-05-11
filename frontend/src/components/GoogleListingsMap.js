@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getPublicAppConfig } from '../services/api';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -10,7 +11,6 @@ const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.08;
-const FALLBACK_MAP_EMBED_URL = 'https://www.openstreetmap.org/export/embed.html?bbox=34.2665%2C29.4534%2C35.8950%2C33.3356&layer=mapnik&marker=31.7683%2C35.2137';
 const MAP_SILVER_STYLES = [
   { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
@@ -218,7 +218,10 @@ const GoogleListingsMap = ({
   drawModeToggleSignal = 0,
   onDrawModeChange,
 }) => {
-  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+  const buildTimeApiKey = safeText(process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
+  const [runtimeApiKey, setRuntimeApiKey] = useState('');
+  const [isApiKeyLoading, setIsApiKeyLoading] = useState(!buildTimeApiKey);
+  const apiKey = buildTimeApiKey || runtimeApiKey;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
@@ -241,6 +244,33 @@ const GoogleListingsMap = ({
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
+
+  useEffect(() => {
+    if (buildTimeApiKey) {
+      setIsApiKeyLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setIsApiKeyLoading(true);
+    getPublicAppConfig()
+      .then((response) => {
+        if (cancelled) return;
+        const serverKey = safeText(response?.config?.googleMapsApiKey || response?.googleMapsApiKey);
+        setRuntimeApiKey(serverKey);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRuntimeApiKey('');
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsApiKeyLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildTimeApiKey]);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -625,22 +655,16 @@ const GoogleListingsMap = ({
 
   if (!apiKey) {
     return (
-      <div className="google-listings-map-shell google-listings-map-shell--fallback">
-        <div className="google-listings-map-fallback-frame-wrap">
-          <iframe
-            title="Israel map fallback"
-            className="google-listings-map-fallback-frame"
-            src={FALLBACK_MAP_EMBED_URL}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-        <div className="google-listings-map-note google-listings-map-note--fallback">
-          Google markers are temporarily unavailable. Set <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> to restore interactive listing pins.
-        </div>
-        <p className="google-listings-map-caption google-listings-map-caption--fallback">
-          Showing a live fallback map so discovery remains available.
-        </p>
+      <div className="google-listings-map-note">
+        {isApiKeyLoading
+          ? 'Loading map configuration...'
+          : (
+            <>
+              Set <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> (or server env <code>GOOGLE_MAPS_API_KEY</code>)
+              {' '}
+              to enable apartment location markers.
+            </>
+          )}
       </div>
     );
   }
