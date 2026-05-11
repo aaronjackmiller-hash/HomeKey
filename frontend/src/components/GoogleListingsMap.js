@@ -767,9 +767,7 @@ const GoogleListingsMap = ({
           </div>
           {!isOverlayCollapsed ? (
             <p>
-              <strong>Find your perfect match.</strong>
-              {' '}
-              Draw a circle on the map to instantly filter the best apartments in your target zone!
+              View where available apartments are located and draw a circle to filter the search area.
             </p>
           ) : null}
         </header>

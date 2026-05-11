@@ -352,9 +352,7 @@ const ConnectedListingsMapFallback = ({
           </div>
           {!isOverlayCollapsed ? (
             <p>
-              <strong>Interactive fallback mode.</strong>
-              {' '}
-              Draw a circle to filter listings by area while Google Maps credentials are unavailable.
+              View where available apartments are located and draw a circle to filter the search area.
             </p>
           ) : null}
         </header>
