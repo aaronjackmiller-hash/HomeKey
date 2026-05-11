@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getPublicAppConfig } from '../services/api';
+import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -654,23 +655,30 @@ const GoogleListingsMap = ({
   }, []);
 
   if (!apiKey) {
+    if (isApiKeyLoading) {
+      return <div className="google-listings-map-note">Loading map configuration...</div>;
+    }
     return (
-      <div className="google-listings-map-note">
-        {isApiKeyLoading
-          ? 'Loading map configuration...'
-          : (
-            <>
-              Set <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> (or server env <code>GOOGLE_MAPS_API_KEY</code>)
-              {' '}
-              to enable apartment location markers.
-            </>
-          )}
-      </div>
+      <ConnectedListingsMapFallback
+        properties={properties}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+      />
     );
   }
 
   if (mapError) {
-    return <div className="google-listings-map-note">{mapError}</div>;
+    return (
+      <ConnectedListingsMapFallback
+        properties={properties}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+      />
+    );
   }
 
   const panMapBy = (x, y) => {
