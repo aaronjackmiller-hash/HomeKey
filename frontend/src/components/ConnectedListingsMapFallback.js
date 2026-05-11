@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
@@ -22,12 +19,6 @@ const CITY_CENTER_HINTS = [
   { name: 'ירושלים', center: { lat: 31.7683, lng: 35.2137 } },
   { name: 'חיפה', center: { lat: 32.794, lng: 34.9896 } },
 ];
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 const getPropertyId = (property) => property && (property._id || property.id);
@@ -79,6 +70,14 @@ const buildFallbackCoords = (addressQuery, markerIndex = 0) => {
   };
 };
 
+const createFallbackPriceIcon = (priceText) => L.divIcon({
+  className: 'fallback-price-pin',
+  html: `<span>${priceText}</span>`,
+  iconSize: [72, 28],
+  iconAnchor: [36, 28],
+  popupAnchor: [0, -24],
+});
+
 const ConnectedListingsMapFallback = ({
   properties = [],
   onCircleSelectionChange,
@@ -97,6 +96,7 @@ const ConnectedListingsMapFallback = ({
   const [markerCount, setMarkerCount] = useState(0);
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [hasActiveCircle, setHasActiveCircle] = useState(false);
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
 
@@ -146,6 +146,7 @@ const ConnectedListingsMapFallback = ({
 
     setMarkerCount(visibleMarkers);
     setTotalMarkerCount(markersRef.current.length);
+    setHasActiveCircle(hasAreaFilter);
     setCircleRadiusMeters(hasAreaFilter ? radius : 0);
     emitCircleSelection({
       active: hasAreaFilter,
@@ -212,6 +213,9 @@ const ConnectedListingsMapFallback = ({
     }).addTo(map);
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
     mapInstanceRef.current = map;
+    window.setTimeout(() => {
+      if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+    }, 0);
   }, []);
 
   useEffect(() => {
@@ -227,11 +231,13 @@ const ConnectedListingsMapFallback = ({
     const bounds = [];
     markerInputs.forEach((item, markerIndex) => {
       const coords = buildFallbackCoords(item.addressQuery, markerIndex);
+      const priceText = formatMarkerPrice(item.property.price);
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
+        icon: createFallbackPriceIcon(priceText),
       });
       marker.bindPopup(
-        `<strong>${safeText(item.property.title) || 'Property listing'}</strong><br/>${formatMarkerPrice(item.property.price)}<br/>${item.addressQuery}`
+        `<strong>${safeText(item.property.title) || 'Property listing'}</strong><br/>${priceText}<br/>${item.addressQuery}`
       );
       marker.addTo(map);
       markersRef.current.push({
@@ -241,15 +247,19 @@ const ConnectedListingsMapFallback = ({
       bounds.push([coords.lat, coords.lng]);
     });
 
-    setTotalMarkerCount(markersRef.current.length);
-    if (bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [36, 36] });
-    } else if (bounds.length === 1) {
-      map.setView(bounds[0], 13);
-    } else {
-      map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
-    }
-    applyCircleFilter();
+    window.setTimeout(() => {
+      if (!mapInstanceRef.current) return;
+      map.invalidateSize();
+      setTotalMarkerCount(markersRef.current.length);
+      if (bounds.length > 1) {
+        map.fitBounds(bounds, { padding: [36, 36] });
+      } else if (bounds.length === 1) {
+        map.setView(bounds[0], 13);
+      } else {
+        map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
+      }
+      applyCircleFilter();
+    }, 0);
   }, [propertiesWithAddress]);
 
   useEffect(() => {
@@ -372,7 +382,7 @@ const ConnectedListingsMapFallback = ({
         <div ref={mapContainerRef} className="google-listings-map-canvas connected-map-fallback-canvas" />
       </div>
       <p className="google-listings-map-caption">
-        {circleRadiusMeters > 0
+        {hasActiveCircle
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
           : markerCount > 0
             ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
