@@ -67,7 +67,7 @@ a {
 .premium-header__search-cell {
   justify-self: center;
   width: 100%;
-  max-width: 700px;
+  max-width: 620px;
 }
 
 .premium-header__actions-cell {
@@ -102,19 +102,19 @@ a {
 
 .premium-header__search-pill {
   display: grid;
-  grid-template-columns: minmax(220px, 1.85fr) minmax(150px, 1.2fr) minmax(120px, 1fr) minmax(108px, 0.9fr);
+  grid-template-columns: minmax(220px, 2fr) minmax(74px, 0.8fr) minmax(124px, 1.05fr) minmax(90px, 0.9fr);
   align-items: center;
-  min-height: 52px;
+  min-height: 44px;
   border: 1px solid #d9d4c8;
   border-radius: 999px;
   background: #ffffff;
-  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.1);
+  box-shadow: 0 3px 10px rgba(26, 26, 26, 0.1);
 }
 
 .premium-header__search-segment {
   min-width: 0;
   position: relative;
-  padding: 6px 10px;
+  padding: 4px 8px;
 }
 
 .premium-header__search-segment + .premium-header__search-segment::before {
@@ -132,13 +132,13 @@ a {
 .premium-header__search-segment .premium-header__rooms-toggle,
 .premium-header__search-segment .premium-header__filters-toggle {
   width: 100%;
-  height: 28px;
+  height: 24px;
   border: 0;
   border-radius: var(--hk-radius-container);
   background: transparent;
   color: var(--hk-brand-charcoal);
-  padding: 4px 8px;
-  font-size: 0.84rem;
+  padding: 2px 8px;
+  font-size: 0.76rem;
   line-height: 1.1;
 }
 
@@ -558,7 +558,7 @@ a {
   gap: 6px;
   margin-bottom: 6px;
   color: #0f172a;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
 }
 
@@ -2385,7 +2385,7 @@ legend {
   }
 
   .premium-header__search-pill {
-    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.9fr);
+    grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
   }
 
   .premium-header__brand-cell {

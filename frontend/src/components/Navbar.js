@@ -59,7 +59,7 @@ const sanitizeListingType = (rawValue) => {
 const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   const normalizedRooms = String(rooms || '').trim();
   const normalizedBaths = String(baths || '').trim();
-  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms';
+  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms/Baths';
   const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
   const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
@@ -433,8 +433,7 @@ const Navbar = () => {
                     setPriceExpanded((isExpanded) => !isExpanded);
                   }}
                 >
-                  <span>{hasCustomPrice ? getPriceSummaryLabel(minPriceInput, maxPriceInput) : 'Price'}</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{priceExpanded ? '▲' : '▼'}</span>
+                  <span>Price</span>
                 </button>
                 <div
                   id="header-price-slider-panel"
@@ -510,7 +509,6 @@ const Navbar = () => {
                   aria-controls="header-rooms-baths-panel"
                 >
                   <span>{roomsBathsSummaryLabel}</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{roomsBathsExpanded ? '▲' : '▼'}</span>
                 </button>
                 <div
                   id="header-rooms-baths-panel"
@@ -589,7 +587,6 @@ const Navbar = () => {
                   aria-controls="header-filters-panel"
                 >
                   <span>All Filters</span>
-                  <span className="premium-header__price-caret" aria-hidden="true">{filtersExpanded ? '▲' : '▼'}</span>
                 </button>
                 <div
                   id="header-filters-panel"
