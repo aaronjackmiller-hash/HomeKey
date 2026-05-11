@@ -175,6 +175,10 @@ a {
 .premium-header__price-toggle span:first-child,
 .premium-header__rooms-toggle span:first-child,
 .premium-header__filters-toggle span:first-child {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

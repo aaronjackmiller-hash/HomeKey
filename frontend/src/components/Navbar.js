@@ -63,9 +63,9 @@ const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
   const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
-  if (roomOption) summaryParts.push(`Bedrooms: ${roomOption.label}`);
-  if (bathOption) summaryParts.push(`Baths: ${bathOption.label}`);
-  return summaryParts.join(' • ');
+  if (roomOption) summaryParts.push(`${roomOption.label}BR`);
+  if (bathOption) summaryParts.push(`${bathOption.label}BA`);
+  return summaryParts.join(' / ');
 };
 
 const parseSearchFromLocation = (search = '') => {
