@@ -3232,6 +3232,11 @@ legend {
   grid-template-rows: 1fr auto;
 }
 
+.property-list-page .google-listings-map-shell--fallback {
+  grid-template-rows: 1fr auto auto;
+  background: #dbe4f1;
+}
+
 .property-list-page .google-listings-map-canvas-wrap {
   position: relative;
   height: 100%;
@@ -3305,6 +3310,28 @@ legend {
   border-top: 1px solid #dce3ee;
 }
 
+.property-list-page .google-listings-map-note--fallback {
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.property-list-page .google-listings-map-fallback-frame-wrap {
+  position: relative;
+  min-height: 520px;
+  height: 100%;
+}
+
+.property-list-page .google-listings-map-fallback-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.property-list-page .google-listings-map-caption--fallback {
+  border-top: 1px solid #dce3ee;
+}
+
 .mobile-discovery-toggle,
 .mobile-thumb-zone-controls {
   display: none;
@@ -3363,6 +3390,10 @@ legend {
   .property-list-page .google-listings-map-canvas {
     min-height: 360px;
   }
+
+  .property-list-page .google-listings-map-fallback-frame-wrap {
+    min-height: 360px;
+  }
 }
 
 @media (max-width: 767px) {
@@ -3411,7 +3442,9 @@ legend {
 
   .property-list-page .google-listings-map-shell,
   .property-list-page .google-listings-map-canvas-wrap,
-  .property-list-page .google-listings-map-canvas {
+  .property-list-page .google-listings-map-canvas,
+  .property-list-page .google-listings-map-fallback-frame-wrap,
+  .property-list-page .google-listings-map-fallback-frame {
     height: 100%;
     min-height: 100%;
   }
