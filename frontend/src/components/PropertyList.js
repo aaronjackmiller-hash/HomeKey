@@ -25,13 +25,6 @@ const SUPPORTED_ALL_FILTERS = new Set([
   'fitness-center',
 ]);
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
-const DYNAMIC_SEARCH_HUB_OPTIONS = [
-  'New Developments',
-  'Immediate Entry',
-  'Verified Listings',
-  'Pet Friendly',
-  'Decision Hub',
-];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
   'parking',
@@ -500,7 +493,6 @@ const PropertyList = () => {
   const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
   const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
   const [interestVersion, setInterestVersion] = useState(0);
-  const [activeSearchHubChip, setActiveSearchHubChip] = useState('Verified Listings');
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -1085,23 +1077,6 @@ const PropertyList = () => {
                 </div>
               </div>
             </section>
-            <div className="reference-chip-row" aria-label="Dynamic Search Hub filters">
-              <span className="reference-chip-label">Dynamic Search Hub</span>
-              {DYNAMIC_SEARCH_HUB_OPTIONS.map((chip) => {
-                const isActive = activeSearchHubChip === chip;
-                return (
-                  <button
-                    type="button"
-                    key={chip}
-                    className={`reference-chip ${isActive ? 'is-active' : ''}`}
-                    aria-pressed={isActive}
-                    onClick={() => setActiveSearchHubChip(chip)}
-                  >
-                    {chip}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           <div className="property-interest-toolbar">
             <button
