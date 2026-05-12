@@ -286,7 +286,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const [markerPresetKey, setMarkerPresetKey] = useState(DEFAULT_MARKER_PRESET_KEY);
+  const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
@@ -763,8 +763,8 @@ const GoogleListingsMap = ({
     <div className="google-listings-map-shell">
       <div className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}>
         <header className="google-listings-map-header">
-          <div className="google-listings-map-header-top">
-            {isMobileOverlay ? (
+          {isMobileOverlay ? (
+            <div className="google-listings-map-header-top">
               <button
                 type="button"
                 className="secondary-btn google-listings-map-collapse-btn"
@@ -772,8 +772,8 @@ const GoogleListingsMap = ({
               >
                 {isOverlayCollapsed ? 'Expand' : 'Collapse'}
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           {!isOverlayCollapsed ? (
             <div className="google-listings-map-copy-block">
               <h2>Find Your Next Home.</h2>
@@ -798,18 +798,6 @@ const GoogleListingsMap = ({
             >
               Clear Area
             </button>
-            <div className="map-marker-presets" role="group" aria-label="Marker label style">
-              {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, preset]) => (
-                <button
-                  key={presetKey}
-                  type="button"
-                  className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
-                  onClick={() => setMarkerPresetKey(presetKey)}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
           </div>
         ) : null}
       </div>
