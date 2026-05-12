@@ -1,0 +1,199 @@
+.blueprint-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+}
+
+.blueprint-map-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 25%, rgba(139, 148, 158, 0.42) 0, rgba(139, 148, 158, 0) 38%),
+    radial-gradient(circle at 70% 45%, rgba(119, 129, 141, 0.44) 0, rgba(119, 129, 141, 0) 34%),
+    repeating-linear-gradient(38deg, #b6c0cb 0, #b6c0cb 7px, #aab4bf 7px, #aab4bf 14px),
+    repeating-linear-gradient(-42deg, #d4d9df 0, #d4d9df 10px, #c7ced7 10px, #c7ced7 20px);
+  filter: grayscale(1) saturate(0.45) brightness(0.9);
+  transform: scale(1.04);
+}
+
+.blueprint-map-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(130deg, rgba(39, 46, 56, 0.28), rgba(39, 46, 56, 0.14)),
+    radial-gradient(circle at 15% 80%, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+}
+
+.blueprint-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: #1a1a1b;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0 16px;
+  z-index: 2;
+}
+
+.blueprint-sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.blueprint-nav-button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.7);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.blueprint-nav-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.blueprint-nav-button:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.blueprint-nav-button.is-active {
+  background: #f97316;
+  border-color: #fb923c;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.45);
+}
+
+.inquiry-card {
+  position: relative;
+  z-index: 2;
+  margin: 52px 52px 52px auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  width: min(450px, calc(100% - 132px));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.inquiry-card h1 {
+  margin: 0 0 1.6rem;
+  font-size: clamp(1.55rem, 2.6vw, 2rem);
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.inquiry-name-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.inquiry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: #334155;
+  font-size: 0.87rem;
+  font-weight: 600;
+}
+
+.inquiry-input-field {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 100%;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.inquiry-input-field::placeholder {
+  color: #94a3b8;
+}
+
+.inquiry-input-field:focus {
+  outline: none;
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
+}
+
+.submit-btn {
+  margin-top: 0.3rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  width: 100%;
+  font-size: 0.99rem;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+}
+
+.inquiry-branding {
+  margin: 1.15rem 0 0;
+  text-align: right;
+  font-size: 0.73rem;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .inquiry-card {
+    margin: 28px 20px 20px auto;
+    width: min(450px, calc(100% - 92px));
+    padding: 1.6rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .blueprint-sidebar {
+    flex-direction: row;
+    width: auto;
+    height: 60px;
+    right: 0;
+    bottom: auto;
+    padding: 0 10px;
+  }
+
+  .blueprint-sidebar-group {
+    flex-direction: row;
+  }
+
+  .inquiry-card {
+    margin: 88px 14px 16px;
+    width: auto;
+  }
+
+  .inquiry-name-grid {
+    grid-template-columns: 1fr;
+  }
+}
