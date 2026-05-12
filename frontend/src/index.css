@@ -3319,6 +3319,15 @@ legend {
   line-height: 1;
   box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3);
   padding: 0 8px;
+  transform-origin: center bottom;
+  transition: transform 0.14s ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fallback-price-pin span:hover {
+    transform: scale(1.12);
+    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.34);
+  }
 }
 
 .fallback-house-pin {

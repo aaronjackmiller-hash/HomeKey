@@ -10,7 +10,7 @@ const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
-const DESKTOP_MARKER_HOVER_SCALE = 1.08;
+const DESKTOP_MARKER_HOVER_SCALE = 1.12;
 const MAP_SILVER_STYLES = [
   { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
@@ -32,6 +32,19 @@ const MAP_SILVER_STYLES = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#8f9aa5' }] },
 ];
 const MARKER_STYLE_PRESETS = {
+  minimal: {
+    label: 'Minimal',
+    markerMode: 'pricePin',
+    minWidth: 46,
+    pinHeight: 21,
+    pointerHeight: 7,
+    horizontalPadding: 7,
+    fontSize: 10,
+    fontWeight: 600,
+    pinColor: BRAND_CHARCOAL,
+    pinStrokeColor: BRAND_CHARCOAL,
+    textColor: '#ffffff',
+  },
   house: {
     label: 'House Pins',
     markerMode: 'house',
@@ -68,7 +81,7 @@ const MARKER_STYLE_PRESETS = {
     textColor: '#ffffff',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'house';
+const DEFAULT_MARKER_PRESET_KEY = 'minimal';
 
 let googleMapsLoadPromise;
 
@@ -635,33 +648,26 @@ const GoogleListingsMap = ({
       applyCircleFilter();
     };
 
-    const onClick = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
+    const onMouseDown = mapsApi.event.addListener(mapRef.current, 'mousedown', (event) => {
       if (!event || !event.latLng) return;
-      if (!drawStartRef.current) {
-        removeDraftCircle();
-        drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-        draftCircleRef.current = new mapsApi.Circle({
-          map: mapRef.current,
-          center: event.latLng,
-          radius: MIN_CIRCLE_RADIUS_METERS,
-          strokeColor: '#0e8a88',
-          strokeOpacity: 0.9,
-          strokeWeight: 2,
-          fillColor: '#0e8a88',
-          fillOpacity: 0.12,
-          clickable: false,
-        });
-        return;
-      }
-      const radiusMeters = getDistanceMeters(drawStartRef.current, {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
+      removeDraftCircle();
+      drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+      draftCircleRef.current = new mapsApi.Circle({
+        map: mapRef.current,
+        center: event.latLng,
+        radius: MIN_CIRCLE_RADIUS_METERS,
+        strokeColor: '#0e8a88',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#0e8a88',
+        fillOpacity: 0.12,
+        clickable: false,
       });
-      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
-      completeDraftCircle();
     });
 
-    drawListenersRef.current = [onMouseMove, onClick];
+    const onMouseUp = mapsApi.event.addListener(mapRef.current, 'mouseup', completeDraftCircle);
+
+    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp];
 
     return () => {
       clearDrawListeners();
@@ -726,6 +732,28 @@ const GoogleListingsMap = ({
     );
   }
 
+  const toggleDrawMode = () => {
+    setDrawMode((value) => {
+      const nextValue = !value;
+      if (mapRef.current) {
+        mapRef.current.setOptions(nextValue
+          ? {
+            draggableCursor: 'crosshair',
+            draggable: false,
+            gestureHandling: 'none',
+            disableDoubleClickZoom: true,
+          }
+          : {
+            draggableCursor: null,
+            draggable: true,
+            gestureHandling: 'greedy',
+            disableDoubleClickZoom: false,
+          });
+      }
+      return nextValue;
+    });
+  };
+
   const panMapBy = (x, y) => {
     if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
     mapRef.current.panBy(x, y);
@@ -760,7 +788,7 @@ const GoogleListingsMap = ({
             <button
               type="button"
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-              onClick={() => setDrawMode((value) => !value)}
+              onClick={toggleDrawMode}
             >
               {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>

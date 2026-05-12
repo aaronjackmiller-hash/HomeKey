@@ -7,6 +7,16 @@ const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const FALLBACK_MARKER_STYLE_PRESETS = {
+  minimal: {
+    label: 'Minimal',
+    markerMode: 'pricePin',
+    pinBackground: '#1A1A1A',
+    pinTextColor: '#ffffff',
+    minWidth: 50,
+    height: 20,
+    fontSize: 10,
+    fontWeight: 600,
+  },
   house: {
     label: 'House Pins',
     markerMode: 'house',
@@ -37,7 +47,7 @@ const FALLBACK_MARKER_STYLE_PRESETS = {
     fontWeight: 700,
   },
 };
-const DEFAULT_FALLBACK_MARKER_PRESET_KEY = 'house';
+const DEFAULT_FALLBACK_MARKER_PRESET_KEY = 'minimal';
 const CITY_CENTER_HINTS = [
   { name: 'tel aviv', center: { lat: 32.0853, lng: 34.7818 } },
   { name: 'jerusalem', center: { lat: 31.7683, lng: 35.2137 } },
@@ -238,7 +248,32 @@ const ConnectedListingsMapFallback = ({
   const clearCircleFilter = () => {
     removeActiveCircle();
     setDrawMode(false);
+    const map = mapInstanceRef.current;
+    if (map) {
+      if (map.dragging) map.dragging.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      map.getContainer().style.cursor = '';
+    }
     applyCircleFilter();
+  };
+
+  const toggleDrawMode = () => {
+    setDrawMode((value) => {
+      const nextValue = !value;
+      const map = mapInstanceRef.current;
+      if (map) {
+        if (nextValue) {
+          if (map.dragging) map.dragging.disable();
+          if (map.doubleClickZoom) map.doubleClickZoom.disable();
+          map.getContainer().style.cursor = 'crosshair';
+        } else {
+          if (map.dragging) map.dragging.enable();
+          if (map.doubleClickZoom) map.doubleClickZoom.enable();
+          map.getContainer().style.cursor = '';
+        }
+      }
+      return nextValue;
+    });
   };
 
   const propertiesWithAddress = useMemo(() => properties
@@ -347,8 +382,13 @@ const ConnectedListingsMapFallback = ({
     map.getContainer().style.cursor = drawMode ? 'crosshair' : '';
     if (!drawMode) {
       pendingCenterRef.current = null;
+      if (map.dragging) map.dragging.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
       return undefined;
     }
+
+    if (map.dragging) map.dragging.disable();
+    if (map.doubleClickZoom) map.doubleClickZoom.disable();
 
     const onMouseMove = (event) => {
       if (!pendingCenterRef.current || !activeCircleRef.current) return;
@@ -359,19 +399,20 @@ const ConnectedListingsMapFallback = ({
       activeCircleRef.current.setRadius(radius);
     };
 
-    const onClick = (event) => {
-      if (!pendingCenterRef.current) {
-        removeActiveCircle();
-        pendingCenterRef.current = event.latlng;
-        activeCircleRef.current = L.circle(event.latlng, {
-          radius: MIN_CIRCLE_RADIUS_METERS,
-          color: '#0e8a88',
-          fillColor: '#0e8a88',
-          fillOpacity: 0.16,
-          weight: 2,
-        }).addTo(map);
-        return;
-      }
+    const onMouseDown = (event) => {
+      removeActiveCircle();
+      pendingCenterRef.current = event.latlng;
+      activeCircleRef.current = L.circle(event.latlng, {
+        radius: MIN_CIRCLE_RADIUS_METERS,
+        color: '#0e8a88',
+        fillColor: '#0e8a88',
+        fillOpacity: 0.16,
+        weight: 2,
+      }).addTo(map);
+    };
+
+    const onMouseUp = (event) => {
+      if (!pendingCenterRef.current || !activeCircleRef.current) return;
       const radius = Math.max(
         MIN_CIRCLE_RADIUS_METERS,
         map.distance(pendingCenterRef.current, event.latlng)
@@ -383,11 +424,15 @@ const ConnectedListingsMapFallback = ({
     };
 
     map.on('mousemove', onMouseMove);
-    map.on('click', onClick);
+    map.on('mousedown', onMouseDown);
+    map.on('mouseup', onMouseUp);
 
     return () => {
       map.off('mousemove', onMouseMove);
-      map.off('click', onClick);
+      map.off('mousedown', onMouseDown);
+      map.off('mouseup', onMouseUp);
+      if (map.dragging) map.dragging.enable();
+      if (map.doubleClickZoom) map.doubleClickZoom.enable();
       map.getContainer().style.cursor = '';
     };
   }, [drawMode]);
@@ -442,7 +487,7 @@ const ConnectedListingsMapFallback = ({
             <button
               type="button"
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-              onClick={() => setDrawMode((value) => !value)}
+              onClick={toggleDrawMode}
             >
               {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
