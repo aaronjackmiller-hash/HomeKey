@@ -252,7 +252,6 @@ const ConnectedListingsMapFallback = ({
     if (map) {
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
-      map.getContainer().style.cursor = '';
     }
     applyCircleFilter();
   };
@@ -265,11 +264,9 @@ const ConnectedListingsMapFallback = ({
         if (nextValue) {
           if (map.dragging) map.dragging.disable();
           if (map.doubleClickZoom) map.doubleClickZoom.disable();
-          map.getContainer().style.cursor = 'crosshair';
         } else {
           if (map.dragging) map.dragging.enable();
           if (map.doubleClickZoom) map.doubleClickZoom.enable();
-          map.getContainer().style.cursor = '';
         }
       }
       return nextValue;
@@ -379,7 +376,6 @@ const ConnectedListingsMapFallback = ({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return undefined;
-    map.getContainer().style.cursor = drawMode ? 'crosshair' : '';
     if (!drawMode) {
       pendingCenterRef.current = null;
       if (map.dragging) map.dragging.enable();
@@ -433,7 +429,6 @@ const ConnectedListingsMapFallback = ({
       map.off('mouseup', onMouseUp);
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
-      map.getContainer().style.cursor = '';
     };
   }, [drawMode]);
 
@@ -513,7 +508,10 @@ const ConnectedListingsMapFallback = ({
         ) : null}
       </div>
       <div className="google-listings-map-canvas-wrap">
-        <div ref={mapContainerRef} className="google-listings-map-canvas connected-map-fallback-canvas" />
+        <div
+          ref={mapContainerRef}
+          className={`google-listings-map-canvas connected-map-fallback-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
+        />
       </div>
       <p className="google-listings-map-caption">
         {hasActiveCircle

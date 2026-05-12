@@ -604,7 +604,7 @@ const GoogleListingsMap = ({
     }
 
     mapRef.current.setOptions({
-      draggableCursor: 'crosshair',
+      draggableCursor: null,
       draggable: false,
       gestureHandling: 'none',
       disableDoubleClickZoom: true,
@@ -738,7 +738,7 @@ const GoogleListingsMap = ({
       if (mapRef.current) {
         mapRef.current.setOptions(nextValue
           ? {
-            draggableCursor: 'crosshair',
+            draggableCursor: null,
             draggable: false,
             gestureHandling: 'none',
             disableDoubleClickZoom: true,
@@ -814,7 +814,10 @@ const GoogleListingsMap = ({
         ) : null}
       </div>
       <div className="google-listings-map-canvas-wrap">
-        <div ref={mapContainerRef} className="google-listings-map-canvas" />
+        <div
+          ref={mapContainerRef}
+          className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
+        />
         <div className="google-listings-map-pan-controls" aria-label="Pan map">
           <button
             type="button"

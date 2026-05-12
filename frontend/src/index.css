@@ -3265,6 +3265,17 @@ legend {
   background: #dbe4f1;
 }
 
+/* The Map Container */
+.map-viewport {
+  cursor: crosshair;
+}
+
+/* When the user starts drawing the circle */
+.map-viewport.is-drawing,
+.map-viewport.is-drawing * {
+  cursor: url('https://fonts.gstatic.com/s/i/short-term/release/googlestandardicons/edit/v11/24px.svg'), auto !important;
+}
+
 .property-list-page .google-listings-map-pan-controls {
   display: none;
 }
