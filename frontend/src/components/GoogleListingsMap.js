@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -31,6 +32,15 @@ const MAP_SILVER_STYLES = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#8f9aa5' }] },
 ];
 const MARKER_STYLE_PRESETS = {
+  house: {
+    label: 'House Pins',
+    markerMode: 'house',
+    iconWidth: 19,
+    iconHeight: 27,
+    pinColor: '#2563eb',
+    pinStrokeColor: '#1d4ed8',
+    homeStrokeColor: '#ffffff',
+  },
   medium: {
     label: 'Medium',
     markerMode: 'pricePin',
@@ -210,6 +220,33 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1) => {
   };
 };
 
+const createHousePinIcon = (mapsApi, preset) => {
+  const iconWidth = Number(preset.iconWidth) || 19;
+  const iconHeight = Number(preset.iconHeight) || 27;
+  const pinColor = preset.pinColor || '#0e8a88';
+  const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
+  const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
+  const centerX = iconWidth / 2;
+  const roofTop = 1;
+  const eaveY = Math.round(iconHeight * 0.4);
+  const wallLeft = Math.round(iconWidth * 0.16);
+  const wallRight = Math.round(iconWidth * 0.84);
+  const doorW = Math.round(iconWidth * 0.32);
+  const doorH = Math.round(iconHeight * 0.3);
+  const doorX = Math.round(centerX - doorW / 2);
+  const doorY = iconHeight - doorH;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
+    <path d="M${centerX} ${roofTop} L0 ${eaveY} H${wallLeft} V${iconHeight} H${wallRight} V${eaveY} H${iconWidth} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
+    <rect x="${doorX}" y="${doorY}" width="${doorW}" height="${doorH}" fill="${homeStrokeColor}" rx="0.5"/>
+  </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new mapsApi.Size(iconWidth, iconHeight),
+    anchor: new mapsApi.Point(centerX, iconHeight),
+  };
+};
+
 const GoogleListingsMap = ({
   properties = [],
   onCircleSelectionChange,
@@ -310,7 +347,12 @@ const GoogleListingsMap = ({
     }
     setDrawMode(false);
     if (mapRef.current) {
-      mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      mapRef.current.setOptions({
+        draggableCursor: null,
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
     }
     applyCircleFilter();
   };
@@ -437,12 +479,16 @@ const GoogleListingsMap = ({
           await new Promise((resolve) => setTimeout(resolve, 80));
         }
 
-        const markerIcon = createPricePinIcon(
-          mapsApi,
-          markerPreset,
-          formatMarkerPrice(item.property.price)
-        );
+        const isHousePinPreset = markerPreset.markerMode === 'house';
+        const markerIcon = isHousePinPreset
+          ? createHousePinIcon(mapsApi, markerPreset)
+          : createPricePinIcon(
+            mapsApi,
+            markerPreset,
+            formatMarkerPrice(item.property.price)
+          );
         const markerHoverIcon = supportsDesktopHover
+          && !isHousePinPreset
           ? createPricePinIcon(
             mapsApi,
             markerPreset,
@@ -532,27 +578,23 @@ const GoogleListingsMap = ({
     const mapsApi = window.google.maps;
     clearDrawListeners();
     if (!drawMode) {
-      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      removeDraftCircle();
+      if (mapRef.current) {
+        mapRef.current.setOptions({
+          draggableCursor: null,
+          draggable: true,
+          gestureHandling: 'greedy',
+          disableDoubleClickZoom: false,
+        });
+      }
       return undefined;
     }
 
-    mapRef.current.setOptions({ draggableCursor: 'crosshair', draggable: false });
-
-    const onMouseDown = mapsApi.event.addListener(mapRef.current, 'mousedown', (event) => {
-      if (!event || !event.latLng) return;
-      removeDraftCircle();
-      drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-      draftCircleRef.current = new mapsApi.Circle({
-        map: mapRef.current,
-        center: event.latLng,
-        radius: MIN_CIRCLE_RADIUS_METERS,
-        strokeColor: '#0e8a88',
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: '#0e8a88',
-        fillOpacity: 0.12,
-        clickable: false,
-      });
+    mapRef.current.setOptions({
+      draggableCursor: 'crosshair',
+      draggable: false,
+      gestureHandling: 'none',
+      disableDoubleClickZoom: true,
     });
 
     const onMouseMove = mapsApi.event.addListener(mapRef.current, 'mousemove', (event) => {
@@ -564,7 +606,7 @@ const GoogleListingsMap = ({
       draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
     });
 
-    const onMouseUp = mapsApi.event.addListener(mapRef.current, 'mouseup', () => {
+    const completeDraftCircle = () => {
       if (!draftCircleRef.current) return;
       if (activeCircleRef.current) {
         mapsApi.event.clearInstanceListeners(activeCircleRef.current);
@@ -584,15 +626,53 @@ const GoogleListingsMap = ({
       mapsApi.event.addListener(activeCircleRef.current, 'center_changed', applyCircleFilter);
 
       setDrawMode(false);
-      mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      mapRef.current.setOptions({
+        draggableCursor: null,
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
       applyCircleFilter();
+    };
+
+    const onClick = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
+      if (!event || !event.latLng) return;
+      if (!drawStartRef.current) {
+        removeDraftCircle();
+        drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+        draftCircleRef.current = new mapsApi.Circle({
+          map: mapRef.current,
+          center: event.latLng,
+          radius: MIN_CIRCLE_RADIUS_METERS,
+          strokeColor: '#0e8a88',
+          strokeOpacity: 0.9,
+          strokeWeight: 2,
+          fillColor: '#0e8a88',
+          fillOpacity: 0.12,
+          clickable: false,
+        });
+        return;
+      }
+      const radiusMeters = getDistanceMeters(drawStartRef.current, {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+      });
+      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
+      completeDraftCircle();
     });
 
-    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp];
+    drawListenersRef.current = [onMouseMove, onClick];
 
     return () => {
       clearDrawListeners();
-      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true });
+      if (mapRef.current) {
+        mapRef.current.setOptions({
+          draggableCursor: null,
+          draggable: true,
+          gestureHandling: 'greedy',
+          disableDoubleClickZoom: false,
+        });
+      }
     };
   }, [drawMode, mapReady]);
 
@@ -624,14 +704,26 @@ const GoogleListingsMap = ({
 
   if (!apiKey) {
     return (
-      <div className="google-listings-map-note">
-        Set <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> to enable apartment location markers.
-      </div>
+      <ConnectedListingsMapFallback
+        properties={properties}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+      />
     );
   }
 
   if (mapError) {
-    return <div className="google-listings-map-note">{mapError}</div>;
+    return (
+      <ConnectedListingsMapFallback
+        properties={properties}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+      />
+    );
   }
 
   const panMapBy = (x, y) => {
@@ -668,7 +760,7 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={() => setDrawMode((value) => !value)}
             >
-              {drawMode ? 'Draw Mode' : 'Draw search circle'}
+              {drawMode ? 'Drawing mode: click center then edge' : 'Draw search circle'}
             </button>
             <button
               type="button"
