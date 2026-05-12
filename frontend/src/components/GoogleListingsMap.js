@@ -10,7 +10,7 @@ const EARTH_RADIUS_METERS = 6371000;
 const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
-const DESKTOP_MARKER_HOVER_SCALE = 1.08;
+const DESKTOP_MARKER_HOVER_SCALE = 1.12;
 const MAP_SILVER_STYLES = [
   { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
@@ -32,6 +32,19 @@ const MAP_SILVER_STYLES = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#8f9aa5' }] },
 ];
 const MARKER_STYLE_PRESETS = {
+  minimal: {
+    label: 'Minimal',
+    markerMode: 'pricePin',
+    minWidth: 46,
+    pinHeight: 21,
+    pointerHeight: 7,
+    horizontalPadding: 7,
+    fontSize: 10,
+    fontWeight: 600,
+    pinColor: BRAND_CHARCOAL,
+    pinStrokeColor: BRAND_CHARCOAL,
+    textColor: '#ffffff',
+  },
   house: {
     label: 'House Pins',
     markerMode: 'house',
@@ -68,7 +81,7 @@ const MARKER_STYLE_PRESETS = {
     textColor: '#ffffff',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'bold';
+const DEFAULT_MARKER_PRESET_KEY = 'minimal';
 
 let googleMapsLoadPromise;
 
@@ -273,7 +286,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const [markerPresetKey, setMarkerPresetKey] = useState(DEFAULT_MARKER_PRESET_KEY);
+  const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
@@ -591,7 +604,7 @@ const GoogleListingsMap = ({
     }
 
     mapRef.current.setOptions({
-      draggableCursor: 'crosshair',
+      draggableCursor: null,
       draggable: false,
       gestureHandling: 'none',
       disableDoubleClickZoom: true,
@@ -635,33 +648,26 @@ const GoogleListingsMap = ({
       applyCircleFilter();
     };
 
-    const onClick = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
+    const onMouseDown = mapsApi.event.addListener(mapRef.current, 'mousedown', (event) => {
       if (!event || !event.latLng) return;
-      if (!drawStartRef.current) {
-        removeDraftCircle();
-        drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-        draftCircleRef.current = new mapsApi.Circle({
-          map: mapRef.current,
-          center: event.latLng,
-          radius: MIN_CIRCLE_RADIUS_METERS,
-          strokeColor: '#0e8a88',
-          strokeOpacity: 0.9,
-          strokeWeight: 2,
-          fillColor: '#0e8a88',
-          fillOpacity: 0.12,
-          clickable: false,
-        });
-        return;
-      }
-      const radiusMeters = getDistanceMeters(drawStartRef.current, {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
+      removeDraftCircle();
+      drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+      draftCircleRef.current = new mapsApi.Circle({
+        map: mapRef.current,
+        center: event.latLng,
+        radius: MIN_CIRCLE_RADIUS_METERS,
+        strokeColor: '#0e8a88',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#0e8a88',
+        fillOpacity: 0.12,
+        clickable: false,
       });
-      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
-      completeDraftCircle();
     });
 
-    drawListenersRef.current = [onMouseMove, onClick];
+    const onMouseUp = mapsApi.event.addListener(mapRef.current, 'mouseup', completeDraftCircle);
+
+    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp];
 
     return () => {
       clearDrawListeners();
@@ -726,6 +732,28 @@ const GoogleListingsMap = ({
     );
   }
 
+  const toggleDrawMode = () => {
+    setDrawMode((value) => {
+      const nextValue = !value;
+      if (mapRef.current) {
+        mapRef.current.setOptions(nextValue
+          ? {
+            draggableCursor: null,
+            draggable: false,
+            gestureHandling: 'none',
+            disableDoubleClickZoom: true,
+          }
+          : {
+            draggableCursor: null,
+            draggable: true,
+            gestureHandling: 'greedy',
+            disableDoubleClickZoom: false,
+          });
+      }
+      return nextValue;
+    });
+  };
+
   const panMapBy = (x, y) => {
     if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
     mapRef.current.panBy(x, y);
@@ -735,9 +763,8 @@ const GoogleListingsMap = ({
     <div className="google-listings-map-shell">
       <div className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}>
         <header className="google-listings-map-header">
-          <div className="google-listings-map-header-top">
-            <h2>Apartment Locations</h2>
-            {isMobileOverlay ? (
+          {isMobileOverlay ? (
+            <div className="google-listings-map-header-top">
               <button
                 type="button"
                 className="secondary-btn google-listings-map-collapse-btn"
@@ -745,12 +772,13 @@ const GoogleListingsMap = ({
               >
                 {isOverlayCollapsed ? 'Expand' : 'Collapse'}
               </button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           {!isOverlayCollapsed ? (
-            <p>
-              View where available apartments are located and draw a circle to filter the search area.
-            </p>
+            <div className="google-listings-map-copy-block">
+              <h2>Find Your Next Home.</h2>
+              <p>Your perfect neighborhood is just a circle away.</p>
+            </div>
           ) : null}
         </header>
         {!isOverlayCollapsed ? (
@@ -758,9 +786,9 @@ const GoogleListingsMap = ({
             <button
               type="button"
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-              onClick={() => setDrawMode((value) => !value)}
+              onClick={toggleDrawMode}
             >
-              {drawMode ? 'Drawing mode: click center then edge' : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
             <button
               type="button"
@@ -770,23 +798,14 @@ const GoogleListingsMap = ({
             >
               Clear Area
             </button>
-            <div className="map-marker-presets" role="group" aria-label="Marker label style">
-              {Object.entries(MARKER_STYLE_PRESETS).map(([presetKey, preset]) => (
-                <button
-                  key={presetKey}
-                  type="button"
-                  className={`secondary-btn map-marker-preset-btn ${markerPresetKey === presetKey ? 'is-active' : ''}`}
-                  onClick={() => setMarkerPresetKey(presetKey)}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
           </div>
         ) : null}
       </div>
       <div className="google-listings-map-canvas-wrap">
-        <div ref={mapContainerRef} className="google-listings-map-canvas" />
+        <div
+          ref={mapContainerRef}
+          className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
+        />
         <div className="google-listings-map-pan-controls" aria-label="Pan map">
           <button
             type="button"

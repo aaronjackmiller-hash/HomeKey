@@ -3174,7 +3174,7 @@ legend {
 
 .property-list-page .google-listings-map-header {
   margin: 0;
-  padding: 14px 16px 10px;
+  padding: 8px 12px 6px;
 }
 
 .property-list-page .google-listings-map-overlay-info {
@@ -3182,7 +3182,7 @@ legend {
   top: 10px;
   right: 10px;
   z-index: 1200;
-  width: min(360px, calc(100% - 20px));
+  width: min(320px, calc(100% - 20px));
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: var(--hk-radius-container);
   background: rgba(255, 255, 255, 0.85);
@@ -3207,6 +3207,28 @@ legend {
 
 .property-list-page .google-listings-map-header p strong {
   font-weight: 700;
+}
+
+.property-list-page .google-listings-map-copy-block {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.property-list-page .google-listings-map-copy-block h2 {
+  color: #1a1a1a;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 1.5rem;
+  margin: 0 0 4px;
+}
+
+.property-list-page .google-listings-map-copy-block p {
+  color: #4a4a4a;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  margin: 0 0 2px;
 }
 
 .property-list-page .google-listings-map-header-top {
@@ -3244,6 +3266,17 @@ legend {
   background: #dbe4f1;
 }
 
+/* The Map Container */
+.map-viewport {
+  cursor: crosshair;
+}
+
+/* When the user starts drawing the circle */
+.map-viewport.is-drawing,
+.map-viewport.is-drawing * {
+  cursor: url('https://fonts.gstatic.com/s/i/short-term/release/googlestandardicons/edit/v11/24px.svg'), auto !important;
+}
+
 .property-list-page .google-listings-map-pan-controls {
   display: none;
 }
@@ -3252,7 +3285,7 @@ legend {
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
-  padding: 12px 16px 14px;
+  padding: 8px 12px 10px;
   border-top: 1px solid rgba(148, 163, 184, 0.45);
   background: transparent;
   overflow-x: auto;
@@ -3319,6 +3352,15 @@ legend {
   line-height: 1;
   box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3);
   padding: 0 8px;
+  transform-origin: center bottom;
+  transition: transform 0.14s ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fallback-price-pin span:hover {
+    transform: scale(1.12);
+    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.34);
+  }
 }
 
 .fallback-house-pin {
@@ -3457,6 +3499,10 @@ legend {
 
   .property-list-page .google-listings-map-header p {
     color: #1a1a1a;
+  }
+
+  .property-list-page .google-listings-map-copy-block p {
+    white-space: normal;
   }
 
   .property-list-page .google-listings-map-toolbar {
