@@ -705,7 +705,7 @@ const PropertyDetail = () => {
                 )}
 
                 {shouldShowContactSection && (
-                    <section className="detail-section-card">
+                    <section className="detail-section-card map-container">
                         <div id="contact-manager-form" />
                         <h2>Contact Listing Manager</h2>
                         <p>
@@ -750,6 +750,7 @@ const PropertyDetail = () => {
                             <div className="input-field">
                                 <label>Your Name</label>
                                 <input
+                                    className="form-input"
                                     type="text"
                                     value={inquiry.name}
                                     onChange={(e) => setInquiry((prev) => ({ ...prev, name: e.target.value }))}
@@ -759,6 +760,7 @@ const PropertyDetail = () => {
                             <div className="input-field">
                                 <label>Your Email</label>
                                 <input
+                                    className="form-input"
                                     type="email"
                                     value={inquiry.email}
                                     onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
@@ -767,6 +769,7 @@ const PropertyDetail = () => {
                             <div className="input-field">
                                 <label>Your Phone</label>
                                 <input
+                                    className="form-input"
                                     type="tel"
                                     value={inquiry.phone}
                                     onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
@@ -775,6 +778,7 @@ const PropertyDetail = () => {
                             <div className="input-field">
                                 <label>Preferred Contact Method</label>
                                 <select
+                                    className="form-input"
                                     value={inquiry.preferredMethod}
                                     onChange={(e) => setInquiry((prev) => ({ ...prev, preferredMethod: e.target.value }))}
                                 >
@@ -786,12 +790,13 @@ const PropertyDetail = () => {
                             <div className="input-field">
                                 <label>Message</label>
                                 <textarea
+                                    className="form-input"
                                     value={inquiry.message}
                                     onChange={(e) => setInquiry((prev) => ({ ...prev, message: e.target.value }))}
                                     required
                                 />
                             </div>
-                            <button type="submit" className="primary-button">Send Inquiry</button>
+                            <button type="submit" className="primary-button get-details-btn">Send Inquiry</button>
                             {inquiryStatus && <p>{inquiryStatus}</p>}
                         </form>
                     </section>
