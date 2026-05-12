@@ -463,7 +463,6 @@ const ConnectedListingsMapFallback = ({
       <div className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}>
         <header className="google-listings-map-header">
           <div className="google-listings-map-header-top">
-            <h2>Apartment Locations</h2>
             {isMobileOverlay ? (
               <button
                 type="button"
@@ -475,11 +474,10 @@ const ConnectedListingsMapFallback = ({
             ) : null}
           </div>
           {!isOverlayCollapsed ? (
-            <p>
-              <strong>Find your perfect match.</strong>
-              {' '}
-              Draw a circle on the map to instantly filter the best apartments in your target zone!
-            </p>
+            <div className="google-listings-map-copy-block">
+              <h2>Find Your Next Home.</h2>
+              <p>Your perfect neighborhood is just a circle away.</p>
+            </div>
           ) : null}
         </header>
         {!isOverlayCollapsed ? (
