@@ -112,11 +112,11 @@ const buildFallbackCoords = (addressQuery, markerIndex = 0) => {
   };
 };
 
-const createFallbackPriceIcon = (priceText, preset) => {
+const createFallbackPriceIcon = (priceText, preset, textColorOverride = '') => {
   const minWidth = Number(preset.minWidth) || 60;
   const height = Number(preset.height) || 24;
   const pinBackground = preset.pinBackground || '#1A1A1A';
-  const pinTextColor = preset.pinTextColor || '#ffffff';
+  const pinTextColor = textColorOverride || preset.pinTextColor || '#ffffff';
   const fontSize = Number(preset.fontSize) || 11;
   const fontWeight = Number(preset.fontWeight) || 700;
   const estimatedTextWidth = Math.ceil(String(priceText).length * fontSize * 0.62);
@@ -161,12 +161,13 @@ const createFallbackHouseIcon = (preset) => {
 const getFallbackMarkerStylePreset = (presetKey) =>
   FALLBACK_MARKER_STYLE_PRESETS[presetKey] || FALLBACK_MARKER_STYLE_PRESETS[DEFAULT_FALLBACK_MARKER_PRESET_KEY];
 
-const createFallbackMarkerIcon = (priceText, preset) => (preset.markerMode === 'house'
+const createFallbackMarkerIcon = (priceText, preset, textColorOverride = '') => (preset.markerMode === 'house'
   ? createFallbackHouseIcon(preset)
-  : createFallbackPriceIcon(priceText, preset));
+  : createFallbackPriceIcon(priceText, preset, textColorOverride));
 
 const ConnectedListingsMapFallback = ({
   properties = [],
+  favoritePropertyIds = [],
   onCircleSelectionChange,
   clearSignal = 0,
   drawModeToggleSignal = 0,
@@ -188,6 +189,10 @@ const ConnectedListingsMapFallback = ({
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getFallbackMarkerStylePreset(markerPresetKey);
+  const favoritePropertyIdSet = useMemo(
+    () => new Set(favoritePropertyIds.map((id) => String(id))),
+    [favoritePropertyIds]
+  );
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -342,10 +347,13 @@ const ConnectedListingsMapFallback = ({
     const bounds = [];
     markerInputs.forEach((item, markerIndex) => {
       const coords = buildFallbackCoords(item.addressQuery, markerIndex);
+      const propertyId = String(item.propertyId);
+      const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
+      const priceTextColor = isFavoriteProperty ? '#dc2626' : '';
       const priceText = formatMarkerPrice(item.property.price);
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
-        icon: createFallbackMarkerIcon(priceText, markerPreset),
+        icon: createFallbackMarkerIcon(priceText, markerPreset, priceTextColor),
       });
       marker.bindPopup(
         `<strong>${safeText(item.property.title) || 'Property listing'}</strong><br/>${priceText}<br/>${item.addressQuery}`
@@ -353,7 +361,7 @@ const ConnectedListingsMapFallback = ({
       marker.addTo(map);
       markersRef.current.push({
         marker,
-        propertyId: String(item.propertyId),
+        propertyId,
       });
       bounds.push([coords.lat, coords.lng]);
     });
@@ -371,7 +379,7 @@ const ConnectedListingsMapFallback = ({
       }
       applyCircleFilter();
     }, 0);
-  }, [markerPreset, propertiesWithAddress]);
+  }, [markerPreset, propertiesWithAddress, favoritePropertyIdSet]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

@@ -176,7 +176,7 @@ const formatMarkerPrice = (price) => {
   return `₪${parsedPrice.toLocaleString()}`;
 };
 
-const createPricePinIcon = (mapsApi, preset, priceText, scale = 1) => {
+const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, textColorOverride = '') => {
   const pinHeight = Number(preset.pinHeight) || 26;
   const pointerHeight = Number(preset.pointerHeight) || 10;
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
@@ -185,7 +185,7 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1) => {
   const fontWeight = Number(preset.fontWeight) || 700;
   const pinColor = preset.pinColor || '#2563eb';
   const pinStrokeColor = preset.pinStrokeColor || '#1d4ed8';
-  const textColor = preset.textColor || '#ffffff';
+  const textColor = textColorOverride || preset.textColor || '#ffffff';
   const safePriceText = escapeHtml(priceText);
 
   const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
@@ -242,6 +242,7 @@ const createHousePinIcon = (mapsApi, preset) => {
 
 const GoogleListingsMap = ({
   properties = [],
+  favoritePropertyIds = [],
   onCircleSelectionChange,
   clearSignal = 0,
   drawModeToggleSignal = 0,
@@ -270,6 +271,10 @@ const GoogleListingsMap = ({
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
+  const favoritePropertyIdSet = useMemo(
+    () => new Set(favoritePropertyIds.map((id) => String(id))),
+    [favoritePropertyIds]
+  );
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -471,21 +476,28 @@ const GoogleListingsMap = ({
           await new Promise((resolve) => setTimeout(resolve, 80));
         }
 
+        const propertyId = String(item.propertyId);
+        const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
+        const priceTextColor = isFavoriteProperty ? '#dc2626' : '';
+        const markerPrice = formatMarkerPrice(item.property.price);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const markerIcon = isHousePinPreset
           ? createHousePinIcon(mapsApi, markerPreset)
           : createPricePinIcon(
             mapsApi,
             markerPreset,
-            formatMarkerPrice(item.property.price)
+            markerPrice,
+            1,
+            priceTextColor
           );
         const markerHoverIcon = supportsDesktopHover
           && !isHousePinPreset
           ? createPricePinIcon(
             mapsApi,
             markerPreset,
-            formatMarkerPrice(item.property.price),
-            DESKTOP_MARKER_HOVER_SCALE
+            markerPrice,
+            DESKTOP_MARKER_HOVER_SCALE,
+            priceTextColor
           )
           : null;
 
@@ -531,7 +543,7 @@ const GoogleListingsMap = ({
         markerEntriesRef.current.push({
           marker,
           frameMarker: null,
-          propertyId: String(item.propertyId),
+          propertyId,
           coords,
         });
         bounds.extend(coords);
@@ -563,7 +575,7 @@ const GoogleListingsMap = ({
       });
       markerEntriesRef.current = [];
     };
-  }, [mapReady, propertiesWithAddress, markerPreset]);
+  }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
@@ -691,6 +703,7 @@ const GoogleListingsMap = ({
     return (
       <ConnectedListingsMapFallback
         properties={properties}
+        favoritePropertyIds={favoritePropertyIds}
         onCircleSelectionChange={onCircleSelectionChange}
         clearSignal={clearSignal}
         drawModeToggleSignal={drawModeToggleSignal}
@@ -703,6 +716,7 @@ const GoogleListingsMap = ({
     return (
       <ConnectedListingsMapFallback
         properties={properties}
+        favoritePropertyIds={favoritePropertyIds}
         onCircleSelectionChange={onCircleSelectionChange}
         clearSignal={clearSignal}
         drawModeToggleSignal={drawModeToggleSignal}
