@@ -2048,6 +2048,22 @@ a {
   text-decoration: none;
 }
 
+/* The primary call-to-action button in watermarked_img_7782061331131057191.png */
+.get-details-btn {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* For the input fields shown in watermarked_img_7782061331131057191.png */
+.form-input {
+  cursor: text;
+}
+
+/* For the Map surrounding the form */
+.map-container {
+  cursor: crosshair;
+}
+
 .detail-interest-actions {
   margin-top: 10px;
   display: flex;
