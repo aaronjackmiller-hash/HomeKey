@@ -70,10 +70,19 @@ const normalizePhoneForLinks = (value) => {
   return cleaned;
 };
 
-const buildWhatsAppHref = (phone, title = 'this listing') => {
+const getContactFirstName = (name = '') => {
+  const trimmedName = String(name || '').trim();
+  if (!trimmedName) return '';
+  return trimmedName.split(/\s+/)[0];
+};
+
+const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
   const normalizedPhone = normalizePhoneForLinks(phone);
   if (!normalizedPhone) return '';
-  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(`Hi, I am interested in ${title}.`)}`;
+  const firstName = getContactFirstName(contactName) || 'there';
+  const normalizedTitle = String(title || '').trim() || 'this listing';
+  const message = `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedTitle}.`;
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 };
 
 const formatTimestamp = (isoValue) => {
@@ -199,7 +208,12 @@ const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
       || directContact.phone
       || agentContact.phone
   );
-  return buildWhatsAppHref(rawPhone, title);
+  const rawContactName = safeText(
+    externalContact.name
+      || directContact.name
+      || agentContact.name
+  );
+  return buildWhatsAppHref(rawPhone, title, rawContactName);
 };
 
 const removeYad2ImageLogo = (url, sourceType = '') => {
