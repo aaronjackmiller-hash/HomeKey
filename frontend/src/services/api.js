@@ -130,11 +130,6 @@ export const getPublicYad2SyncStatus = async () => {
   return response.data;
 };
 
-export const getPublicAppConfig = async () => {
-  const response = await api.get('/config/public');
-  return response.data;
-};
-
 // Agents
 export const getAgents = async () => {
   const response = await api.get('/agents');
