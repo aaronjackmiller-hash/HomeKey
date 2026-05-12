@@ -244,6 +244,13 @@ const getPublicYad2SyncStatus = () => {
     };
 };
 
+const getPublicAppConfig = () => ({
+    googleMapsApiKey:
+        (typeof process.env.GOOGLE_MAPS_API_KEY === 'string' && process.env.GOOGLE_MAPS_API_KEY.trim())
+            || (typeof process.env.REACT_APP_GOOGLE_MAPS_API_KEY === 'string' && process.env.REACT_APP_GOOGLE_MAPS_API_KEY.trim())
+            || '',
+});
+
 const isAuthFailureError = (err) =>
     Boolean(err) && (
         err.code === 18 ||
@@ -387,11 +394,18 @@ connectMongo(MONGODB_URI)
 // MongoDB is connected. The /api/health endpoint is exempt so monitoring can
 // always check the server state.
 app.use('/api', (req, res, next) => {
-    if (req.path === '/health') return next();
+    if (req.path === '/health' || req.path === '/config/public') return next();
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ success: false, message: 'Database not ready. Please try again shortly.' });
     }
     next();
+});
+
+app.get('/api/config/public', (req, res) => {
+    res.json({
+        success: true,
+        config: getPublicAppConfig(),
+    });
 });
 
 // Routes
