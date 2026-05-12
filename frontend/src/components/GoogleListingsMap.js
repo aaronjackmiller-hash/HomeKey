@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getPublicAppConfig } from '../services/api';
-import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -112,42 +110,10 @@ const loadGoogleMaps = (apiKey) => {
   if (googleMapsLoadPromise) return googleMapsLoadPromise;
 
   googleMapsLoadPromise = new Promise((resolve, reject) => {
-    let settled = false;
-    const previousAuthFailureHandler = typeof window.gm_authFailure === 'function'
-      ? window.gm_authFailure
-      : null;
-    const resetAuthFailureHandler = () => {
-      if (window.gm_authFailure === authFailureHandler) {
-        window.gm_authFailure = previousAuthFailureHandler || undefined;
-      }
-    };
-    const failWithError = (message) => {
-      if (settled) return;
-      settled = true;
-      resetAuthFailureHandler();
-      googleMapsLoadPromise = undefined;
-      reject(new Error(message));
-    };
-    const resolveMapsApi = () => {
-      if (settled) return;
-      settled = true;
-      resetAuthFailureHandler();
-      resolve(window.google && window.google.maps);
-    };
-    const authFailureHandler = () => {
-      if (typeof previousAuthFailureHandler === 'function') {
-        previousAuthFailureHandler();
-      }
-      failWithError('Google Maps authentication failed.');
-    };
-    window.gm_authFailure = authFailureHandler;
-
     const existingScript = document.getElementById(MAP_SCRIPT_ID);
     if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        window.setTimeout(resolveMapsApi, 1000);
-      });
-      existingScript.addEventListener('error', () => failWithError('Failed to load Google Maps script.'));
+      existingScript.addEventListener('load', () => resolve(window.google && window.google.maps));
+      existingScript.addEventListener('error', () => reject(new Error('Failed to load Google Maps script.')));
       return;
     }
 
@@ -156,10 +122,8 @@ const loadGoogleMaps = (apiKey) => {
     script.async = true;
     script.defer = true;
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}`;
-    script.onload = () => {
-      window.setTimeout(resolveMapsApi, 1000);
-    };
-    script.onerror = () => failWithError('Failed to load Google Maps script.');
+    script.onload = () => resolve(window.google && window.google.maps);
+    script.onerror = () => reject(new Error('Failed to load Google Maps script.'));
     document.head.appendChild(script);
   });
 
@@ -253,10 +217,7 @@ const GoogleListingsMap = ({
   drawModeToggleSignal = 0,
   onDrawModeChange,
 }) => {
-  const buildTimeApiKey = safeText(process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
-  const [runtimeApiKey, setRuntimeApiKey] = useState('');
-  const [isApiKeyLoading, setIsApiKeyLoading] = useState(!buildTimeApiKey);
-  const apiKey = buildTimeApiKey || runtimeApiKey;
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
@@ -279,33 +240,6 @@ const GoogleListingsMap = ({
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
-
-  useEffect(() => {
-    if (buildTimeApiKey) {
-      setIsApiKeyLoading(false);
-      return undefined;
-    }
-    let cancelled = false;
-    setIsApiKeyLoading(true);
-    getPublicAppConfig()
-      .then((response) => {
-        if (cancelled) return;
-        const serverKey = safeText(response?.config?.googleMapsApiKey || response?.googleMapsApiKey);
-        setRuntimeApiKey(serverKey);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setRuntimeApiKey('');
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setIsApiKeyLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [buildTimeApiKey]);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -594,35 +528,6 @@ const GoogleListingsMap = ({
   }, [mapReady, propertiesWithAddress, markerPreset]);
 
   useEffect(() => {
-    if (!mapReady || !mapContainerRef.current) return undefined;
-    const container = mapContainerRef.current;
-    const hasAuthErrorText = () => {
-      const text = String(container.textContent || '').toLowerCase();
-      return text.includes("didn't load google maps correctly") || text.includes('oops! something went wrong');
-    };
-    const setAuthFailureFallback = () => {
-      setMapError((currentError) => currentError || 'Google Maps authentication failed.');
-    };
-
-    if (hasAuthErrorText()) {
-      setAuthFailureFallback();
-      return undefined;
-    }
-
-    const observer = new MutationObserver(() => {
-      if (!hasAuthErrorText()) return;
-      setAuthFailureFallback();
-    });
-    observer.observe(container, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    return () => observer.disconnect();
-  }, [mapReady]);
-
-  useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
     clearDrawListeners();
@@ -718,30 +623,15 @@ const GoogleListingsMap = ({
   }, []);
 
   if (!apiKey) {
-    if (isApiKeyLoading) {
-      return <div className="google-listings-map-note">Loading map configuration...</div>;
-    }
     return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-      />
+      <div className="google-listings-map-note">
+        Set <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> to enable apartment location markers.
+      </div>
     );
   }
 
   if (mapError) {
-    return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-      />
-    );
+    return <div className="google-listings-map-note">{mapError}</div>;
   }
 
   const panMapBy = (x, y) => {
