@@ -37,7 +37,7 @@ const FALLBACK_MARKER_STYLE_PRESETS = {
     fontWeight: 700,
   },
 };
-const DEFAULT_FALLBACK_MARKER_PRESET_KEY = 'bold';
+const DEFAULT_FALLBACK_MARKER_PRESET_KEY = 'house';
 const CITY_CENTER_HINTS = [
   { name: 'tel aviv', center: { lat: 32.0853, lng: 34.7818 } },
   { name: 'jerusalem', center: { lat: 31.7683, lng: 35.2137 } },
@@ -431,7 +431,9 @@ const ConnectedListingsMapFallback = ({
           </div>
           {!isOverlayCollapsed ? (
             <p>
-              View where available apartments are located and draw a circle to filter the search area.
+              <strong>Find your perfect match.</strong>
+              {' '}
+              Draw a circle on the map to instantly filter the best apartments in your target zone!
             </p>
           ) : null}
         </header>
@@ -442,7 +444,7 @@ const ConnectedListingsMapFallback = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={() => setDrawMode((value) => !value)}
             >
-              {drawMode ? 'Drawing mode: click center then edge' : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
             <button
               type="button"

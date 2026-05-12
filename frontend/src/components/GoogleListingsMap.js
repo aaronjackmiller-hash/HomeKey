@@ -68,7 +68,7 @@ const MARKER_STYLE_PRESETS = {
     textColor: '#ffffff',
   },
 };
-const DEFAULT_MARKER_PRESET_KEY = 'bold';
+const DEFAULT_MARKER_PRESET_KEY = 'house';
 
 let googleMapsLoadPromise;
 
@@ -749,7 +749,9 @@ const GoogleListingsMap = ({
           </div>
           {!isOverlayCollapsed ? (
             <p>
-              View where available apartments are located and draw a circle to filter the search area.
+              <strong>Find your perfect match.</strong>
+              {' '}
+              Draw a circle on the map to instantly filter the best apartments in your target zone!
             </p>
           ) : null}
         </header>
@@ -760,7 +762,7 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={() => setDrawMode((value) => !value)}
             >
-              {drawMode ? 'Drawing mode: click center then edge' : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
             <button
               type="button"
