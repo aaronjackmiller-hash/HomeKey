@@ -15,6 +15,8 @@ import {
     toggleFavoriteProperty,
     toggleSavedProperty,
 } from '../utils/propertyInterest';
+import { getPropertyId } from '../utils/propertyIdentity';
+import { pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -202,11 +204,15 @@ const getListingContact = (property = {}) => {
         ? property.agent
         : {};
 
-    const name = dedupeRepeatingPhrase(externalContact.name || directContact.name || agentContact.name || '');
-    const agency = dedupeRepeatingPhrase(externalContact.agency || directContact.agency || agentContact.agency || '');
-    const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
-    const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
-    const email = externalContact.email || directContact.email || agentContact.email || '';
+    const name = pickBestContactName({
+        directName: directContact.name,
+        agentName: agentContact.name,
+        externalName: externalContact.name,
+    });
+    const agency = dedupeRepeatingPhrase(agentContact.agency || directContact.agency || externalContact.agency || '');
+    const phone = agentContact.phone || directContact.phone || externalContact.phone || '';
+    const whatsapp = agentContact.whatsapp || directContact.whatsapp || externalContact.whatsapp || '';
+    const email = agentContact.email || directContact.email || externalContact.email || '';
     const preferredMethod =
         externalContact.preferredMethod
         || directContact.preferredMethod
@@ -257,11 +263,6 @@ const sanitizeImageSource = (url) => {
     if (!source) return '';
     // Keep the original image dimensions so photos are not side-truncated.
     return source;
-};
-
-const getPropertyId = (property) => {
-    if (!property || typeof property !== 'object') return '';
-    return String(property._id || property.id || '').trim();
 };
 
 const getCachedLiveListingById = (id) => {
@@ -434,12 +435,11 @@ const PropertyDetail = () => {
     const coverStreetParts = getPrimaryStreetParts(property);
     const coverTitleStreet = coverStreetParts.street || detailTitle;
     const coverTitleNumber = coverStreetParts.streetNumber;
-    const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
     const amenities = buildAmenities(property);
-    const propertyId = property?._id || property?.id;
+    const propertyId = getPropertyId(property);
     const favoriteActive = isFavoriteProperty(propertyId);
     const savedActive = isSavedProperty(propertyId);
 
@@ -473,17 +473,6 @@ const PropertyDetail = () => {
     };
 
     const profileSections = [
-        {
-            title: 'Specifications',
-            items: [
-                { label: 'Bedrooms', value: property.bedrooms ?? '—' },
-                { label: 'Bathrooms', value: property.bathrooms ?? '—' },
-                { label: 'Size', value: property.size ? `${property.size} sqm` : '—' },
-                { label: 'Floor', value: property.floorNumber ?? '—' },
-                { label: 'Status', value: property.status || '—' },
-                { label: 'Type', value: typeLabel },
-            ],
-        },
         ...(!isRental ? [{
             title: 'Financial Profile',
             items: [
@@ -495,24 +484,6 @@ const PropertyDetail = () => {
                 { label: 'Property Tax', value: formatCurrency(property.financialDetails?.propertyTax) },
             ],
         }] : []),
-        {
-            title: 'Building Details',
-            items: [
-                { label: 'Building Name', value: property.buildingDetails?.name || '—' },
-                { label: 'Total Floors', value: property.buildingDetails?.floorCount ?? '—' },
-                { label: 'Apartment Count', value: property.buildingDetails?.apartmentCount ?? '—' },
-            ],
-        },
-        {
-            title: 'Availability & Dates',
-            items: [
-                { label: 'Available From', value: formatDate(property.dates?.availableFrom) },
-                { label: 'Listing Date', value: formatDate(property.dates?.listingDate) },
-                { label: 'Expires At', value: formatDate(property.lifecycle?.expiresAt) },
-                { label: 'Created At', value: formatDate(property.createdAt) },
-                { label: 'Updated At', value: formatDate(property.updatedAt) },
-            ],
-        },
     ];
 
     const shouldShowContactSection = true;
@@ -552,7 +523,9 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <>
                                 <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo yad2-obscure-logo--hero detail-template-logo-clean" />
+                                <span className="detail-h-badge detail-h-badge--hero" aria-hidden="true">
+                                    <span className="detail-h-badge-icon" />
+                                </span>
                             </>
                         )}
                     </div>
@@ -661,7 +634,9 @@ const PropertyDetail = () => {
                                     {isYad2ListingMedia && (
                                         <>
                                             <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery yad2-obscure-logo yad2-obscure-logo--secondary" />
+                                            <span className="detail-h-badge detail-h-badge--gallery" aria-hidden="true">
+                                                <span className="detail-h-badge-icon" />
+                                            </span>
                                         </>
                                     )}
                                 </span>
@@ -677,21 +652,23 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                <section className="profile-grid">
-                    {profileSections.map((section) => (
-                        <div className="profile-card" key={section.title}>
-                            <h3>{section.title}</h3>
-                            <dl>
-                                {section.items.map((item) => (
-                                    <div className="profile-row" key={item.label}>
-                                        <dt>{item.label}</dt>
-                                        <dd>{item.value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </div>
-                    ))}
-                </section>
+                {profileSections.length > 0 && (
+                    <section className="profile-grid">
+                        {profileSections.map((section) => (
+                            <div className="profile-card" key={section.title}>
+                                <h3>{section.title}</h3>
+                                <dl>
+                                    {section.items.map((item) => (
+                                        <div className="profile-row" key={item.label}>
+                                            <dt>{item.label}</dt>
+                                            <dd>{item.value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </div>
+                        ))}
+                    </section>
+                )}
 
                 {property.agent && (
                     <section className="detail-section-card">
@@ -837,12 +814,12 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {canManageListing && isManualListing && (
+                {canManageListing && isManualListing && propertyId && (
                     <div className="detail-actions">
-                        <button className="secondary-btn" onClick={() => history.push(`/properties/${property._id}/engagement`)}>
+                        <button className="secondary-btn" onClick={() => history.push(`/properties/${propertyId}/engagement`)}>
                             View inquiries & attendee list
                         </button>
-                        <button className="primary-button" onClick={() => history.push(`/edit-listing/${property._id}`)}>
+                        <button className="primary-button" onClick={() => history.push(`/edit-listing/${propertyId}`)}>
                             Edit Listing
                         </button>
                         <button className="danger-button" onClick={handleDelete}>
@@ -868,7 +845,9 @@ const PropertyDetail = () => {
                                     />
                                     {isYad2ListingMedia && (
                                         <>
-                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox yad2-obscure-logo yad2-obscure-logo--lightbox" />
+                                            <span className="detail-h-badge detail-h-badge--lightbox" aria-hidden="true">
+                                                <span className="detail-h-badge-icon" />
+                                            </span>
                                         </>
                                     )}
                                 </span>
