@@ -180,10 +180,10 @@ const getListingContact = (property = {}) => {
         agentName: agentContact.name,
         externalName: externalContact.name,
     });
-    const agency = dedupeRepeatingPhrase(externalContact.agency || directContact.agency || agentContact.agency || '');
-    const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
-    const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
-    const email = externalContact.email || directContact.email || agentContact.email || '';
+    const agency = dedupeRepeatingPhrase(agentContact.agency || directContact.agency || externalContact.agency || '');
+    const phone = agentContact.phone || directContact.phone || externalContact.phone || '';
+    const whatsapp = agentContact.whatsapp || directContact.whatsapp || externalContact.whatsapp || '';
+    const email = agentContact.email || directContact.email || externalContact.email || '';
     const preferredMethod =
         externalContact.preferredMethod
         || directContact.preferredMethod
@@ -220,7 +220,7 @@ const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
 };
 
 const getDisplayWhatsApp = (contact = {}) => {
-    const raw = safeText(contact.whatsapp || contact.phone);
+    const raw = safeText(contact.whatsapp);
     return raw;
 };
 
