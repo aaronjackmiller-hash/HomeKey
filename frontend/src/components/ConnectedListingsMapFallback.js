@@ -9,7 +9,7 @@ const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const FAVORITE_PRICE_PIN_STYLE = {
   pinBackground: '#FF0000',
   pinBorderColor: '#000000',
-  borderWidth: 0.9,
+  borderWidth: 0.75,
   pinTextColor: '#FFFFFF',
   fontWeight: 700,
 };

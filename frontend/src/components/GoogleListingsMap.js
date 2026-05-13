@@ -14,7 +14,7 @@ const DESKTOP_MARKER_HOVER_SCALE = 1.12;
 const FAVORITE_PRICE_PIN_STYLE = {
   pinColor: '#FF0000',
   pinStrokeColor: '#000000',
-  strokeWidth: 0.9,
+  strokeWidth: 0.75,
   textColor: '#FFFFFF',
   fontWeight: 700,
 };
