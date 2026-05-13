@@ -425,7 +425,6 @@ const PropertyDetail = () => {
     const coverStreetParts = getPrimaryStreetParts(property);
     const coverTitleStreet = coverStreetParts.street || detailTitle;
     const coverTitleNumber = coverStreetParts.streetNumber;
-    const typeLabel = property.type === 'rental' ? 'Rental' : 'For Sale';
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
@@ -468,17 +467,6 @@ const PropertyDetail = () => {
     };
 
     const profileSections = [
-        {
-            title: 'Specifications',
-            items: [
-                { label: 'Bedrooms', value: property.bedrooms ?? '—' },
-                { label: 'Bathrooms', value: property.bathrooms ?? '—' },
-                { label: 'Size', value: property.size ? `${property.size} sqm` : '—' },
-                { label: 'Floor', value: property.floorNumber ?? '—' },
-                { label: 'Status', value: property.status || '—' },
-                { label: 'Type', value: typeLabel },
-            ],
-        },
         ...(!isRental ? [{
             title: 'Financial Profile',
             items: [
@@ -490,24 +478,6 @@ const PropertyDetail = () => {
                 { label: 'Property Tax', value: formatCurrency(property.financialDetails?.propertyTax) },
             ],
         }] : []),
-        {
-            title: 'Building Details',
-            items: [
-                { label: 'Building Name', value: property.buildingDetails?.name || '—' },
-                { label: 'Total Floors', value: property.buildingDetails?.floorCount ?? '—' },
-                { label: 'Apartment Count', value: property.buildingDetails?.apartmentCount ?? '—' },
-            ],
-        },
-        {
-            title: 'Availability & Dates',
-            items: [
-                { label: 'Available From', value: formatDate(property.dates?.availableFrom) },
-                { label: 'Listing Date', value: formatDate(property.dates?.listingDate) },
-                { label: 'Expires At', value: formatDate(property.lifecycle?.expiresAt) },
-                { label: 'Created At', value: formatDate(property.createdAt) },
-                { label: 'Updated At', value: formatDate(property.updatedAt) },
-            ],
-        },
     ];
 
     const shouldShowContactSection = listingContact.hasAny || Boolean(managerWhatsAppHref || managerPhoneHref);
@@ -672,21 +642,23 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                <section className="profile-grid">
-                    {profileSections.map((section) => (
-                        <div className="profile-card" key={section.title}>
-                            <h3>{section.title}</h3>
-                            <dl>
-                                {section.items.map((item) => (
-                                    <div className="profile-row" key={item.label}>
-                                        <dt>{item.label}</dt>
-                                        <dd>{item.value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </div>
-                    ))}
-                </section>
+                {profileSections.length > 0 && (
+                    <section className="profile-grid">
+                        {profileSections.map((section) => (
+                            <div className="profile-card" key={section.title}>
+                                <h3>{section.title}</h3>
+                                <dl>
+                                    {section.items.map((item) => (
+                                        <div className="profile-row" key={item.label}>
+                                            <dt>{item.label}</dt>
+                                            <dd>{item.value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            </div>
+                        ))}
+                    </section>
+                )}
 
                 {property.agent && (
                     <section className="detail-section-card">
