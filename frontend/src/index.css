@@ -2048,6 +2048,105 @@ a {
   text-decoration: none;
 }
 
+.detail-inquiry-section {
+  padding: 18px;
+}
+
+.detail-inquiry-card {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.detail-inquiry-card h2 {
+  margin: 0 0 14px;
+  color: #0f172a;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.1;
+}
+
+.detail-inquiry-contact-meta {
+  margin: 0 0 14px;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.detail-inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-inquiry-name-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-inquiry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.detail-inquiry-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 100%;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.detail-inquiry-input::placeholder {
+  color: #94a3b8;
+}
+
+.detail-inquiry-input:focus {
+  outline: none;
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
+}
+
+.detail-inquiry-submit {
+  margin-top: 4px;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.detail-inquiry-submit:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+}
+
+.detail-inquiry-status {
+  margin: 4px 0 0;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.detail-inquiry-status.is-error {
+  color: #b91c1c;
+}
+
+.detail-inquiry-branding {
+  margin: 16px 0 0;
+  text-align: right;
+  font-size: 0.73rem;
+  color: #64748b;
+}
+
 /* The primary call-to-action button in watermarked_img_7782061331131057191.png */
 .get-details-btn {
   cursor: pointer;
@@ -2619,6 +2718,14 @@ legend {
   .property-interest-summary {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .detail-inquiry-card {
+    padding: 1.4rem;
+  }
+
+  .detail-inquiry-name-grid {
+    grid-template-columns: 1fr;
   }
 }
 
