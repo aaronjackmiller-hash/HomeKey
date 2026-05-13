@@ -174,11 +174,7 @@ const getListingContact = (property = {}) => {
         ? property.agent
         : {};
 
-    const name = pickBestContactName({
-        directName: directContact.name,
-        agentName: agentContact.name,
-        externalName: externalContact.name,
-    });
+    const name = dedupeRepeatingPhrase(externalContact.name || directContact.name || agentContact.name || '');
     const agency = dedupeRepeatingPhrase(externalContact.agency || directContact.agency || agentContact.agency || '');
     const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
     const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
@@ -428,9 +424,14 @@ const PropertyDetail = () => {
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
+    const salutationContactName = pickBestContactName({
+        directName: property?.contact?.name,
+        agentName: property?.agent?.name,
+        externalName: property?.externalContact?.name,
+    });
     const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
     const managerPhoneDisplay = safeText(listingContact.phone);
-    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, listingContact.name);
+    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, salutationContactName);
     const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
     const propertyId = property?._id || property?.id;
