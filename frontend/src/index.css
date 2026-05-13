@@ -1224,6 +1224,23 @@ a {
   background: #000000;
 }
 
+.property-card-action-btn--whatsapp {
+  border: 1px solid #25d366;
+  background: #25d366;
+  color: #ffffff;
+}
+
+.property-card-action-btn--whatsapp:hover {
+  border-color: #20ba5a;
+  background: #20ba5a;
+}
+
+.property-card-action-btn--whatsapp-disabled {
+  border: 1px solid #888888;
+  background: #888888;
+  color: #ffffff;
+}
+
 .property-card-action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1232,6 +1249,11 @@ a {
 .property-card-action-btn:disabled:hover {
   border-color: inherit;
   background: inherit;
+}
+
+.property-card-action-btn--whatsapp-disabled:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
 .property-interest-actions {
@@ -1580,9 +1602,24 @@ a {
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
-  width: 54px;
-  height: 36px;
-  min-height: 36px;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.28);
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--secondary .homekey-logo-lockup-image {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  object-position: center;
+  transform: none;
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--hero {
@@ -3161,6 +3198,18 @@ legend {
 .property-list-page .property-card-action-btn--charcoal {
   border-color: #1a1a1a;
   background: #1a1a1a;
+  color: #ffffff;
+}
+
+.property-list-page .property-card-action-btn--whatsapp {
+  border-color: #25d366;
+  background: #25d366;
+  color: #ffffff;
+}
+
+.property-list-page .property-card-action-btn--whatsapp-disabled {
+  border-color: #888888;
+  background: #888888;
   color: #ffffff;
 }
 
