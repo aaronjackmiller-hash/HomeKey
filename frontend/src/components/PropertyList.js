@@ -8,6 +8,7 @@ import {
   incrementHeartClickCount,
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
+import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
@@ -479,7 +480,7 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
   const favorites = [];
   const others = [];
   listings.forEach((property) => {
-    const propertyId = property && (property._id || property.id);
+    const propertyId = getPropertyId(property);
     if (propertyId && favoriteIdSet.has(String(propertyId))) {
       favorites.push(property);
       return;
@@ -809,7 +810,7 @@ const PropertyList = () => {
 
     if (favoritesOnly) {
       displayProperties = displayProperties.filter((property) => {
-        const propertyId = property && (property._id || property.id);
+        const propertyId = getPropertyId(property);
         return propertyId ? favoriteIdSet.has(String(propertyId)) : false;
       });
     }
@@ -840,7 +841,7 @@ const PropertyList = () => {
     const visibleProperties = !circleSelection.active
       ? mapSourceProperties
       : mapSourceProperties.filter((property) => {
-        const propertyId = property && (property._id || property.id);
+        const propertyId = getPropertyId(property);
         return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
@@ -947,7 +948,7 @@ const PropertyList = () => {
         {!dbIsEmpty && displayProperties.length === 0 && <p className="status-message">No properties found.</p>}
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
-          const propertyId = property._id || property.id;
+          const propertyId = getPropertyId(property);
           const canOpenDetail = Boolean(propertyId);
           const isYad2Media = isYad2LikeListing(property);
           const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;

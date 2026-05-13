@@ -15,6 +15,7 @@ import {
     toggleFavoriteProperty,
     toggleSavedProperty,
 } from '../utils/propertyInterest';
+import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
@@ -259,11 +260,6 @@ const sanitizeImageSource = (url) => {
     return source;
 };
 
-const getPropertyId = (property) => {
-    if (!property || typeof property !== 'object') return '';
-    return String(property._id || property.id || '').trim();
-};
-
 const getCachedLiveListingById = (id) => {
     if (!id || typeof window === 'undefined' || !window.localStorage) return null;
     try {
@@ -432,7 +428,7 @@ const PropertyDetail = () => {
     const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, listingContact.name);
     const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
-    const propertyId = property?._id || property?.id;
+    const propertyId = getPropertyId(property);
     const favoriteActive = isFavoriteProperty(propertyId);
     const savedActive = isSavedProperty(propertyId);
 
@@ -828,12 +824,12 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {canManageListing && isManualListing && (
+                {canManageListing && isManualListing && propertyId && (
                     <div className="detail-actions">
-                        <button className="secondary-btn" onClick={() => history.push(`/properties/${property._id}/engagement`)}>
+                        <button className="secondary-btn" onClick={() => history.push(`/properties/${propertyId}/engagement`)}>
                             View inquiries & attendee list
                         </button>
-                        <button className="primary-button" onClick={() => history.push(`/edit-listing/${property._id}`)}>
+                        <button className="primary-button" onClick={() => history.push(`/edit-listing/${propertyId}`)}>
                             Edit Listing
                         </button>
                         <button className="danger-button" onClick={handleDelete}>

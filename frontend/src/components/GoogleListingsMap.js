@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
+import { getPropertyId } from '../utils/propertyIdentity';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -66,7 +67,6 @@ const DEFAULT_MARKER_PRESET_KEY = 'minimal';
 let googleMapsLoadPromise;
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
-const getPropertyId = (property) => property && (property._id || property.id);
 const escapeHtml = (value) => String(value || '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
