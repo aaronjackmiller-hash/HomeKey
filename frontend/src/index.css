@@ -1580,9 +1580,19 @@ a {
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
-  width: 54px;
+  width: 36px;
   height: 36px;
   min-height: 36px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.28);
+}
+
+.homekey-logo-lockup--compact.yad2-obscure-logo--secondary .homekey-logo-lockup-image {
+  object-fit: contain;
+  object-position: center;
+  transform: none;
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--hero {
