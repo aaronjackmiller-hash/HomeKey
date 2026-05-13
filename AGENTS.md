@@ -43,6 +43,29 @@ HomeKey is a monorepo with two services:
 
 There are no automated test files in this codebase. The frontend `package.json` includes `react-scripts test` but no test files exist. Manual API/browser testing is the primary verification method.
 
+### PR testing checklist (use on every PR)
+
+Run checks that match your change scope:
+
+1. **Install dependencies** (if needed in a fresh environment)
+   - `npm ci --prefix backend && npm ci --prefix frontend`
+2. **Frontend/UI changes**
+   - `NODE_OPTIONS="--openssl-legacy-provider --max-old-space-size=384" CI=false npm run build --prefix frontend`
+   - Manually verify the changed UI behavior in browser
+3. **Backend/API changes**
+   - `curl http://localhost:5000/api/health`
+   - Manually verify affected API endpoints
+4. **Both frontend + backend changes**
+   - Run both frontend and backend checks above
+5. **Docs-only or copy-only changes**
+   - No runtime checks required; note this in the PR description
+
+### Automation notes
+
+- You **do not need to copy/paste testing guidance each PR** when using Cursor Cloud in this repo; this `AGENTS.md` file is automatically read by agents.
+- To avoid manual PR writeups, add a PR template (`.github/PULL_REQUEST_TEMPLATE.md`) with a checklist section and standard test command slots.
+- For stronger automation, add a GitHub Actions workflow to run baseline checks (e.g. frontend build) on every PR.
+
 ### API quick reference
 
 See `README.md` for the full endpoint list. Key endpoints:
