@@ -1580,16 +1580,21 @@ a {
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 3px;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 2px 7px rgba(15, 23, 42, 0.28);
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--secondary .homekey-logo-lockup-image {
+  width: 84%;
+  height: 84%;
   object-fit: contain;
   object-position: center;
   transform: none;
