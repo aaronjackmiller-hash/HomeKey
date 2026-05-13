@@ -27,14 +27,15 @@ const PrivateRoute = ({ children, ...rest }) => {
 
 const AppRoutes = () => {
   const location = useLocation();
-  const isBlueprintRoute = location.pathname === '/blueprint-inquiry';
+  const isBlueprintRoute = location.pathname === '/' || location.pathname === '/blueprint-inquiry';
 
   return (
     <>
       {!isBlueprintRoute && <Navbar />}
       <main className="app-main" style={isBlueprintRoute ? { minHeight: '100vh' } : undefined}>
         <Switch>
-          <Route exact path="/" component={PropertyList} />
+          <Route exact path="/" component={RealEstateInquiryBlueprint} />
+          <Route exact path="/listings" component={PropertyList} />
           <Route path="/properties/:id" component={PropertyDetail} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
