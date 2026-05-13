@@ -197,16 +197,13 @@ const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
     ? property.agent
     : {};
   const rawPhone = safeText(
-    externalContact.whatsapp
+    agentContact.whatsapp
       || directContact.whatsapp
-      || agentContact.whatsapp
-      || externalContact.phone
-      || directContact.phone
-      || agentContact.phone
+      || externalContact.whatsapp
   );
   const rawContactName = pickBestContactName({
-    directName: directContact.name,
-    agentName: agentContact.name,
+    directName: agentContact.name,
+    agentName: directContact.name,
     externalName: externalContact.name,
   });
   return buildWhatsAppHref(rawPhone, title, rawContactName);
@@ -223,16 +220,28 @@ const getPropertyAgentWhatsApp = (property = {}) => {
     ? property.agent
     : {};
   const whatsappNumber = safeText(
-    externalContact.whatsapp
+    agentContact.whatsapp
       || directContact.whatsapp
-      || agentContact.whatsapp
+      || externalContact.whatsapp
   );
-  const contactName = safeText(
-    externalContact.name
+  return { whatsappNumber };
+};
+
+const getPropertyAgentDisplayName = (property = {}) => {
+  const externalContact = property.externalContact && typeof property.externalContact === 'object'
+    ? property.externalContact
+    : {};
+  const directContact = property.contact && typeof property.contact === 'object'
+    ? property.contact
+    : {};
+  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+    ? property.agent
+    : {};
+  return safeText(
+    agentContact.name
       || directContact.name
-      || agentContact.name
+      || externalContact.name
   );
-  return { whatsappNumber, contactName };
 };
 
 const removeYad2ImageLogo = (url, sourceType = '') => {
@@ -968,14 +977,13 @@ const PropertyList = () => {
             && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
           );
           const monthly = property.financialDetails?.totalMonthlyPayment;
-          const { whatsappNumber: cardWhatsAppNumber, contactName: cardWhatsAppContactName } = getPropertyAgentWhatsApp(property);
+          const { whatsappNumber: cardWhatsAppNumber } = getPropertyAgentWhatsApp(property);
+          const cardAgentDisplayName = getPropertyAgentDisplayName(property);
           const agentHasWhatsApp = Boolean(normalizePhoneForLinks(cardWhatsAppNumber));
           const cardWhatsAppHref = agentHasWhatsApp
-            ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardWhatsAppContactName)
+            ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardAgentDisplayName)
             : '';
-          const whatsappButtonLabel = agentHasWhatsApp
-            ? `Chat on WhatsApp${getContactFirstName(cardWhatsAppContactName) ? ` with ${getContactFirstName(cardWhatsAppContactName)}` : ''}`
-            : 'WhatsApp Agent';
+          const whatsappButtonLabel = 'WhatsApp Agent';
           const openPropertyDetail = () => {
             if (!canOpenDetail) return;
             history.push(`/properties/${propertyId}`, { previewProperty: property });
