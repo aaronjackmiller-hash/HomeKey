@@ -1579,15 +1579,16 @@ a {
   min-height: 40px;
 }
 
-.detail-secondary-h-badge {
+.detail-h-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 3px;
+  right: 3px;
   z-index: 8;
   width: 42px;
   height: 42px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.2);
   box-shadow: 0 2px 9px rgba(15, 23, 42, 0.32);
   display: inline-flex;
   align-items: center;
@@ -1595,10 +1596,25 @@ a {
   pointer-events: none;
 }
 
-.detail-secondary-h-badge-icon {
+.detail-h-badge--hero {
+  width: 56px;
+  height: 56px;
+}
+
+.detail-h-badge--gallery {
+  width: 40px;
+  height: 40px;
+}
+
+.detail-h-badge--lightbox {
+  width: 64px;
+  height: 64px;
+}
+
+.detail-h-badge-icon {
   width: 84%;
   height: 84%;
-  background-image: url("./assets/h-secondary-badge.svg");
+  background-image: url("./assets/h-letter-logo-transparent-fixed.png");
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
