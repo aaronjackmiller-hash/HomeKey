@@ -162,6 +162,35 @@ const getLocationLine = (address = {}) => {
     return parts.join(', ');
 };
 
+const splitNameForInquiry = (fullName = '') => {
+    const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { firstName: '', lastName: '' };
+    if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+    return {
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' '),
+    };
+};
+
+const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
+    if (!isAuthenticated || !authUser) {
+        return {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+        };
+    }
+
+    const { firstName, lastName } = splitNameForInquiry(authUser.name);
+    return {
+        firstName,
+        lastName,
+        email: safeText(authUser.email),
+        phone: safeText(authUser.phone || authUser.whatsapp),
+    };
+};
+
 const getListingContact = (property = {}) => {
     const externalContact = property.externalContact && typeof property.externalContact === 'object'
         ? property.externalContact
@@ -263,12 +292,7 @@ const PropertyDetail = () => {
             || ['agent', 'admin'].includes(user?.role)
         )
     );
-    const [inquiry, setInquiry] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-    });
+    const [inquiry, setInquiry] = useState(() => buildInquiryDefaultsFromUser(user, isAuthenticated));
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
@@ -316,6 +340,16 @@ const PropertyDetail = () => {
         fetchProperty();
     }, [id, location]);
 
+    useEffect(() => {
+        const defaults = buildInquiryDefaultsFromUser(user, isAuthenticated);
+        setInquiry((prev) => ({
+            firstName: prev.firstName || defaults.firstName,
+            lastName: prev.lastName || defaults.lastName,
+            email: prev.email || defaults.email,
+            phone: prev.phone || defaults.phone,
+        }));
+    }, [isAuthenticated, user]);
+
     const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this listing?')) return;
         try {
@@ -344,12 +378,7 @@ const PropertyDetail = () => {
         try {
             await createPropertyInquiry(id, inquiryPayload);
             setInquiryStatus('Details request sent successfully.');
-            setInquiry({
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: '',
-            });
+            setInquiry(buildInquiryDefaultsFromUser(user, isAuthenticated));
             const result = await getProperty(id);
             setProperty(result.data);
         } catch (err) {
