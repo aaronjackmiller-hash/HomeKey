@@ -15,6 +15,7 @@ import {
     toggleFavoriteProperty,
     toggleSavedProperty,
 } from '../utils/propertyInterest';
+import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -173,7 +174,11 @@ const getListingContact = (property = {}) => {
         ? property.agent
         : {};
 
-    const name = dedupeRepeatingPhrase(externalContact.name || directContact.name || agentContact.name || '');
+    const name = pickBestContactName({
+        directName: directContact.name,
+        agentName: agentContact.name,
+        externalName: externalContact.name,
+    });
     const agency = dedupeRepeatingPhrase(externalContact.agency || directContact.agency || agentContact.agency || '');
     const phone = externalContact.phone || directContact.phone || agentContact.phone || '';
     const whatsapp = externalContact.whatsapp || directContact.whatsapp || '';
@@ -202,12 +207,6 @@ const normalizePhoneForLinks = (value) => {
     if (cleaned.startsWith('+')) return cleaned.slice(1);
     if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
     return cleaned;
-};
-
-const getContactFirstName = (name = '') => {
-    const trimmedName = String(name || '').trim();
-    if (!trimmedName) return '';
-    return trimmedName.split(/\s+/)[0];
 };
 
 const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
