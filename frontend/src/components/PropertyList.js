@@ -8,6 +8,8 @@ import {
   incrementHeartClickCount,
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
+import { getPropertyId } from '../utils/propertyIdentity';
+import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -68,12 +70,6 @@ const normalizePhoneForLinks = (value) => {
   if (cleaned.startsWith('+')) return cleaned.slice(1);
   if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
   return cleaned;
-};
-
-const getContactFirstName = (name = '') => {
-  const trimmedName = String(name || '').trim();
-  if (!trimmedName) return '';
-  return trimmedName.split(/\s+/)[0];
 };
 
 const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
@@ -205,11 +201,11 @@ const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
       || directContact.whatsapp
       || externalContact.whatsapp
   );
-  const rawContactName = safeText(
-    agentContact.name
-      || directContact.name
-      || externalContact.name
-  );
+  const rawContactName = pickBestContactName({
+    directName: agentContact.name,
+    agentName: directContact.name,
+    externalName: externalContact.name,
+  });
   return buildWhatsAppHref(rawPhone, title, rawContactName);
 };
 
@@ -493,7 +489,7 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
   const favorites = [];
   const others = [];
   listings.forEach((property) => {
-    const propertyId = property && (property._id || property.id);
+    const propertyId = getPropertyId(property);
     if (propertyId && favoriteIdSet.has(String(propertyId))) {
       favorites.push(property);
       return;
@@ -823,7 +819,7 @@ const PropertyList = () => {
 
     if (favoritesOnly) {
       displayProperties = displayProperties.filter((property) => {
-        const propertyId = property && (property._id || property.id);
+        const propertyId = getPropertyId(property);
         return propertyId ? favoriteIdSet.has(String(propertyId)) : false;
       });
     }
@@ -854,7 +850,7 @@ const PropertyList = () => {
     const visibleProperties = !circleSelection.active
       ? mapSourceProperties
       : mapSourceProperties.filter((property) => {
-        const propertyId = property && (property._id || property.id);
+        const propertyId = getPropertyId(property);
         return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
@@ -961,7 +957,7 @@ const PropertyList = () => {
         {!dbIsEmpty && displayProperties.length === 0 && <p className="status-message">No properties found.</p>}
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
-          const propertyId = property._id || property.id;
+          const propertyId = getPropertyId(property);
           const canOpenDetail = Boolean(propertyId);
           const isYad2Media = isYad2LikeListing(property);
           const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;
