@@ -64,7 +64,7 @@ Run checks that match your change scope:
 
 - You **do not need to copy/paste testing guidance each PR** when using Cursor Cloud in this repo; this `AGENTS.md` file is automatically read by agents.
 - To avoid manual PR writeups, add a PR template (`.github/PULL_REQUEST_TEMPLATE.md`) with a checklist section and standard test command slots.
-- For stronger automation, add a GitHub Actions workflow to run baseline checks (e.g. frontend build) on every PR.
+- Baseline automation is now in place via `.github/workflows/homekey-pr-checks.yml`, which runs frontend build + backend health smoke checks on every PR to `main`.
 
 ### API quick reference
 
