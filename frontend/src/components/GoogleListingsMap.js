@@ -478,7 +478,7 @@ const GoogleListingsMap = ({
 
         const propertyId = String(item.propertyId);
         const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
-        const priceTextColor = isFavoriteProperty ? '#dc2626' : '';
+        const priceTextColor = isFavoriteProperty ? '#ef4444' : '';
         const markerPrice = formatMarkerPrice(item.property.price);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const markerIcon = isHousePinPreset

@@ -349,7 +349,7 @@ const ConnectedListingsMapFallback = ({
       const coords = buildFallbackCoords(item.addressQuery, markerIndex);
       const propertyId = String(item.propertyId);
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
-      const priceTextColor = isFavoriteProperty ? '#dc2626' : '';
+      const priceTextColor = isFavoriteProperty ? '#ef4444' : '';
       const priceText = formatMarkerPrice(item.property.price);
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
