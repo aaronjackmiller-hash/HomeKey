@@ -8,6 +8,7 @@ import {
   incrementHeartClickCount,
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
+import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -68,12 +69,6 @@ const normalizePhoneForLinks = (value) => {
   if (cleaned.startsWith('+')) return cleaned.slice(1);
   if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
   return cleaned;
-};
-
-const getContactFirstName = (name = '') => {
-  const trimmedName = String(name || '').trim();
-  if (!trimmedName) return '';
-  return trimmedName.split(/\s+/)[0];
 };
 
 const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
@@ -208,11 +203,11 @@ const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
       || directContact.phone
       || agentContact.phone
   );
-  const rawContactName = safeText(
-    externalContact.name
-      || directContact.name
-      || agentContact.name
-  );
+  const rawContactName = pickBestContactName({
+    directName: directContact.name,
+    agentName: agentContact.name,
+    externalName: externalContact.name,
+  });
   return buildWhatsAppHref(rawPhone, title, rawContactName);
 };
 
