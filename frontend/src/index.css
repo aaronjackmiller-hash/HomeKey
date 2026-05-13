@@ -1599,10 +1599,6 @@ a {
   width: 84%;
   height: 84%;
   background-color: #0f2238;
-  background-image: url("./assets/h-letter-logo-transparent-fixed.png");
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: center;
   -webkit-mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
   mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
   -webkit-mask-repeat: no-repeat;
