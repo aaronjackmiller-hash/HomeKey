@@ -1579,25 +1579,38 @@ a {
   min-height: 40px;
 }
 
-.homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
+.detail-secondary-h-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 8;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 9px rgba(15, 23, 42, 0.32);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
 }
 
-.homekey-logo-lockup--compact.yad2-obscure-logo--secondary .homekey-logo-lockup-image {
+.detail-secondary-h-badge-icon {
   width: 84%;
   height: 84%;
-  object-fit: contain;
-  object-position: center;
-  transform: none;
+  background-color: #0f2238;
+  background-image: url("./assets/h-letter-logo-transparent-fixed.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  -webkit-mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
+  mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--hero {

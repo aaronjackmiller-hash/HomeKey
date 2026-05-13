@@ -626,7 +626,9 @@ const PropertyDetail = () => {
                                     {isYad2ListingMedia && (
                                         <>
                                             <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery yad2-obscure-logo yad2-obscure-logo--secondary" />
+                                            <span className="detail-secondary-h-badge" aria-hidden="true">
+                                                <span className="detail-secondary-h-badge-icon" />
+                                            </span>
                                         </>
                                     )}
                                 </span>
