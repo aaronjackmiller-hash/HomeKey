@@ -1581,14 +1581,14 @@ a {
 
 .detail-h-badge {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  z-index: 8;
-  width: 42px;
+  top: 2px;
+  right: 2px;
+  z-index: 10;
+  width: 64px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.16);
   box-shadow: 0 2px 9px rgba(15, 23, 42, 0.32);
   display: inline-flex;
   align-items: center;
@@ -1597,26 +1597,26 @@ a {
 }
 
 .detail-h-badge--hero {
-  width: 56px;
-  height: 56px;
+  width: 96px;
+  height: 62px;
 }
 
 .detail-h-badge--gallery {
-  width: 40px;
-  height: 40px;
+  width: 74px;
+  height: 48px;
 }
 
 .detail-h-badge--lightbox {
-  width: 64px;
-  height: 64px;
+  width: 112px;
+  height: 72px;
 }
 
 .detail-h-badge-icon {
-  width: 84%;
-  height: 84%;
+  width: 96%;
+  height: 96%;
   background-image: url("./assets/h-letter-logo-transparent-fixed.png");
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: auto 96%;
   background-position: center;
 }
 
