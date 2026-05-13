@@ -1598,15 +1598,10 @@ a {
 .detail-secondary-h-badge-icon {
   width: 84%;
   height: 84%;
-  background-color: #0f2238;
-  -webkit-mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
-  mask-image: url("./assets/h-letter-logo-transparent-fixed.png");
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-position: center;
-  mask-position: center;
+  background-image: url("./assets/h-secondary-badge.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--hero {
