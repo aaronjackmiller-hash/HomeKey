@@ -205,10 +205,32 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const pointerHalfWidth = Math.max(5, Math.round(bubbleWidth * 0.12));
   const textY = Math.round((pinHeight / 2) + (fontSize * 0.36));
   const halfStroke = strokeWidth / 2;
+  const leftX = halfStroke;
+  const rightX = bubbleWidth - halfStroke;
+  const topY = halfStroke;
+  const bubbleBottomY = pinHeight - halfStroke;
+  const tipY = totalHeight - halfStroke;
+  const safeRadius = Math.max(1, radius - halfStroke);
+  const pointerLeftX = centerX - pointerHalfWidth;
+  const pointerRightX = centerX + pointerHalfWidth;
+  const pinPath = [
+    `M${leftX + safeRadius} ${topY}`,
+    `H${rightX - safeRadius}`,
+    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
+    `V${bubbleBottomY - safeRadius}`,
+    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
+    `H${pointerRightX}`,
+    `L${centerX} ${tipY}`,
+    `L${pointerLeftX} ${bubbleBottomY}`,
+    `H${leftX + safeRadius}`,
+    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
+    `V${topY + safeRadius}`,
+    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
+    'Z',
+  ].join(' ');
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bubbleWidth}" height="${totalHeight}" viewBox="0 0 ${bubbleWidth} ${totalHeight}" overflow="visible">
-    <rect x="${halfStroke}" y="${halfStroke}" width="${bubbleWidth - strokeWidth}" height="${pinHeight - strokeWidth}" rx="${radius}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}"/>
-    <path d="M${centerX - pointerHalfWidth} ${pinHeight - halfStroke} L${centerX} ${totalHeight - halfStroke} L${centerX + pointerHalfWidth} ${pinHeight - halfStroke} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
+    <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
     <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
   </svg>`;
 

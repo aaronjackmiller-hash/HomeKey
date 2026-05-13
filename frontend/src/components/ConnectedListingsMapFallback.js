@@ -154,9 +154,31 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
   const textY = Math.round((height / 2) + (fontSize * 0.36));
   const radius = Math.round(height / 2);
   const halfBorder = borderWidth / 2;
+  const leftX = halfBorder;
+  const rightX = pinWidth - halfBorder;
+  const topY = halfBorder;
+  const bubbleBottomY = height - halfBorder;
+  const tipY = totalHeight - halfBorder;
+  const safeRadius = Math.max(1, radius - halfBorder);
+  const pointerLeftX = centerX - pointerHalfWidth;
+  const pointerRightX = centerX + pointerHalfWidth;
+  const pinPath = [
+    `M${leftX + safeRadius} ${topY}`,
+    `H${rightX - safeRadius}`,
+    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
+    `V${bubbleBottomY - safeRadius}`,
+    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
+    `H${pointerRightX}`,
+    `L${centerX} ${tipY}`,
+    `L${pointerLeftX} ${bubbleBottomY}`,
+    `H${leftX + safeRadius}`,
+    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
+    `V${topY + safeRadius}`,
+    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
+    'Z',
+  ].join(' ');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${totalHeight}" viewBox="0 0 ${pinWidth} ${totalHeight}" overflow="visible">
-    <rect x="${halfBorder}" y="${halfBorder}" width="${pinWidth - borderWidth}" height="${height - borderWidth}" rx="${radius}" fill="${pinBackground}" stroke="${pinBorderColor}" stroke-width="${borderWidth}"/>
-    <path d="M${centerX - pointerHalfWidth} ${height - halfBorder} L${centerX} ${totalHeight - halfBorder} L${centerX + pointerHalfWidth} ${height - halfBorder} Z" fill="${pinBackground}" stroke="${pinBorderColor}" stroke-width="${borderWidth}" stroke-linejoin="round"/>
+    <path d="${pinPath}" fill="${pinBackground}" stroke="${pinBorderColor}" stroke-width="${borderWidth}" stroke-linejoin="round"/>
     <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${pinTextColor}">${safePriceText}</text>
   </svg>`;
   return L.icon({
