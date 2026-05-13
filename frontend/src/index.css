@@ -1601,25 +1601,45 @@ a {
   min-height: 40px;
 }
 
-.homekey-logo-lockup--compact.yad2-obscure-logo--secondary {
-  width: 38px;
-  height: 38px;
-  min-height: 38px;
+.detail-h-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 8;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  box-shadow: 0 2px 9px rgba(15, 23, 42, 0.32);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
 }
 
-.homekey-logo-lockup--compact.yad2-obscure-logo--secondary .homekey-logo-lockup-image {
+.detail-h-badge--hero {
+  width: 56px;
+  height: 56px;
+}
+
+.detail-h-badge--gallery {
+  width: 40px;
+  height: 40px;
+}
+
+.detail-h-badge--lightbox {
+  width: 64px;
+  height: 64px;
+}
+
+.detail-h-badge-icon {
   width: 84%;
   height: 84%;
-  object-fit: contain;
-  object-position: center;
-  transform: none;
+  background-image: url("./assets/h-letter-logo-transparent-fixed.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }
 
 .homekey-logo-lockup--compact.yad2-obscure-logo--hero {

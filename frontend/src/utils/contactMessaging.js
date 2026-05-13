@@ -3,6 +3,10 @@ const COMPANY_TOKEN_BLACKLIST = new Set([
   'realty',
   'realestate',
   'estate',
+  'solution',
+  'solutions',
+  'service',
+  'services',
   'agency',
   'group',
   'office',
@@ -81,15 +85,15 @@ export const pickBestContactName = ({
   agentName = '',
   externalName = '',
 } = {}) => {
-  const personLike = firstPersonLikeName([directName, agentName, externalName]);
+  const personLike = firstPersonLikeName([agentName, directName, externalName]);
   if (personLike) return personLike;
-  return normalizeCandidateName(directName || agentName || externalName || '');
+  return '';
 };
 
 export const getContactFirstName = (name = '') => {
   const tokens = tokenizeName(name);
   if (tokens.length === 0) return '';
   const firstMeaningful = tokens.find((token) => !isCompanyLikeToken(token));
-  return firstMeaningful || tokens[0];
+  return firstMeaningful || '';
 };
 

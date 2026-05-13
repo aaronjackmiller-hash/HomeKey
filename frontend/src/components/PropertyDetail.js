@@ -423,9 +423,14 @@ const PropertyDetail = () => {
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
+    const salutationContactName = pickBestContactName({
+        directName: property?.contact?.name,
+        agentName: property?.agent?.name,
+        externalName: property?.externalContact?.name,
+    });
     const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
     const managerPhoneDisplay = safeText(listingContact.phone);
-    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, listingContact.name);
+    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, salutationContactName);
     const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
     const propertyId = getPropertyId(property);
@@ -512,7 +517,9 @@ const PropertyDetail = () => {
                         {isYad2ListingMedia && (
                             <>
                                 <span className="yad2-logo-mask yad2-logo-mask--hero" aria-hidden="true" />
-                                <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--hero yad2-obscure-logo yad2-obscure-logo--hero detail-template-logo-clean" />
+                                <span className="detail-h-badge detail-h-badge--hero" aria-hidden="true">
+                                    <span className="detail-h-badge-icon" />
+                                </span>
                             </>
                         )}
                     </div>
@@ -621,7 +628,9 @@ const PropertyDetail = () => {
                                     {isYad2ListingMedia && (
                                         <>
                                             <span className="yad2-logo-mask yad2-logo-mask--gallery" aria-hidden="true" />
-                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--gallery yad2-obscure-logo yad2-obscure-logo--secondary" />
+                                            <span className="detail-h-badge detail-h-badge--gallery" aria-hidden="true">
+                                                <span className="detail-h-badge-icon" />
+                                            </span>
                                         </>
                                     )}
                                 </span>
@@ -855,7 +864,9 @@ const PropertyDetail = () => {
                                     />
                                     {isYad2ListingMedia && (
                                         <>
-                                            <HomeKeyLogoBadge compact className="image-corner-logo image-corner-logo--lightbox yad2-obscure-logo yad2-obscure-logo--lightbox" />
+                                            <span className="detail-h-badge detail-h-badge--lightbox" aria-hidden="true">
+                                                <span className="detail-h-badge-icon" />
+                                            </span>
                                         </>
                                     )}
                                 </span>
