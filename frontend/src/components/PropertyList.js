@@ -983,7 +983,7 @@ const PropertyList = () => {
           const cardWhatsAppHref = agentHasWhatsApp
             ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardAgentDisplayName)
             : '';
-          const whatsappButtonLabel = 'WhatsApp Agent';
+          const whatsappButtonLabel = 'WhatsApp';
           const openPropertyDetail = () => {
             if (!canOpenDetail) return;
             history.push(`/properties/${propertyId}`, { previewProperty: property });
