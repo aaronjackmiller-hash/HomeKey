@@ -8,6 +8,7 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import PropertyInquiryCard from './PropertyInquiryCard';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
     isFavoriteProperty,
@@ -16,6 +17,7 @@ import {
     toggleSavedProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
+import { pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -147,23 +149,6 @@ const getPrimaryStreetParts = (property = {}) => {
     return splitStreetAndNumber(title, '');
 };
 
-const inquiryAgentConfig = {
-    name: 'מירי',
-    agency: 'Real Deal',
-    hasWhatsApp: false, // Set to true to show the Green Button and hide "Preferred: Email"
-    whatsappNumber: '972533229317',
-    // The shared message variable
-    inquiryMessage: 'באמת צפון תל אביב החדשה, אני מעוניין לקבל פרטים נוספים על הדירה הזו.',
-};
-
-const normalizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
-
-const buildWhatsAppInquiryHref = (phone, message) => {
-    const normalizedPhone = normalizeWhatsAppNumber(phone);
-    if (!normalizedPhone) return '';
-    return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(String(message || ''))}`;
-};
-
 const getLocationLine = (address = {}) => {
     const city = safeText(address.city);
     const state = safeText(address.state);
@@ -199,6 +184,42 @@ const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
         lastName,
         email: safeText(authUser.email),
         phone: safeText(authUser.phone || authUser.whatsapp),
+    };
+};
+
+const getListingContact = (property = {}) => {
+    const externalContact = property.externalContact && typeof property.externalContact === 'object'
+        ? property.externalContact
+        : {};
+    const directContact = property.contact && typeof property.contact === 'object'
+        ? property.contact
+        : {};
+    const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
+        ? property.agent
+        : {};
+
+    const name = pickBestContactName({
+        directName: directContact.name,
+        agentName: agentContact.name,
+        externalName: externalContact.name,
+    });
+    const agency = dedupeRepeatingPhrase(agentContact.agency || directContact.agency || externalContact.agency || '');
+    const phone = agentContact.phone || directContact.phone || externalContact.phone || '';
+    const whatsapp = agentContact.whatsapp || directContact.whatsapp || externalContact.whatsapp || '';
+    const email = agentContact.email || directContact.email || externalContact.email || '';
+    const preferredMethod =
+        externalContact.preferredMethod
+        || directContact.preferredMethod
+        || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
+
+    return {
+        name,
+        agency,
+        phone,
+        whatsapp,
+        email,
+        preferredMethod,
+        hasAny: Boolean(name || agency || phone || whatsapp || email),
     };
 };
 
@@ -266,7 +287,10 @@ const PropertyDetail = () => {
             || ['agent', 'admin'].includes(user?.role)
         )
     );
-    const [inquiry, setInquiry] = useState(() => buildInquiryDefaultsFromUser(user, isAuthenticated));
+    const [inquiry, setInquiry] = useState(() => ({
+        ...buildInquiryDefaultsFromUser(user, isAuthenticated),
+        message: '',
+    }));
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
@@ -321,6 +345,7 @@ const PropertyDetail = () => {
             lastName: prev.lastName || defaults.lastName,
             email: prev.email || defaults.email,
             phone: prev.phone || defaults.phone,
+            message: prev.message || '',
         }));
     }, [isAuthenticated, user]);
 
@@ -347,12 +372,15 @@ const PropertyDetail = () => {
             email: inquiry.email,
             phone: inquiry.phone,
             preferredMethod: 'email',
-            message: inquiryAgentConfig.inquiryMessage || `I am interested in ${detailTitle}. Please send more details.`,
+            message: safeText(inquiry.message) || `I am interested in ${detailTitle}. Please send more details.`,
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
             setInquiryStatus('Details request sent successfully.');
-            setInquiry(buildInquiryDefaultsFromUser(user, isAuthenticated));
+            setInquiry({
+                ...buildInquiryDefaultsFromUser(user, isAuthenticated),
+                message: '',
+            });
             const result = await getProperty(id);
             setProperty(result.data);
         } catch (err) {
@@ -410,13 +438,11 @@ const PropertyDetail = () => {
     const coverTitleNumber = coverStreetParts.streetNumber;
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
+    const listingContact = getListingContact(property);
     const amenities = buildAmenities(property);
     const propertyId = getPropertyId(property);
     const favoriteActive = isFavoriteProperty(propertyId);
     const savedActive = isSavedProperty(propertyId);
-    const inquiryWhatsAppHref = inquiryAgentConfig.hasWhatsApp
-        ? buildWhatsAppInquiryHref(inquiryAgentConfig.whatsappNumber, inquiryAgentConfig.inquiryMessage)
-        : '';
 
     const handleToggleInterest = (mode) => {
         if (!propertyId) return;
@@ -471,6 +497,19 @@ const PropertyDetail = () => {
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
     const templatePriceValue = formatTemplatePrice(property.price);
+    const inquirySubtitleRaw = safeText(property.description)
+        || `Submit your details and get more information about ${detailTitle}.`;
+    const inquirySubtitle = inquirySubtitleRaw.length > 130
+        ? `${inquirySubtitleRaw.slice(0, 127)}...`
+        : inquirySubtitleRaw;
+    const inquiryWhatsAppNumber = String(listingContact.whatsapp || '').replace(/[^\d]/g, '');
+    const inquiryAgent = {
+        agency: listingContact.agency || 'Real Deal',
+        name: listingContact.name || '',
+        hasWhatsApp: Boolean(inquiryWhatsAppNumber),
+        whatsappNumber: inquiryWhatsAppNumber,
+        inquiryMessage: safeText(inquiry.message) || `Hi, I am interested in ${detailTitle}. Please share more details.`,
+    };
 
     return (
         <div className="property-detail-page">
@@ -662,80 +701,19 @@ const PropertyDetail = () => {
                 )}
 
                 {shouldShowContactSection && (
-                    <section className="detail-section-card map-container detail-inquiry-section">
+                    <section className="detail-inquiry-section">
                         <div id="contact-manager-form" />
-                        <div className="detail-inquiry-card">
-                            <h2>Interested? Get Details!</h2>
-                            <p className="detail-inquiry-contact-meta">
-                                {`Manager: ${inquiryAgentConfig.name}`}
-                                {!inquiryAgentConfig.hasWhatsApp ? ' • Preferred: Email' : ''}
-                            </p>
-                            {inquiryAgentConfig.hasWhatsApp && inquiryWhatsAppHref && (
-                                <a
-                                    className="detail-inquiry-whatsapp-btn"
-                                    href={inquiryWhatsAppHref}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    WhatsApp
-                                </a>
-                            )}
-                            <form onSubmit={handleInquirySubmit} className="detail-inquiry-form">
-                                <div className="detail-inquiry-name-grid">
-                                    <label className="detail-inquiry-field">
-                                        First Name
-                                        <input
-                                            className="detail-inquiry-input"
-                                            type="text"
-                                            value={inquiry.firstName}
-                                            onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
-                                            placeholder="Enter first name"
-                                            required
-                                        />
-                                    </label>
-                                    <label className="detail-inquiry-field">
-                                        Last Name
-                                        <input
-                                            className="detail-inquiry-input"
-                                            type="text"
-                                            value={inquiry.lastName}
-                                            onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
-                                            placeholder="Enter last name"
-                                            required
-                                        />
-                                    </label>
-                                </div>
-                                <label className="detail-inquiry-field">
-                                    Email
-                                    <input
-                                        className="detail-inquiry-input"
-                                        type="email"
-                                        value={inquiry.email}
-                                        onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
-                                        placeholder="your.email@example.com"
-                                    />
-                                </label>
-                                <label className="detail-inquiry-field">
-                                    Phone
-                                    <input
-                                        className="detail-inquiry-input"
-                                        type="tel"
-                                        value={inquiry.phone}
-                                        onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
-                                        placeholder="+972 50 123 4567"
-                                    />
-                                </label>
-                                <button type="submit" className="detail-inquiry-submit">Get Details!</button>
-                                {inquiryStatus && (
-                                    <p className={`detail-inquiry-status ${inquiryStatus.toLowerCase().includes('failed') ? 'is-error' : ''}`}>
-                                        {inquiryStatus}
-                                    </p>
-                                )}
-                            </form>
-                            <p className="detail-inquiry-branding">
-                                {`${inquiryAgentConfig.name} - ${inquiryAgentConfig.agency}`}
-                            </p>
-                        </div>
+                        <PropertyInquiryCard
+                            mode="embedded"
+                            title={detailTitle}
+                            subtitle={inquirySubtitle}
+                            agent={inquiryAgent}
+                            formValues={inquiry}
+                            onFormChange={(field, value) => setInquiry((prev) => ({ ...prev, [field]: value }))}
+                            onSubmit={handleInquirySubmit}
+                            statusMessage={inquiryStatus}
+                            statusIsError={inquiryStatus.toLowerCase().includes('failed') || inquiryStatus.toLowerCase().includes('please')}
+                        />
                     </section>
                 )}
 
