@@ -7,14 +7,24 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
+const FAVORITE_PRICE_PIN_STYLE = {
+  pinBackground: '#FF0000',
+  pinBorderColor: '#000000',
+  borderWidth: 0.9,
+  pinTextColor: '#FFFFFF',
+  fontWeight: 700,
+};
 const FALLBACK_MARKER_STYLE_PRESETS = {
   minimal: {
     label: 'Minimal',
     markerMode: 'pricePin',
     pinBackground: '#1A1A1A',
+    pinBorderColor: '#1A1A1A',
+    borderWidth: 1,
     pinTextColor: '#ffffff',
     minWidth: 50,
     height: 20,
+    pointerHeight: 7,
     fontSize: 10,
     fontWeight: 600,
   },
@@ -31,9 +41,12 @@ const FALLBACK_MARKER_STYLE_PRESETS = {
     label: 'Medium',
     markerMode: 'pricePin',
     pinBackground: '#2b3440',
+    pinBorderColor: '#2b3440',
+    borderWidth: 1,
     pinTextColor: '#ffffff',
     minWidth: 60,
     height: 24,
+    pointerHeight: 8,
     fontSize: 11,
     fontWeight: 600,
   },
@@ -41,9 +54,12 @@ const FALLBACK_MARKER_STYLE_PRESETS = {
     label: 'Bold',
     markerMode: 'pricePin',
     pinBackground: '#1A1A1A',
+    pinBorderColor: '#1A1A1A',
+    borderWidth: 1,
     pinTextColor: '#ffffff',
     minWidth: 64,
     height: 26,
+    pointerHeight: 9,
     fontSize: 11,
     fontWeight: 700,
   },
@@ -64,6 +80,12 @@ const CITY_CENTER_HINTS = [
 ];
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const escapeSvgText = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 const toAddressQuery = (property = {}) => {
   const address = property.address && typeof property.address === 'object' ? property.address : {};
   const street = safeText(address.street);
@@ -111,20 +133,55 @@ const buildFallbackCoords = (addressQuery, markerIndex = 0) => {
   };
 };
 
-const createFallbackPriceIcon = (priceText, preset, textColorOverride = '') => {
+const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
+  const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
   const minWidth = Number(preset.minWidth) || 60;
   const height = Number(preset.height) || 24;
-  const pinBackground = preset.pinBackground || '#1A1A1A';
-  const pinTextColor = textColorOverride || preset.pinTextColor || '#ffffff';
+  const pointerHeight = Number(preset.pointerHeight) || 8;
+  const pinBackground = resolvedStyleOverrides.pinBackground || preset.pinBackground || '#1A1A1A';
+  const pinBorderColor = resolvedStyleOverrides.pinBorderColor || preset.pinBorderColor || pinBackground;
+  const borderWidth = Number(resolvedStyleOverrides.borderWidth) || Number(preset.borderWidth) || 1;
+  const pinTextColor = resolvedStyleOverrides.pinTextColor || preset.pinTextColor || '#ffffff';
   const fontSize = Number(preset.fontSize) || 11;
-  const fontWeight = Number(preset.fontWeight) || 700;
-  const estimatedTextWidth = Math.ceil(String(priceText).length * fontSize * 0.62);
+  const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
+  const safePriceText = escapeSvgText(priceText);
+  const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
   const pinWidth = Math.max(minWidth, estimatedTextWidth + 16);
-  return L.divIcon({
-    className: 'fallback-price-pin',
-    html: `<span style="min-width:${pinWidth}px;height:${height}px;background:${pinBackground};color:${pinTextColor};font-size:${fontSize}px;font-weight:${fontWeight};">${priceText}</span>`,
-    iconSize: [pinWidth, height],
-    iconAnchor: [pinWidth / 2, height],
+  const totalHeight = height + pointerHeight;
+  const centerX = pinWidth / 2;
+  const pointerHalfWidth = Math.max(5, Math.round(pinWidth * 0.12));
+  const textY = Math.round((height / 2) + (fontSize * 0.36));
+  const radius = Math.round(height / 2);
+  const halfBorder = borderWidth / 2;
+  const leftX = halfBorder;
+  const rightX = pinWidth - halfBorder;
+  const topY = halfBorder;
+  const bubbleBottomY = height - halfBorder;
+  const tipY = totalHeight - halfBorder;
+  const safeRadius = Math.max(1, radius - halfBorder);
+  const pointerLeftX = centerX - pointerHalfWidth;
+  const pointerRightX = centerX + pointerHalfWidth;
+  const pinPath = [
+    `M${leftX + safeRadius} ${topY}`,
+    `H${rightX - safeRadius}`,
+    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
+    `V${bubbleBottomY - safeRadius}`,
+    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
+    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
+    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
+    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
+    `V${topY + safeRadius}`,
+    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
+    'Z',
+  ].join(' ');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${totalHeight}" viewBox="0 0 ${pinWidth} ${totalHeight}" overflow="visible">
+    <path d="${pinPath}" fill="${pinBackground}" stroke="${pinBorderColor}" stroke-width="${borderWidth}" stroke-linejoin="round"/>
+    <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${pinTextColor}">${safePriceText}</text>
+  </svg>`;
+  return L.icon({
+    iconUrl: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    iconSize: [pinWidth, totalHeight],
+    iconAnchor: [pinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
   });
 };
@@ -160,9 +217,9 @@ const createFallbackHouseIcon = (preset) => {
 const getFallbackMarkerStylePreset = (presetKey) =>
   FALLBACK_MARKER_STYLE_PRESETS[presetKey] || FALLBACK_MARKER_STYLE_PRESETS[DEFAULT_FALLBACK_MARKER_PRESET_KEY];
 
-const createFallbackMarkerIcon = (priceText, preset, textColorOverride = '') => (preset.markerMode === 'house'
+const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}) => (preset.markerMode === 'house'
   ? createFallbackHouseIcon(preset)
-  : createFallbackPriceIcon(priceText, preset, textColorOverride));
+  : createFallbackPriceIcon(priceText, preset, styleOverrides));
 
 const ConnectedListingsMapFallback = ({
   properties = [],
@@ -348,11 +405,11 @@ const ConnectedListingsMapFallback = ({
       const coords = buildFallbackCoords(item.addressQuery, markerIndex);
       const propertyId = String(item.propertyId);
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
-      const priceTextColor = isFavoriteProperty ? '#ef4444' : '';
+      const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
       const priceText = formatMarkerPrice(item.property.price);
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
-        icon: createFallbackMarkerIcon(priceText, markerPreset, priceTextColor),
+        icon: createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides),
       });
       marker.bindPopup(
         `<strong>${safeText(item.property.title) || 'Property listing'}</strong><br/>${priceText}<br/>${item.addressQuery}`

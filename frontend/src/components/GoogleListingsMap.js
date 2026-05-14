@@ -12,6 +12,13 @@ const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.12;
+const FAVORITE_PRICE_PIN_STYLE = {
+  pinColor: '#FF0000',
+  pinStrokeColor: '#000000',
+  strokeWidth: 0.9,
+  textColor: '#FFFFFF',
+  fontWeight: 700,
+};
 const MARKER_STYLE_PRESETS = {
   minimal: {
     label: 'Minimal',
@@ -176,16 +183,18 @@ const formatMarkerPrice = (price) => {
   return `₪${parsedPrice.toLocaleString()}`;
 };
 
-const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, textColorOverride = '') => {
+const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}) => {
   const pinHeight = Number(preset.pinHeight) || 26;
   const pointerHeight = Number(preset.pointerHeight) || 10;
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
   const minWidth = Number(preset.minWidth) || 56;
   const fontSize = Number(preset.fontSize) || 12;
-  const fontWeight = Number(preset.fontWeight) || 700;
-  const pinColor = preset.pinColor || '#2563eb';
-  const pinStrokeColor = preset.pinStrokeColor || '#1d4ed8';
-  const textColor = textColorOverride || preset.textColor || '#ffffff';
+  const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
+  const pinColor = resolvedStyleOverrides.pinColor || preset.pinColor || '#2563eb';
+  const pinStrokeColor = resolvedStyleOverrides.pinStrokeColor || preset.pinStrokeColor || '#1d4ed8';
+  const strokeWidth = Number(resolvedStyleOverrides.strokeWidth) || 1;
+  const textColor = resolvedStyleOverrides.textColor || preset.textColor || '#ffffff';
   const safePriceText = escapeHtml(priceText);
 
   const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
@@ -195,10 +204,31 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, textColorOver
   const centerX = bubbleWidth / 2;
   const pointerHalfWidth = Math.max(5, Math.round(bubbleWidth * 0.12));
   const textY = Math.round((pinHeight / 2) + (fontSize * 0.36));
+  const halfStroke = strokeWidth / 2;
+  const leftX = halfStroke;
+  const rightX = bubbleWidth - halfStroke;
+  const topY = halfStroke;
+  const bubbleBottomY = pinHeight - halfStroke;
+  const tipY = totalHeight - halfStroke;
+  const safeRadius = Math.max(1, radius - halfStroke);
+  const pointerLeftX = centerX - pointerHalfWidth;
+  const pointerRightX = centerX + pointerHalfWidth;
+  const pinPath = [
+    `M${leftX + safeRadius} ${topY}`,
+    `H${rightX - safeRadius}`,
+    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
+    `V${bubbleBottomY - safeRadius}`,
+    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
+    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
+    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
+    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
+    `V${topY + safeRadius}`,
+    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
+    'Z',
+  ].join(' ');
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bubbleWidth}" height="${totalHeight}" viewBox="0 0 ${bubbleWidth} ${totalHeight}" overflow="visible">
-    <rect x="0.5" y="0.5" width="${bubbleWidth - 1}" height="${pinHeight - 1}" rx="${radius}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1"/>
-    <path d="M${centerX - pointerHalfWidth} ${pinHeight - 1} L${centerX} ${totalHeight - 1} L${centerX + pointerHalfWidth} ${pinHeight - 1} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round"/>
+    <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
     <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
   </svg>`;
 
@@ -478,7 +508,7 @@ const GoogleListingsMap = ({
 
         const propertyId = String(item.propertyId);
         const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
-        const priceTextColor = isFavoriteProperty ? '#ef4444' : '';
+        const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
         const markerPrice = formatMarkerPrice(item.property.price);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const markerIcon = isHousePinPreset
@@ -488,7 +518,7 @@ const GoogleListingsMap = ({
             markerPreset,
             markerPrice,
             1,
-            priceTextColor
+            markerStyleOverrides
           );
         const markerHoverIcon = supportsDesktopHover
           && !isHousePinPreset
@@ -497,7 +527,7 @@ const GoogleListingsMap = ({
             markerPreset,
             markerPrice,
             DESKTOP_MARKER_HOVER_SCALE,
-            priceTextColor
+            markerStyleOverrides
           )
           : null;
 
