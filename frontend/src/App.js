@@ -12,7 +12,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
-import RealEstateInquiryBlueprint from './components/RealEstateInquiryBlueprint';
+import PropertyInquiryCard from './components/PropertyInquiryCard';
 import './index.css';
 
 const PrivateRoute = ({ children, ...rest }) => {
@@ -40,7 +40,7 @@ const AppRoutes = () => {
           <Route path="/register" component={Register} />
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
-          <Route path="/blueprint-inquiry" component={RealEstateInquiryBlueprint} />
+          <Route path="/blueprint-inquiry" component={PropertyInquiryCard} />
           <PrivateRoute path="/add-listing">
             <AddListing />
           </PrivateRoute>
