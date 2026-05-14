@@ -12,6 +12,12 @@
   background: #ffffff;
 }
 
+.property-inquiry-shell--embedded {
+  min-height: 0;
+  border-radius: 16px;
+  padding: 10px 12px 20px;
+}
+
 .property-inquiry-map-layer {
   position: absolute;
   inset: 0;
@@ -44,6 +50,20 @@
   padding-bottom: 16px;
 }
 
+.property-inquiry-shell--embedded .property-inquiry-description {
+  max-width: 760px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.property-inquiry-shell--embedded .property-inquiry-description h1 {
+  font-size: clamp(1.45rem, 2.8vw, 2.1rem);
+}
+
+.property-inquiry-shell--embedded .property-inquiry-description p {
+  font-size: clamp(0.86rem, 1.65vw, 1rem);
+}
+
 .property-inquiry-description h1 {
   margin: 0 0 6px;
   font-size: clamp(2rem, 4.4vw, 3.2rem);
@@ -72,6 +92,10 @@
   -webkit-backdrop-filter: blur(5px);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.24);
   padding: 26px 22px 22px;
+}
+
+.property-inquiry-shell--embedded .property-inquiry-card {
+  width: min(640px, 100%);
 }
 
 .property-inquiry-card-header {
@@ -182,6 +206,11 @@
   padding: 8px 16px;
 }
 
+.property-inquiry-shell--embedded .property-inquiry-primary-btn,
+.property-inquiry-shell--embedded .property-inquiry-whatsapp-btn {
+  font-size: 1.36rem;
+}
+
 .property-inquiry-primary-btn {
   background: linear-gradient(180deg, #4c86de 0%, #3d75cc 100%);
   border: 1px solid #3a6bb7;
@@ -210,6 +239,17 @@
   cursor: not-allowed;
   opacity: 0.75;
   box-shadow: none;
+}
+
+.property-inquiry-status {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #137333;
+}
+
+.property-inquiry-status.is-error {
+  color: #b91c1c;
 }
 
 @media (max-width: 760px) {

@@ -8,6 +8,7 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
+import PropertyInquiryCard from './PropertyInquiryCard';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
     isFavoriteProperty,
@@ -148,13 +149,6 @@ const getPrimaryStreetParts = (property = {}) => {
     return splitStreetAndNumber(title, '');
 };
 
-const formatContactMethod = (method) => {
-    const normalized = String(method || '').toLowerCase();
-    if (normalized === 'whatsapp') return 'WhatsApp';
-    if (normalized === 'phone') return 'Phone';
-    return 'Email';
-};
-
 const getLocationLine = (address = {}) => {
     const city = safeText(address.city);
     const state = safeText(address.state);
@@ -293,7 +287,10 @@ const PropertyDetail = () => {
             || ['agent', 'admin'].includes(user?.role)
         )
     );
-    const [inquiry, setInquiry] = useState(() => buildInquiryDefaultsFromUser(user, isAuthenticated));
+    const [inquiry, setInquiry] = useState(() => ({
+        ...buildInquiryDefaultsFromUser(user, isAuthenticated),
+        message: '',
+    }));
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
@@ -348,6 +345,7 @@ const PropertyDetail = () => {
             lastName: prev.lastName || defaults.lastName,
             email: prev.email || defaults.email,
             phone: prev.phone || defaults.phone,
+            message: prev.message || '',
         }));
     }, [isAuthenticated, user]);
 
@@ -374,12 +372,15 @@ const PropertyDetail = () => {
             email: inquiry.email,
             phone: inquiry.phone,
             preferredMethod: 'email',
-            message: `I am interested in ${detailTitle}. Please send more details.`,
+            message: safeText(inquiry.message) || `I am interested in ${detailTitle}. Please send more details.`,
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
             setInquiryStatus('Details request sent successfully.');
-            setInquiry(buildInquiryDefaultsFromUser(user, isAuthenticated));
+            setInquiry({
+                ...buildInquiryDefaultsFromUser(user, isAuthenticated),
+                message: '',
+            });
             const result = await getProperty(id);
             setProperty(result.data);
         } catch (err) {
@@ -496,6 +497,19 @@ const PropertyDetail = () => {
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
     const templatePriceValue = formatTemplatePrice(property.price);
+    const inquirySubtitleRaw = safeText(property.description)
+        || `Submit your details and get more information about ${detailTitle}.`;
+    const inquirySubtitle = inquirySubtitleRaw.length > 130
+        ? `${inquirySubtitleRaw.slice(0, 127)}...`
+        : inquirySubtitleRaw;
+    const inquiryWhatsAppNumber = String(listingContact.whatsapp || '').replace(/[^\d]/g, '');
+    const inquiryAgent = {
+        agency: listingContact.agency || 'Real Deal',
+        name: listingContact.name || '',
+        hasWhatsApp: Boolean(inquiryWhatsAppNumber),
+        whatsappNumber: inquiryWhatsAppNumber,
+        inquiryMessage: safeText(inquiry.message) || `Hi, I am interested in ${detailTitle}. Please share more details.`,
+    };
 
     return (
         <div className="property-detail-page">
@@ -687,75 +701,19 @@ const PropertyDetail = () => {
                 )}
 
                 {shouldShowContactSection && (
-                    <section className="detail-section-card map-container detail-inquiry-section">
+                    <section className="detail-inquiry-section">
                         <div id="contact-manager-form" />
-                        <div className="detail-inquiry-card">
-                            <h2>Interested? Get Details!</h2>
-                            <p className="detail-inquiry-contact-meta">
-                                {listingContact.name ? `Manager: ${listingContact.name}` : 'Property manager available'}
-                                {listingContact.name && listingContact.preferredMethod
-                                    ? ` • Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
-                                    : ''}
-                                {!listingContact.name && listingContact.preferredMethod
-                                    ? `Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
-                                    : ''}
-                            </p>
-                            <form onSubmit={handleInquirySubmit} className="detail-inquiry-form">
-                                <div className="detail-inquiry-name-grid">
-                                    <label className="detail-inquiry-field">
-                                        First Name
-                                        <input
-                                            className="detail-inquiry-input"
-                                            type="text"
-                                            value={inquiry.firstName}
-                                            onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
-                                            placeholder="Enter first name"
-                                            required
-                                        />
-                                    </label>
-                                    <label className="detail-inquiry-field">
-                                        Last Name
-                                        <input
-                                            className="detail-inquiry-input"
-                                            type="text"
-                                            value={inquiry.lastName}
-                                            onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
-                                            placeholder="Enter last name"
-                                            required
-                                        />
-                                    </label>
-                                </div>
-                                <label className="detail-inquiry-field">
-                                    Email
-                                    <input
-                                        className="detail-inquiry-input"
-                                        type="email"
-                                        value={inquiry.email}
-                                        onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
-                                        placeholder="your.email@example.com"
-                                    />
-                                </label>
-                                <label className="detail-inquiry-field">
-                                    Phone
-                                    <input
-                                        className="detail-inquiry-input"
-                                        type="tel"
-                                        value={inquiry.phone}
-                                        onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
-                                        placeholder="+972 50 123 4567"
-                                    />
-                                </label>
-                                <button type="submit" className="detail-inquiry-submit">Get Details!</button>
-                                {inquiryStatus && (
-                                    <p className={`detail-inquiry-status ${inquiryStatus.toLowerCase().includes('failed') ? 'is-error' : ''}`}>
-                                        {inquiryStatus}
-                                    </p>
-                                )}
-                            </form>
-                            <p className="detail-inquiry-branding">
-                                Ariel Israeloff - Israeloff Property Services
-                            </p>
-                        </div>
+                        <PropertyInquiryCard
+                            mode="embedded"
+                            title={detailTitle}
+                            subtitle={inquirySubtitle}
+                            agent={inquiryAgent}
+                            formValues={inquiry}
+                            onFormChange={(field, value) => setInquiry((prev) => ({ ...prev, [field]: value }))}
+                            onSubmit={handleInquirySubmit}
+                            statusMessage={inquiryStatus}
+                            statusIsError={inquiryStatus.toLowerCase().includes('failed') || inquiryStatus.toLowerCase().includes('please')}
+                        />
                     </section>
                 )}
 
