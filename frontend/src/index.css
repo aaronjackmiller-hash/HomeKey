@@ -2170,6 +2170,12 @@ a {
   box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
 }
 
+.detail-inquiry-message-input {
+  min-height: 118px;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
 .detail-inquiry-submit {
   margin-top: 4px;
   background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
@@ -2195,13 +2201,6 @@ a {
 
 .detail-inquiry-status.is-error {
   color: #b91c1c;
-}
-
-.detail-inquiry-branding {
-  margin: 16px 0 0;
-  text-align: right;
-  font-size: 0.73rem;
-  color: #64748b;
 }
 
 /* The primary call-to-action button in watermarked_img_7782061331131057191.png */

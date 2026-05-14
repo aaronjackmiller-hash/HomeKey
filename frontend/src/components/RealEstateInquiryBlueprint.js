@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './RealEstateInquiryBlueprint.css';
 
 const SidebarIcon = ({ children, active = false, label }) => (
@@ -13,6 +13,18 @@ const SidebarIcon = ({ children, active = false, label }) => (
 );
 
 const RealEstateInquiryBlueprint = () => {
+  const [inquiry, setInquiry] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    customMessage: '',
+  });
+  const inquiryMessagePrefix = 'Hi Ariel I was on HomeKey and I am interested in פינת אוכל. 4 חדרים דוגמה כתובת.';
+  const inquiryMessageValue = inquiry.customMessage
+    ? `${inquiryMessagePrefix}\n\n${inquiry.customMessage}`
+    : inquiryMessagePrefix;
+
   return (
     <div className="blueprint-shell">
       <div className="blueprint-map-layer" aria-hidden="true" />
@@ -66,7 +78,10 @@ const RealEstateInquiryBlueprint = () => {
                 className="inquiry-input-field"
                 type="text"
                 name="firstName"
+                value={inquiry.firstName}
+                onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
                 placeholder="Enter first name"
+                required
               />
             </label>
             <label className="inquiry-field">
@@ -75,7 +90,10 @@ const RealEstateInquiryBlueprint = () => {
                 className="inquiry-input-field"
                 type="text"
                 name="lastName"
+                value={inquiry.lastName}
+                onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
                 placeholder="Enter last name"
+                required
               />
             </label>
           </div>
@@ -86,7 +104,10 @@ const RealEstateInquiryBlueprint = () => {
               className="inquiry-input-field"
               type="email"
               name="email"
+              value={inquiry.email}
+              onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="your.email@example.com"
+              required={!inquiry.phone.trim()}
             />
           </label>
 
@@ -96,7 +117,26 @@ const RealEstateInquiryBlueprint = () => {
               className="inquiry-input-field"
               type="tel"
               name="phone"
+              value={inquiry.phone}
+              onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
               placeholder="+972 50 123 4567"
+              required={!inquiry.email.trim()}
+            />
+          </label>
+
+          <label className="inquiry-field">
+            Message to Agent
+            <textarea
+              className="inquiry-input-field inquiry-message-input-field"
+              value={inquiryMessageValue}
+              onChange={(e) => {
+                const typedValue = String(e.target.value || '');
+                const messageWithoutPrefix = typedValue.startsWith(inquiryMessagePrefix)
+                  ? typedValue.slice(inquiryMessagePrefix.length).replace(/^\s+/, '')
+                  : typedValue;
+                setInquiry((prev) => ({ ...prev, customMessage: messageWithoutPrefix }));
+              }}
+              rows={4}
             />
           </label>
 
@@ -104,10 +144,6 @@ const RealEstateInquiryBlueprint = () => {
             Get Details!
           </button>
         </form>
-
-        <p className="inquiry-branding">
-          Ariel Israeloff - Israeloff Property Services
-        </p>
       </section>
     </div>
   );

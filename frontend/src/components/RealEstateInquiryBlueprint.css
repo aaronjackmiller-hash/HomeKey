@@ -142,6 +142,12 @@
   box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.35);
 }
 
+.inquiry-message-input-field {
+  min-height: 118px;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
 .submit-btn {
   margin-top: 0.3rem;
   background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
@@ -157,13 +163,6 @@
 
 .submit-btn:hover {
   background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-}
-
-.inquiry-branding {
-  margin: 1.15rem 0 0;
-  text-align: right;
-  font-size: 0.73rem;
-  color: #64748b;
 }
 
 @media (max-width: 900px) {

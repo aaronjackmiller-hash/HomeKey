@@ -155,6 +155,11 @@ const formatContactMethod = (method) => {
     return 'Email';
 };
 
+const getFirstName = (fullName = '') => {
+    const parts = safeText(fullName).split(/\s+/).filter(Boolean);
+    return parts[0] || '';
+};
+
 const getLocationLine = (address = {}) => {
     const city = safeText(address.city);
     const state = safeText(address.state);
@@ -181,6 +186,7 @@ const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
             lastName: '',
             email: '',
             phone: '',
+            customMessage: '',
         };
     }
 
@@ -190,6 +196,7 @@ const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
         lastName,
         email: safeText(authUser.email),
         phone: safeText(authUser.phone || authUser.whatsapp),
+        customMessage: '',
     };
 };
 
@@ -348,6 +355,7 @@ const PropertyDetail = () => {
             lastName: prev.lastName || defaults.lastName,
             email: prev.email || defaults.email,
             phone: prev.phone || defaults.phone,
+            customMessage: prev.customMessage || defaults.customMessage,
         }));
     }, [isAuthenticated, user]);
 
@@ -364,17 +372,28 @@ const PropertyDetail = () => {
     const handleInquirySubmit = async (e) => {
         e.preventDefault();
         setInquiryStatus('');
-        const fullName = `${inquiry.firstName} ${inquiry.lastName}`.trim();
-        if (!fullName) {
+        const firstName = safeText(inquiry.firstName);
+        const lastName = safeText(inquiry.lastName);
+        const email = safeText(inquiry.email);
+        const phone = safeText(inquiry.phone);
+        if (!firstName || !lastName) {
             setInquiryStatus('Please provide your first and last name.');
             return;
         }
+        if (!email && !phone) {
+            setInquiryStatus('Please provide either an email address or phone number.');
+            return;
+        }
+        const fullName = `${firstName} ${lastName}`.trim();
+        const inquiryMessage = [inquiryMessagePrefix, safeText(inquiry.customMessage)]
+            .filter(Boolean)
+            .join('\n\n');
         const inquiryPayload = {
             name: fullName,
-            email: inquiry.email,
-            phone: inquiry.phone,
-            preferredMethod: 'email',
-            message: `I am interested in ${detailTitle}. Please send more details.`,
+            email,
+            phone,
+            preferredMethod: email ? 'email' : 'phone',
+            message: inquiryMessage,
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
@@ -496,6 +515,12 @@ const PropertyDetail = () => {
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
     const templatePriceValue = formatTemplatePrice(property.price);
+    const inquiryAddress = addressLine || detailTitle;
+    const inquiryAgentFirstName = getFirstName(listingContact.name) || 'there';
+    const inquiryMessagePrefix = `Hi ${inquiryAgentFirstName} I was on HomeKey and I am interested in פינת אוכל. 4 חדרים ${inquiryAddress}.`;
+    const inquiryMessageValue = inquiry.customMessage
+        ? `${inquiryMessagePrefix}\n\n${inquiry.customMessage}`
+        : inquiryMessagePrefix;
 
     return (
         <div className="property-detail-page">
@@ -733,6 +758,7 @@ const PropertyDetail = () => {
                                         value={inquiry.email}
                                         onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
                                         placeholder="your.email@example.com"
+                                        required={!safeText(inquiry.phone)}
                                     />
                                 </label>
                                 <label className="detail-inquiry-field">
@@ -743,6 +769,22 @@ const PropertyDetail = () => {
                                         value={inquiry.phone}
                                         onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
                                         placeholder="+972 50 123 4567"
+                                        required={!safeText(inquiry.email)}
+                                    />
+                                </label>
+                                <label className="detail-inquiry-field">
+                                    Message to Agent
+                                    <textarea
+                                        className="detail-inquiry-input detail-inquiry-message-input"
+                                        value={inquiryMessageValue}
+                                        onChange={(e) => {
+                                            const typedValue = String(e.target.value || '');
+                                            const messageWithoutPrefix = typedValue.startsWith(inquiryMessagePrefix)
+                                                ? typedValue.slice(inquiryMessagePrefix.length).replace(/^\s+/, '')
+                                                : typedValue;
+                                            setInquiry((prev) => ({ ...prev, customMessage: messageWithoutPrefix }));
+                                        }}
+                                        rows={4}
                                     />
                                 </label>
                                 <button type="submit" className="detail-inquiry-submit">Get Details!</button>
@@ -752,9 +794,6 @@ const PropertyDetail = () => {
                                     </p>
                                 )}
                             </form>
-                            <p className="detail-inquiry-branding">
-                                Ariel Israeloff - Israeloff Property Services
-                            </p>
                         </div>
                     </section>
                 )}
