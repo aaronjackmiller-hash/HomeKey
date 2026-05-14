@@ -2,9 +2,9 @@ import React from 'react';
 import './PropertyInquiryCard.css';
 
 const agentConfig = {
-  agency: 'Israeloff Property Services',
-  name: 'Ariel Israeloff',
-  hasWhatsApp: true,
+  agency: 'Real Deal',
+  name: "רו'ן",
+  hasWhatsApp: false,
   whatsappNumber: '972503229317',
   inquiryMessage: 'Hi Ariel, I am interested in this property. Please share more details.',
 };
@@ -16,12 +16,7 @@ const PropertyInquiryCard = () => {
         className="property-inquiry-map-layer"
         aria-hidden="true"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(232, 236, 242, 0.68), rgba(216, 222, 231, 0.68)),
-            repeating-linear-gradient(38deg, #c4ccd6 0, #c4ccd6 9px, #b8c1cc 9px, #b8c1cc 18px),
-            repeating-linear-gradient(-42deg, #dde2e8 0, #dde2e8 12px, #d1d8df 12px, #d1d8df 24px),
-            url('/path-to-your-tel-aviv-map.png')
-          `,
+          backgroundImage: "url('/tel-aviv-map.svg')",
         }}
       />
 
@@ -36,7 +31,7 @@ const PropertyInquiryCard = () => {
         <div className="property-inquiry-card-header">
           <h2>Interested? Get Details!</h2>
           <p>
-            <span>Manager: {agentConfig.agency} • {agentConfig.name}</span>
+            <span>Manger: {agentConfig.agency} {agentConfig.name}</span>
             {!agentConfig.hasWhatsApp && (
               <>
                 <span className="property-inquiry-separator">•</span>
@@ -74,7 +69,7 @@ const PropertyInquiryCard = () => {
             <textarea
               id="inquiry-message"
               rows="4"
-              defaultValue={agentConfig.inquiryMessage}
+              placeholder="Message to Agent"
             />
           </label>
 
@@ -83,7 +78,7 @@ const PropertyInquiryCard = () => {
               Get Details!
             </button>
 
-            {agentConfig.hasWhatsApp ? (
+            {agentConfig.hasWhatsApp && (
               <a
                 href={`https://wa.me/${agentConfig.whatsappNumber}?text=${encodeURIComponent(agentConfig.inquiryMessage)}`}
                 className="property-inquiry-whatsapp-btn"
@@ -92,10 +87,6 @@ const PropertyInquiryCard = () => {
               >
                 Chat on WhatsApp with {agentConfig.name}
               </a>
-            ) : (
-              <button type="button" disabled className="property-inquiry-whatsapp-btn is-disabled">
-                WhatsApp Agent
-              </button>
             )}
           </div>
         </form>

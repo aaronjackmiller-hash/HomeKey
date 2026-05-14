@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Stylized Tel Aviv map background">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bcc5d1" />
+      <stop offset="100%" stop-color="#adb7c4" />
+    </linearGradient>
+    <filter id="softNoise" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.09" />
+      </feComponentTransfer>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)" />
+  <path d="M0,0 L270,0 C255,130 280,270 250,420 C215,620 210,820 265,1000 L0,1000 Z" fill="#8f9caf" />
+  <path d="M210,0 C180,160 150,300 135,470 C118,665 145,820 195,1000" stroke="#6f7f95" stroke-width="8" fill="none" opacity="0.7" />
+
+  <g stroke-linecap="round" fill="none">
+    <g stroke="#f9fcff" stroke-width="10" opacity="0.92">
+      <path d="M285 75 L1575 250" />
+      <path d="M275 145 L1540 322" />
+      <path d="M265 215 L1510 395" />
+      <path d="M260 285 L1490 465" />
+      <path d="M255 355 L1470 535" />
+      <path d="M260 430 L1450 610" />
+      <path d="M280 510 L1420 700" />
+      <path d="M305 590 L1380 785" />
+      <path d="M340 665 L1335 865" />
+      <path d="M375 740 L1290 940" />
+    </g>
+
+    <g stroke="#f2f7fb" stroke-width="8" opacity="0.92">
+      <path d="M390 50 L600 960" />
+      <path d="M500 40 L710 960" />
+      <path d="M620 45 L830 970" />
+      <path d="M740 55 L950 980" />
+      <path d="M860 70 L1060 985" />
+      <path d="M980 90 L1180 990" />
+      <path d="M1100 120 L1290 995" />
+      <path d="M1220 155 L1390 995" />
+      <path d="M1335 195 L1490 995" />
+    </g>
+
+    <g stroke="#788699" stroke-width="4" opacity="0.9">
+      <path d="M330 95 L505 170 L685 120 L830 182 L980 140 L1140 196 L1290 165 L1470 225" />
+      <path d="M320 175 L470 255 L645 212 L795 278 L945 236 L1110 302 L1260 270 L1440 340" />
+      <path d="M315 255 L470 330 L640 305 L790 365 L940 330 L1090 390 L1245 360 L1410 430" />
+      <path d="M315 340 L470 420 L640 395 L790 460 L940 425 L1090 490 L1230 460 L1390 520" />
+      <path d="M325 425 L480 510 L650 490 L795 560 L940 530 L1080 590 L1220 565 L1360 635" />
+      <path d="M340 510 L495 600 L660 585 L805 650 L940 620 L1070 680 L1200 660 L1335 735" />
+      <path d="M360 595 L520 690 L680 675 L815 735 L945 710 L1065 765 L1180 755 L1300 835" />
+      <path d="M390 680 L545 770 L695 760 L830 820 L955 798 L1065 845 L1175 838 L1270 905" />
+    </g>
+
+    <g stroke="#667487" stroke-width="2.7" opacity="0.9">
+      <path d="M440 120 L420 940" />
+      <path d="M560 105 L540 950" />
+      <path d="M680 105 L670 960" />
+      <path d="M800 115 L790 965" />
+      <path d="M920 132 L910 970" />
+      <path d="M1040 156 L1028 975" />
+      <path d="M1160 182 L1148 980" />
+      <path d="M1280 210 L1268 982" />
+      <path d="M1400 248 L1390 985" />
+    </g>
+
+    <g stroke="#6f7d90" stroke-width="3.2" opacity="0.86">
+      <path d="M292 115 L1498 312" />
+      <path d="M284 205 L1476 403" />
+      <path d="M279 295 L1454 492" />
+      <path d="M281 385 L1438 580" />
+      <path d="M295 480 L1415 670" />
+      <path d="M315 570 L1378 760" />
+      <path d="M342 660 L1338 852" />
+      <path d="M374 750 L1285 940" />
+    </g>
+  </g>
+
+  <rect width="1600" height="1000" fill="#ffffff" filter="url(#softNoise)" opacity="0.18" />
+</svg>
