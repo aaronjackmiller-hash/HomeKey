@@ -16,7 +16,6 @@ import {
     toggleSavedProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -148,11 +147,21 @@ const getPrimaryStreetParts = (property = {}) => {
     return splitStreetAndNumber(title, '');
 };
 
-const formatContactMethod = (method) => {
-    const normalized = String(method || '').toLowerCase();
-    if (normalized === 'whatsapp') return 'WhatsApp';
-    if (normalized === 'phone') return 'Phone';
-    return 'Email';
+const inquiryAgentConfig = {
+    name: 'מירי',
+    agency: 'Real Deal',
+    hasWhatsApp: false, // Set to true to show the Green Button and hide "Preferred: Email"
+    whatsappNumber: '972533229317',
+    // The shared message variable
+    inquiryMessage: 'באמת צפון תל אביב החדשה, אני מעוניין לקבל פרטים נוספים על הדירה הזו.',
+};
+
+const normalizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
+
+const buildWhatsAppInquiryHref = (phone, message) => {
+    const normalizedPhone = normalizeWhatsAppNumber(phone);
+    if (!normalizedPhone) return '';
+    return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(String(message || ''))}`;
 };
 
 const getLocationLine = (address = {}) => {
@@ -190,42 +199,6 @@ const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
         lastName,
         email: safeText(authUser.email),
         phone: safeText(authUser.phone || authUser.whatsapp),
-    };
-};
-
-const getListingContact = (property = {}) => {
-    const externalContact = property.externalContact && typeof property.externalContact === 'object'
-        ? property.externalContact
-        : {};
-    const directContact = property.contact && typeof property.contact === 'object'
-        ? property.contact
-        : {};
-    const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-        ? property.agent
-        : {};
-
-    const name = pickBestContactName({
-        directName: directContact.name,
-        agentName: agentContact.name,
-        externalName: externalContact.name,
-    });
-    const agency = dedupeRepeatingPhrase(agentContact.agency || directContact.agency || externalContact.agency || '');
-    const phone = agentContact.phone || directContact.phone || externalContact.phone || '';
-    const whatsapp = agentContact.whatsapp || directContact.whatsapp || externalContact.whatsapp || '';
-    const email = agentContact.email || directContact.email || externalContact.email || '';
-    const preferredMethod =
-        externalContact.preferredMethod
-        || directContact.preferredMethod
-        || (whatsapp ? 'whatsapp' : (phone ? 'phone' : (email ? 'email' : '')));
-
-    return {
-        name,
-        agency,
-        phone,
-        whatsapp,
-        email,
-        preferredMethod,
-        hasAny: Boolean(name || agency || phone || whatsapp || email),
     };
 };
 
@@ -374,7 +347,7 @@ const PropertyDetail = () => {
             email: inquiry.email,
             phone: inquiry.phone,
             preferredMethod: 'email',
-            message: `I am interested in ${detailTitle}. Please send more details.`,
+            message: inquiryAgentConfig.inquiryMessage || `I am interested in ${detailTitle}. Please send more details.`,
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
@@ -437,11 +410,13 @@ const PropertyDetail = () => {
     const coverTitleNumber = coverStreetParts.streetNumber;
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
-    const listingContact = getListingContact(property);
     const amenities = buildAmenities(property);
     const propertyId = getPropertyId(property);
     const favoriteActive = isFavoriteProperty(propertyId);
     const savedActive = isSavedProperty(propertyId);
+    const inquiryWhatsAppHref = inquiryAgentConfig.hasWhatsApp
+        ? buildWhatsAppInquiryHref(inquiryAgentConfig.whatsappNumber, inquiryAgentConfig.inquiryMessage)
+        : '';
 
     const handleToggleInterest = (mode) => {
         if (!propertyId) return;
@@ -692,14 +667,19 @@ const PropertyDetail = () => {
                         <div className="detail-inquiry-card">
                             <h2>Interested? Get Details!</h2>
                             <p className="detail-inquiry-contact-meta">
-                                {listingContact.name ? `Manager: ${listingContact.name}` : 'Property manager available'}
-                                {listingContact.name && listingContact.preferredMethod
-                                    ? ` • Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
-                                    : ''}
-                                {!listingContact.name && listingContact.preferredMethod
-                                    ? `Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
-                                    : ''}
+                                {`Manager: ${inquiryAgentConfig.name}`}
+                                {!inquiryAgentConfig.hasWhatsApp ? ' • Preferred: Email' : ''}
                             </p>
+                            {inquiryAgentConfig.hasWhatsApp && inquiryWhatsAppHref && (
+                                <a
+                                    className="detail-inquiry-whatsapp-btn"
+                                    href={inquiryWhatsAppHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    WhatsApp
+                                </a>
+                            )}
                             <form onSubmit={handleInquirySubmit} className="detail-inquiry-form">
                                 <div className="detail-inquiry-name-grid">
                                     <label className="detail-inquiry-field">
@@ -753,7 +733,7 @@ const PropertyDetail = () => {
                                 )}
                             </form>
                             <p className="detail-inquiry-branding">
-                                Ariel Israeloff - Israeloff Property Services
+                                {`${inquiryAgentConfig.name} - ${inquiryAgentConfig.agency}`}
                             </p>
                         </div>
                     </section>

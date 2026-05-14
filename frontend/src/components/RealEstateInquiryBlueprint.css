@@ -101,6 +101,31 @@
   color: #0f172a;
 }
 
+.inquiry-contact-meta {
+  margin: -0.75rem 0 1rem;
+  font-size: 0.84rem;
+  color: #475569;
+}
+
+.whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.95rem;
+  padding: 0.62rem 1rem;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+}
+
+.whatsapp-btn:hover {
+  background: #16a34a;
+}
+
 .inquiry-form {
   display: flex;
   flex-direction: column;

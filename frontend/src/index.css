@@ -2129,6 +2129,25 @@ a {
   font-size: 0.92rem;
 }
 
+.detail-inquiry-whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 12px;
+  padding: 0.62rem 1rem;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+}
+
+.detail-inquiry-whatsapp-btn:hover {
+  background: #16a34a;
+}
+
 .detail-inquiry-form {
   display: flex;
   flex-direction: column;
