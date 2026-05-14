@@ -1,0 +1,218 @@
+.property-inquiry-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  padding: 0 16px 48px;
+}
+
+.property-inquiry-map-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(1) blur(2px) brightness(1.1) contrast(0.9);
+  opacity: 0.65;
+  transform: scale(1.04);
+}
+
+.property-inquiry-description {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 920px;
+  text-align: center;
+  padding-top: 48px;
+  padding-bottom: 30px;
+}
+
+.property-inquiry-description h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.property-inquiry-description p {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+  font-weight: 500;
+  line-height: 1.45;
+  color: #1f2937;
+}
+
+.property-inquiry-card {
+  position: relative;
+  z-index: 1;
+  width: min(600px, 100%);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 32px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+  padding: 40px;
+}
+
+.property-inquiry-card-header {
+  margin-bottom: 30px;
+}
+
+.property-inquiry-card-header h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.85rem, 4vw, 2.25rem);
+  line-height: 1.12;
+  color: #111827;
+}
+
+.property-inquiry-card-header p {
+  margin: 0;
+  font-size: 1.08rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.property-inquiry-card-header strong {
+  color: #2563eb;
+}
+
+.property-inquiry-separator {
+  color: #9ca3af;
+}
+
+.property-inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.property-inquiry-name-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.property-inquiry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.property-inquiry-field span {
+  margin-left: 4px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.property-inquiry-field input,
+.property-inquiry-field textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(243, 244, 246, 0.72);
+  color: #111827;
+  font-size: 0.98rem;
+}
+
+.property-inquiry-field input::placeholder,
+.property-inquiry-field textarea::placeholder {
+  color: #6b7280;
+}
+
+.property-inquiry-field input:focus,
+.property-inquiry-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.property-inquiry-field textarea {
+  resize: none;
+  min-height: 110px;
+}
+
+.property-inquiry-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.property-inquiry-primary-btn,
+.property-inquiry-whatsapp-btn {
+  width: 100%;
+  min-height: 56px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.24rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: 8px 18px;
+}
+
+.property-inquiry-primary-btn {
+  background: linear-gradient(to right, #2563eb, #3b82f6);
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.35);
+}
+
+.property-inquiry-primary-btn:hover {
+  filter: brightness(1.08);
+}
+
+.property-inquiry-whatsapp-btn {
+  background: #25d366;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(22, 163, 74, 0.3);
+}
+
+.property-inquiry-whatsapp-btn:hover {
+  background: #20ba5a;
+}
+
+.property-inquiry-whatsapp-btn.is-disabled,
+.property-inquiry-whatsapp-btn.is-disabled:hover {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.75;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .property-inquiry-shell {
+    padding: 0 12px 26px;
+  }
+
+  .property-inquiry-description {
+    padding-top: 30px;
+    padding-bottom: 22px;
+  }
+
+  .property-inquiry-card {
+    border-radius: 22px;
+    padding: 24px 18px;
+  }
+
+  .property-inquiry-name-grid {
+    grid-template-columns: 1fr;
+  }
+}
