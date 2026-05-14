@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getPropertyId } from '../utils/propertyIdentity';
 
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
@@ -79,14 +80,12 @@ const CITY_CENTER_HINTS = [
 ];
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
-const getPropertyId = (property) => property && (property._id || property.id);
 const escapeSvgText = (value) => String(value || '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
-
 const toAddressQuery = (property = {}) => {
   const address = property.address && typeof property.address === 'object' ? property.address : {};
   const street = safeText(address.street);

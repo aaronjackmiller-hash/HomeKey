@@ -204,6 +204,7 @@ const getAllProperties = async (req, res) => {
 
         // Mongoose will handle the connection queue automatically
         const properties = await Property.find(filter)
+            .populate('agent', 'name email phone whatsapp agency')
             .sort({ createdAt: -1 });
 
         res.json({
@@ -226,7 +227,7 @@ const getAllProperties = async (req, res) => {
 // @access  Public
 const getPropertyById = async (req, res) => {
     try {
-        const property = await Property.findById(req.params.id).populate('agent', 'name email phone agency');
+        const property = await Property.findById(req.params.id).populate('agent', 'name email phone whatsapp agency');
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
@@ -434,7 +435,7 @@ const createPropertyInquiry = async (req, res) => {
         const inquiry = {
             name,
             message,
-            email: normalizeEmail(pickFirstNonEmpty(req.body.email)),
+            email: normalizeOptionalEmail(req.body.email),
             phone: pickFirstNonEmpty(req.body.phone),
             preferredMethod: parsePreferredMethod(req.body.preferredMethod),
             createdAt: new Date(),
@@ -481,7 +482,7 @@ const registerShowingAttendee = async (req, res) => {
         }
         showing.attendees.push({
             name,
-            email: normalizeEmail(req.body.email),
+            email: normalizeOptionalEmail(req.body.email),
             phone: pickFirstNonEmpty(req.body.phone),
             message: pickFirstNonEmpty(req.body.message),
             createdAt: new Date(),
