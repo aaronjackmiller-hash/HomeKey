@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './RealEstateInquiryBlueprint.css';
+import { buildAgentInterestMessage } from '../utils/contactMessaging';
 
 const SidebarIcon = ({ children, active = false, label }) => (
   <button
@@ -20,7 +21,7 @@ const RealEstateInquiryBlueprint = () => {
     phone: '',
     customMessage: '',
   });
-  const inquiryMessagePrefix = 'Hi Ariel I was on HomeKey and I am interested in פינת אוכל. 4 חדרים דוגמה כתובת.';
+  const inquiryMessagePrefix = buildAgentInterestMessage('Ariel', 'דוגמה כתובת');
   const inquiryMessageValue = inquiry.customMessage
     ? `${inquiryMessagePrefix}\n\n${inquiry.customMessage}`
     : inquiryMessagePrefix;

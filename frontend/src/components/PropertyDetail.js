@@ -16,7 +16,7 @@ import {
     toggleSavedProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { pickBestContactName } from '../utils/contactMessaging';
+import { buildAgentInterestMessage, pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -153,11 +153,6 @@ const formatContactMethod = (method) => {
     if (normalized === 'whatsapp') return 'WhatsApp';
     if (normalized === 'phone') return 'Phone';
     return 'Email';
-};
-
-const getFirstName = (fullName = '') => {
-    const parts = safeText(fullName).split(/\s+/).filter(Boolean);
-    return parts[0] || '';
 };
 
 const getLocationLine = (address = {}) => {
@@ -515,9 +510,7 @@ const PropertyDetail = () => {
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
     const templatePriceValue = formatTemplatePrice(property.price);
-    const inquiryAddress = addressLine || detailTitle;
-    const inquiryAgentFirstName = getFirstName(listingContact.name) || 'there';
-    const inquiryMessagePrefix = `Hi ${inquiryAgentFirstName} I was on HomeKey and I am interested in פינת אוכל. 4 חדרים ${inquiryAddress}.`;
+    const inquiryMessagePrefix = buildAgentInterestMessage(listingContact.name, detailTitle);
     const inquiryMessageValue = inquiry.customMessage
         ? `${inquiryMessagePrefix}\n\n${inquiry.customMessage}`
         : inquiryMessagePrefix;

@@ -97,3 +97,9 @@ export const getContactFirstName = (name = '') => {
   return firstMeaningful || '';
 };
 
+export const buildAgentInterestMessage = (contactName = '', listingTitle = 'this listing') => {
+  const firstName = getContactFirstName(contactName) || 'there';
+  const normalizedListingTitle = safeText(listingTitle) || 'this listing';
+  return `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedListingTitle}.`;
+};
+

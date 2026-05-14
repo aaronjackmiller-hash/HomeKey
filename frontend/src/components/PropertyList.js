@@ -9,7 +9,7 @@ import {
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
+import { buildAgentInterestMessage, pickBestContactName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -75,9 +75,7 @@ const normalizePhoneForLinks = (value) => {
 const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
   const normalizedPhone = normalizePhoneForLinks(phone);
   if (!normalizedPhone) return '';
-  const firstName = getContactFirstName(contactName) || 'there';
-  const normalizedTitle = String(title || '').trim() || 'this listing';
-  const message = `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedTitle}.`;
+  const message = buildAgentInterestMessage(contactName, title);
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 };
 
