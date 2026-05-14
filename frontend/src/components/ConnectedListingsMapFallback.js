@@ -9,7 +9,7 @@ const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const FAVORITE_PRICE_PIN_STYLE = {
   pinBackground: '#FF0000',
   pinBorderColor: '#000000',
-  borderWidth: 1,
+  borderWidth: 0.9,
   pinTextColor: '#FFFFFF',
   fontWeight: 700,
 };
@@ -168,10 +168,8 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
     `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
     `V${bubbleBottomY - safeRadius}`,
     `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
-    `H${pointerRightX}`,
-    `L${centerX} ${tipY}`,
-    `L${pointerLeftX} ${bubbleBottomY}`,
-    `H${leftX + safeRadius}`,
+    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
+    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
     `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
     `V${topY + safeRadius}`,
     `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,

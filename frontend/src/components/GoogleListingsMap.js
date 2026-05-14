@@ -14,7 +14,7 @@ const DESKTOP_MARKER_HOVER_SCALE = 1.12;
 const FAVORITE_PRICE_PIN_STYLE = {
   pinColor: '#FF0000',
   pinStrokeColor: '#000000',
-  strokeWidth: 1,
+  strokeWidth: 0.9,
   textColor: '#FFFFFF',
   fontWeight: 700,
 };
@@ -219,10 +219,8 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
     `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
     `V${bubbleBottomY - safeRadius}`,
     `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
-    `H${pointerRightX}`,
-    `L${centerX} ${tipY}`,
-    `L${pointerLeftX} ${bubbleBottomY}`,
-    `H${leftX + safeRadius}`,
+    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
+    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
     `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
     `V${topY + safeRadius}`,
     `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
