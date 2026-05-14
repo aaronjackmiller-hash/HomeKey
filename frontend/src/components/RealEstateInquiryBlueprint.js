@@ -81,7 +81,6 @@ const RealEstateInquiryBlueprint = () => {
                 value={inquiry.firstName}
                 onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
                 placeholder="Enter first name"
-                required
               />
             </label>
             <label className="inquiry-field">
@@ -93,7 +92,6 @@ const RealEstateInquiryBlueprint = () => {
                 value={inquiry.lastName}
                 onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
                 placeholder="Enter last name"
-                required
               />
             </label>
           </div>
@@ -107,7 +105,6 @@ const RealEstateInquiryBlueprint = () => {
               value={inquiry.email}
               onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="your.email@example.com"
-              required={!inquiry.phone.trim()}
             />
           </label>
 
@@ -120,7 +117,6 @@ const RealEstateInquiryBlueprint = () => {
               value={inquiry.phone}
               onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
               placeholder="+972 50 123 4567"
-              required={!inquiry.email.trim()}
             />
           </label>
 

@@ -735,7 +735,6 @@ const PropertyDetail = () => {
                                             value={inquiry.firstName}
                                             onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
                                             placeholder="Enter first name"
-                                            required
                                         />
                                     </label>
                                     <label className="detail-inquiry-field">
@@ -746,7 +745,6 @@ const PropertyDetail = () => {
                                             value={inquiry.lastName}
                                             onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
                                             placeholder="Enter last name"
-                                            required
                                         />
                                     </label>
                                 </div>
@@ -758,7 +756,6 @@ const PropertyDetail = () => {
                                         value={inquiry.email}
                                         onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
                                         placeholder="your.email@example.com"
-                                        required={!safeText(inquiry.phone)}
                                     />
                                 </label>
                                 <label className="detail-inquiry-field">
@@ -769,7 +766,6 @@ const PropertyDetail = () => {
                                         value={inquiry.phone}
                                         onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
                                         placeholder="+972 50 123 4567"
-                                        required={!safeText(inquiry.email)}
                                     />
                                 </label>
                                 <label className="detail-inquiry-field">
