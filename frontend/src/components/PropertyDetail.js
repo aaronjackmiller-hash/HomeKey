@@ -16,7 +16,7 @@ import {
     toggleSavedProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
+import { pickBestContactName } from '../utils/contactMessaging';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -164,6 +164,35 @@ const getLocationLine = (address = {}) => {
     return parts.join(', ');
 };
 
+const splitNameForInquiry = (fullName = '') => {
+    const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { firstName: '', lastName: '' };
+    if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+    return {
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' '),
+    };
+};
+
+const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
+    if (!isAuthenticated || !authUser) {
+        return {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+        };
+    }
+
+    const { firstName, lastName } = splitNameForInquiry(authUser.name);
+    return {
+        firstName,
+        lastName,
+        email: safeText(authUser.email),
+        phone: safeText(authUser.phone || authUser.whatsapp),
+    };
+};
+
 const getListingContact = (property = {}) => {
     const externalContact = property.externalContact && typeof property.externalContact === 'object'
         ? property.externalContact
@@ -198,30 +227,6 @@ const getListingContact = (property = {}) => {
         preferredMethod,
         hasAny: Boolean(name || agency || phone || whatsapp || email),
     };
-};
-
-const normalizePhoneForLinks = (value) => {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    const cleaned = raw.replace(/[^\d+]/g, '');
-    if (!cleaned) return '';
-    if (cleaned.startsWith('+')) return cleaned.slice(1);
-    if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
-    return cleaned;
-};
-
-const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
-    const normalizedPhone = normalizePhoneForLinks(phone);
-    if (!normalizedPhone) return '';
-    const firstName = getContactFirstName(contactName) || 'there';
-    const normalizedTitle = String(title || '').trim() || 'this listing';
-    const message = `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedTitle}.`;
-    return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
-};
-
-const getDisplayWhatsApp = (contact = {}) => {
-    const raw = safeText(contact.whatsapp);
-    return raw;
 };
 
 const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
@@ -288,13 +293,7 @@ const PropertyDetail = () => {
             || ['agent', 'admin'].includes(user?.role)
         )
     );
-    const [inquiry, setInquiry] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        preferredMethod: 'email',
-        message: '',
-    });
+    const [inquiry, setInquiry] = useState(() => buildInquiryDefaultsFromUser(user, isAuthenticated));
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
@@ -342,6 +341,16 @@ const PropertyDetail = () => {
         fetchProperty();
     }, [id, location]);
 
+    useEffect(() => {
+        const defaults = buildInquiryDefaultsFromUser(user, isAuthenticated);
+        setInquiry((prev) => ({
+            firstName: prev.firstName || defaults.firstName,
+            lastName: prev.lastName || defaults.lastName,
+            email: prev.email || defaults.email,
+            phone: prev.phone || defaults.phone,
+        }));
+    }, [isAuthenticated, user]);
+
     const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this listing?')) return;
         try {
@@ -355,16 +364,22 @@ const PropertyDetail = () => {
     const handleInquirySubmit = async (e) => {
         e.preventDefault();
         setInquiryStatus('');
+        const fullName = `${inquiry.firstName} ${inquiry.lastName}`.trim();
+        if (!fullName) {
+            setInquiryStatus('Please provide your first and last name.');
+            return;
+        }
+        const inquiryPayload = {
+            name: fullName,
+            email: inquiry.email,
+            phone: inquiry.phone,
+            preferredMethod: 'email',
+            message: `I am interested in ${detailTitle}. Please send more details.`,
+        };
         try {
-            await createPropertyInquiry(id, inquiry);
-            setInquiryStatus('Inquiry sent to the listing owner.');
-            setInquiry({
-                name: '',
-                email: '',
-                phone: '',
-                preferredMethod: 'email',
-                message: '',
-            });
+            await createPropertyInquiry(id, inquiryPayload);
+            setInquiryStatus('Details request sent successfully.');
+            setInquiry(buildInquiryDefaultsFromUser(user, isAuthenticated));
             const result = await getProperty(id);
             setProperty(result.data);
         } catch (err) {
@@ -423,15 +438,6 @@ const PropertyDetail = () => {
     const isRental = property.type === 'rental';
     const isYad2ListingMedia = isYad2LikeListing(property);
     const listingContact = getListingContact(property);
-    const salutationContactName = pickBestContactName({
-        directName: property?.contact?.name,
-        agentName: property?.agent?.name,
-        externalName: property?.externalContact?.name,
-    });
-    const managerWhatsAppDisplay = getDisplayWhatsApp(listingContact);
-    const managerPhoneDisplay = safeText(listingContact.phone);
-    const managerWhatsAppHref = buildWhatsAppHref(managerWhatsAppDisplay, detailTitle, salutationContactName);
-    const managerPhoneHref = managerPhoneDisplay ? `tel:${managerPhoneDisplay}` : '';
     const amenities = buildAmenities(property);
     const propertyId = getPropertyId(property);
     const favoriteActive = isFavoriteProperty(propertyId);
@@ -480,7 +486,7 @@ const PropertyDetail = () => {
         }] : []),
     ];
 
-    const shouldShowContactSection = listingContact.hasAny || Boolean(managerWhatsAppHref || managerPhoneHref);
+    const shouldShowContactSection = true;
     const templateTypeLabel = property.type === 'rental' ? 'Rent' : 'Sale';
     const templateTitle = [coverTitleStreet, coverTitleNumber].filter(Boolean).join(' ').trim() || detailTitle;
     const templateLocation = (
@@ -681,100 +687,75 @@ const PropertyDetail = () => {
                 )}
 
                 {shouldShowContactSection && (
-                    <section className="detail-section-card map-container">
+                    <section className="detail-section-card map-container detail-inquiry-section">
                         <div id="contact-manager-form" />
-                        <h2>Contact Listing Manager</h2>
-                        <p>
-                            Preferred method:{' '}
-                            {formatContactMethod(listingContact.preferredMethod)}
-                        </p>
-                        <div className="agent-grid">
-                            {listingContact.name && <p>Manager: {listingContact.name}</p>}
-                            {listingContact.agency && <p>Agency: {listingContact.agency}</p>}
-                            {managerPhoneDisplay && <p>Phone: {managerPhoneDisplay}</p>}
-                            {managerWhatsAppDisplay && <p>WhatsApp: {managerWhatsAppDisplay}</p>}
-                            {listingContact.email && <p>Email: {listingContact.email}</p>}
+                        <div className="detail-inquiry-card">
+                            <h2>Interested? Get Details!</h2>
+                            <p className="detail-inquiry-contact-meta">
+                                {listingContact.name ? `Manager: ${listingContact.name}` : 'Property manager available'}
+                                {listingContact.name && listingContact.preferredMethod
+                                    ? ` • Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
+                                    : ''}
+                                {!listingContact.name && listingContact.preferredMethod
+                                    ? `Preferred method: ${formatContactMethod(listingContact.preferredMethod)}`
+                                    : ''}
+                            </p>
+                            <form onSubmit={handleInquirySubmit} className="detail-inquiry-form">
+                                <div className="detail-inquiry-name-grid">
+                                    <label className="detail-inquiry-field">
+                                        First Name
+                                        <input
+                                            className="detail-inquiry-input"
+                                            type="text"
+                                            value={inquiry.firstName}
+                                            onChange={(e) => setInquiry((prev) => ({ ...prev, firstName: e.target.value }))}
+                                            placeholder="Enter first name"
+                                            required
+                                        />
+                                    </label>
+                                    <label className="detail-inquiry-field">
+                                        Last Name
+                                        <input
+                                            className="detail-inquiry-input"
+                                            type="text"
+                                            value={inquiry.lastName}
+                                            onChange={(e) => setInquiry((prev) => ({ ...prev, lastName: e.target.value }))}
+                                            placeholder="Enter last name"
+                                            required
+                                        />
+                                    </label>
+                                </div>
+                                <label className="detail-inquiry-field">
+                                    Email
+                                    <input
+                                        className="detail-inquiry-input"
+                                        type="email"
+                                        value={inquiry.email}
+                                        onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
+                                        placeholder="your.email@example.com"
+                                    />
+                                </label>
+                                <label className="detail-inquiry-field">
+                                    Phone
+                                    <input
+                                        className="detail-inquiry-input"
+                                        type="tel"
+                                        value={inquiry.phone}
+                                        onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
+                                        placeholder="+972 50 123 4567"
+                                    />
+                                </label>
+                                <button type="submit" className="detail-inquiry-submit">Get Details!</button>
+                                {inquiryStatus && (
+                                    <p className={`detail-inquiry-status ${inquiryStatus.toLowerCase().includes('failed') ? 'is-error' : ''}`}>
+                                        {inquiryStatus}
+                                    </p>
+                                )}
+                            </form>
+                            <p className="detail-inquiry-branding">
+                                Ariel Israeloff - Israeloff Property Services
+                            </p>
                         </div>
-                        {managerWhatsAppHref && (
-                            <div className="manager-whatsapp-banner">
-                                <strong>Manager WhatsApp:</strong> {managerWhatsAppDisplay}
-                            </div>
-                        )}
-                        <div className="detail-contact-actions">
-                            {managerWhatsAppHref && (
-                                <a
-                                    href={managerWhatsAppHref}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="secondary-btn whatsapp-cta"
-                                >
-                                    Chat on WhatsApp
-                                </a>
-                            )}
-                            {managerPhoneHref && (
-                                <a href={managerPhoneHref} className="secondary-btn">
-                                    Call Manager
-                                </a>
-                            )}
-                            {listingContact.email && (
-                                <a href={`mailto:${listingContact.email}`} className="secondary-btn">
-                                    Send Message
-                                </a>
-                            )}
-                        </div>
-                        <form onSubmit={handleInquirySubmit}>
-                            <div className="input-field">
-                                <label>Your Name</label>
-                                <input
-                                    className="form-input"
-                                    type="text"
-                                    value={inquiry.name}
-                                    onChange={(e) => setInquiry((prev) => ({ ...prev, name: e.target.value }))}
-                                    required
-                                />
-                            </div>
-                            <div className="input-field">
-                                <label>Your Email</label>
-                                <input
-                                    className="form-input"
-                                    type="email"
-                                    value={inquiry.email}
-                                    onChange={(e) => setInquiry((prev) => ({ ...prev, email: e.target.value }))}
-                                />
-                            </div>
-                            <div className="input-field">
-                                <label>Your Phone</label>
-                                <input
-                                    className="form-input"
-                                    type="tel"
-                                    value={inquiry.phone}
-                                    onChange={(e) => setInquiry((prev) => ({ ...prev, phone: e.target.value }))}
-                                />
-                            </div>
-                            <div className="input-field">
-                                <label>Preferred Contact Method</label>
-                                <select
-                                    className="form-input"
-                                    value={inquiry.preferredMethod}
-                                    onChange={(e) => setInquiry((prev) => ({ ...prev, preferredMethod: e.target.value }))}
-                                >
-                                    <option value="email">Email</option>
-                                    <option value="whatsapp">WhatsApp</option>
-                                    <option value="phone">Phone</option>
-                                </select>
-                            </div>
-                            <div className="input-field">
-                                <label>Message</label>
-                                <textarea
-                                    className="form-input"
-                                    value={inquiry.message}
-                                    onChange={(e) => setInquiry((prev) => ({ ...prev, message: e.target.value }))}
-                                    required
-                                />
-                            </div>
-                            <button type="submit" className="primary-button get-details-btn">Send Inquiry</button>
-                            {inquiryStatus && <p>{inquiryStatus}</p>}
-                        </form>
                     </section>
                 )}
 

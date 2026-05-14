@@ -435,7 +435,7 @@ const createPropertyInquiry = async (req, res) => {
         const inquiry = {
             name,
             message,
-            email: normalizeEmail(pickFirstNonEmpty(req.body.email)),
+            email: normalizeOptionalEmail(req.body.email),
             phone: pickFirstNonEmpty(req.body.phone),
             preferredMethod: parsePreferredMethod(req.body.preferredMethod),
             createdAt: new Date(),
@@ -482,7 +482,7 @@ const registerShowingAttendee = async (req, res) => {
         }
         showing.attendees.push({
             name,
-            email: normalizeEmail(req.body.email),
+            email: normalizeOptionalEmail(req.body.email),
             phone: pickFirstNonEmpty(req.body.phone),
             message: pickFirstNonEmpty(req.body.message),
             createdAt: new Date(),
