@@ -1,6 +1,23 @@
 import React from 'react';
 import './RealEstateInquiryBlueprint.css';
 
+const agentConfig = {
+  name: 'מירי',
+  agency: 'Real Deal',
+  hasWhatsApp: false, // Set to true to show the Green Button and hide "Preferred: Email"
+  whatsappNumber: '972533229317',
+  // The shared message variable
+  inquiryMessage: 'באמת צפון תל אביב החדשה, אני מעוניין לקבל פרטים נוספים על הדירה הזו.',
+};
+
+const normalizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
+
+const buildWhatsAppLink = (phone, message) => {
+  const normalizedPhone = normalizeWhatsAppNumber(phone);
+  if (!normalizedPhone) return '';
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(String(message || ''))}`;
+};
+
 const SidebarIcon = ({ children, active = false, label }) => (
   <button
     type="button"
@@ -13,6 +30,10 @@ const SidebarIcon = ({ children, active = false, label }) => (
 );
 
 const RealEstateInquiryBlueprint = () => {
+  const whatsappLink = agentConfig.hasWhatsApp
+    ? buildWhatsAppLink(agentConfig.whatsappNumber, agentConfig.inquiryMessage)
+    : '';
+
   return (
     <div className="blueprint-shell">
       <div className="blueprint-map-layer" aria-hidden="true" />
@@ -57,6 +78,20 @@ const RealEstateInquiryBlueprint = () => {
 
       <section className="inquiry-card" aria-label="Inquiry form">
         <h1>Interested? Get Details!</h1>
+        <p className="inquiry-contact-meta">
+          {`Manager: ${agentConfig.name}`}
+          {!agentConfig.hasWhatsApp ? ' • Preferred: Email' : ''}
+        </p>
+        {agentConfig.hasWhatsApp && whatsappLink && (
+          <a
+            className="whatsapp-btn"
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            WhatsApp
+          </a>
+        )}
 
         <form className="inquiry-form">
           <div className="inquiry-name-grid">
@@ -106,7 +141,7 @@ const RealEstateInquiryBlueprint = () => {
         </form>
 
         <p className="inquiry-branding">
-          Ariel Israeloff - Israeloff Property Services
+          {`${agentConfig.name} - ${agentConfig.agency}`}
         </p>
       </section>
     </div>
