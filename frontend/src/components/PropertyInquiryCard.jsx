@@ -42,8 +42,14 @@ const PropertyInquiryCard = ({
   const whatsappNumber = sanitizeWhatsAppNumber(agent?.whatsappNumber);
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
-  const rootClassName = `property-inquiry-shell ${mode === 'embedded' ? 'property-inquiry-shell--embedded' : 'property-inquiry-shell--standalone'}`;
-  const cardClassName = `property-inquiry-card${mode === 'embedded' ? ' property-inquiry-card--embedded' : ' property-inquiry-card--standalone'}`;
+  const rootClassName = [
+    'property-inquiry-shell',
+    mode === 'embedded' ? 'property-inquiry-shell--embedded' : 'property-inquiry-shell--standalone',
+  ].join(' ');
+  const cardClassName = [
+    'property-inquiry-card',
+    mode === 'embedded' ? 'property-inquiry-card--embedded' : 'property-inquiry-card--standalone',
+  ].join(' ');
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
   const backgroundMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
 
