@@ -44,11 +44,7 @@ const PropertyInquiryCard = ({
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
-  const fallbackMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
-  const mapTilerApiKey = process.env.REACT_APP_MAPTILER_API_KEY;
-  const backgroundMapUrl = mapTilerApiKey
-    ? `https://api.maptiler.com/maps/toner-v2/static/34.7818,32.0853,13/1200x600.png?key=${mapTilerApiKey}`
-    : fallbackMapUrl;
+  const backgroundMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
 
   return (
     <section className={rootClassName}>
@@ -59,7 +55,7 @@ const PropertyInquiryCard = ({
           backgroundImage: `url("${backgroundMapUrl}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'grayscale(100%) opacity(0.4) brightness(1.1)',
+          filter: 'grayscale(100%) opacity(0.85) brightness(1)',
         }}
       />
       <div className="property-inquiry-map-overlay" aria-hidden="true" />
