@@ -1,116 +1,118 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Tel Aviv grayscale map background">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Tel Aviv grayscale map background zoomed out">
   <defs>
     <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#dedfe2" />
+      <stop offset="0%" stop-color="#dde0e3" />
       <stop offset="100%" stop-color="#d4d7db" />
     </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0.9" y2="1">
-      <stop offset="0%" stop-color="#b2b6bb" />
-      <stop offset="100%" stop-color="#a7acb2" />
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c1c4c8" />
+      <stop offset="100%" stop-color="#b4b8bd" />
     </linearGradient>
     <linearGradient id="fadeBottom" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="1" />
     </linearGradient>
-    <pattern id="cityBlocks" width="34" height="34" patternUnits="userSpaceOnUse">
-      <rect width="34" height="34" fill="none" />
-      <rect x="1" y="1" width="13" height="10" fill="#e6e8eb" />
-      <rect x="18" y="2" width="14" height="11" fill="#dde1e5" />
-      <rect x="2" y="15" width="10" height="7" fill="#e8eaed" />
-      <rect x="14" y="16" width="17" height="7" fill="#e0e3e7" />
-      <rect x="2" y="25" width="12" height="8" fill="#e8eaed" />
-      <rect x="16" y="25" width="16" height="8" fill="#dde1e5" />
-      <path d="M0 12.5 H34 M13.5 0 V34" stroke="#c6cbd1" stroke-width="1.1" />
-      <path d="M0 24.5 H34 M24.5 0 V34" stroke="#ced3d9" stroke-width="0.9" />
+    <pattern id="blockPattern" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="24" height="24" fill="#ebedef" />
+      <rect x="1" y="1" width="8" height="6" fill="#e0e3e7" />
+      <rect x="11" y="2" width="11" height="5" fill="#dce0e4" />
+      <rect x="2" y="9" width="7" height="5" fill="#e2e5e8" />
+      <rect x="11" y="9" width="11" height="6" fill="#dde1e5" />
+      <rect x="1" y="17" width="9" height="6" fill="#e4e7ea" />
+      <rect x="12" y="17" width="10" height="6" fill="#dfe3e7" />
+      <path d="M0 8.5 H24 M0 16.5 H24 M9.5 0 V24 M19.5 0 V24" stroke="#cfd4d9" stroke-width="0.8" />
     </pattern>
-    <pattern id="microRoads" width="62" height="62" patternUnits="userSpaceOnUse">
-      <path d="M0 10 L62 22 M0 30 L62 42 M10 0 L26 62 M34 0 L50 62" stroke="#c4c9cf" stroke-width="1.1" fill="none" />
-      <path d="M4 54 L54 4" stroke="#cbced4" stroke-width="0.9" fill="none" />
+    <pattern id="fineRoads" width="54" height="54" patternUnits="userSpaceOnUse">
+      <path d="M0 12 L54 24 M0 30 L54 42 M8 0 L20 54 M26 0 L38 54 M42 0 L52 54" stroke="#c2c7cd" stroke-width="0.9" fill="none" />
+      <path d="M4 52 L50 6" stroke="#c9ced3" stroke-width="0.75" fill="none" />
     </pattern>
     <filter id="paperNoise" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" stitchTiles="stitch" />
+      <feTurbulence type="fractalNoise" baseFrequency="0.58" numOctaves="2" stitchTiles="stitch" />
       <feColorMatrix type="saturate" values="0" />
       <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 0.06" />
+        <feFuncA type="table" tableValues="0 0.05" />
       </feComponentTransfer>
     </filter>
   </defs>
 
   <rect width="1600" height="1000" fill="url(#land)" />
+  <path d="M0 0 L248 0 C234 138 250 288 228 438 C200 636 196 836 240 1000 L0 1000 Z" fill="url(#sea)" />
+  <path d="M206 0 C176 172 156 322 144 490 C130 692 148 850 190 1000" fill="none" stroke="#878c93" stroke-width="7" opacity="0.62" />
 
-  <path d="M0 0 L272 0 C252 146 276 284 248 428 C218 618 214 828 262 1000 L0 1000 Z" fill="url(#sea)" />
-  <path d="M232 0 C194 170 172 314 156 482 C140 688 156 846 202 1000" fill="none" stroke="#767c83" stroke-width="8" opacity="0.72" />
+  <rect x="226" y="0" width="1374" height="1000" fill="url(#blockPattern)" />
+  <rect x="226" y="0" width="1374" height="1000" fill="url(#fineRoads)" opacity="0.75" />
 
-  <rect x="250" y="0" width="1350" height="1000" fill="url(#cityBlocks)" opacity="0.96" />
-  <rect x="250" y="0" width="1350" height="1000" fill="url(#microRoads)" opacity="0.78" />
-
-  <g fill="#8f949a" opacity="0.88">
-    <path d="M560 64 L738 60 L790 162 L724 236 L538 196 Z" />
-    <path d="M884 134 L1042 146 L1096 236 L1030 320 L874 300 L838 216 Z" />
-    <path d="M1160 136 L1300 148 L1348 224 L1288 292 L1148 278 L1116 212 Z" />
-    <path d="M292 334 L412 352 L460 426 L434 502 L302 488 L250 406 Z" />
-    <path d="M390 354 L520 374 L574 450 L548 532 L406 516 L350 430 Z" />
-    <path d="M950 500 L1110 512 L1166 602 L1100 680 L944 664 L910 584 Z" />
-    <path d="M1206 636 L1362 650 L1418 742 L1348 824 L1194 806 L1152 718 Z" />
+  <g fill="#8f949b" opacity="0.78">
+    <path d="M596 72 L770 76 L820 176 L744 238 L564 204 Z" />
+    <path d="M838 96 L1024 112 L1078 206 L996 276 L818 254 L786 174 Z" />
+    <path d="M1124 124 L1292 138 L1344 228 L1270 294 L1108 280 L1078 198 Z" />
+    <path d="M384 350 L510 370 L560 446 L526 530 L396 516 L340 432 Z" />
+    <path d="M944 520 L1096 538 L1142 624 L1076 692 L930 674 L892 596 Z" />
+    <path d="M1216 640 L1372 660 L1420 746 L1348 816 L1198 798 L1156 716 Z" />
   </g>
 
   <g stroke-linecap="round" fill="none">
-    <g stroke="#70757c" stroke-width="7" opacity="0.82">
-      <path d="M248 126 C464 166 698 210 930 250 C1170 294 1384 328 1582 358" />
-      <path d="M242 286 C470 326 676 362 910 406 C1152 454 1364 498 1572 538" />
-      <path d="M252 454 C468 500 676 548 898 590 C1118 636 1316 678 1548 730" />
-      <path d="M276 636 C488 680 692 726 902 768 C1110 812 1288 848 1502 900" />
-      <path d="M356 4 C338 216 326 428 298 1000" />
-      <path d="M546 0 C526 236 502 470 468 1000" />
-      <path d="M748 0 C726 238 700 482 654 1000" />
-      <path d="M960 0 C936 244 906 494 852 1000" />
-      <path d="M1168 0 C1142 246 1108 506 1044 1000" />
-      <path d="M1378 0 C1348 250 1312 514 1244 1000" />
+    <g stroke="#686d74" stroke-width="4.8" opacity="0.86">
+      <path d="M240 132 C472 166 700 206 930 242 C1164 278 1380 312 1586 344" />
+      <path d="M234 284 C464 324 686 364 910 404 C1146 444 1366 484 1574 524" />
+      <path d="M246 446 C478 492 694 534 910 578 C1128 624 1336 668 1548 714" />
+      <path d="M270 620 C500 666 708 708 914 752 C1120 794 1318 836 1508 880" />
+      <path d="M318 806 C540 846 734 882 926 920 C1118 958 1276 982 1418 1000" />
+      <path d="M346 0 C328 242 314 488 286 1000" />
+      <path d="M516 0 C498 242 474 494 438 1000" />
+      <path d="M694 0 C674 246 648 500 604 1000" />
+      <path d="M878 0 C854 254 824 510 772 1000" />
+      <path d="M1064 0 C1038 262 1004 520 944 1000" />
+      <path d="M1252 0 C1222 268 1184 530 1116 1000" />
+      <path d="M1440 0 C1408 274 1366 540 1292 1000" />
     </g>
 
-    <g stroke="#878c93" stroke-width="3.8" opacity="0.72">
-      <path d="M266 70 L1580 258" />
-      <path d="M258 176 L1568 364" />
-      <path d="M252 370 L1542 560" />
-      <path d="M262 560 L1512 750" />
-      <path d="M300 760 L1452 936" />
-      <path d="M318 0 L272 996" />
-      <path d="M438 0 L390 996" />
-      <path d="M626 0 L578 996" />
-      <path d="M814 0 L766 996" />
-      <path d="M1002 0 L954 996" />
-      <path d="M1192 0 L1144 996" />
-      <path d="M1380 0 L1332 996" />
+    <g stroke="#848a91" stroke-width="2.7" opacity="0.8">
+      <path d="M256 84 L1588 272" />
+      <path d="M248 170 L1578 358" />
+      <path d="M240 250 L1564 438" />
+      <path d="M236 362 L1548 550" />
+      <path d="M234 478 L1532 666" />
+      <path d="M240 596 L1512 782" />
+      <path d="M258 712 L1486 894" />
+      <path d="M280 818 L1444 996" />
+      <path d="M286 0 L244 1000" />
+      <path d="M404 0 L362 1000" />
+      <path d="M582 0 L542 1000" />
+      <path d="M760 0 L720 1000" />
+      <path d="M938 0 L898 1000" />
+      <path d="M1116 0 L1078 1000" />
+      <path d="M1296 0 L1258 1000" />
+      <path d="M1474 0 L1438 1000" />
     </g>
 
-    <g stroke="#c5cad0" stroke-width="1.9" opacity="0.82">
-      <path d="M288 108 L1592 296" />
-      <path d="M282 156 L1584 344" />
-      <path d="M276 238 L1570 426" />
-      <path d="M268 336 L1552 524" />
-      <path d="M262 440 L1534 628" />
-      <path d="M258 544 L1516 730" />
-      <path d="M264 650 L1496 834" />
-      <path d="M280 754 L1468 934" />
-      <path d="M300 844 L1394 996" />
-      <path d="M350 0 L304 996" />
-      <path d="M406 0 L360 996" />
-      <path d="M486 0 L440 996" />
-      <path d="M566 0 L520 996" />
-      <path d="M646 0 L600 996" />
-      <path d="M726 0 L680 996" />
-      <path d="M806 0 L760 996" />
-      <path d="M886 0 L840 996" />
-      <path d="M966 0 L920 996" />
-      <path d="M1046 0 L1000 996" />
-      <path d="M1126 0 L1080 996" />
-      <path d="M1206 0 L1160 996" />
-      <path d="M1286 0 L1240 996" />
-      <path d="M1368 0 L1322 996" />
-      <path d="M1452 0 L1406 996" />
+    <g stroke="#c5cbd1" stroke-width="1.4" opacity="0.82">
+      <path d="M270 118 L1592 306" />
+      <path d="M264 156 L1586 344" />
+      <path d="M258 206 L1578 394" />
+      <path d="M252 300 L1564 488" />
+      <path d="M246 416 L1548 604" />
+      <path d="M244 532 L1534 720" />
+      <path d="M248 648 L1510 834" />
+      <path d="M262 764 L1482 946" />
+      <path d="M300 0 L256 1000" />
+      <path d="M356 0 L314 1000" />
+      <path d="M440 0 L398 1000" />
+      <path d="M524 0 L482 1000" />
+      <path d="M608 0 L566 1000" />
+      <path d="M692 0 L650 1000" />
+      <path d="M776 0 L734 1000" />
+      <path d="M860 0 L818 1000" />
+      <path d="M944 0 L902 1000" />
+      <path d="M1028 0 L986 1000" />
+      <path d="M1112 0 L1070 1000" />
+      <path d="M1196 0 L1154 1000" />
+      <path d="M1280 0 L1238 1000" />
+      <path d="M1364 0 L1322 1000" />
+      <path d="M1448 0 L1406 1000" />
     </g>
   </g>
 
-  <rect width="1600" height="1000" fill="#ffffff" filter="url(#paperNoise)" opacity="0.18" />
-  <rect x="0" y="640" width="1600" height="360" fill="url(#fadeBottom)" />
+  <rect width="1600" height="1000" fill="#ffffff" filter="url(#paperNoise)" opacity="0.17" />
+  <rect x="0" y="620" width="1600" height="380" fill="url(#fadeBottom)" />
 </svg>
