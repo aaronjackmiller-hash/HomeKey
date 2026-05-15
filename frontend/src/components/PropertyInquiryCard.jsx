@@ -73,6 +73,7 @@ const PropertyInquiryCard = ({
             <span>Manger: {managerLine}</span>
             {!hasWhatsApp && (
               <>
+                {' '}
                 <strong>Preferred method: Email</strong>
               </>
             )}
