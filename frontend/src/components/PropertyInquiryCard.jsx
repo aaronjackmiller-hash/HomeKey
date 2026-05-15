@@ -42,7 +42,8 @@ const PropertyInquiryCard = ({
   const whatsappNumber = sanitizeWhatsAppNumber(agent?.whatsappNumber);
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
-  const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
+  const rootClassName = `property-inquiry-shell ${mode === 'embedded' ? 'property-inquiry-shell--embedded' : 'property-inquiry-shell--standalone'}`;
+  const cardClassName = `property-inquiry-card${mode === 'embedded' ? ' property-inquiry-card--embedded' : ' property-inquiry-card--standalone'}`;
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
   const backgroundMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
 
@@ -58,12 +59,14 @@ const PropertyInquiryCard = ({
       </div>
       <div className="property-inquiry-map-overlay" aria-hidden="true" />
 
-      <div className="property-inquiry-description" dir="rtl">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
+      {mode === 'embedded' && (
+        <div className="property-inquiry-description" dir="rtl">
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+        </div>
+      )}
 
-      <div className="property-inquiry-card">
+      <div className={cardClassName}>
         <div className="property-inquiry-card-header">
           <h2>Interested? Get Details!</h2>
           <p>
