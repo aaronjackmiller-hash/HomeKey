@@ -48,16 +48,14 @@ const PropertyInquiryCard = ({
 
   return (
     <section className={rootClassName}>
-      <div
-        className="property-inquiry-map-layer"
-        aria-hidden="true"
-        style={{
-          backgroundImage: `url("${backgroundMapUrl}")`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'grayscale(100%) opacity(0.85) brightness(1)',
-        }}
-      />
+      <div className="property-inquiry-map-layer" aria-hidden="true">
+        <img
+          className="property-inquiry-map-image"
+          src={backgroundMapUrl}
+          alt=""
+          aria-hidden="true"
+        />
+      </div>
       <div className="property-inquiry-map-overlay" aria-hidden="true" />
 
       <div className="property-inquiry-description" dir="rtl">
