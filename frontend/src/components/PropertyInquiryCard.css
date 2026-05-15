@@ -34,6 +34,8 @@
   object-fit: cover;
   object-position: center top;
   filter: grayscale(100%) opacity(1) brightness(0.92) contrast(1.18);
+  transform: scale(1.18);
+  transform-origin: center top;
 }
 
 .property-inquiry-map-overlay {
