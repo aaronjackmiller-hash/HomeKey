@@ -44,6 +44,7 @@ const PropertyInquiryCard = ({
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
+  const telAvivMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
 
   return (
     <section className={rootClassName}>
@@ -51,7 +52,7 @@ const PropertyInquiryCard = ({
         className="property-inquiry-map-layer"
         aria-hidden="true"
         style={{
-          backgroundImage: "url('/tel-aviv-map.svg')",
+          backgroundImage: `url("${telAvivMapUrl}")`,
         }}
       />
 
