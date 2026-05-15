@@ -33,7 +33,7 @@
   max-width: none;
   object-fit: contain;
   object-position: top center;
-  filter: grayscale(100%) opacity(0.85) brightness(1);
+  filter: grayscale(100%) opacity(1) brightness(0.92) contrast(1.18);
 }
 
 .property-inquiry-map-overlay {
