@@ -43,6 +43,7 @@ const PropertyInquiryCard = ({
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
+  const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
   const backgroundMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg`;
 
@@ -58,10 +59,12 @@ const PropertyInquiryCard = ({
       </div>
       <div className="property-inquiry-map-overlay" aria-hidden="true" />
 
-      <div className="property-inquiry-description" dir="rtl">
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
+      {shouldShowDescription && (
+        <div className="property-inquiry-description" dir="rtl">
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+        </div>
+      )}
 
       <div className="property-inquiry-card">
         <div className="property-inquiry-card-header">
@@ -70,7 +73,7 @@ const PropertyInquiryCard = ({
             <span>Manger: {managerLine}</span>
             {!hasWhatsApp && (
               <>
-                <span className="property-inquiry-separator">•</span>
+                {' '}
                 <strong>Preferred method: Email</strong>
               </>
             )}
@@ -135,7 +138,7 @@ const PropertyInquiryCard = ({
           </label>
 
           <label className="property-inquiry-field" htmlFor="inquiry-message">
-            <span>Message to Agent</span>
+            <span>Message to agent</span>
             <textarea
               id="inquiry-message"
               rows="4"
