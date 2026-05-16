@@ -3,6 +3,7 @@ import { Link, useHistory, useLocation } from 'react-router-dom';
 import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
 import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
+import { useAuth } from '../context/AuthContext';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
@@ -66,6 +67,18 @@ const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
   if (roomOption) summaryParts.push(`${roomOption.label}BR`);
   if (bathOption) summaryParts.push(`${bathOption.label}BA`);
   return summaryParts.join(' / ');
+};
+
+const getUserFirstName = (user = null) => {
+  if (!user || typeof user !== 'object') return '';
+  const fullName = String(user.name || '').trim();
+  if (fullName) return fullName.split(/\s+/)[0];
+  const emailPrefix = String(user.email || '').split('@')[0].trim();
+  if (!emailPrefix) return '';
+  return emailPrefix
+    .replace(/[._-]+/g, ' ')
+    .trim()
+    .split(/\s+/)[0];
 };
 
 const parseSearchFromLocation = (search = '') => {
@@ -145,6 +158,7 @@ const buildSearchQuery = ({
 const Navbar = () => {
   const history = useHistory();
   const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
   const parsedFromLocation = useMemo(
     () => parseSearchFromLocation(location.search),
     [location.search]
@@ -394,6 +408,8 @@ const Navbar = () => {
   const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel(rooms, baths);
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const likedCount = (interestSummary.favoriteIds || []).length;
+  const userFirstName = getUserFirstName(user);
+  const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
 
   return (
     <nav className="premium-header" aria-label="Primary navigation">
@@ -640,7 +656,14 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
-          <Link to="/login" className="premium-header__login">Login</Link>
+          {shouldShowGreeting ? (
+            <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
+              <span className="premium-header__greeting-label">Hello</span>
+              <span className="premium-header__greeting-name">{userFirstName}</span>
+            </div>
+          ) : (
+            <Link to="/login" className="premium-header__login">Login</Link>
+          )}
         </div>
       </div>
     </nav>
