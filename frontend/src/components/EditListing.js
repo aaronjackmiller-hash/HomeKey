@@ -35,6 +35,7 @@ const EditListing = () => {
             maintenanceFees: '',
             propertyTax: '',
         },
+        virtualTourUrl: '',
         dates: {
             availableFrom: '',
         },
@@ -92,6 +93,7 @@ const EditListing = () => {
                         maintenanceFees: p.financialDetails?.maintenanceFees != null ? String(p.financialDetails.maintenanceFees) : '',
                         propertyTax: p.financialDetails?.propertyTax != null ? String(p.financialDetails.propertyTax) : '',
                     },
+                    virtualTourUrl: p.virtualTourUrl || '',
                     dates: {
                         availableFrom: p.dates?.availableFrom
                             ? new Date(p.dates.availableFrom).toISOString().split('T')[0]
@@ -215,6 +217,7 @@ const EditListing = () => {
                     .filter(([, v]) => v !== '')
                     .map(([k, v]) => [k, Number(v)])
             ),
+            virtualTourUrl: String(formData.virtualTourUrl || '').trim(),
             dates: {
                 ...(formData.dates.availableFrom && { availableFrom: formData.dates.availableFrom }),
             },
@@ -260,6 +263,16 @@ const EditListing = () => {
                     <div className="input-field">
                         <label>Description</label>
                         <textarea name="description" value={formData.description} onChange={handleChange} />
+                    </div>
+                    <div className="input-field">
+                        <label>3D Virtual Tour URL</label>
+                        <input
+                            type="url"
+                            name="virtualTourUrl"
+                            value={formData.virtualTourUrl}
+                            onChange={handleChange}
+                            placeholder="https://my.matterport.com/show/?m=..."
+                        />
                     </div>
                     <div className="input-field">
                         <label>Type *</label>

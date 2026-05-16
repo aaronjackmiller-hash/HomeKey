@@ -71,6 +71,16 @@ const AddListing = () => {
                         <textarea name="description" value={formData.description} onChange={handleChange} />
                     </div>
                     <div className="input-field">
+                        <label>3D Virtual Tour URL</label>
+                        <input
+                            type="url"
+                            name="virtualTourUrl"
+                            value={formData.virtualTourUrl}
+                            onChange={handleChange}
+                            placeholder="https://my.matterport.com/show/?m=..."
+                        />
+                    </div>
+                    <div className="input-field">
                         <label>Type *</label>
                         <select name="type" value={formData.type} onChange={handleChange} required>
                             <option value="sale">For Sale</option>

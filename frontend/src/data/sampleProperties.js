@@ -8,6 +8,7 @@ const SAMPLE_PROPERTIES = [
     bedrooms: 3,
     bathrooms: 2,
     size: 110,
+    virtualTourUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
     images: ['https://picsum.photos/seed/homekey1/800/600'],
   },
   {

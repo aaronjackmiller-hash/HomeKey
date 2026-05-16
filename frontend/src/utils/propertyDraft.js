@@ -32,6 +32,7 @@ export const createInitialPropertyDraft = () => ({
     maintenanceFees: '',
     propertyTax: '',
   },
+  virtualTourUrl: '',
   dates: {
     availableFrom: '',
   },
@@ -77,6 +78,7 @@ export const formatPropertyForEditForm = (property) => ({
     maintenanceFees: property.financialDetails?.maintenanceFees != null ? String(property.financialDetails.maintenanceFees) : '',
     propertyTax: property.financialDetails?.propertyTax != null ? String(property.financialDetails.propertyTax) : '',
   },
+  virtualTourUrl: property.virtualTourUrl || '',
   dates: {
     availableFrom: property.dates?.availableFrom
       ? new Date(property.dates.availableFrom).toISOString().split('T')[0]
@@ -136,6 +138,7 @@ export const buildPropertyPayload = (formData) => {
         .filter(([, v]) => v !== '')
         .map(([k, v]) => [k, Number(v)]),
     ),
+    virtualTourUrl: String(formData.virtualTourUrl || '').trim(),
     dates: {
       ...(formData.dates.availableFrom && { availableFrom: formData.dates.availableFrom }),
     },
