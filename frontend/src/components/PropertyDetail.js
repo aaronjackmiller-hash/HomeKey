@@ -272,6 +272,43 @@ const getCachedLiveListingById = (id) => {
     }
 };
 
+const normalizeVirtualTourUrl = (value) => {
+    const raw = safeText(value);
+    if (!raw) return '';
+    try {
+        const parsed = new URL(raw);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+        return parsed.toString();
+    } catch (_err) {
+        return '';
+    }
+};
+
+const getVirtualTourEmbedUrl = (tourUrl) => {
+    if (!tourUrl) return '';
+    try {
+        const parsed = new URL(tourUrl);
+        const host = parsed.hostname.toLowerCase();
+
+        if (host.includes('youtu.be')) {
+            const videoId = parsed.pathname.replace('/', '');
+            return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        }
+        if (host.includes('youtube.com')) {
+            if (parsed.pathname.startsWith('/embed/')) return parsed.toString();
+            const videoId = parsed.searchParams.get('v');
+            return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+        }
+        if (host.includes('matterport.com')) {
+            const modelId = parsed.searchParams.get('m');
+            return modelId ? `https://my.matterport.com/show/?m=${modelId}&play=1&brand=0` : '';
+        }
+        return '';
+    } catch (_err) {
+        return '';
+    }
+};
+
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
@@ -441,6 +478,8 @@ const PropertyDetail = () => {
     const listingContact = getListingContact(property);
     const amenities = buildAmenities(property);
     const propertyId = getPropertyId(property);
+    const virtualTourUrl = normalizeVirtualTourUrl(property.virtualTourUrl);
+    const virtualTourEmbedUrl = getVirtualTourEmbedUrl(virtualTourUrl);
     const favoriteActive = isFavoriteProperty(propertyId);
     const savedActive = isSavedProperty(propertyId);
 
@@ -663,6 +702,33 @@ const PropertyDetail = () => {
                     <section className="detail-section-card">
                         <h2>About this property</h2>
                         <p className="detail-description">{property.description}</p>
+                    </section>
+                )}
+
+                {virtualTourUrl && (
+                    <section className="detail-section-card detail-virtual-tour-card">
+                        <div className="detail-virtual-tour-header">
+                            <h2>3D Virtual Tour</h2>
+                            <a href={virtualTourUrl} target="_blank" rel="noopener noreferrer">
+                                Open full tour
+                            </a>
+                        </div>
+                        {virtualTourEmbedUrl ? (
+                            <div className="detail-virtual-tour-frame-wrap">
+                                <iframe
+                                    src={virtualTourEmbedUrl}
+                                    title={`3D virtual tour for ${detailTitle}`}
+                                    className="detail-virtual-tour-frame"
+                                    loading="lazy"
+                                    allow="autoplay; fullscreen; xr-spatial-tracking"
+                                    allowFullScreen
+                                />
+                            </div>
+                        ) : (
+                            <p className="detail-virtual-tour-note">
+                                This tour provider does not support inline embedding. Use the link above.
+                            </p>
+                        )}
                     </section>
                 )}
 

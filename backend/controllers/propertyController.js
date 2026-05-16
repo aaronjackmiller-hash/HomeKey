@@ -19,7 +19,7 @@ const { getRequestUserRole } = require('../utils/authorization');
 const PROPERTY_UPDATE_FIELDS = [
     'title', 'description', 'type', 'price', 'address', 'bedrooms', 'bathrooms',
     'size', 'floorNumber', 'buildingDetails', 'financialDetails', 'dates',
-    'images', 'agent', 'status', 'contact', 'lifecycle', 'showings',
+    'images', 'virtualTourUrl', 'agent', 'status', 'contact', 'lifecycle', 'showings',
 ];
 
 const parsePreferredMethod = (value) => {
@@ -38,6 +38,18 @@ const pickFirstNonEmpty = (...values) => {
 const normalizeOptionalEmail = (...values) => {
     const email = pickFirstNonEmpty(...values);
     return email ? email.toLowerCase() : '';
+};
+
+const normalizeVirtualTourUrl = (value) => {
+    const trimmed = pickFirstNonEmpty(value);
+    if (!trimmed) return '';
+    try {
+        const parsed = new URL(trimmed);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+        return parsed.toString();
+    } catch (_err) {
+        return '';
+    }
 };
 
 const sanitizeShowings = (showings = []) => {
@@ -253,6 +265,7 @@ const createProperty = async (req, res) => {
 
         const payload = {
             ...req.body,
+            virtualTourUrl: normalizeVirtualTourUrl(req.body.virtualTourUrl),
             sourceType: 'manual',
             owner: owner._id,
             contact: normalizeManualContact({ bodyContact: req.body.contact || {}, user: owner }),
@@ -284,6 +297,9 @@ const createProperty = async (req, res) => {
             duplicate.financialDetails = payload.financialDetails;
             duplicate.dates = payload.dates;
             duplicate.status = payload.status || duplicate.status;
+            if (payload.virtualTourUrl) {
+                duplicate.virtualTourUrl = payload.virtualTourUrl;
+            }
             duplicate.contact = payload.contact;
             duplicate.owner = duplicate.owner || payload.owner;
             duplicate.lifecycle = {
@@ -341,6 +357,9 @@ const updateProperty = async (req, res) => {
                 updateData[field] = req.body[field];
             }
         });
+        if (Object.prototype.hasOwnProperty.call(updateData, 'virtualTourUrl')) {
+            updateData.virtualTourUrl = normalizeVirtualTourUrl(updateData.virtualTourUrl);
+        }
 
         const property = await Property.findById(req.params.id);
 

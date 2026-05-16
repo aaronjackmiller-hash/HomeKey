@@ -81,6 +81,18 @@ const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 };
 
+const normalizeVirtualTourUrl = (value) => {
+  const raw = safeText(value);
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    return parsed.toString();
+  } catch (_err) {
+    return '';
+  }
+};
+
 const formatTimestamp = (isoValue) => {
   if (!isoValue) return null;
   const parsed = new Date(isoValue);
@@ -983,6 +995,8 @@ const PropertyList = () => {
           const cardWhatsAppHref = agentHasWhatsApp
             ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardAgentDisplayName)
             : '';
+          const virtualTourHref = normalizeVirtualTourUrl(property.virtualTourUrl);
+          const hasVirtualTour = Boolean(virtualTourHref);
           const whatsappButtonLabel = 'WhatsApp';
           const openPropertyDetail = () => {
             if (!canOpenDetail) return;
@@ -1062,6 +1076,19 @@ const PropertyList = () => {
                   </span>
                 </div>
                 <div className="property-card-actions">
+                  {hasVirtualTour && (
+                    <button
+                      type="button"
+                      className="property-card-action-btn property-card-action-btn--outline"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (typeof window === 'undefined') return;
+                        window.open(virtualTourHref, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      3D Tour
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="property-card-action-btn property-card-action-btn--outline"

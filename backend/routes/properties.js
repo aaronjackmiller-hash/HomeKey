@@ -41,6 +41,10 @@ const validatePropertyInput = [
     body('financialDetails.cityTaxes')
         .optional()
         .isFloat({ min: 0 }).withMessage('City taxes must be >= 0'),
+    body('virtualTourUrl')
+        .optional({ checkFalsy: true })
+        .isURL({ protocols: ['http', 'https'], require_protocol: true })
+        .withMessage('Virtual tour URL must be a valid http(s) URL'),
     body('agent').optional().isMongoId().withMessage('Agent ID must be a valid ObjectId'),
 ];
 

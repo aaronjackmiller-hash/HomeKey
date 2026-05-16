@@ -153,6 +153,10 @@ const PropertySchema = new mongoose.Schema(
             },
         ],
         images: [{ type: String }],
+        virtualTourUrl: {
+            type: String,
+            trim: true,
+        },
         externalSource: {
             type: String,
             trim: true,
