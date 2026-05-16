@@ -1,19 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Tel Aviv grayscale map background">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-label="Tel Aviv grayscale map background zoomed out">
   <defs>
     <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#dddfe2" />
+      <stop offset="0%" stop-color="#dde0e3" />
       <stop offset="100%" stop-color="#d4d7db" />
     </linearGradient>
-    <linearGradient id="sea" x1="0" y1="0" x2="0.8" y2="1">
-      <stop offset="0%" stop-color="#8f949b" />
-      <stop offset="100%" stop-color="#80858d" />
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c2c5c9" />
+      <stop offset="100%" stop-color="#b5b9be" />
     </linearGradient>
     <linearGradient id="fadeBottom" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="1" />
     </linearGradient>
-    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.62" numOctaves="2" stitchTiles="stitch" />
+
+    <pattern id="denseBlocks" width="18" height="18" patternUnits="userSpaceOnUse">
+      <rect width="18" height="18" fill="#eaecef" />
+      <rect x="1" y="1" width="7" height="5" fill="#e2e6ea" />
+      <rect x="9" y="1" width="8" height="5" fill="#dfe4e8" />
+      <rect x="1" y="7" width="6" height="5" fill="#e3e7eb" />
+      <rect x="8" y="7" width="9" height="5" fill="#e0e4e8" />
+      <rect x="1" y="13" width="7" height="4" fill="#e4e8ec" />
+      <rect x="9" y="13" width="8" height="4" fill="#e1e5e9" />
+      <path d="M0 6.5 H18 M0 12.5 H18 M8.5 0 V18" stroke="#d7dbe0" stroke-width="0.6" />
+    </pattern>
+
+    <clipPath id="n1"><path d="M252 52 L572 86 L620 272 L426 358 L250 286 Z" /></clipPath>
+    <clipPath id="n2"><path d="M560 70 L940 106 L980 300 L648 374 L522 242 Z" /></clipPath>
+    <clipPath id="n3"><path d="M930 92 L1326 134 L1396 312 L1072 392 L914 274 Z" /></clipPath>
+    <clipPath id="n4"><path d="M236 288 L568 360 L620 574 L378 668 L226 510 Z" /></clipPath>
+    <clipPath id="n5"><path d="M556 336 L992 394 L1032 634 L676 734 L520 560 Z" /></clipPath>
+    <clipPath id="n6"><path d="M960 370 L1384 426 L1452 666 L1118 762 L940 590 Z" /></clipPath>
+    <clipPath id="n7"><path d="M246 554 L650 628 L700 836 L382 936 L222 756 Z" /></clipPath>
+    <clipPath id="n8"><path d="M646 596 L1128 666 L1180 884 L780 980 L608 804 Z" /></clipPath>
+    <clipPath id="n9"><path d="M1090 638 L1458 692 L1516 906 L1222 988 L1060 832 Z" /></clipPath>
+
+    <filter id="paperNoise" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.58" numOctaves="2" stitchTiles="stitch" />
       <feColorMatrix type="saturate" values="0" />
       <feComponentTransfer>
         <feFuncA type="table" tableValues="0 0.05" />
@@ -22,75 +44,93 @@
   </defs>
 
   <rect width="1600" height="1000" fill="url(#land)" />
+  <path d="M0 0 L238 0 C230 120 248 280 224 432 C196 622 192 834 236 1000 L0 1000 Z" fill="url(#sea)" />
+  <path d="M206 0 C174 170 152 320 140 490 C126 696 146 854 188 1000" fill="none" stroke="#868b92" stroke-width="7" opacity="0.64" />
 
-  <path d="M0 0 L310 0 C286 140 292 274 270 430 C238 646 240 850 294 1000 L0 1000 Z" fill="url(#sea)" />
-  <path d="M286 0 C248 178 224 328 212 492 C194 704 206 860 252 1000" fill="none" stroke="#6f747b" stroke-width="8" opacity="0.7" />
+  <g fill="url(#denseBlocks)" opacity="0.96">
+    <g clip-path="url(#n1)" transform="rotate(-14 420 210)"><rect x="210" y="-20" width="470" height="480" /></g>
+    <g clip-path="url(#n2)" transform="rotate(11 760 230)"><rect x="470" y="-40" width="620" height="540" /></g>
+    <g clip-path="url(#n3)" transform="rotate(-8 1160 250)"><rect x="860" y="-30" width="620" height="560" /></g>
+    <g clip-path="url(#n4)" transform="rotate(16 430 500)"><rect x="160" y="220" width="560" height="560" /></g>
+    <g clip-path="url(#n5)" transform="rotate(-9 780 540)"><rect x="480" y="250" width="650" height="620" /></g>
+    <g clip-path="url(#n6)" transform="rotate(12 1190 560)"><rect x="870" y="280" width="650" height="620" /></g>
+    <g clip-path="url(#n7)" transform="rotate(-17 450 760)"><rect x="170" y="500" width="620" height="620" /></g>
+    <g clip-path="url(#n8)" transform="rotate(10 900 810)"><rect x="560" y="520" width="720" height="600" /></g>
+    <g clip-path="url(#n9)" transform="rotate(-9 1280 836)"><rect x="990" y="560" width="610" height="520" /></g>
+  </g>
 
-  <g fill="#b5b8bc" opacity="0.78">
-    <path d="M640 68 L780 66 L818 154 L742 222 L600 180 Z" />
-    <path d="M920 268 L1040 294 L1092 364 L1008 438 L882 410 L860 336 Z" />
-    <path d="M1145 208 L1238 222 L1286 286 L1240 344 L1146 326 L1112 272 Z" />
-    <path d="M700 552 L844 548 L892 620 L850 700 L710 708 L664 636 Z" />
-    <path d="M1048 522 L1172 536 L1208 610 L1160 676 L1044 664 L1014 602 Z" />
-    <path d="M1240 604 L1370 612 L1420 694 L1372 772 L1248 760 L1200 684 Z" />
+  <g fill="#9398a0" opacity="0.6">
+    <path d="M556 76 L726 84 L770 172 L690 238 L522 204 Z" />
+    <path d="M912 96 L1030 106 L1070 184 L996 248 L876 236 L844 160 Z" />
+    <path d="M1170 126 L1300 142 L1338 216 L1282 276 L1154 262 L1118 190 Z" />
+    <path d="M352 356 L470 376 L512 448 L480 522 L358 510 L312 436 Z" />
+    <path d="M988 498 L1120 512 L1164 594 L1098 666 L964 648 L930 576 Z" />
+    <path d="M1242 638 L1376 654 L1420 738 L1356 810 L1226 792 L1188 716 Z" />
   </g>
 
   <g stroke-linecap="round" fill="none">
-    <g stroke="#555a61" stroke-width="10" opacity="0.86">
-      <path d="M340 148 L1534 342" />
-      <path d="M328 316 L1494 510" />
-      <path d="M340 520 L1458 710" />
-      <path d="M372 760 L1414 936" />
-      <path d="M560 24 L470 992" />
-      <path d="M742 18 L654 996" />
-      <path d="M914 20 L834 996" />
-      <path d="M1098 26 L1016 996" />
-      <path d="M1280 46 L1198 996" />
+    <g stroke="#7f858d" stroke-width="3.7" opacity="0.58">
+      <path d="M236 126 C446 170 668 208 916 248 C1158 286 1386 318 1584 346" />
+      <path d="M228 264 C454 308 674 352 900 392 C1140 434 1366 476 1570 510" />
+      <path d="M238 414 C470 460 686 506 906 548 C1132 592 1336 634 1548 676" />
+      <path d="M258 566 C484 614 698 656 912 700 C1126 742 1324 786 1512 826" />
+      <path d="M282 726 C512 768 712 810 922 848 C1118 884 1282 920 1458 952" />
+      <path d="M330 0 C318 236 300 476 270 1000" />
+      <path d="M506 0 C492 236 468 484 430 1000" />
+      <path d="M688 0 C670 240 644 496 594 1000" />
+      <path d="M874 0 C850 244 816 510 758 1000" />
+      <path d="M1064 0 C1034 252 996 522 928 1000" />
+      <path d="M1254 0 C1222 260 1180 532 1102 1000" />
+      <path d="M1444 0 C1410 272 1362 544 1278 1000" />
     </g>
 
-    <g stroke="#686d74" stroke-width="5" opacity="0.82">
-      <path d="M356 76 L1550 262" />
-      <path d="M348 196 L1520 382" />
-      <path d="M340 420 L1484 602" />
-      <path d="M360 638 L1442 812" />
-      <path d="M390 840 L1384 996" />
-      <path d="M416 28 L334 996" />
-      <path d="M496 26 L422 996" />
-      <path d="M648 20 L568 996" />
-      <path d="M822 20 L742 996" />
-      <path d="M998 24 L914 996" />
-      <path d="M1170 30 L1088 996" />
-      <path d="M1342 54 L1262 996" />
+    <g stroke="#9aa0a8" stroke-width="1.6" opacity="0.42">
+      <path d="M252 90 L1588 278" />
+      <path d="M248 156 L1580 344" />
+      <path d="M242 224 L1572 412" />
+      <path d="M238 330 L1558 518" />
+      <path d="M236 442 L1542 628" />
+      <path d="M236 556 L1526 740" />
+      <path d="M244 672 L1502 854" />
+      <path d="M258 784 L1478 960" />
+      <path d="M286 0 L242 1000" />
+      <path d="M402 0 L360 1000" />
+      <path d="M576 0 L536 1000" />
+      <path d="M752 0 L712 1000" />
+      <path d="M928 0 L888 1000" />
+      <path d="M1104 0 L1064 1000" />
+      <path d="M1282 0 L1242 1000" />
+      <path d="M1458 0 L1420 1000" />
     </g>
 
-    <g stroke="#8e9399" stroke-width="2.6" opacity="0.9">
-      <path d="M392 62 L1558 248" />
-      <path d="M384 112 L1548 298" />
-      <path d="M376 164 L1538 350" />
-      <path d="M364 252 L1516 438" />
-      <path d="M358 356 L1496 540" />
-      <path d="M352 458 L1478 640" />
-      <path d="M364 566 L1460 742" />
-      <path d="M382 674 L1428 844" />
-      <path d="M412 782 L1388 942" />
-      <path d="M438 876 L1302 996" />
-      <path d="M372 36 L292 996" />
-      <path d="M456 30 L380 996" />
-      <path d="M530 26 L454 996" />
-      <path d="M612 22 L536 996" />
-      <path d="M688 20 L612 996" />
-      <path d="M772 20 L698 996" />
-      <path d="M856 20 L780 996" />
-      <path d="M940 22 L866 996" />
-      <path d="M1022 26 L948 996" />
-      <path d="M1104 30 L1032 996" />
-      <path d="M1184 36 L1116 996" />
-      <path d="M1264 44 L1200 996" />
-      <path d="M1346 56 L1286 996" />
-      <path d="M1428 76 L1370 996" />
+    <g stroke="#cfd4da" stroke-width="0.9" opacity="0.46">
+      <path d="M266 112 L1592 300" />
+      <path d="M262 146 L1588 334" />
+      <path d="M256 184 L1582 372" />
+      <path d="M250 276 L1568 464" />
+      <path d="M246 384 L1554 572" />
+      <path d="M244 494 L1540 682" />
+      <path d="M244 604 L1524 790" />
+      <path d="M250 714 L1500 898" />
+      <path d="M260 820 L1458 996" />
+      <path d="M306 0 L264 1000" />
+      <path d="M362 0 L320 1000" />
+      <path d="M444 0 L402 1000" />
+      <path d="M526 0 L484 1000" />
+      <path d="M608 0 L566 1000" />
+      <path d="M690 0 L648 1000" />
+      <path d="M772 0 L730 1000" />
+      <path d="M854 0 L812 1000" />
+      <path d="M936 0 L894 1000" />
+      <path d="M1018 0 L976 1000" />
+      <path d="M1100 0 L1058 1000" />
+      <path d="M1182 0 L1140 1000" />
+      <path d="M1264 0 L1222 1000" />
+      <path d="M1346 0 L1304 1000" />
+      <path d="M1428 0 L1386 1000" />
     </g>
   </g>
 
-  <rect width="1600" height="1000" fill="#ffffff" filter="url(#grain)" opacity="0.2" />
-  <rect x="0" y="640" width="1600" height="360" fill="url(#fadeBottom)" />
+  <rect width="1600" height="1000" fill="#ffffff" filter="url(#paperNoise)" opacity="0.16" />
+  <rect x="0" y="620" width="1600" height="380" fill="url(#fadeBottom)" />
 </svg>
