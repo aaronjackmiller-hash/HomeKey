@@ -45,20 +45,9 @@ const PropertyInquiryCard = ({
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
-  const backgroundMapUrl = `${process.env.PUBLIC_URL || ''}/tel-aviv-map.svg?v=20260515-exact`;
 
   return (
     <section className={rootClassName}>
-      <div className="property-inquiry-map-layer" aria-hidden="true">
-        <img
-          className="property-inquiry-map-image"
-          src={backgroundMapUrl}
-          alt=""
-          aria-hidden="true"
-        />
-      </div>
-      <div className="property-inquiry-map-overlay" aria-hidden="true" />
-
       {shouldShowDescription && (
         <div className="property-inquiry-description" dir="rtl">
           <h1>{title}</h1>
