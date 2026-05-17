@@ -799,6 +799,8 @@ a {
 }
 
 .premium-header__cta:hover {
+  background: #f2eee6;
+  border-color: #d2ccbe;
   opacity: 0.9;
 }
 
