@@ -154,13 +154,18 @@ a {
   background: transparent;
   color: var(--hk-brand-charcoal);
   padding: 2px 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.82rem;
   line-height: 1.1;
 }
 
 .premium-header__search-segment input::placeholder {
   color: #4b5563;
+}
+
+.premium-header__search-segment--location input,
+.premium-header__search-segment--location input::placeholder {
+  font-size: 0.94rem;
+  font-weight: 700;
 }
 
 .premium-header__search-segment input:focus,
