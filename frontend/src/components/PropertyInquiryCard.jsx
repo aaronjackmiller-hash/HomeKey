@@ -34,13 +34,14 @@ const PropertyInquiryCard = ({
       lastName: formValues.lastName || '',
       email: formValues.email || '',
       phone: formValues.phone || '',
-      message: formValues.message || '',
+      messageNote: formValues.messageNote || '',
     }
     : null;
 
   const managerLine = [agent?.agency, agent?.name].filter(Boolean).join(' ').trim() || 'Property manager';
   const whatsappNumber = sanitizeWhatsAppNumber(agent?.whatsappNumber);
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
+  const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
@@ -126,15 +127,25 @@ const PropertyInquiryCard = ({
             />
           </label>
 
-          <label className="property-inquiry-field" htmlFor="inquiry-message">
-            <span>Message to agent</span>
+          <label className="property-inquiry-field" htmlFor="inquiry-message-template">
+            <span>Automated message (locked)</span>
             <textarea
-              id="inquiry-message"
+              id="inquiry-message-template"
               rows="4"
-              placeholder="Message to Agent"
+              value={whatsappTemplateMessage}
+              readOnly
+            />
+          </label>
+
+          <label className="property-inquiry-field" htmlFor="inquiry-message-note">
+            <span>Add a note (optional)</span>
+            <textarea
+              id="inquiry-message-note"
+              rows="3"
+              placeholder="Add extra details after the automated message"
               {...(hasControlledForm ? {
-                value: safeValues.message,
-                onChange: (event) => onFormChange('message', event.target.value),
+                value: safeValues.messageNote,
+                onChange: (event) => onFormChange('messageNote', event.target.value),
               } : {})}
             />
           </label>
