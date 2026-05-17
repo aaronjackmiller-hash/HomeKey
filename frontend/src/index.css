@@ -49,7 +49,7 @@ a {
 }
 
 .is-active .property-heart-icon {
-  fill: none;
+  fill: var(--hk-heart-red);
 }
 
 .premium-header {
