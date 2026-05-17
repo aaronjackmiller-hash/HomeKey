@@ -1513,6 +1513,8 @@ a {
 
 .detail-template-location {
   margin: 0;
+  width: 100%;
+  text-align: right;
   color: #dbeafe;
   font-size: 1.48rem;
   line-height: 1;
@@ -1730,6 +1732,10 @@ a {
   border-radius: 0;
   background: transparent;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .detail-template-amenities h3 {
@@ -1748,6 +1754,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  align-items: center;
 }
 
 .detail-template-amenities li {
@@ -1772,7 +1779,7 @@ a {
 .detail-template-price-mark {
   margin: 0;
   border-right: 1px solid rgba(226, 232, 240, 0.28);
-  background: rgba(15, 23, 42, 0.3);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1784,6 +1791,7 @@ a {
   height: 100%;
   min-height: 100%;
   border-radius: 0;
+  background: #ffffff;
   overflow: hidden;
 }
 
