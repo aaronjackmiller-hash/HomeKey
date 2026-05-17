@@ -799,9 +799,9 @@ a {
 
 .premium-header__cta {
   text-decoration: none;
-  background: var(--hk-brand-cream);
-  color: var(--hk-brand-charcoal);
-  border: 1px solid #d9d4c8;
+  background: #0b4a76;
+  color: #ffffff;
+  border: 1px solid #0b4a76;
   border-radius: 999px;
   min-height: 40px;
   padding: 8px 20px;
@@ -812,13 +812,12 @@ a {
   font-weight: 500;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  transition: opacity 0.16s ease;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
 }
 
 .premium-header__cta:hover {
-  background: #e9dfce;
-  border-color: #cabda7;
-  opacity: 0.9;
+  background: #083a5e;
+  border-color: #083a5e;
 }
 
 .premium-header__login {
