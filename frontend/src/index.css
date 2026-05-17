@@ -41,15 +41,17 @@ a {
 .property-heart-icon {
   width: 18px;
   height: 18px;
-  fill: var(--hk-heart-red);
-  stroke: var(--hk-heart-border);
-  stroke-width: 0.9;
+  fill: none;
+  stroke: var(--hk-heart-red);
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.is-active .property-heart-icon {
-  filter: saturate(1.05);
+.property-card-favorite-btn.is-active .property-heart-icon,
+.detail-favorite-fab.is-active .property-heart-icon,
+.premium-header__likes-heart.is-active .property-heart-icon {
+  fill: var(--hk-heart-red);
 }
 
 .premium-header {
