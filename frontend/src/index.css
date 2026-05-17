@@ -48,7 +48,9 @@ a {
   stroke-linejoin: round;
 }
 
-.is-active .property-heart-icon {
+.property-card-favorite-btn.is-active .property-heart-icon,
+.detail-favorite-fab.is-active .property-heart-icon,
+.premium-header__likes-heart.is-active .property-heart-icon {
   fill: var(--hk-heart-red);
 }
 
