@@ -118,7 +118,7 @@ a {
 
 .premium-header__search-pill {
   display: grid;
-  grid-template-columns: minmax(248px, 2.3fr) minmax(74px, 0.78fr) minmax(124px, 1.02fr) minmax(90px, 0.9fr);
+  grid-template-columns: minmax(280px, 2.8fr) minmax(70px, 0.7fr) minmax(116px, 0.95fr) minmax(86px, 0.8fr);
   align-items: center;
   min-height: 44px;
   border: 1px solid #d9d4c8;
