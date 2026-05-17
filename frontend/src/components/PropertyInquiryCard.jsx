@@ -43,9 +43,28 @@ const PropertyInquiryCard = ({
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
+  const noteValue = safeValues?.messageNote || '';
+  const messageBlockPrefix = `${whatsappTemplateMessage}\n\n`;
+  const combinedMessageBlockValue = `${messageBlockPrefix}${noteValue}`;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
+  const handleCombinedMessageChange = (event) => {
+    if (!hasControlledForm) return;
+    const nextRaw = String(event.target.value || '');
+    let nextNote = '';
+
+    if (nextRaw.startsWith(messageBlockPrefix)) {
+      nextNote = nextRaw.slice(messageBlockPrefix.length);
+    } else if (nextRaw.startsWith(whatsappTemplateMessage)) {
+      nextNote = nextRaw.slice(whatsappTemplateMessage.length).replace(/^\n+/, '');
+    } else {
+      const separatorIndex = nextRaw.indexOf('\n\n');
+      nextNote = separatorIndex >= 0 ? nextRaw.slice(separatorIndex + 2) : safeValues.messageNote;
+    }
+
+    onFormChange('messageNote', nextNote);
+  };
 
   return (
     <section className={rootClassName}>
@@ -60,7 +79,7 @@ const PropertyInquiryCard = ({
         <div className="property-inquiry-card-header">
           <h2>Interested? Get Details!</h2>
           <p>
-            <span>Manger: {managerLine}</span>
+            <span>Manager: {managerLine}</span>
             {!hasWhatsApp && (
               <>
                 {' '}
@@ -127,26 +146,18 @@ const PropertyInquiryCard = ({
             />
           </label>
 
-          <label className="property-inquiry-field" htmlFor="inquiry-message-template">
-            <span>Automated message (locked)</span>
-            <textarea
-              id="inquiry-message-template"
-              rows="4"
-              value={whatsappTemplateMessage}
-              readOnly
-            />
-          </label>
-
           <label className="property-inquiry-field" htmlFor="inquiry-message-note">
             <span>Add a note (optional)</span>
             <textarea
               id="inquiry-message-note"
-              rows="3"
+              rows="5"
               placeholder="Add extra details after the automated message"
               {...(hasControlledForm ? {
-                value: safeValues.messageNote,
-                onChange: (event) => onFormChange('messageNote', event.target.value),
-              } : {})}
+                value: combinedMessageBlockValue,
+                onChange: handleCombinedMessageChange,
+              } : {
+                defaultValue: messageBlockPrefix,
+              })}
             />
           </label>
 
