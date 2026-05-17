@@ -818,7 +818,9 @@ a {
 }
 
 .premium-header__cta:hover {
-  opacity: 0.97;
+  background: #3f8fc8;
+  border-color: #3f8fc8;
+  opacity: 0.9;
 }
 
 .premium-header__login {
