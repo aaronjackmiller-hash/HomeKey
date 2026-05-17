@@ -185,6 +185,40 @@
   min-height: 74px;
 }
 
+.property-inquiry-message-block {
+  border: 1px solid #c8d0dc;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+  padding: 8px 10px;
+}
+
+.property-inquiry-message-block:focus-within {
+  border-color: #4f7ecd;
+  box-shadow: 0 0 0 2px rgba(79, 126, 205, 0.2);
+}
+
+.property-inquiry-message-template {
+  margin: 0;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.property-inquiry-message-note-input,
+.property-inquiry-message-note-input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin-top: 8px;
+  padding: 0 !important;
+  min-height: 66px;
+}
+
 .property-inquiry-actions {
   display: flex;
   flex-direction: column;

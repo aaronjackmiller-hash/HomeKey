@@ -45,53 +45,11 @@ const PropertyInquiryCard = ({
   const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
   const noteValue = hasControlledForm ? safeValues.messageNote : localMessageNote;
-  const messageBlockPrefix = `${whatsappTemplateMessage}\n\n`;
-  const combinedMessageBlockValue = `${messageBlockPrefix}${noteValue}`;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
-  const enforceNoteCursor = (textareaEl) => {
-    if (!textareaEl || typeof textareaEl.setSelectionRange !== 'function') return;
-    const cursor = textareaEl.selectionStart || 0;
-    if (cursor >= messageBlockPrefix.length) return;
-    const end = textareaEl.value.length;
-    textareaEl.setSelectionRange(end, end);
-  };
-  const handleCombinedMessageKeyDown = (event) => {
-    const textareaEl = event.currentTarget;
-    const prefixLen = messageBlockPrefix.length;
-    const selectionStart = Number(textareaEl.selectionStart || 0);
-    const selectionEnd = Number(textareaEl.selectionEnd || 0);
-    const selectionTouchesPrefix = selectionStart < prefixLen;
-    const isModifier = event.ctrlKey || event.metaKey || event.altKey;
-    const isSingleCharInsert = event.key.length === 1 && !isModifier;
-    const isDestructive = event.key === 'Backspace' || event.key === 'Delete';
-    const isBlockedAction = isSingleCharInsert || isDestructive || event.key === 'Enter';
-
-    if (!isBlockedAction || !selectionTouchesPrefix) return;
-    event.preventDefault();
-    requestAnimationFrame(() => enforceNoteCursor(textareaEl));
-  };
-  const handleCombinedMessagePaste = (event) => {
-    const textareaEl = event.currentTarget;
-    const selectionStart = Number(textareaEl.selectionStart || 0);
-    if (selectionStart >= messageBlockPrefix.length) return;
-    event.preventDefault();
-    requestAnimationFrame(() => enforceNoteCursor(textareaEl));
-  };
-  const handleCombinedMessageChange = (event) => {
-    const nextRaw = String(event.target.value || '');
-    let nextNote = '';
-
-    if (nextRaw.startsWith(messageBlockPrefix)) {
-      nextNote = nextRaw.slice(messageBlockPrefix.length);
-    } else if (nextRaw.startsWith(whatsappTemplateMessage)) {
-      nextNote = nextRaw.slice(whatsappTemplateMessage.length).replace(/^\n+/, '');
-    } else {
-      const separatorIndex = nextRaw.indexOf('\n\n');
-      nextNote = separatorIndex >= 0 ? nextRaw.slice(separatorIndex + 2) : noteValue;
-    }
-
+  const handleMessageNoteChange = (event) => {
+    const nextNote = String(event.target.value || '');
     if (hasControlledForm) {
       onFormChange('messageNote', nextNote);
       return;
@@ -181,16 +139,17 @@ const PropertyInquiryCard = ({
 
           <label className="property-inquiry-field" htmlFor="inquiry-message-note">
             <span>Add a note (optional)</span>
-            <textarea
-              id="inquiry-message-note"
-              rows="5"
-              placeholder="Add extra details after the automated message"
-              value={combinedMessageBlockValue}
-              onChange={handleCombinedMessageChange}
-              onKeyDown={handleCombinedMessageKeyDown}
-              onPaste={handleCombinedMessagePaste}
-              onFocus={(event) => requestAnimationFrame(() => enforceNoteCursor(event.currentTarget))}
-            />
+            <div className="property-inquiry-message-block">
+              <p className="property-inquiry-message-template">{whatsappTemplateMessage}</p>
+              <textarea
+                id="inquiry-message-note"
+                className="property-inquiry-message-note-input"
+                rows="3"
+                placeholder="Add extra details after the automated message"
+                value={noteValue}
+                onChange={handleMessageNoteChange}
+              />
+            </div>
           </label>
 
           <div className="property-inquiry-actions">
