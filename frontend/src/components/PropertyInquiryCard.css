@@ -185,10 +185,23 @@
   min-height: 74px;
 }
 
-.property-inquiry-field textarea[readonly] {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #d1d5db;
+.property-inquiry-message-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.property-inquiry-message-template {
+  min-height: 42px !important;
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border-color: #d1d5db !important;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.property-inquiry-message-note {
+  min-height: 64px;
 }
 
 .property-inquiry-actions {

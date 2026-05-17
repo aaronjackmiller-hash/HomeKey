@@ -60,7 +60,7 @@ const PropertyInquiryCard = ({
         <div className="property-inquiry-card-header">
           <h2>Interested? Get Details!</h2>
           <p>
-            <span>Manger: {managerLine}</span>
+            <span>Manager: {managerLine}</span>
             {!hasWhatsApp && (
               <>
                 {' '}
@@ -127,27 +127,27 @@ const PropertyInquiryCard = ({
             />
           </label>
 
-          <label className="property-inquiry-field" htmlFor="inquiry-message-template">
-            <span>Automated message (locked)</span>
-            <textarea
-              id="inquiry-message-template"
-              rows="4"
-              value={whatsappTemplateMessage}
-              readOnly
-            />
-          </label>
-
           <label className="property-inquiry-field" htmlFor="inquiry-message-note">
             <span>Add a note (optional)</span>
-            <textarea
-              id="inquiry-message-note"
-              rows="3"
-              placeholder="Add extra details after the automated message"
-              {...(hasControlledForm ? {
-                value: safeValues.messageNote,
-                onChange: (event) => onFormChange('messageNote', event.target.value),
-              } : {})}
-            />
+            <div className="property-inquiry-message-stack">
+              <textarea
+                id="inquiry-message-template"
+                className="property-inquiry-message-template"
+                rows="1"
+                value={whatsappTemplateMessage}
+                readOnly
+              />
+              <textarea
+                id="inquiry-message-note"
+                className="property-inquiry-message-note"
+                rows="3"
+                placeholder="Add any questions you have .."
+                {...(hasControlledForm ? {
+                  value: safeValues.messageNote,
+                  onChange: (event) => onFormChange('messageNote', event.target.value),
+                } : {})}
+              />
+            </div>
           </label>
 
           <div className="property-inquiry-actions">
