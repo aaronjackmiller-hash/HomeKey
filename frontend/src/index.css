@@ -10,6 +10,8 @@
   --hk-accent-navy: #2D3E50;
   --hk-accent-navy-strong: #223242;
   --hk-radius-container: 12px;
+  --hk-heart-red: #FF0000;
+  --hk-heart-border: #000000;
 }
 
 body {
@@ -34,6 +36,20 @@ main {
 
 a {
   color: inherit;
+}
+
+.property-heart-icon {
+  width: 18px;
+  height: 18px;
+  fill: var(--hk-heart-red);
+  stroke: var(--hk-heart-border);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.is-active .property-heart-icon {
+  filter: saturate(1.05);
 }
 
 .premium-header {
@@ -688,46 +704,47 @@ a {
 }
 
 .premium-header__likes {
+  -webkit-appearance: none;
+  appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: none;
-  padding: 4px 6px;
-  border-radius: 8px;
+  padding: 2px 4px;
+  border-radius: 0;
   background: transparent;
   cursor: pointer;
   text-decoration: none;
 }
 
 .premium-header__likes:hover {
-  background: #fee2e2;
+  background: transparent;
 }
 
 .premium-header__likes:focus-visible {
-  outline: 1px solid #991b1b;
+  outline: 1px solid #111827;
   outline-offset: 1px;
 }
 
 .premium-header__likes.is-active {
-  background: #fee2e2;
+  background: transparent;
 }
 
-.premium-header__likes-icon {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: #dc2626;
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.premium-header__likes-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .premium-header__likes-copy {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #7f1d1d;
-  font-size: 0.74rem;
+  color: #1a1a1a;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -795,7 +812,7 @@ a {
   font-weight: 500;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  transition: opacity 0.16s ease;
+  transition: background-color 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
 }
 
 .premium-header__cta:hover {
@@ -1515,6 +1532,8 @@ a {
 
 .detail-template-location {
   margin: 0;
+  width: 100%;
+  text-align: right;
   color: #dbeafe;
   font-size: 1.48rem;
   line-height: 1;
@@ -1528,6 +1547,41 @@ a {
   top: 12px;
   right: 12px;
   z-index: 6;
+}
+
+.detail-favorite-fab {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 7;
+  width: 44px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.detail-favorite-fab:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+}
+
+.detail-favorite-fab:focus-visible {
+  outline: 1px solid #111827;
+  outline-offset: 2px;
+}
+
+.detail-favorite-fab .property-heart-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .homekey-logo-lockup {
@@ -1732,6 +1786,10 @@ a {
   border-radius: 0;
   background: transparent;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .detail-template-amenities h3 {
@@ -1750,6 +1808,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  align-items: center;
 }
 
 .detail-template-amenities li {
@@ -1774,7 +1833,7 @@ a {
 .detail-template-price-mark {
   margin: 0;
   border-right: 1px solid rgba(226, 232, 240, 0.28);
-  background: rgba(15, 23, 42, 0.3);
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1786,6 +1845,7 @@ a {
   height: 100%;
   min-height: 100%;
   border-radius: 0;
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -3318,10 +3378,12 @@ legend {
 }
 
 .property-list-page .property-card-favorite-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
   border: none;
+  border-radius: 0;
   background: transparent;
   line-height: 1;
   cursor: pointer;
@@ -3331,26 +3393,16 @@ legend {
   justify-content: center;
   position: relative;
   z-index: 6;
+  transition: transform 0.16s ease;
 }
 
 .property-list-page .property-card-favorite-btn:hover {
   transform: scale(1.06);
 }
 
-.property-list-page .property-card-favorite-btn svg {
+.property-list-page .property-card-favorite-btn .property-heart-icon {
   width: 20px;
   height: 20px;
-  fill: none;
-  stroke: #dc2626;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.8));
-}
-
-.property-list-page .property-card-favorite-btn.is-active svg {
-  fill: rgba(239, 68, 68, 0.9);
-  stroke: #b91c1c;
 }
 
 .property-list-page .property-card-body {
