@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './PropertyInquiryCard.css';
 
 const agentConfig = {
@@ -28,6 +28,7 @@ const PropertyInquiryCard = ({
   statusIsError = false,
 }) => {
   const hasControlledForm = Boolean(formValues && typeof onFormChange === 'function');
+  const [localMessageNote, setLocalMessageNote] = useState('');
   const safeValues = hasControlledForm
     ? {
       firstName: formValues.firstName || '',
@@ -43,7 +44,7 @@ const PropertyInquiryCard = ({
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
-  const noteValue = safeValues?.messageNote || '';
+  const noteValue = hasControlledForm ? safeValues.messageNote : localMessageNote;
   const messageBlockPrefix = `${whatsappTemplateMessage}\n\n`;
   const combinedMessageBlockValue = `${messageBlockPrefix}${noteValue}`;
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
@@ -57,7 +58,6 @@ const PropertyInquiryCard = ({
     textareaEl.setSelectionRange(end, end);
   };
   const handleCombinedMessageKeyDown = (event) => {
-    if (!hasControlledForm) return;
     const textareaEl = event.currentTarget;
     const prefixLen = messageBlockPrefix.length;
     const selectionStart = Number(textareaEl.selectionStart || 0);
@@ -73,7 +73,6 @@ const PropertyInquiryCard = ({
     requestAnimationFrame(() => enforceNoteCursor(textareaEl));
   };
   const handleCombinedMessagePaste = (event) => {
-    if (!hasControlledForm) return;
     const textareaEl = event.currentTarget;
     const selectionStart = Number(textareaEl.selectionStart || 0);
     if (selectionStart >= messageBlockPrefix.length) return;
@@ -81,7 +80,6 @@ const PropertyInquiryCard = ({
     requestAnimationFrame(() => enforceNoteCursor(textareaEl));
   };
   const handleCombinedMessageChange = (event) => {
-    if (!hasControlledForm) return;
     const nextRaw = String(event.target.value || '');
     let nextNote = '';
 
@@ -91,10 +89,14 @@ const PropertyInquiryCard = ({
       nextNote = nextRaw.slice(whatsappTemplateMessage.length).replace(/^\n+/, '');
     } else {
       const separatorIndex = nextRaw.indexOf('\n\n');
-      nextNote = separatorIndex >= 0 ? nextRaw.slice(separatorIndex + 2) : safeValues.messageNote;
+      nextNote = separatorIndex >= 0 ? nextRaw.slice(separatorIndex + 2) : noteValue;
     }
 
-    onFormChange('messageNote', nextNote);
+    if (hasControlledForm) {
+      onFormChange('messageNote', nextNote);
+      return;
+    }
+    setLocalMessageNote(nextNote);
   };
 
   return (
@@ -183,15 +185,11 @@ const PropertyInquiryCard = ({
               id="inquiry-message-note"
               rows="5"
               placeholder="Add extra details after the automated message"
-              {...(hasControlledForm ? {
-                value: combinedMessageBlockValue,
-                onChange: handleCombinedMessageChange,
-                onKeyDown: handleCombinedMessageKeyDown,
-                onPaste: handleCombinedMessagePaste,
-                onFocus: (event) => requestAnimationFrame(() => enforceNoteCursor(event.currentTarget)),
-              } : {
-                defaultValue: messageBlockPrefix,
-              })}
+              value={combinedMessageBlockValue}
+              onChange={handleCombinedMessageChange}
+              onKeyDown={handleCombinedMessageKeyDown}
+              onPaste={handleCombinedMessagePaste}
+              onFocus={(event) => requestAnimationFrame(() => enforceNoteCursor(event.currentTarget))}
             />
           </label>
 
