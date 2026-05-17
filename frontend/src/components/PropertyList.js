@@ -1020,7 +1020,7 @@ const PropertyList = () => {
                   </span>
                   <button
                     type="button"
-                    className={`property-card-favorite-btn property-heart-chip ${isFavorite ? 'is-active' : ''}`}
+                    className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
                     aria-label={isFavorite ? 'Remove favorite from listing' : 'Add favorite to listing'}
                     aria-pressed={isFavorite}
                     onClick={(event) => {
