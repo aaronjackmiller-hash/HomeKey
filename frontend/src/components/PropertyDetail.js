@@ -574,7 +574,7 @@ const PropertyDetail = () => {
                     </div>
                     <button
                         type="button"
-                        className={`detail-favorite-fab property-heart-chip ${favoriteActive ? 'is-active' : ''}`}
+                        className={`detail-favorite-fab ${favoriteActive ? 'is-active' : ''}`}
                         onClick={handleToggleFavorite}
                         aria-pressed={favoriteActive}
                         aria-label={favoriteActive ? 'Remove listing from liked properties' : 'Add listing to liked properties'}
