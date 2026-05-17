@@ -118,7 +118,7 @@ a {
 
 .premium-header__search-pill {
   display: grid;
-  grid-template-columns: minmax(280px, 2.8fr) minmax(70px, 0.7fr) minmax(116px, 0.95fr) minmax(86px, 0.8fr);
+  grid-template-columns: minmax(272px, 2.35fr) minmax(86px, 0.85fr) minmax(154px, 1.3fr) minmax(128px, 1.15fr);
   align-items: center;
   min-height: 44px;
   border: 1px solid #d9d4c8;
@@ -154,7 +154,7 @@ a {
   background: transparent;
   color: var(--hk-brand-charcoal);
   padding: 2px 8px;
-  font-size: 1.07rem;
+  font-size: 0.9rem;
   line-height: 1.1;
 }
 
