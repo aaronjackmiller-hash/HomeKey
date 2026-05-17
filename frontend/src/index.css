@@ -164,8 +164,13 @@ a {
 
 .premium-header__search-segment--location input,
 .premium-header__search-segment--location input::placeholder {
-  font-size: 0.94rem;
+  font-size: 1rem;
   font-weight: 700;
+}
+
+.premium-header__search-segment--location input::placeholder {
+  color: #1f2937;
+  opacity: 1;
 }
 
 .premium-header__search-segment input:focus,
