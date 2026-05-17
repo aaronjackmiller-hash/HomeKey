@@ -38,31 +38,18 @@ a {
   color: inherit;
 }
 
-.property-heart-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  border: 0.9px solid var(--hk-heart-border);
-  background: #ffffff;
-  color: var(--hk-heart-red);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
-}
-
 .property-heart-icon {
   width: 18px;
   height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
+  fill: var(--hk-heart-red);
+  stroke: var(--hk-heart-border);
+  stroke-width: 0.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.property-heart-chip.is-active .property-heart-icon {
-  fill: var(--hk-heart-red);
+.is-active .property-heart-icon {
+  filter: saturate(1.05);
 }
 
 .premium-header {
@@ -720,16 +707,16 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 0.9px solid var(--hk-heart-border);
-  padding: 3px 10px 3px 4px;
-  border-radius: 999px;
-  background: #ffffff;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
   text-decoration: none;
 }
 
 .premium-header__likes:hover {
-  background: #fff5f5;
+  background: transparent;
 }
 
 .premium-header__likes:focus-visible {
@@ -738,10 +725,15 @@ a {
 }
 
 .premium-header__likes.is-active {
-  background: #fff0f0;
+  background: transparent;
 }
 
 .premium-header__likes-heart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -1558,7 +1550,13 @@ a {
   z-index: 7;
   width: 40px;
   height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: #ffffff;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -3366,9 +3364,11 @@ legend {
 }
 
 .property-list-page .property-card-favorite-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   line-height: 1;
   cursor: pointer;
   padding: 0;
@@ -3385,7 +3385,9 @@ legend {
 }
 
 .property-list-page .property-card-favorite-btn .property-heart-icon {
-  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9));
 }
 
 .property-list-page .property-card-body {
