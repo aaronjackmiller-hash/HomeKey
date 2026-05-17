@@ -805,9 +805,9 @@ a {
 
 .premium-header__cta {
   text-decoration: none;
-  background: var(--hk-accent-navy);
-  color: #ffffff;
-  border: 1px solid var(--hk-accent-navy);
+  background: var(--hk-brand-cream);
+  color: var(--hk-brand-charcoal);
+  border: 1px solid #d9d4c8;
   border-radius: 999px;
   min-height: 40px;
   padding: 8px 20px;
@@ -822,6 +822,8 @@ a {
 }
 
 .premium-header__cta:hover {
+  background: #e9dfce;
+  border-color: #cabda7;
   opacity: 0.9;
 }
 
