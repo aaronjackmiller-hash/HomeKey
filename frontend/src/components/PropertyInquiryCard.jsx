@@ -15,6 +15,14 @@ const defaultCopy = {
 };
 
 const sanitizeWhatsAppNumber = (value) => String(value || '').replace(/[^\d]/g, '');
+const sanitizeNoteValue = (value, template) => {
+  const raw = String(value || '');
+  const prefix = String(template || '');
+  if (!raw) return '';
+  if (!prefix) return raw;
+  if (!raw.startsWith(prefix)) return raw;
+  return raw.slice(prefix.length).replace(/^\n+/, '');
+};
 
 const PropertyInquiryCard = ({
   mode = 'standalone',
@@ -44,12 +52,13 @@ const PropertyInquiryCard = ({
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
   const whatsappMessage = agent?.inquiryMessage || agentConfig.inquiryMessage;
-  const noteValue = hasControlledForm ? safeValues.messageNote : localMessageNote;
+  const rawNoteValue = hasControlledForm ? safeValues.messageNote : localMessageNote;
+  const noteValue = sanitizeNoteValue(rawNoteValue, whatsappTemplateMessage);
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
   const handleMessageNoteChange = (event) => {
-    const nextNote = String(event.target.value || '');
+    const nextNote = sanitizeNoteValue(event.target.value, whatsappTemplateMessage);
     if (hasControlledForm) {
       onFormChange('messageNote', nextNote);
       return;
