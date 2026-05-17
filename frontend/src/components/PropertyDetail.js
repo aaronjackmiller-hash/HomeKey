@@ -168,6 +168,14 @@ const splitNameForInquiry = (fullName = '') => {
     };
 };
 
+const buildMessageWithUserNote = (automatedMessage = '', userNote = '') => {
+    const frozenMessage = safeText(automatedMessage);
+    const note = safeText(userNote);
+    if (!frozenMessage) return note;
+    if (!note) return frozenMessage;
+    return `${frozenMessage}\n\n${note}`;
+};
+
 const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
     if (!isAuthenticated || !authUser) {
         return {
@@ -326,7 +334,7 @@ const PropertyDetail = () => {
     );
     const [inquiry, setInquiry] = useState(() => ({
         ...buildInquiryDefaultsFromUser(user, isAuthenticated),
-        message: '',
+        messageNote: '',
     }));
     const [inquiryStatus, setInquiryStatus] = useState('');
     const [showingForms, setShowingForms] = useState({});
@@ -382,7 +390,7 @@ const PropertyDetail = () => {
             lastName: prev.lastName || defaults.lastName,
             email: prev.email || defaults.email,
             phone: prev.phone || defaults.phone,
-            message: prev.message || '',
+            messageNote: prev.messageNote || '',
         }));
     }, [isAuthenticated, user]);
 
@@ -409,14 +417,17 @@ const PropertyDetail = () => {
             email: inquiry.email,
             phone: inquiry.phone,
             preferredMethod: 'email',
-            message: safeText(inquiry.message) || `I am interested in ${detailTitle}. Please send more details.`,
+            message: buildMessageWithUserNote(
+                `I am interested in ${detailTitle}. Please send more details.`,
+                inquiry.messageNote,
+            ),
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
             setInquiryStatus('Details request sent successfully.');
             setInquiry({
                 ...buildInquiryDefaultsFromUser(user, isAuthenticated),
-                message: '',
+                messageNote: '',
             });
             const result = await getProperty(id);
             setProperty(result.data);
@@ -542,12 +553,14 @@ const PropertyDetail = () => {
         ? `${inquirySubtitleRaw.slice(0, 127)}...`
         : inquirySubtitleRaw;
     const inquiryWhatsAppNumber = String(listingContact.whatsapp || '').replace(/[^\d]/g, '');
+    const inquiryFrozenMessage = `Hi, I am interested in ${detailTitle}. Please share more details.`;
     const inquiryAgent = {
         agency: listingContact.agency || 'Real Deal',
         name: listingContact.name || '',
         hasWhatsApp: Boolean(inquiryWhatsAppNumber),
         whatsappNumber: inquiryWhatsAppNumber,
-        inquiryMessage: safeText(inquiry.message) || `Hi, I am interested in ${detailTitle}. Please share more details.`,
+        inquiryMessageTemplate: inquiryFrozenMessage,
+        inquiryMessage: buildMessageWithUserNote(inquiryFrozenMessage, inquiry.messageNote),
     };
 
     return (
