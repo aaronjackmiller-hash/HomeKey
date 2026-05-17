@@ -49,6 +49,37 @@ const PropertyInquiryCard = ({
   const rootClassName = `property-inquiry-shell${mode === 'embedded' ? ' property-inquiry-shell--embedded' : ''}`;
   const shouldShowDescription = mode === 'embedded' && (title || subtitle);
   const handleSubmit = onSubmit || ((event) => event.preventDefault());
+  const enforceNoteCursor = (textareaEl) => {
+    if (!textareaEl || typeof textareaEl.setSelectionRange !== 'function') return;
+    const cursor = textareaEl.selectionStart || 0;
+    if (cursor >= messageBlockPrefix.length) return;
+    const end = textareaEl.value.length;
+    textareaEl.setSelectionRange(end, end);
+  };
+  const handleCombinedMessageKeyDown = (event) => {
+    if (!hasControlledForm) return;
+    const textareaEl = event.currentTarget;
+    const prefixLen = messageBlockPrefix.length;
+    const selectionStart = Number(textareaEl.selectionStart || 0);
+    const selectionEnd = Number(textareaEl.selectionEnd || 0);
+    const selectionTouchesPrefix = selectionStart < prefixLen;
+    const isModifier = event.ctrlKey || event.metaKey || event.altKey;
+    const isSingleCharInsert = event.key.length === 1 && !isModifier;
+    const isDestructive = event.key === 'Backspace' || event.key === 'Delete';
+    const isBlockedAction = isSingleCharInsert || isDestructive || event.key === 'Enter';
+
+    if (!isBlockedAction || !selectionTouchesPrefix) return;
+    event.preventDefault();
+    requestAnimationFrame(() => enforceNoteCursor(textareaEl));
+  };
+  const handleCombinedMessagePaste = (event) => {
+    if (!hasControlledForm) return;
+    const textareaEl = event.currentTarget;
+    const selectionStart = Number(textareaEl.selectionStart || 0);
+    if (selectionStart >= messageBlockPrefix.length) return;
+    event.preventDefault();
+    requestAnimationFrame(() => enforceNoteCursor(textareaEl));
+  };
   const handleCombinedMessageChange = (event) => {
     if (!hasControlledForm) return;
     const nextRaw = String(event.target.value || '');
@@ -155,6 +186,9 @@ const PropertyInquiryCard = ({
               {...(hasControlledForm ? {
                 value: combinedMessageBlockValue,
                 onChange: handleCombinedMessageChange,
+                onKeyDown: handleCombinedMessageKeyDown,
+                onPaste: handleCombinedMessagePaste,
+                onFocus: (event) => requestAnimationFrame(() => enforceNoteCursor(event.currentTarget)),
               } : {
                 defaultValue: messageBlockPrefix,
               })}
