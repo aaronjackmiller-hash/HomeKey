@@ -156,14 +156,19 @@ const PropertyInquiryCard = ({
             </button>
 
             {hasWhatsApp && (
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
-                className="property-inquiry-whatsapp-btn"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Chat on WhatsApp with {agent?.name || 'Agent'}
-              </a>
+              <>
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
+                  className="property-inquiry-whatsapp-btn"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Chat on WhatsApp with {agent?.name || 'Agent'}
+                </a>
+                <p className="property-inquiry-whatsapp-hint">
+                  Locked template stays fixed in HomeKey. WhatsApp still allows edits before send.
+                </p>
+              </>
             )}
           </div>
 

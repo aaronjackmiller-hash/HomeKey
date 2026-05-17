@@ -9,7 +9,6 @@ import {
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -70,15 +69,6 @@ const normalizePhoneForLinks = (value) => {
   if (cleaned.startsWith('+')) return cleaned.slice(1);
   if (cleaned.startsWith('0')) return `972${cleaned.slice(1)}`;
   return cleaned;
-};
-
-const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
-  const normalizedPhone = normalizePhoneForLinks(phone);
-  if (!normalizedPhone) return '';
-  const firstName = getContactFirstName(contactName) || 'there';
-  const normalizedTitle = String(title || '').trim() || 'this listing';
-  const message = `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedTitle}.`;
-  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 };
 
 const normalizeVirtualTourUrl = (value) => {
@@ -198,29 +188,6 @@ const getAddressDisplay = (address = {}) => {
   return { street, fullAddress, locationLine: locationParts.join(', ') };
 };
 
-const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
-  const externalContact = property.externalContact && typeof property.externalContact === 'object'
-    ? property.externalContact
-    : {};
-  const directContact = property.contact && typeof property.contact === 'object'
-    ? property.contact
-    : {};
-  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-    ? property.agent
-    : {};
-  const rawPhone = safeText(
-    agentContact.whatsapp
-      || directContact.whatsapp
-      || externalContact.whatsapp
-  );
-  const rawContactName = pickBestContactName({
-    directName: agentContact.name,
-    agentName: directContact.name,
-    externalName: externalContact.name,
-  });
-  return buildWhatsAppHref(rawPhone, title, rawContactName);
-};
-
 const getPropertyAgentWhatsApp = (property = {}) => {
   const externalContact = property.externalContact && typeof property.externalContact === 'object'
     ? property.externalContact
@@ -237,23 +204,6 @@ const getPropertyAgentWhatsApp = (property = {}) => {
       || externalContact.whatsapp
   );
   return { whatsappNumber };
-};
-
-const getPropertyAgentDisplayName = (property = {}) => {
-  const externalContact = property.externalContact && typeof property.externalContact === 'object'
-    ? property.externalContact
-    : {};
-  const directContact = property.contact && typeof property.contact === 'object'
-    ? property.contact
-    : {};
-  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-    ? property.agent
-    : {};
-  return safeText(
-    agentContact.name
-      || directContact.name
-      || externalContact.name
-  );
 };
 
 const removeYad2ImageLogo = (url, sourceType = '') => {
@@ -867,18 +817,16 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
-  const mobileWhatsAppHref = useMemo(() => {
+  const mobileWhatsAppTargetProperty = useMemo(() => {
     for (const property of mapSourceProperties) {
       if (!property || typeof property !== 'object') continue;
-      const { street } = getAddressDisplay(property.address || {});
-      const displayTitle =
-        sanitizeReadableText(property, street)
-        || sanitizeReadableText(property, property.title)
-        || 'this listing';
-      const whatsappHref = getPropertyWhatsAppHref(property, displayTitle);
-      if (whatsappHref) return whatsappHref;
+      const propertyId = getPropertyId(property);
+      if (!propertyId) continue;
+      const { whatsappNumber } = getPropertyAgentWhatsApp(property);
+      if (!normalizePhoneForLinks(whatsappNumber)) continue;
+      return { property, propertyId };
     }
-    return '';
+    return null;
   }, [mapSourceProperties]);
 
   const handleCircleSelectionChange = useCallback((selection) => {
@@ -990,11 +938,7 @@ const PropertyList = () => {
           );
           const monthly = property.financialDetails?.totalMonthlyPayment;
           const { whatsappNumber: cardWhatsAppNumber } = getPropertyAgentWhatsApp(property);
-          const cardAgentDisplayName = getPropertyAgentDisplayName(property);
           const agentHasWhatsApp = Boolean(normalizePhoneForLinks(cardWhatsAppNumber));
-          const cardWhatsAppHref = agentHasWhatsApp
-            ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardAgentDisplayName)
-            : '';
           const virtualTourHref = normalizeVirtualTourUrl(property.virtualTourUrl);
           const hasVirtualTour = Boolean(virtualTourHref);
           const whatsappButtonLabel = 'WhatsApp';
@@ -1109,10 +1053,14 @@ const PropertyList = () => {
                     }`}
                     onClick={(event) => {
                       event.stopPropagation();
-                      if (!agentHasWhatsApp || !cardWhatsAppHref || typeof window === 'undefined') return;
-                      window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                      if (!agentHasWhatsApp || !canOpenDetail) return;
+                      history.push({
+                        pathname: `/properties/${propertyId}`,
+                        hash: '#contact-manager-form',
+                        state: { previewProperty: property },
+                      });
                     }}
-                    disabled={!agentHasWhatsApp}
+                    disabled={!agentHasWhatsApp || !canOpenDetail}
                   >
                     {whatsappButtonLabel}
                   </button>
@@ -1207,10 +1155,14 @@ const PropertyList = () => {
           type="button"
           className="mobile-thumb-zone-fab mobile-thumb-zone-fab--whatsapp"
           onClick={() => {
-            if (!mobileWhatsAppHref || typeof window === 'undefined') return;
-            window.open(mobileWhatsAppHref, '_blank', 'noopener,noreferrer');
+            if (!mobileWhatsAppTargetProperty) return;
+            history.push({
+              pathname: `/properties/${mobileWhatsAppTargetProperty.propertyId}`,
+              hash: '#contact-manager-form',
+              state: { previewProperty: mobileWhatsAppTargetProperty.property },
+            });
           }}
-          disabled={!mobileWhatsAppHref}
+          disabled={!mobileWhatsAppTargetProperty}
           aria-label="Open WhatsApp chat for a listing"
         >
           <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
