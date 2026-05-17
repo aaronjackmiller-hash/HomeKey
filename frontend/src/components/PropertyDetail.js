@@ -12,9 +12,7 @@ import PropertyInquiryCard from './PropertyInquiryCard';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
     isFavoriteProperty,
-    isSavedProperty,
     toggleFavoriteProperty,
-    toggleSavedProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { pickBestContactName } from '../utils/contactMessaging';
@@ -120,16 +118,6 @@ const splitStreetAndNumber = (streetValue = '', explicitStreetNumber = '') => {
 const normalizeStreetDisplay = (streetValue = '', explicitStreetNumber = '') => {
     const { street, streetNumber } = splitStreetAndNumber(streetValue, explicitStreetNumber);
     return [street, streetNumber].filter(Boolean).join(' ').trim();
-};
-
-const getAddressLine = (address) => {
-    const street = normalizeStreetDisplay(address?.street, address?.streetNumber);
-    const city = safeText(address?.city);
-    const state = safeText(address?.state);
-    const zip = safeText(address?.zip);
-    const nonIsraelCountry = safeText(address?.country).toLowerCase() === 'israel' ? '' : safeText(address?.country);
-    const parts = dedupeCaseInsensitive([street, city, state, zip, nonIsraelCountry]);
-    return parts.join(', ');
 };
 
 const getPrimaryAddressTitle = (property = {}) => {
@@ -340,7 +328,7 @@ const PropertyDetail = () => {
     const [showingForms, setShowingForms] = useState({});
     const [showingStatus, setShowingStatus] = useState({});
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
-    const [interestVersion, setInterestVersion] = useState(0);
+    const [, setInterestVersion] = useState(0);
 
     useEffect(() => {
         const fetchProperty = async () => {
@@ -471,7 +459,6 @@ const PropertyDetail = () => {
     if (error) return <p className="status-message status-message-error">{error}</p>;
     if (!property) return null;
 
-    const addressLine = getAddressLine(property.address);
     const locationLine = getLocationLine(property.address);
     const allImages = (Array.isArray(property.images) ? property.images : [])
         .map((image) => sanitizeImageSource(image))
@@ -492,19 +479,9 @@ const PropertyDetail = () => {
     const virtualTourUrl = normalizeVirtualTourUrl(property.virtualTourUrl);
     const virtualTourEmbedUrl = getVirtualTourEmbedUrl(virtualTourUrl);
     const favoriteActive = isFavoriteProperty(propertyId);
-    const savedActive = isSavedProperty(propertyId);
-
-    const handleToggleInterest = (mode) => {
+    const handleToggleFavorite = () => {
         if (!propertyId) return;
-        if (mode === 'favorite') {
-            toggleFavoriteProperty(property);
-        } else {
-            const displayLocation = locationLine || addressLine;
-            toggleSavedProperty(property, {
-                displayTitle: detailTitle,
-                displayLocation,
-            });
-        }
+        toggleFavoriteProperty(property);
         setInterestVersion((value) => value + 1);
     };
 
@@ -595,9 +572,17 @@ const PropertyDetail = () => {
                             </>
                         )}
                     </div>
-                    {selectedImageIndex == null && (
-                        <HomeKeyLogoBadge className="homekey-logo-badge detail-template-logo-clean" />
-                    )}
+                    <button
+                        type="button"
+                        className={`detail-favorite-fab property-heart-chip ${favoriteActive ? 'is-active' : ''}`}
+                        onClick={handleToggleFavorite}
+                        aria-pressed={favoriteActive}
+                        aria-label={favoriteActive ? 'Remove listing from liked properties' : 'Add listing to liked properties'}
+                    >
+                        <svg className="property-heart-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+                        </svg>
+                    </button>
                     <div className="detail-hero-content detail-template-panel">
                         <div className="detail-template-head">
                             <span className="detail-template-type">{templateTypeLabel}</span>
@@ -657,25 +642,6 @@ const PropertyDetail = () => {
                         </div>
                     </div>
                 </section>
-                <div className="detail-interest-actions detail-interest-actions--standalone">
-                    <button
-                        type="button"
-                        className={`property-interest-btn ${favoriteActive ? 'is-active' : ''}`}
-                        onClick={() => handleToggleInterest('favorite')}
-                        aria-pressed={favoriteActive}
-                    >
-                        {favoriteActive ? 'Favorited' : 'Favorite'}
-                    </button>
-                    <button
-                        type="button"
-                        className={`property-interest-btn ${savedActive ? 'is-active' : ''}`}
-                        onClick={() => handleToggleInterest('saved')}
-                        aria-pressed={savedActive}
-                    >
-                        {savedActive ? 'Saved' : 'Save'}
-                    </button>
-                </div>
-
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
                         {additionalImages.map((image, index) => (
