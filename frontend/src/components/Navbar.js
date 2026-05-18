@@ -264,7 +264,9 @@ const Navbar = () => {
   useEffect(() => {
     if (!filtersExpanded) return undefined;
     const handlePointerDown = (event) => {
-      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
+      const backdropTarget = event.target && event.target.classList
+        && event.target.classList.contains('mobile-filter-sheet-backdrop');
+      if (backdropTarget || (filtersRef.current && !filtersRef.current.contains(event.target))) {
         setFiltersExpanded(false);
       }
     };
