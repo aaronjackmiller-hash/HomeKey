@@ -9,7 +9,7 @@ import {
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
+import { getContactFirstName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -17,6 +17,7 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
+const MOBILE_LAYOUT_BREAKPOINT = 767;
 const SUPPORTED_ALL_FILTERS = new Set([
   '',
   'newest',
@@ -198,29 +199,6 @@ const getAddressDisplay = (address = {}) => {
   return { street, fullAddress, locationLine: locationParts.join(', ') };
 };
 
-const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
-  const externalContact = property.externalContact && typeof property.externalContact === 'object'
-    ? property.externalContact
-    : {};
-  const directContact = property.contact && typeof property.contact === 'object'
-    ? property.contact
-    : {};
-  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-    ? property.agent
-    : {};
-  const rawPhone = safeText(
-    agentContact.whatsapp
-      || directContact.whatsapp
-      || externalContact.whatsapp
-  );
-  const rawContactName = pickBestContactName({
-    directName: agentContact.name,
-    agentName: directContact.name,
-    externalName: externalContact.name,
-  });
-  return buildWhatsAppHref(rawPhone, title, rawContactName);
-};
-
 const getPropertyAgentWhatsApp = (property = {}) => {
   const externalContact = property.externalContact && typeof property.externalContact === 'object'
     ? property.externalContact
@@ -286,6 +264,13 @@ const clampPriceValue = (value) => {
   const asNumber = Number(value);
   if (Number.isNaN(asNumber)) return PRICE_SLIDER_MIN;
   return Math.min(PRICE_SLIDER_MAX, Math.max(PRICE_SLIDER_MIN, asNumber));
+};
+
+const getInitialMobileDiscoveryView = () => {
+  if (typeof window !== 'undefined' && window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT) {
+    return 'list';
+  }
+  return 'map';
 };
 
 const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
@@ -543,9 +528,10 @@ const PropertyList = () => {
   const history = useHistory();
   const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
-  const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
-  const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
-  const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
+  const [mobileDiscoveryView, setMobileDiscoveryView] = useState(getInitialMobileDiscoveryView);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT : false
+  );
   const [interestVersion, setInterestVersion] = useState(0);
 
   // Clear any pending auto-retry timers
@@ -772,6 +758,18 @@ const PropertyList = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleViewportResize = () => {
+      setIsMobileViewport(window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT);
+    };
+    handleViewportResize();
+    window.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
+
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const favoritesCount = interestSummary.favoriteIds.length;
   const savedCount = interestSummary.savedIds.length;
@@ -867,19 +865,13 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
-  const mobileWhatsAppHref = useMemo(() => {
-    for (const property of mapSourceProperties) {
-      if (!property || typeof property !== 'object') continue;
-      const { street } = getAddressDisplay(property.address || {});
-      const displayTitle =
-        sanitizeReadableText(property, street)
-        || sanitizeReadableText(property, property.title)
-        || 'this listing';
-      const whatsappHref = getPropertyWhatsAppHref(property, displayTitle);
-      if (whatsappHref) return whatsappHref;
-    }
-    return '';
-  }, [mapSourceProperties]);
+  const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
+
+  const openMobileFilters = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleCircleSelectionChange = useCallback((selection) => {
     const nextSelection = (!selection || typeof selection !== 'object')
@@ -1078,7 +1070,7 @@ const PropertyList = () => {
                   </span>
                 </div>
                 <div className="property-card-actions">
-                  {hasVirtualTour && (
+                  {!isMobileViewport && hasVirtualTour && (
                     <button
                       type="button"
                       className="property-card-action-btn property-card-action-btn--outline"
@@ -1093,7 +1085,7 @@ const PropertyList = () => {
                   )}
                   <button
                     type="button"
-                    className="property-card-action-btn property-card-action-btn--outline"
+                    className={`property-card-action-btn ${isMobileViewport ? 'property-card-action-btn--primary-mobile' : 'property-card-action-btn--outline'}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       openPropertyDetail();
@@ -1102,22 +1094,54 @@ const PropertyList = () => {
                   >
                     View Details
                   </button>
-                  <button
-                    type="button"
-                    className={`property-card-action-btn ${
-                      agentHasWhatsApp
-                        ? 'property-card-action-btn--whatsapp'
-                        : 'property-card-action-btn--whatsapp-disabled'
-                    }`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (!agentHasWhatsApp || !cardWhatsAppHref || typeof window === 'undefined') return;
-                      window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
-                    }}
-                    disabled={!agentHasWhatsApp}
-                  >
-                    {whatsappButtonLabel}
-                  </button>
+                  {!isMobileViewport && (
+                    <button
+                      type="button"
+                      className={`property-card-action-btn ${
+                        agentHasWhatsApp
+                          ? 'property-card-action-btn--whatsapp'
+                          : 'property-card-action-btn--whatsapp-disabled'
+                      }`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!agentHasWhatsApp || !cardWhatsAppHref || typeof window === 'undefined') return;
+                        window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                      }}
+                      disabled={!agentHasWhatsApp}
+                    >
+                      {whatsappButtonLabel}
+                    </button>
+                  )}
+                  {isMobileViewport && (hasVirtualTour || agentHasWhatsApp) && (
+                    <div className="property-card-mobile-quick-actions" aria-label="Quick property actions">
+                      {hasVirtualTour && (
+                        <button
+                          type="button"
+                          className="property-card-mobile-link"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (typeof window === 'undefined') return;
+                            window.open(virtualTourHref, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          3D Tour
+                        </button>
+                      )}
+                      {agentHasWhatsApp && (
+                        <button
+                          type="button"
+                          className="property-card-mobile-link"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!cardWhatsAppHref || typeof window === 'undefined') return;
+                            window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          WhatsApp
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
@@ -1140,6 +1164,19 @@ const PropertyList = () => {
           className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
           onScroll={handleListScroll}
         >
+          <section className="mobile-listing-header" aria-label="Listing quick controls">
+            <div className="mobile-listing-header-copy">
+              <p className="mobile-listing-header-eyebrow">HomeKey listings</p>
+              <h2>{mobileListingHeaderTitle}</h2>
+            </div>
+            <button
+              type="button"
+              className="mobile-listing-header-filter-btn"
+              onClick={openMobileFilters}
+            >
+              Filters
+            </button>
+          </section>
           <div className="homepage-hero-shell">
             <section className="hero-banner">
               <img
@@ -1198,30 +1235,12 @@ const PropertyList = () => {
               favoritePropertyIds={interestSummary.favoriteIds}
               onCircleSelectionChange={handleCircleSelectionChange}
               clearSignal={clearCircleSignal}
-              drawModeToggleSignal={drawModeToggleSignal}
-              onDrawModeChange={setIsMapDrawModeActive}
+              drawModeToggleSignal={0}
             />
           </section>
         </div>
       </section>
       <div className="mobile-thumb-zone-controls" aria-label="Thumb-zone map controls">
-        <button
-          type="button"
-          className="mobile-thumb-zone-fab mobile-thumb-zone-fab--whatsapp"
-          onClick={() => {
-            if (!mobileWhatsAppHref || typeof window === 'undefined') return;
-            window.open(mobileWhatsAppHref, '_blank', 'noopener,noreferrer');
-          }}
-          disabled={!mobileWhatsAppHref}
-          aria-label="Open WhatsApp chat for a listing"
-        >
-          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M12 4.5a7.5 7.5 0 0 0-6.5 11.2L4.5 20l4.5-1A7.5 7.5 0 1 0 12 4.5Z" />
-              <path d="M9.4 9.2c.1-.2.3-.2.5-.2h.4c.2 0 .3.1.4.3l.7 1.7c.1.2 0 .4-.1.5l-.4.4c.5.9 1.2 1.6 2.1 2.1l.4-.4c.2-.1.3-.2.5-.1l1.7.7c.2.1.3.2.3.4v.4c0 .2-.1.4-.2.5-.4.4-1 .6-1.7.5-1.3-.2-2.6-.9-3.6-1.9s-1.7-2.3-1.9-3.6c-.1-.7.1-1.3.5-1.8Z" />
-            </svg>
-          </span>
-        </button>
         <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
           <button
             type="button"
@@ -1229,7 +1248,7 @@ const PropertyList = () => {
             onClick={() => setMobileDiscoveryView('map')}
             aria-pressed={mobileDiscoveryView === 'map'}
           >
-            Map View
+            Map
           </button>
           <button
             type="button"
@@ -1237,26 +1256,9 @@ const PropertyList = () => {
             onClick={() => setMobileDiscoveryView('list')}
             aria-pressed={mobileDiscoveryView === 'list'}
           >
-            List View
+            List
           </button>
         </div>
-        <button
-          type="button"
-          className={`mobile-thumb-zone-fab mobile-thumb-zone-fab--draw ${isMapDrawModeActive ? 'is-active' : ''}`}
-          onClick={() => {
-            setMobileDiscoveryView('map');
-            setDrawModeToggleSignal((value) => value + 1);
-          }}
-          aria-label="Toggle draw mode on map"
-          aria-pressed={isMapDrawModeActive}
-        >
-          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M4 16.8 15.8 5a1.5 1.5 0 0 1 2.1 0l1.1 1.1a1.5 1.5 0 0 1 0 2.1L7.2 20H4z" />
-              <path d="M13.8 7 17 10.2" />
-            </svg>
-          </span>
-        </button>
       </div>
     </div>
   );

@@ -183,6 +183,7 @@ const Navbar = () => {
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
+  const filtersPanelRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
@@ -263,23 +264,50 @@ const Navbar = () => {
 
   useEffect(() => {
     if (!filtersExpanded) return undefined;
-    const handlePointerDown = (event) => {
-      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
-        setFiltersExpanded(false);
-      }
+    const closeFiltersFromOutsideInteraction = (event) => {
+      const eventTarget = event.target;
+      const clickedFilterToggle = eventTarget && eventTarget.closest
+        ? eventTarget.closest('#header-search-filter-toggle')
+        : null;
+      if (clickedFilterToggle) return;
+      if (filtersPanelRef.current && filtersPanelRef.current.contains(eventTarget)) return;
+      setFiltersExpanded(false);
     };
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setFiltersExpanded(false);
     };
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('pointerdown', closeFiltersFromOutsideInteraction, true);
+    document.addEventListener('click', closeFiltersFromOutsideInteraction, true);
+    document.addEventListener('touchstart', closeFiltersFromOutsideInteraction, true);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('pointerdown', closeFiltersFromOutsideInteraction, true);
+      document.removeEventListener('click', closeFiltersFromOutsideInteraction, true);
+      document.removeEventListener('touchstart', closeFiltersFromOutsideInteraction, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [filtersExpanded]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.body.classList.toggle('mobile-filters-open', filtersExpanded);
+    return () => {
+      document.body.classList.remove('mobile-filters-open');
+    };
+  }, [filtersExpanded]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleOpenMobileFilters = () => {
+      setPriceExpanded(false);
+      setRoomsBathsExpanded(false);
+      setFiltersExpanded(true);
+    };
+    window.addEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
+    return () => {
+      window.removeEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
+    };
+  }, []);
 
   const applySearch = ({
     nextCity = city,
@@ -606,7 +634,8 @@ const Navbar = () => {
                 </button>
                 <div
                   id="header-filters-panel"
-                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
+                  ref={filtersPanelRef}
+                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
                 >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
@@ -619,7 +648,31 @@ const Navbar = () => {
                     onTogglePropertyCategory={handleTogglePropertyCategory}
                     onToggleFeature={handleToggleFeatureFilter}
                   />
+                  <button
+                    type="button"
+                    className="mobile-filter-sheet-close-btn"
+                    onClick={() => setFiltersExpanded(false)}
+                  >
+                    Show Results
+                  </button>
                 </div>
+                {filtersExpanded && (
+                  <button
+                    type="button"
+                    className="mobile-filter-sheet-backdrop is-visible"
+                    aria-label="Close filters panel backdrop"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setFiltersExpanded(false);
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setFiltersExpanded(false);
+                    }}
+                  />
+                )}
               </div>
             </div>
             <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
