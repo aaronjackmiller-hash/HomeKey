@@ -3828,7 +3828,7 @@ legend {
     z-index: 55;
   }
 
-  .premium-header__filters-panel.is-mobile-sheet {
+  .premium-header__filters-panel.is-mobile-sheet.is-open {
     position: fixed;
     left: 0;
     right: 0;
@@ -3846,7 +3846,7 @@ legend {
     z-index: 60;
   }
 
-  .premium-header__filters-panel.is-mobile-sheet .filter-menu {
+  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu {
     width: 100%;
     flex: 1 1 auto;
     min-height: 0;
@@ -3858,7 +3858,7 @@ legend {
     padding: 16px 16px 10px;
   }
 
-  .premium-header__filters-panel.is-mobile-sheet .filter-menu__header {
+  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu__header {
     position: sticky;
     top: 0;
     z-index: 1;
