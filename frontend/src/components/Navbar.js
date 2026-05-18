@@ -183,6 +183,7 @@ const Navbar = () => {
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
+  const filtersPanelRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
@@ -264,11 +265,13 @@ const Navbar = () => {
   useEffect(() => {
     if (!filtersExpanded) return undefined;
     const handlePointerDown = (event) => {
-      const backdropTarget = event.target && event.target.classList
-        && event.target.classList.contains('mobile-filter-sheet-backdrop');
-      if (backdropTarget || (filtersRef.current && !filtersRef.current.contains(event.target))) {
-        setFiltersExpanded(false);
-      }
+      const eventTarget = event.target;
+      const clickedFilterToggle = eventTarget && eventTarget.closest
+        ? eventTarget.closest('#header-search-filter-toggle')
+        : null;
+      if (clickedFilterToggle) return;
+      if (filtersPanelRef.current && filtersPanelRef.current.contains(eventTarget)) return;
+      setFiltersExpanded(false);
     };
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setFiltersExpanded(false);
@@ -629,6 +632,7 @@ const Navbar = () => {
                 </button>
                 <div
                   id="header-filters-panel"
+                  ref={filtersPanelRef}
                   className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
                 >
                   <FilterMenu
@@ -655,9 +659,16 @@ const Navbar = () => {
                     type="button"
                     className="mobile-filter-sheet-backdrop is-visible"
                     aria-label="Close filters panel backdrop"
-                    onMouseDown={() => setFiltersExpanded(false)}
-                    onTouchStart={() => setFiltersExpanded(false)}
-                    onClick={() => setFiltersExpanded(false)}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setFiltersExpanded(false);
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setFiltersExpanded(false);
+                    }}
                   />
                 )}
               </div>
