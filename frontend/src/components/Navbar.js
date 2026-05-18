@@ -264,7 +264,7 @@ const Navbar = () => {
 
   useEffect(() => {
     if (!filtersExpanded) return undefined;
-    const handlePointerDown = (event) => {
+    const closeFiltersFromOutsideInteraction = (event) => {
       const eventTarget = event.target;
       const clickedFilterToggle = eventTarget && eventTarget.closest
         ? eventTarget.closest('#header-search-filter-toggle')
@@ -276,10 +276,14 @@ const Navbar = () => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') setFiltersExpanded(false);
     };
-    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('pointerdown', closeFiltersFromOutsideInteraction, true);
+    document.addEventListener('click', closeFiltersFromOutsideInteraction, true);
+    document.addEventListener('touchstart', closeFiltersFromOutsideInteraction, true);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('pointerdown', closeFiltersFromOutsideInteraction, true);
+      document.removeEventListener('click', closeFiltersFromOutsideInteraction, true);
+      document.removeEventListener('touchstart', closeFiltersFromOutsideInteraction, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [filtersExpanded]);
