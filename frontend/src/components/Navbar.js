@@ -281,6 +281,19 @@ const Navbar = () => {
     };
   }, [filtersExpanded]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleOpenMobileFilters = () => {
+      setPriceExpanded(false);
+      setRoomsBathsExpanded(false);
+      setFiltersExpanded(true);
+    };
+    window.addEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
+    return () => {
+      window.removeEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
+    };
+  }, []);
+
   const applySearch = ({
     nextCity = city,
     nextRooms = rooms,

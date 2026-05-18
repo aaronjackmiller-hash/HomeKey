@@ -17,6 +17,7 @@ const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
+const MOBILE_LAYOUT_BREAKPOINT = 767;
 const SUPPORTED_ALL_FILTERS = new Set([
   '',
   'newest',
@@ -288,6 +289,13 @@ const clampPriceValue = (value) => {
   return Math.min(PRICE_SLIDER_MAX, Math.max(PRICE_SLIDER_MIN, asNumber));
 };
 
+const getInitialMobileDiscoveryView = () => {
+  if (typeof window !== 'undefined' && window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT) {
+    return 'list';
+  }
+  return 'map';
+};
+
 const matchesRoomsSelection = (bedroomsValue, roomsSelection) => {
   const selected = safeText(roomsSelection);
   if (!selected) return true;
@@ -543,7 +551,7 @@ const PropertyList = () => {
   const history = useHistory();
   const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
-  const [mobileDiscoveryView, setMobileDiscoveryView] = useState('map');
+  const [mobileDiscoveryView, setMobileDiscoveryView] = useState(getInitialMobileDiscoveryView);
   const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
   const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
   const [interestVersion, setInterestVersion] = useState(0);
@@ -880,6 +888,13 @@ const PropertyList = () => {
     }
     return '';
   }, [mapSourceProperties]);
+  const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
+
+  const openMobileFilters = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleCircleSelectionChange = useCallback((selection) => {
     const nextSelection = (!selection || typeof selection !== 'object')
@@ -1140,6 +1155,19 @@ const PropertyList = () => {
           className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
           onScroll={handleListScroll}
         >
+          <section className="mobile-listing-header" aria-label="Listing quick controls">
+            <div className="mobile-listing-header-copy">
+              <p className="mobile-listing-header-eyebrow">HomeKey listings</p>
+              <h2>{mobileListingHeaderTitle}</h2>
+            </div>
+            <button
+              type="button"
+              className="mobile-listing-header-filter-btn"
+              onClick={openMobileFilters}
+            >
+              Filters
+            </button>
+          </section>
           <div className="homepage-hero-shell">
             <section className="hero-banner">
               <img
