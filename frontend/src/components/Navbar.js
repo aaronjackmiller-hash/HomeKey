@@ -653,6 +653,8 @@ const Navbar = () => {
                     type="button"
                     className="mobile-filter-sheet-backdrop is-visible"
                     aria-label="Close filters panel backdrop"
+                    onMouseDown={() => setFiltersExpanded(false)}
+                    onTouchStart={() => setFiltersExpanded(false)}
                     onClick={() => setFiltersExpanded(false)}
                   />
                 )}
