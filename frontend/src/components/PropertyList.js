@@ -529,6 +529,9 @@ const PropertyList = () => {
   const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
   const [mobileDiscoveryView, setMobileDiscoveryView] = useState(getInitialMobileDiscoveryView);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT : false
+  );
   const [interestVersion, setInterestVersion] = useState(0);
 
   // Clear any pending auto-retry timers
@@ -752,6 +755,18 @@ const PropertyList = () => {
     window.addEventListener('homekey:interest-updated', handleInterestUpdated);
     return () => {
       window.removeEventListener('homekey:interest-updated', handleInterestUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleViewportResize = () => {
+      setIsMobileViewport(window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT);
+    };
+    handleViewportResize();
+    window.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.removeEventListener('resize', handleViewportResize);
     };
   }, []);
 
@@ -1055,7 +1070,7 @@ const PropertyList = () => {
                   </span>
                 </div>
                 <div className="property-card-actions">
-                  {hasVirtualTour && (
+                  {!isMobileViewport && hasVirtualTour && (
                     <button
                       type="button"
                       className="property-card-action-btn property-card-action-btn--outline"
@@ -1070,7 +1085,7 @@ const PropertyList = () => {
                   )}
                   <button
                     type="button"
-                    className="property-card-action-btn property-card-action-btn--outline"
+                    className={`property-card-action-btn ${isMobileViewport ? 'property-card-action-btn--primary-mobile' : 'property-card-action-btn--outline'}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       openPropertyDetail();
@@ -1079,22 +1094,54 @@ const PropertyList = () => {
                   >
                     View Details
                   </button>
-                  <button
-                    type="button"
-                    className={`property-card-action-btn ${
-                      agentHasWhatsApp
-                        ? 'property-card-action-btn--whatsapp'
-                        : 'property-card-action-btn--whatsapp-disabled'
-                    }`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (!agentHasWhatsApp || !cardWhatsAppHref || typeof window === 'undefined') return;
-                      window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
-                    }}
-                    disabled={!agentHasWhatsApp}
-                  >
-                    {whatsappButtonLabel}
-                  </button>
+                  {!isMobileViewport && (
+                    <button
+                      type="button"
+                      className={`property-card-action-btn ${
+                        agentHasWhatsApp
+                          ? 'property-card-action-btn--whatsapp'
+                          : 'property-card-action-btn--whatsapp-disabled'
+                      }`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!agentHasWhatsApp || !cardWhatsAppHref || typeof window === 'undefined') return;
+                        window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                      }}
+                      disabled={!agentHasWhatsApp}
+                    >
+                      {whatsappButtonLabel}
+                    </button>
+                  )}
+                  {isMobileViewport && (hasVirtualTour || agentHasWhatsApp) && (
+                    <div className="property-card-mobile-quick-actions" aria-label="Quick property actions">
+                      {hasVirtualTour && (
+                        <button
+                          type="button"
+                          className="property-card-mobile-link"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (typeof window === 'undefined') return;
+                            window.open(virtualTourHref, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          3D Tour
+                        </button>
+                      )}
+                      {agentHasWhatsApp && (
+                        <button
+                          type="button"
+                          className="property-card-mobile-link"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!cardWhatsAppHref || typeof window === 'undefined') return;
+                            window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          WhatsApp
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {monthly != null && (
                   <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>

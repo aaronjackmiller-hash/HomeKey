@@ -1286,6 +1286,26 @@ a {
   gap: 8px;
 }
 
+.property-card-mobile-quick-actions {
+  display: none;
+}
+
+.property-card-mobile-link {
+  border: none;
+  background: transparent;
+  color: #1f4f8c;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.property-card-mobile-link:hover {
+  color: #173a67;
+}
+
 .property-card-action-btn {
   width: 100%;
   min-height: 40px;
@@ -1325,6 +1345,17 @@ a {
 .property-card-action-btn--charcoal:hover {
   border-color: #000000;
   background: #000000;
+}
+
+.property-card-action-btn--primary-mobile {
+  border: 1px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.property-card-action-btn--primary-mobile:hover {
+  border-color: #111827;
+  background: #111827;
 }
 
 .property-card-action-btn--whatsapp {
@@ -4058,23 +4089,78 @@ legend {
   }
 
   .property-list-page .property-card-image {
-    height: 118px;
+    height: 152px;
   }
 
   .property-list-page .property-card-title {
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+  }
+
+  .property-list-page .property-card-location {
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.35;
   }
 
   .property-list-page .property-card-price {
-    font-size: 22px;
+    font-size: 25px;
+    font-weight: 800;
   }
 
   .property-list-page .property-card-stats {
-    gap: 5px;
+    margin: 0 0 10px;
+    gap: 8px;
   }
 
   .property-list-page .property-card-stat {
-    font-size: 0.58rem;
+    min-height: 34px;
+    font-size: 0.7rem;
+    padding: 7px 6px;
+    background: #f8fafc;
+    border-color: #d7e2ef;
+    color: #334155;
+  }
+
+  .property-list-page .property-card-stat svg {
+    width: 14px;
+    height: 14px;
+    stroke: #334155;
+  }
+
+  .property-list-page .property-card-body {
+    padding: 10px;
+  }
+
+  .property-list-page .property-card-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .property-list-page .property-card-action-btn {
+    min-height: 42px;
+    height: 42px;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+  }
+
+  .property-list-page .property-card-mobile-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  .property-list-page .property-card-mobile-quick-actions .property-card-mobile-link + .property-card-mobile-link::before {
+    content: "•";
+    margin-right: 10px;
+    color: #94a3b8;
+  }
+
+  .property-list-page .property-card-mobile-link {
+    font-size: 0.82rem;
   }
 
   .mobile-thumb-zone-controls {
