@@ -3841,12 +3841,15 @@ legend {
     border-color: #d9dee8;
     box-shadow: 0 -14px 30px rgba(15, 23, 42, 0.28);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     z-index: 60;
   }
 
   .premium-header__filters-panel.is-mobile-sheet .filter-menu {
     width: 100%;
-    max-height: calc(min(76vh, 640px) - 68px);
+    flex: 1 1 auto;
+    min-height: 0;
     margin: 0;
     border: none;
     border-radius: 0;
@@ -3864,6 +3867,7 @@ legend {
   }
 
   .mobile-filter-sheet-close-btn {
+    flex-shrink: 0;
     width: calc(100% - 24px);
     margin: 10px 12px 12px;
     min-height: 44px;
@@ -3988,6 +3992,7 @@ legend {
 
   .mobile-listing-header-copy {
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .mobile-listing-header-eyebrow {
@@ -4008,11 +4013,16 @@ legend {
   }
 
   .mobile-listing-header-filter-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid #1a1a1a;
     border-radius: 999px;
     background: #1a1a1a;
     color: #ffffff;
     min-height: 36px;
+    min-width: 92px;
     padding: 0 14px;
     font-size: 0.8rem;
     font-weight: 700;
