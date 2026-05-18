@@ -9,7 +9,7 @@ import {
   toggleFavoriteProperty,
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName, pickBestContactName } from '../utils/contactMessaging';
+import { getContactFirstName } from '../utils/contactMessaging';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -197,29 +197,6 @@ const getAddressDisplay = (address = {}) => {
   const locationParts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
   const fullAddress = [street, ...locationParts].filter(Boolean).join(', ');
   return { street, fullAddress, locationLine: locationParts.join(', ') };
-};
-
-const getPropertyWhatsAppHref = (property = {}, title = 'this listing') => {
-  const externalContact = property.externalContact && typeof property.externalContact === 'object'
-    ? property.externalContact
-    : {};
-  const directContact = property.contact && typeof property.contact === 'object'
-    ? property.contact
-    : {};
-  const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-    ? property.agent
-    : {};
-  const rawPhone = safeText(
-    agentContact.whatsapp
-      || directContact.whatsapp
-      || externalContact.whatsapp
-  );
-  const rawContactName = pickBestContactName({
-    directName: agentContact.name,
-    agentName: directContact.name,
-    externalName: externalContact.name,
-  });
-  return buildWhatsAppHref(rawPhone, title, rawContactName);
 };
 
 const getPropertyAgentWhatsApp = (property = {}) => {
@@ -552,8 +529,6 @@ const PropertyList = () => {
   const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
   const [mobileDiscoveryView, setMobileDiscoveryView] = useState(getInitialMobileDiscoveryView);
-  const [drawModeToggleSignal, setDrawModeToggleSignal] = useState(0);
-  const [isMapDrawModeActive, setIsMapDrawModeActive] = useState(false);
   const [interestVersion, setInterestVersion] = useState(0);
 
   // Clear any pending auto-retry timers
@@ -875,19 +850,6 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
-  const mobileWhatsAppHref = useMemo(() => {
-    for (const property of mapSourceProperties) {
-      if (!property || typeof property !== 'object') continue;
-      const { street } = getAddressDisplay(property.address || {});
-      const displayTitle =
-        sanitizeReadableText(property, street)
-        || sanitizeReadableText(property, property.title)
-        || 'this listing';
-      const whatsappHref = getPropertyWhatsAppHref(property, displayTitle);
-      if (whatsappHref) return whatsappHref;
-    }
-    return '';
-  }, [mapSourceProperties]);
   const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
 
   const openMobileFilters = () => {
@@ -1226,30 +1188,12 @@ const PropertyList = () => {
               favoritePropertyIds={interestSummary.favoriteIds}
               onCircleSelectionChange={handleCircleSelectionChange}
               clearSignal={clearCircleSignal}
-              drawModeToggleSignal={drawModeToggleSignal}
-              onDrawModeChange={setIsMapDrawModeActive}
+              drawModeToggleSignal={0}
             />
           </section>
         </div>
       </section>
       <div className="mobile-thumb-zone-controls" aria-label="Thumb-zone map controls">
-        <button
-          type="button"
-          className="mobile-thumb-zone-fab mobile-thumb-zone-fab--whatsapp"
-          onClick={() => {
-            if (!mobileWhatsAppHref || typeof window === 'undefined') return;
-            window.open(mobileWhatsAppHref, '_blank', 'noopener,noreferrer');
-          }}
-          disabled={!mobileWhatsAppHref}
-          aria-label="Open WhatsApp chat for a listing"
-        >
-          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M12 4.5a7.5 7.5 0 0 0-6.5 11.2L4.5 20l4.5-1A7.5 7.5 0 1 0 12 4.5Z" />
-              <path d="M9.4 9.2c.1-.2.3-.2.5-.2h.4c.2 0 .3.1.4.3l.7 1.7c.1.2 0 .4-.1.5l-.4.4c.5.9 1.2 1.6 2.1 2.1l.4-.4c.2-.1.3-.2.5-.1l1.7.7c.2.1.3.2.3.4v.4c0 .2-.1.4-.2.5-.4.4-1 .6-1.7.5-1.3-.2-2.6-.9-3.6-1.9s-1.7-2.3-1.9-3.6c-.1-.7.1-1.3.5-1.8Z" />
-            </svg>
-          </span>
-        </button>
         <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
           <button
             type="button"
@@ -1257,7 +1201,7 @@ const PropertyList = () => {
             onClick={() => setMobileDiscoveryView('map')}
             aria-pressed={mobileDiscoveryView === 'map'}
           >
-            Map View
+            Map
           </button>
           <button
             type="button"
@@ -1265,26 +1209,9 @@ const PropertyList = () => {
             onClick={() => setMobileDiscoveryView('list')}
             aria-pressed={mobileDiscoveryView === 'list'}
           >
-            List View
+            List
           </button>
         </div>
-        <button
-          type="button"
-          className={`mobile-thumb-zone-fab mobile-thumb-zone-fab--draw ${isMapDrawModeActive ? 'is-active' : ''}`}
-          onClick={() => {
-            setMobileDiscoveryView('map');
-            setDrawModeToggleSignal((value) => value + 1);
-          }}
-          aria-label="Toggle draw mode on map"
-          aria-pressed={isMapDrawModeActive}
-        >
-          <span className="mobile-thumb-zone-fab-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M4 16.8 15.8 5a1.5 1.5 0 0 1 2.1 0l1.1 1.1a1.5 1.5 0 0 1 0 2.1L7.2 20H4z" />
-              <path d="M13.8 7 17 10.2" />
-            </svg>
-          </span>
-        </button>
       </div>
     </div>
   );

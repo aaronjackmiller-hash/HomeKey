@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
+const MOBILE_SHEET_BREAKPOINT = 767;
 const ROOM_OPTIONS = [
   { value: '', label: 'Any' },
   { value: 'studio', label: 'Studio' },
@@ -177,6 +178,9 @@ const Navbar = () => {
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= MOBILE_SHEET_BREAKPOINT : false
+  );
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
@@ -218,6 +222,18 @@ const Navbar = () => {
     window.addEventListener('homekey:interest-updated', handleInterestUpdated);
     return () => {
       window.removeEventListener('homekey:interest-updated', handleInterestUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleViewportResize = () => {
+      setIsMobileViewport(window.innerWidth <= MOBILE_SHEET_BREAKPOINT);
+    };
+    handleViewportResize();
+    window.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.removeEventListener('resize', handleViewportResize);
     };
   }, []);
 
@@ -619,7 +635,7 @@ const Navbar = () => {
                 </button>
                 <div
                   id="header-filters-panel"
-                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''}`}
+                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} ${isMobileViewport ? 'is-mobile-sheet' : ''}`}
                 >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
@@ -632,7 +648,24 @@ const Navbar = () => {
                     onTogglePropertyCategory={handleTogglePropertyCategory}
                     onToggleFeature={handleToggleFeatureFilter}
                   />
+                  {isMobileViewport && (
+                    <button
+                      type="button"
+                      className="mobile-filter-sheet-close-btn"
+                      onClick={() => setFiltersExpanded(false)}
+                    >
+                      Show Results
+                    </button>
+                  )}
                 </div>
+                {filtersExpanded && isMobileViewport && (
+                  <button
+                    type="button"
+                    className="mobile-filter-sheet-backdrop is-visible"
+                    aria-label="Close filters panel backdrop"
+                    onClick={() => setFiltersExpanded(false)}
+                  />
+                )}
               </div>
             </div>
             <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
