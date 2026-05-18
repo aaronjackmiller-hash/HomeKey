@@ -282,6 +282,14 @@ const Navbar = () => {
   }, [filtersExpanded]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.body.classList.toggle('mobile-filters-open', filtersExpanded);
+    return () => {
+      document.body.classList.remove('mobile-filters-open');
+    };
+  }, [filtersExpanded]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handleOpenMobileFilters = () => {
       setPriceExpanded(false);
