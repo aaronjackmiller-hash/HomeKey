@@ -284,6 +284,8 @@ const GoogleListingsMap = ({
   const geocoderRef = useRef(null);
   const infoWindowRef = useRef(null);
   const markerEntriesRef = useRef([]);
+  const markerHydrationInProgressRef = useRef(false);
+  const expectedMarkerCountRef = useRef(0);
   const geocodeCacheRef = useRef(readGeocodeCache());
   const drawListenersRef = useRef([]);
   const activeCircleRef = useRef(null);
@@ -338,12 +340,18 @@ const GoogleListingsMap = ({
       ? Number(activeCircle.getRadius())
       : 0;
     const hasAreaFilter = Boolean(activeCircle && center && radiusMeters > 0);
-    const centerPoint = hasAreaFilter ? { lat: center.lat(), lng: center.lng() } : null;
+    const hydratedMarkerCount = markerEntriesRef.current.length;
+    const shouldDeferSelection = hasAreaFilter
+      && markerHydrationInProgressRef.current
+      && expectedMarkerCountRef.current > 0
+      && hydratedMarkerCount < expectedMarkerCountRef.current;
+    const effectiveAreaFilter = hasAreaFilter && !shouldDeferSelection;
+    const centerPoint = effectiveAreaFilter ? { lat: center.lat(), lng: center.lng() } : null;
     const selectedPropertyIds = [];
     let visibleMarkers = 0;
 
     markerEntriesRef.current.forEach((entry) => {
-      const isVisible = !hasAreaFilter
+      const isVisible = !effectiveAreaFilter
         || getDistanceMeters(entry.coords, centerPoint) <= radiusMeters;
       entry.marker.setVisible(isVisible);
       if (entry.frameMarker) entry.frameMarker.setVisible(isVisible);
@@ -355,11 +363,11 @@ const GoogleListingsMap = ({
 
     setMarkerCount(visibleMarkers);
     setTotalMarkerCount(markerEntriesRef.current.length);
-    setCircleRadiusMeters(hasAreaFilter ? radiusMeters : 0);
+    setCircleRadiusMeters(effectiveAreaFilter ? radiusMeters : 0);
     emitCircleSelection({
-      active: hasAreaFilter,
+      active: effectiveAreaFilter,
       propertyIds: selectedPropertyIds,
-      radiusMeters: hasAreaFilter ? radiusMeters : 0,
+      radiusMeters: effectiveAreaFilter ? radiusMeters : 0,
       center: centerPoint,
     });
   };
@@ -484,8 +492,11 @@ const GoogleListingsMap = ({
     const geocoder = geocoderRef.current;
     const infoWindow = infoWindowRef.current;
     const markerInputs = propertiesWithAddress.slice(0, MAX_MARKERS);
+    markerHydrationInProgressRef.current = true;
+    expectedMarkerCountRef.current = markerInputs.length;
     const supportsDesktopHover = typeof window.matchMedia === 'function'
       && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    applyCircleFilter();
 
     const updateMarkers = async () => {
       const bounds = new mapsApi.LatLngBounds();
@@ -493,7 +504,10 @@ const GoogleListingsMap = ({
       let cacheChanged = false;
 
       for (const item of markerInputs) {
-        if (cancelled) return;
+        if (cancelled) {
+          markerHydrationInProgressRef.current = false;
+          return;
+        }
         const cacheKey = item.addressQuery.toLowerCase();
         let coords = geocodeCacheRef.current[cacheKey];
 
@@ -576,6 +590,7 @@ const GoogleListingsMap = ({
           propertyId,
           coords,
         });
+        if (activeCircleRef.current) applyCircleFilter();
         bounds.extend(coords);
         placed += 1;
       }
@@ -592,6 +607,7 @@ const GoogleListingsMap = ({
         map.setZoom(10);
       }
 
+      markerHydrationInProgressRef.current = false;
       applyCircleFilter();
     };
 
@@ -604,6 +620,8 @@ const GoogleListingsMap = ({
         if (entry.frameMarker) entry.frameMarker.setMap(null);
       });
       markerEntriesRef.current = [];
+      markerHydrationInProgressRef.current = false;
+      expectedMarkerCountRef.current = 0;
     };
   }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet]);
 
