@@ -340,10 +340,11 @@ const GoogleListingsMap = ({
       ? Number(activeCircle.getRadius())
       : 0;
     const hasAreaFilter = Boolean(activeCircle && center && radiusMeters > 0);
+    const hydratedMarkerCount = markerEntriesRef.current.length;
     const shouldDeferSelection = hasAreaFilter
       && markerHydrationInProgressRef.current
-      && markerEntriesRef.current.length === 0
-      && expectedMarkerCountRef.current > 0;
+      && expectedMarkerCountRef.current > 0
+      && hydratedMarkerCount < expectedMarkerCountRef.current;
     const effectiveAreaFilter = hasAreaFilter && !shouldDeferSelection;
     const centerPoint = effectiveAreaFilter ? { lat: center.lat(), lng: center.lng() } : null;
     const selectedPropertyIds = [];
