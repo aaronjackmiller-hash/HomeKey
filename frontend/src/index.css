@@ -4023,6 +4023,7 @@ legend {
   width: clamp(1.3rem, 1.45vw, 1.75rem);
   height: auto;
   display: block;
+  color: #0f172a;
 }
 
 .property-list-page .google-listings-map-search-count span {
