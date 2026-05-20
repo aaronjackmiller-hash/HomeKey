@@ -456,7 +456,7 @@ const ConnectedListingsMapFallback = ({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return undefined;
-    const coarsePointer = isCoarsePointerDevice();
+    const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
     if (!drawMode) {
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
@@ -532,11 +532,14 @@ const ConnectedListingsMapFallback = ({
       completeDraftCircle(event);
     };
 
-    if (coarsePointer) {
+    if (touchLikeDrawMode) {
       map.on('touchmove', onPointerMove);
       map.on('touchstart', onPointerDown);
       map.on('touchend', completeDraftCircle);
       map.on('click', onTapFallback);
+      map.on('mousemove', onPointerMove);
+      map.on('mousedown', onPointerDown);
+      map.on('mouseup', completeDraftCircle);
     } else {
       map.on('mousemove', onPointerMove);
       map.on('mousedown', onPointerDown);
@@ -554,11 +557,17 @@ const ConnectedListingsMapFallback = ({
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
     };
-  }, [drawMode]);
+  }, [drawMode, isMobileOverlay]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !mobileMoveCircleMode || drawMode || !activeCircleRef.current || !isCoarsePointerDevice()) {
+    if (
+      !map
+      || !mobileMoveCircleMode
+      || drawMode
+      || !activeCircleRef.current
+      || (!isMobileOverlay && !isCoarsePointerDevice())
+    ) {
       return undefined;
     }
 
@@ -573,7 +582,7 @@ const ConnectedListingsMapFallback = ({
     return () => {
       map.off('click', onTapToMoveCircle);
     };
-  }, [drawMode, mobileMoveCircleMode]);
+  }, [drawMode, isMobileOverlay, mobileMoveCircleMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -596,6 +605,7 @@ const ConnectedListingsMapFallback = ({
     }
   }, []);
   const coarsePointerDevice = isCoarsePointerDevice();
+  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
 
   return (
     <div className="google-listings-map-shell">
@@ -627,10 +637,10 @@ const ConnectedListingsMapFallback = ({
               onClick={toggleDrawMode}
             >
               {drawMode
-                ? (coarsePointerDevice ? 'Tap center, then edge' : 'Draw Mode')
+                ? (touchLikeUiMode ? 'Tap center, then edge' : 'Draw Mode')
                 : 'Draw search circle'}
             </button>
-            {coarsePointerDevice && !drawMode && activeCircleRef.current ? (
+            {touchLikeUiMode && !drawMode && activeCircleRef.current ? (
               <button
                 type="button"
                 className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
@@ -657,7 +667,7 @@ const ConnectedListingsMapFallback = ({
         />
       </div>
       <p className="google-listings-map-caption">
-        {drawMode && coarsePointerDevice
+        {drawMode && touchLikeUiMode
           ? 'Tap once for center, then tap again on the edge to apply the area.'
           : hasActiveCircle
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`

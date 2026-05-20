@@ -642,7 +642,7 @@ const GoogleListingsMap = ({
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
-    const coarsePointer = isCoarsePointerDevice();
+    const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
     clearDrawListeners();
     if (!drawMode) {
       removeDraftCircle();
@@ -660,7 +660,7 @@ const GoogleListingsMap = ({
     mapRef.current.setOptions({
       draggableCursor: null,
       draggable: false,
-      gestureHandling: coarsePointer ? 'greedy' : 'none',
+      gestureHandling: touchLikeDrawMode ? 'greedy' : 'none',
       disableDoubleClickZoom: true,
     });
 
@@ -761,12 +761,23 @@ const GoogleListingsMap = ({
       }
     };
 
-    if (coarsePointer) {
+    if (touchLikeDrawMode) {
       const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
       const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
       const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
       const onTapFallback = registerDrawListener('click', handleTapFallback);
-      drawListenersRef.current = [onTouchStart, onTouchMove, onTouchEnd, onTapFallback].filter(Boolean);
+      const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
+      const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
+      const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
+      drawListenersRef.current = [
+        onTouchStart,
+        onTouchMove,
+        onTouchEnd,
+        onTapFallback,
+        onMouseDown,
+        onMouseMove,
+        onMouseUp,
+      ].filter(Boolean);
     } else {
       const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
       const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
@@ -785,11 +796,16 @@ const GoogleListingsMap = ({
         });
       }
     };
-  }, [drawMode, mapReady]);
+  }, [drawMode, isMobileOverlay, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
-    if (!mobileMoveCircleMode || drawMode || !activeCircleRef.current || !isCoarsePointerDevice()) return undefined;
+    if (
+      !mobileMoveCircleMode
+      || drawMode
+      || !activeCircleRef.current
+      || (!isMobileOverlay && !isCoarsePointerDevice())
+    ) return undefined;
     const mapsApi = window.google.maps;
     const onMapTapToMove = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
       if (!event || !event.latLng || !activeCircleRef.current) return;
@@ -802,7 +818,7 @@ const GoogleListingsMap = ({
       if (typeof onMapTapToMove.remove === 'function') onMapTapToMove.remove();
       else mapsApi.event.removeListener(onMapTapToMove);
     };
-  }, [drawMode, mapReady, mobileMoveCircleMode]);
+  }, [drawMode, isMobileOverlay, mapReady, mobileMoveCircleMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -884,6 +900,7 @@ const GoogleListingsMap = ({
     mapRef.current.panBy(x, y);
   };
   const coarsePointerDevice = isCoarsePointerDevice();
+  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
 
   return (
     <div className="google-listings-map-shell">
@@ -915,10 +932,10 @@ const GoogleListingsMap = ({
               onClick={toggleDrawMode}
             >
               {drawMode
-                ? (coarsePointerDevice ? 'Tap center, then edge' : 'Draw Mode')
+                ? (touchLikeUiMode ? 'Tap center, then edge' : 'Draw Mode')
                 : 'Draw search circle'}
             </button>
-            {coarsePointerDevice && !drawMode && activeCircleRef.current ? (
+            {touchLikeUiMode && !drawMode && activeCircleRef.current ? (
               <button
                 type="button"
                 className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
@@ -979,7 +996,7 @@ const GoogleListingsMap = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
-        {drawMode && coarsePointerDevice
+        {drawMode && touchLikeUiMode
           ? 'Tap once for center, then tap again on the edge to apply the area.'
           : circleRadiusMeters > 0
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
