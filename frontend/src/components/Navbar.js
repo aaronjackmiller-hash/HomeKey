@@ -86,7 +86,7 @@ const parseSearchFromLocation = (search = '') => {
   const city = params.get('q') || '';
   const rooms = params.get('rooms') || '';
   const baths = params.get('baths') || '';
-  const listingType = sanitizeListingType(params.get('type') || 'rental');
+  const listingType = sanitizeListingType(params.get('type') || 'all');
   const propertyCategory = params.get('propertyCategory') || '';
   const normalizedPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(propertyCategory) ? propertyCategory : '';
   const rawFeatures = String(params.get('features') || '');
@@ -180,12 +180,15 @@ const Navbar = () => {
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
+  const [isSavingSearch, setIsSavingSearch] = useState(false);
+  const [saveSearchStatus, setSaveSearchStatus] = useState('');
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
+  const saveSearchFeedbackTimerRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -210,6 +213,33 @@ const Navbar = () => {
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
+
+  useEffect(() => () => {
+    if (saveSearchFeedbackTimerRef.current) {
+      window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      saveSearchFeedbackTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleSaveSearchResult = (event) => {
+      const success = Boolean(event?.detail?.success);
+      setIsSavingSearch(false);
+      setSaveSearchStatus(success ? 'Saved' : 'Failed');
+      if (saveSearchFeedbackTimerRef.current) {
+        window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      }
+      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
+        setSaveSearchStatus('');
+        saveSearchFeedbackTimerRef.current = null;
+      }, success ? 2800 : 3200);
+    };
+    window.addEventListener('homekey:save-current-search-result', handleSaveSearchResult);
+    return () => {
+      window.removeEventListener('homekey:save-current-search-result', handleSaveSearchResult);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -438,6 +468,14 @@ const Navbar = () => {
   const likedCount = (interestSummary.favoriteIds || []).length;
   const userFirstName = getUserFirstName(user);
   const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
+  const canSaveCurrentSearch = isAuthenticated && location.pathname === '/';
+
+  const handleSaveCurrentSearch = () => {
+    if (!canSaveCurrentSearch || isSavingSearch) return;
+    setIsSavingSearch(true);
+    setSaveSearchStatus('Saving...');
+    window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+  };
 
   return (
     <nav className="premium-header" aria-label="Primary navigation">
@@ -706,6 +744,16 @@ const Navbar = () => {
         </div>
 
         <div className="premium-header__actions premium-header__actions-cell">
+          {canSaveCurrentSearch && (
+            <button
+              type="button"
+              className={`premium-header__save-search-btn ${saveSearchStatus === 'Saved' ? 'is-success' : ''}`}
+              onClick={handleSaveCurrentSearch}
+              disabled={isSavingSearch}
+            >
+              {isSavingSearch ? 'Saving...' : (saveSearchStatus || 'Save Search')}
+            </button>
+          )}
           <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
             <span className="premium-header__flag-icon" aria-hidden="true">
               <span className="premium-header__flag-star">✡</span>
@@ -713,6 +761,7 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
+          {isAuthenticated && <Link to="/alerts" className="premium-header__alerts-link">Saved Search</Link>}
           {shouldShowGreeting ? (
             <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
               <span className="premium-header__greeting-label">Hello</span>

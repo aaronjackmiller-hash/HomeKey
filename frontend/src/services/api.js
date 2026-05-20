@@ -111,6 +111,45 @@ export const getPropertyEngagement = async (id) => {
   return response.data;
 };
 
+// Instant alerts
+export const getMyInstantAlerts = async () => {
+  const response = await api.get('/alerts');
+  return response.data;
+};
+
+export const updateMyInstantAlertSettings = async (settings) => {
+  const response = await api.put('/alerts/settings', settings);
+  return response.data;
+};
+
+export const upsertMyInstantAlertSearch = async (payload) => {
+  const response = await api.post('/alerts/searches', payload);
+  return response.data;
+};
+
+export const saveMyCurrentSearchAlert = async (payload) => {
+  const response = await api.post('/alerts/searches', {
+    ...payload,
+    autoFromSearch: true,
+  });
+  return response.data;
+};
+
+export const deleteMyInstantAlertSearch = async (searchId) => {
+  const response = await api.delete(`/alerts/searches/${searchId}`);
+  return response.data;
+};
+
+export const getMyInstantAlertInbox = async (params) => {
+  const response = await api.get('/alerts/inbox', { params });
+  return response.data;
+};
+
+export const markMyInstantAlertReadState = async (alertId, read = true) => {
+  const response = await api.put(`/alerts/inbox/${alertId}/read`, { read });
+  return response.data;
+};
+
 export const importYad2ListingsBatch = async ({
   items,
   sourceTag = 'yad2',

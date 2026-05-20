@@ -6,6 +6,7 @@ const {
     findDuplicateCandidate,
     isStrongPropertyIdentityMatch,
 } = require('./propertyMergeService');
+const { queueInstantAlertsForProperties } = require('./instantAlertService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -655,6 +656,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
         sourceTag: normalizedSourceTag,
         errors: [],
     };
+    const createdProperties = [];
 
     for (let i = 0; i < rows.length; i += 1) {
         const row = rows[i];
@@ -748,27 +750,39 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         // For Yad2 rows with explicit external IDs, keep each externalId as a
                         // distinct listing record. This prevents unrelated feed rows from being
                         // collapsed into a single document by fuzzy duplicate scoring.
-                        await Property.create({
+                        const createdProperty = await Property.create({
                             ...payload,
                             sourceType,
                             ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                             sources: [sourceEntry],
                         });
+                        createdProperties.push(createdProperty.toObject ? createdProperty.toObject() : createdProperty);
                         summary.created += 1;
                     }
                 }
             } else {
-                await Property.create({
+                const createdProperty = await Property.create({
                     ...payload,
                     sourceType,
                     ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                     sources: [sourceEntry],
                 });
+                createdProperties.push(createdProperty.toObject ? createdProperty.toObject() : createdProperty);
                 summary.created += 1;
             }
         } catch (err) {
             summary.skipped += 1;
             summary.errors.push({ index: i, reason: err.message });
+        }
+    }
+
+    if (createdProperties.length > 0) {
+        try {
+            const dispatched = await queueInstantAlertsForProperties(createdProperties);
+            summary.alertsCreated = dispatched.alertsCreated;
+            summary.alertsUsersNotified = dispatched.usersNotified;
+        } catch (alertErr) {
+            summary.alertDispatchError = alertErr.message;
         }
     }
 

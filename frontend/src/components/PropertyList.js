@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { getProperties, getPublicYad2SyncStatus } from '../services/api';
+import { getProperties, getPublicYad2SyncStatus, saveMyCurrentSearchAlert } from '../services/api';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
@@ -10,6 +10,7 @@ import {
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName } from '../utils/contactMessaging';
+import { writeSavedSearchContext } from '../utils/savedSearchContext';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -482,6 +483,12 @@ const areStringArraysEqual = (left = [], right = []) => {
   return true;
 };
 
+const normalizeContextNumber = (value) => {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
   const favorites = [];
   const others = [];
@@ -857,6 +864,63 @@ const PropertyList = () => {
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
   );
+  const circleCityHints = useMemo(() => {
+    if (!circleSelection.active) return [];
+    const cityMap = new Map();
+    mapSourceProperties.forEach((property) => {
+      const propertyId = getPropertyId(property);
+      if (!propertyId || !circlePropertyIdSet.has(String(propertyId))) return;
+      const city = safeText(property?.address?.city);
+      if (!city) return;
+      const key = city.toLowerCase();
+      if (!cityMap.has(key)) {
+        cityMap.set(key, city);
+      }
+    });
+    return Array.from(cityMap.values()).slice(0, 8);
+  }, [circlePropertyIdSet, circleSelection.active, mapSourceProperties]);
+
+  useEffect(() => {
+    const searchContext = {
+      source: 'property-list',
+      search: {
+        q: citySearch.trim(),
+        type: filter !== 'all' ? filter : '',
+        rooms: roomsSearch.trim(),
+        baths: bathsSearch.trim(),
+        minPrice: normalizeContextNumber(minPrice),
+        maxPrice: normalizeContextNumber(maxPrice),
+        propertyCategory: propertyCategorySearch.trim(),
+        featureFilters: featureSearch,
+        likedOnly: favoritesOnly,
+      },
+      circle: {
+        active: Boolean(circleSelection.active),
+        radiusMeters: Number(circleSelection.radiusMeters) || 0,
+        center: circleSelection.center || null,
+        cityHints: circleCityHints,
+      },
+      locationSearch: location.search || '',
+      capturedAt: new Date().toISOString(),
+    };
+    writeSavedSearchContext(searchContext);
+  }, [
+    citySearch,
+    filter,
+    roomsSearch,
+    bathsSearch,
+    minPrice,
+    maxPrice,
+    propertyCategorySearch,
+    featureSearch,
+    favoritesOnly,
+    circleSelection.active,
+    circleSelection.radiusMeters,
+    circleSelection.center,
+    circleCityHints,
+    location.search,
+  ]);
+
   const displayProperties = useMemo(() => {
     const visibleProperties = !circleSelection.active
       ? mapSourceProperties
@@ -866,6 +930,80 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleSaveCurrentSearch = async () => {
+      const cityLabel = citySearch.trim() || circleCityHints[0] || '';
+      const typeLabel = filter === 'sale' ? 'Sale' : filter === 'rental' ? 'Rental' : 'Search';
+      const generatedName = `${cityLabel || 'My'} ${typeLabel} ${new Date().toLocaleDateString('en-CA')}`;
+      const payload = {
+        name: generatedName,
+        enabled: true,
+        criteria: {
+          type: filter !== 'all' ? filter : '',
+          city: citySearch.trim(),
+          minPrice: minPrice !== '' ? Number(minPrice) : '',
+          maxPrice: maxPrice !== '' ? Number(maxPrice) : '',
+          rooms: roomsSearch.trim(),
+          baths: bathsSearch.trim(),
+          searchText: citySearch.trim(),
+          cityHints: circleCityHints,
+          circle: circleSelection.active && circleSelection.center && Number(circleSelection.radiusMeters) > 0
+            ? {
+              center: circleSelection.center,
+              radiusMeters: Number(circleSelection.radiusMeters),
+            }
+            : undefined,
+        },
+        sourceContext: {
+          searchText: citySearch.trim(),
+          propertyCategory: propertyCategorySearch.trim(),
+          featureFilters: featureSearch,
+          likedOnly: favoritesOnly,
+          circle: circleSelection.active && circleSelection.center && Number(circleSelection.radiusMeters) > 0
+            ? {
+              center: circleSelection.center,
+              radiusMeters: Number(circleSelection.radiusMeters),
+              cityHints: circleCityHints,
+            }
+            : undefined,
+        },
+      };
+      try {
+        await saveMyCurrentSearchAlert(payload);
+        window.dispatchEvent(new CustomEvent('homekey:save-current-search-result', {
+          detail: { success: true },
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('homekey:save-current-search-result', {
+          detail: {
+            success: false,
+            message: err.response?.data?.message || 'Unable to save this search right now.',
+          },
+        }));
+      }
+    };
+    window.addEventListener('homekey:save-current-search', handleSaveCurrentSearch);
+    return () => {
+      window.removeEventListener('homekey:save-current-search', handleSaveCurrentSearch);
+    };
+  }, [
+    citySearch,
+    circleCityHints,
+    circleSelection.active,
+    circleSelection.center,
+    circleSelection.radiusMeters,
+    favoritesOnly,
+    featureSearch,
+    filter,
+    maxPrice,
+    minPrice,
+    propertyCategorySearch,
+    roomsSearch,
+    bathsSearch,
+  ]);
+
   const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
 
