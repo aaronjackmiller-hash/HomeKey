@@ -10,6 +10,7 @@ import {
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName } from '../utils/contactMessaging';
+import { writeSavedSearchContext } from '../utils/savedSearchContext';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -482,6 +483,12 @@ const areStringArraysEqual = (left = [], right = []) => {
   return true;
 };
 
+const normalizeContextNumber = (value) => {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
   const favorites = [];
   const others = [];
@@ -857,6 +864,63 @@ const PropertyList = () => {
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
   );
+  const circleCityHints = useMemo(() => {
+    if (!circleSelection.active) return [];
+    const cityMap = new Map();
+    mapSourceProperties.forEach((property) => {
+      const propertyId = getPropertyId(property);
+      if (!propertyId || !circlePropertyIdSet.has(String(propertyId))) return;
+      const city = safeText(property?.address?.city);
+      if (!city) return;
+      const key = city.toLowerCase();
+      if (!cityMap.has(key)) {
+        cityMap.set(key, city);
+      }
+    });
+    return Array.from(cityMap.values()).slice(0, 8);
+  }, [circlePropertyIdSet, circleSelection.active, mapSourceProperties]);
+
+  useEffect(() => {
+    const searchContext = {
+      source: 'property-list',
+      search: {
+        q: citySearch.trim(),
+        type: filter !== 'all' ? filter : '',
+        rooms: roomsSearch.trim(),
+        baths: bathsSearch.trim(),
+        minPrice: normalizeContextNumber(minPrice),
+        maxPrice: normalizeContextNumber(maxPrice),
+        propertyCategory: propertyCategorySearch.trim(),
+        featureFilters: featureSearch,
+        likedOnly: favoritesOnly,
+      },
+      circle: {
+        active: Boolean(circleSelection.active),
+        radiusMeters: Number(circleSelection.radiusMeters) || 0,
+        center: circleSelection.center || null,
+        cityHints: circleCityHints,
+      },
+      locationSearch: location.search || '',
+      capturedAt: new Date().toISOString(),
+    };
+    writeSavedSearchContext(searchContext);
+  }, [
+    citySearch,
+    filter,
+    roomsSearch,
+    bathsSearch,
+    minPrice,
+    maxPrice,
+    propertyCategorySearch,
+    featureSearch,
+    favoritesOnly,
+    circleSelection.active,
+    circleSelection.radiusMeters,
+    circleSelection.center,
+    circleCityHints,
+    location.search,
+  ]);
+
   const displayProperties = useMemo(() => {
     const visibleProperties = !circleSelection.active
       ? mapSourceProperties

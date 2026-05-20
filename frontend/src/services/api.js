@@ -93,6 +93,14 @@ export const upsertMyInstantAlertSearch = async (payload) => {
   return response.data;
 };
 
+export const saveMyCurrentSearchAlert = async (payload) => {
+  const response = await api.post('/alerts/searches', {
+    ...payload,
+    autoFromSearch: true,
+  });
+  return response.data;
+};
+
 export const deleteMyInstantAlertSearch = async (searchId) => {
   const response = await api.delete(`/alerts/searches/${searchId}`);
   return response.data;

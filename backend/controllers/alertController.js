@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const {
     normalizeAlertCriteria,
+    normalizeSourceContext,
     normalizeSearchPayload,
 } = require('../services/instantAlertService');
 
@@ -16,6 +17,14 @@ const normalizeBoolean = (value, fallback = false) => {
     return fallback;
 };
 
+const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const normalizeDeliveryPreference = (value, fallback = 'account') => {
+    const normalized = normalizeText(value).toLowerCase();
+    if (['account', 'email', 'whatsapp'].includes(normalized)) return normalized;
+    return fallback;
+};
+
 const serializeInstantAlerts = (instantAlerts = {}) => {
     const savedSearches = Array.isArray(instantAlerts.savedSearches)
         ? instantAlerts.savedSearches
@@ -24,6 +33,8 @@ const serializeInstantAlerts = (instantAlerts = {}) => {
                 name: search.name,
                 enabled: search.enabled !== false,
                 criteria: normalizeAlertCriteria(search.criteria || {}),
+                sourceSignature: normalizeText(search.sourceSignature),
+                sourceContext: normalizeSourceContext(search.sourceContext || {}, search.criteria || {}, { includeCapturedAt: false }),
                 createdAt: search.createdAt || null,
                 updatedAt: search.updatedAt || null,
             }))
@@ -40,6 +51,8 @@ const serializeInstantAlerts = (instantAlerts = {}) => {
                 propertyId: item.propertyId,
                 propertySnapshot: item.propertySnapshot || {},
                 message: item.message || '',
+                deliveryChannel: item.deliveryChannel || 'in-app',
+                deliveryTarget: item.deliveryTarget || '',
                 readAt: item.readAt || null,
                 createdAt: item.createdAt || null,
             }))
@@ -51,6 +64,7 @@ const serializeInstantAlerts = (instantAlerts = {}) => {
         enabled: instantAlerts.enabled === true,
         deliverInApp: instantAlerts.deliverInApp !== false,
         deliverEmail: instantAlerts.deliverEmail === true,
+        deliveryPreference: normalizeDeliveryPreference(instantAlerts.deliveryPreference, 'account'),
         savedSearches,
         inbox,
         unreadCount,
@@ -58,13 +72,14 @@ const serializeInstantAlerts = (instantAlerts = {}) => {
 };
 
 const loadUserAlertsState = async (userId) => {
-    const user = await User.findById(userId).select('instantAlerts');
+    const user = await User.findById(userId).select('instantAlerts preferredContactMethod');
     if (!user) return null;
     if (!user.instantAlerts || typeof user.instantAlerts !== 'object') {
         user.instantAlerts = {
             enabled: false,
             deliverInApp: true,
             deliverEmail: false,
+            deliveryPreference: 'account',
             savedSearches: [],
             inbox: [],
         };
@@ -88,6 +103,8 @@ const getMyInstantAlerts = async (req, res) => {
                 enabled: serialized.enabled,
                 deliverInApp: serialized.deliverInApp,
                 deliverEmail: serialized.deliverEmail,
+                deliveryPreference: serialized.deliveryPreference,
+                accountPreferredContactMethod: normalizeText(user.preferredContactMethod).toLowerCase() || 'email',
                 savedSearches: serialized.savedSearches,
                 unreadCount: serialized.unreadCount,
             },
@@ -109,6 +126,10 @@ const updateMyInstantAlertSettings = async (req, res) => {
         user.instantAlerts.enabled = normalizeBoolean(req.body.enabled, user.instantAlerts.enabled === true);
         user.instantAlerts.deliverInApp = normalizeBoolean(req.body.deliverInApp, user.instantAlerts.deliverInApp !== false);
         user.instantAlerts.deliverEmail = normalizeBoolean(req.body.deliverEmail, user.instantAlerts.deliverEmail === true);
+        user.instantAlerts.deliveryPreference = normalizeDeliveryPreference(
+            req.body.deliveryPreference,
+            normalizeDeliveryPreference(user.instantAlerts.deliveryPreference, 'account')
+        );
         await user.save();
         const serialized = serializeInstantAlerts(user.instantAlerts || {});
         return res.json({
@@ -117,6 +138,8 @@ const updateMyInstantAlertSettings = async (req, res) => {
                 enabled: serialized.enabled,
                 deliverInApp: serialized.deliverInApp,
                 deliverEmail: serialized.deliverEmail,
+                deliveryPreference: serialized.deliveryPreference,
+                accountPreferredContactMethod: normalizeText(user.preferredContactMethod).toLowerCase() || 'email',
                 savedSearches: serialized.savedSearches,
                 unreadCount: serialized.unreadCount,
             },
@@ -140,8 +163,9 @@ const upsertMyInstantAlertSearch = async (req, res) => {
         }
 
         const searchId = String(req.body.searchId || '').trim();
-        const payload = normalizeSearchPayload(req.body, `My Instant Alert ${user.instantAlerts.savedSearches.length + 1}`);
+        const payload = normalizeSearchPayload(req.body, `Saved Search ${user.instantAlerts.savedSearches.length + 1}`);
         let targetSearch = null;
+        const explicitName = normalizeText(req.body.name);
 
         if (searchId) {
             const found = user.instantAlerts.savedSearches.id(searchId);
@@ -151,17 +175,38 @@ const upsertMyInstantAlertSearch = async (req, res) => {
             found.name = payload.name;
             found.enabled = payload.enabled;
             found.criteria = payload.criteria;
+            found.sourceSignature = payload.sourceSignature;
+            found.sourceContext = payload.sourceContext;
             found.updatedAt = new Date();
             targetSearch = found;
         } else {
-            user.instantAlerts.savedSearches.push({
-                name: payload.name,
-                enabled: payload.enabled,
-                criteria: payload.criteria,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-            targetSearch = user.instantAlerts.savedSearches[user.instantAlerts.savedSearches.length - 1];
+            const existingBySignature = normalizeText(payload.sourceSignature)
+                ? user.instantAlerts.savedSearches.find(
+                    (savedSearch) => normalizeText(savedSearch.sourceSignature) === normalizeText(payload.sourceSignature)
+                )
+                : null;
+            if (existingBySignature) {
+                if (explicitName) {
+                    existingBySignature.name = payload.name;
+                }
+                existingBySignature.enabled = payload.enabled;
+                existingBySignature.criteria = payload.criteria;
+                existingBySignature.sourceSignature = payload.sourceSignature;
+                existingBySignature.sourceContext = payload.sourceContext;
+                existingBySignature.updatedAt = new Date();
+                targetSearch = existingBySignature;
+            } else {
+                user.instantAlerts.savedSearches.push({
+                    name: payload.name,
+                    enabled: payload.enabled,
+                    criteria: payload.criteria,
+                    sourceSignature: payload.sourceSignature,
+                    sourceContext: payload.sourceContext,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+                targetSearch = user.instantAlerts.savedSearches[user.instantAlerts.savedSearches.length - 1];
+            }
         }
 
         await user.save();
@@ -173,6 +218,12 @@ const upsertMyInstantAlertSearch = async (req, res) => {
                     name: targetSearch.name,
                     enabled: targetSearch.enabled !== false,
                     criteria: normalizeAlertCriteria(targetSearch.criteria || {}),
+                    sourceSignature: normalizeText(targetSearch.sourceSignature),
+                    sourceContext: normalizeSourceContext(
+                        targetSearch.sourceContext || {},
+                        targetSearch.criteria || {},
+                        { includeCapturedAt: false }
+                    ),
                     createdAt: targetSearch.createdAt || null,
                     updatedAt: targetSearch.updatedAt || null,
                 },

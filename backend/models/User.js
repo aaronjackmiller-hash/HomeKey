@@ -28,6 +28,23 @@ const AlertCriteriaSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        searchText: {
+            type: String,
+            trim: true,
+        },
+        cityHints: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+        circle: {
+            center: {
+                lat: { type: Number },
+                lng: { type: Number },
+            },
+            radiusMeters: { type: Number, min: 0 },
+        },
     },
     { _id: false }
 );
@@ -38,7 +55,7 @@ const SavedAlertSearchSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            default: 'My Instant Alert',
+            default: 'Saved Search',
         },
         enabled: {
             type: Boolean,
@@ -47,6 +64,25 @@ const SavedAlertSearchSchema = new mongoose.Schema(
         criteria: {
             type: AlertCriteriaSchema,
             default: () => ({}),
+        },
+        sourceSignature: {
+            type: String,
+            trim: true,
+        },
+        sourceContext: {
+            searchText: { type: String, trim: true },
+            propertyCategory: { type: String, trim: true },
+            featureFilters: [{ type: String, trim: true }],
+            likedOnly: { type: Boolean, default: false },
+            circle: {
+                center: {
+                    lat: { type: Number },
+                    lng: { type: Number },
+                },
+                radiusMeters: { type: Number, min: 0 },
+                cityHints: [{ type: String, trim: true }],
+            },
+            capturedAt: { type: Date, default: Date.now },
         },
         createdAt: {
             type: Date,
@@ -85,6 +121,15 @@ const InstantAlertInboxItemSchema = new mongoose.Schema(
             createdAt: { type: Date },
         },
         message: {
+            type: String,
+            trim: true,
+        },
+        deliveryChannel: {
+            type: String,
+            enum: ['in-app', 'email', 'whatsapp'],
+            default: 'in-app',
+        },
+        deliveryTarget: {
             type: String,
             trim: true,
         },
@@ -136,6 +181,11 @@ const UserSchema = new mongoose.Schema(
             enabled: { type: Boolean, default: false },
             deliverInApp: { type: Boolean, default: true },
             deliverEmail: { type: Boolean, default: false },
+            deliveryPreference: {
+                type: String,
+                enum: ['account', 'email', 'whatsapp'],
+                default: 'account',
+            },
             savedSearches: {
                 type: [SavedAlertSearchSchema],
                 default: [],

@@ -4,6 +4,8 @@ import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj
 import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
+import { saveMyCurrentSearchAlert } from '../services/api';
+import { readSavedSearchContext } from '../utils/savedSearchContext';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
@@ -86,7 +88,7 @@ const parseSearchFromLocation = (search = '') => {
   const city = params.get('q') || '';
   const rooms = params.get('rooms') || '';
   const baths = params.get('baths') || '';
-  const listingType = sanitizeListingType(params.get('type') || 'rental');
+  const listingType = sanitizeListingType(params.get('type') || 'all');
   const propertyCategory = params.get('propertyCategory') || '';
   const normalizedPropertyCategory = PROPERTY_CATEGORY_OPTIONS.includes(propertyCategory) ? propertyCategory : '';
   const rawFeatures = String(params.get('features') || '');
@@ -180,12 +182,15 @@ const Navbar = () => {
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
+  const [isSavingSearch, setIsSavingSearch] = useState(false);
+  const [saveSearchStatus, setSaveSearchStatus] = useState('');
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
+  const saveSearchFeedbackTimerRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -210,6 +215,13 @@ const Navbar = () => {
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
+
+  useEffect(() => () => {
+    if (saveSearchFeedbackTimerRef.current) {
+      window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      saveSearchFeedbackTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -438,6 +450,79 @@ const Navbar = () => {
   const likedCount = (interestSummary.favoriteIds || []).length;
   const userFirstName = getUserFirstName(user);
   const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
+  const canSaveCurrentSearch = isAuthenticated && location.pathname === '/';
+
+  const handleSaveCurrentSearch = async () => {
+    if (!canSaveCurrentSearch || isSavingSearch) return;
+    const externalSearchContext = readSavedSearchContext();
+    const circleContext = externalSearchContext && externalSearchContext.circle && externalSearchContext.circle.active
+      ? {
+        center: externalSearchContext.circle.center || null,
+        radiusMeters: Number(externalSearchContext.circle.radiusMeters) || 0,
+        cityHints: Array.isArray(externalSearchContext.circle.cityHints)
+          ? externalSearchContext.circle.cityHints
+          : [],
+      }
+      : null;
+    const fallbackAreaName = circleContext && Array.isArray(circleContext.cityHints) && circleContext.cityHints[0]
+      ? circleContext.cityHints[0]
+      : '';
+    const locationLabel = city.trim() || fallbackAreaName || 'My';
+    const typeLabel = listingType === 'sale' ? 'Sale' : listingType === 'rental' ? 'Rental' : 'Search';
+    const generatedName = `${locationLabel} ${typeLabel} ${new Date().toLocaleDateString('en-CA')}`;
+    const criteria = {
+      type: listingType !== 'all' ? listingType : '',
+      city: city.trim(),
+      minPrice: minPriceInput > PRICE_SLIDER_MIN ? minPriceInput : '',
+      maxPrice: maxPriceInput < PRICE_SLIDER_MAX ? maxPriceInput : '',
+      rooms: rooms || '',
+      baths: baths || '',
+      searchText: city.trim(),
+      cityHints: circleContext?.cityHints || [],
+      circle: circleContext && circleContext.center && circleContext.radiusMeters > 0
+        ? {
+          center: circleContext.center,
+          radiusMeters: circleContext.radiusMeters,
+        }
+        : undefined,
+    };
+    const sourceContext = {
+      searchText: city.trim(),
+      propertyCategory,
+      featureFilters,
+      likedOnly,
+      circle: circleContext || undefined,
+    };
+    setIsSavingSearch(true);
+    setSaveSearchStatus('');
+    try {
+      await saveMyCurrentSearchAlert({
+        name: generatedName,
+        enabled: true,
+        criteria,
+        sourceContext,
+      });
+      setSaveSearchStatus('Saved');
+      if (saveSearchFeedbackTimerRef.current) {
+        window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      }
+      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
+        setSaveSearchStatus('');
+        saveSearchFeedbackTimerRef.current = null;
+      }, 2800);
+    } catch (_err) {
+      setSaveSearchStatus('Failed');
+      if (saveSearchFeedbackTimerRef.current) {
+        window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      }
+      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
+        setSaveSearchStatus('');
+        saveSearchFeedbackTimerRef.current = null;
+      }, 3200);
+    } finally {
+      setIsSavingSearch(false);
+    }
+  };
 
   return (
     <nav className="premium-header" aria-label="Primary navigation">
@@ -706,6 +791,16 @@ const Navbar = () => {
         </div>
 
         <div className="premium-header__actions premium-header__actions-cell">
+          {canSaveCurrentSearch && (
+            <button
+              type="button"
+              className={`premium-header__save-search-btn ${saveSearchStatus === 'Saved' ? 'is-success' : ''}`}
+              onClick={handleSaveCurrentSearch}
+              disabled={isSavingSearch}
+            >
+              {isSavingSearch ? 'Saving...' : (saveSearchStatus || 'Save Search')}
+            </button>
+          )}
           <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
             <span className="premium-header__flag-icon" aria-hidden="true">
               <span className="premium-header__flag-star">✡</span>
@@ -713,7 +808,7 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
-          {isAuthenticated && <Link to="/alerts" className="premium-header__alerts-link">Instant Alerts</Link>}
+          {isAuthenticated && <Link to="/alerts" className="premium-header__alerts-link">Saved Search</Link>}
           {shouldShowGreeting ? (
             <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
               <span className="premium-header__greeting-label">Hello</span>

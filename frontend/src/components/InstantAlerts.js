@@ -7,63 +7,64 @@ import {
   updateMyInstantAlertSettings,
   upsertMyInstantAlertSearch,
 } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-const TYPE_OPTIONS = [
-  { value: '', label: 'Any listing type' },
-  { value: 'rental', label: 'Rental apartments' },
-  { value: 'sale', label: 'For sale apartments' },
-];
-
-const ROOM_OPTIONS = [
-  { value: '', label: 'Any bedrooms' },
-  { value: 'studio', label: 'Studio' },
-  { value: '1', label: '1 bedroom' },
-  { value: '2', label: '2 bedrooms' },
-  { value: '3', label: '3 bedrooms' },
-  { value: '4+', label: '4+ bedrooms' },
-];
-
-const BATH_OPTIONS = [
-  { value: '', label: 'Any bathrooms' },
-  { value: '1', label: '1 bathroom' },
-  { value: '2', label: '2 bathrooms' },
-  { value: '3+', label: '3+ bathrooms' },
-];
-
-const emptySearchForm = {
-  searchId: '',
-  name: '',
-  enabled: true,
-  criteria: {
-    type: '',
-    city: '',
-    minPrice: '',
-    maxPrice: '',
-    rooms: '',
-    baths: '',
-  },
+const formatCurrency = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return '';
+  return `₪${parsed.toLocaleString()}`;
 };
 
-const toInputNumber = (value) => {
-  if (value == null || value === '') return '';
-  const asNumber = Number(value);
-  return Number.isFinite(asNumber) ? String(asNumber) : '';
+const toDisplayType = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'rental') return 'Rental';
+  if (normalized === 'sale') return 'Sale';
+  return '';
+};
+
+const summarizeSearchCriteria = (search = {}) => {
+  const criteria = search.criteria || {};
+  const summaryBits = [];
+  const typeLabel = toDisplayType(criteria.type);
+  if (typeLabel) summaryBits.push(typeLabel);
+  if (criteria.city) summaryBits.push(criteria.city);
+  if (criteria.rooms) summaryBits.push(`Beds: ${criteria.rooms}`);
+  if (criteria.baths) summaryBits.push(`Baths: ${criteria.baths}`);
+  if (criteria.minPrice != null) summaryBits.push(`Min ${formatCurrency(criteria.minPrice)}`);
+  if (criteria.maxPrice != null) summaryBits.push(`Max ${formatCurrency(criteria.maxPrice)}`);
+  if (criteria.searchText) summaryBits.push(`Search: ${criteria.searchText}`);
+  const cityHints = Array.isArray(criteria.cityHints) ? criteria.cityHints : [];
+  if (cityHints.length > 0) summaryBits.push(`Area: ${cityHints.join(', ')}`);
+  if (criteria.circle && criteria.circle.radiusMeters) {
+    const kilometers = Number(criteria.circle.radiusMeters) / 1000;
+    if (Number.isFinite(kilometers) && kilometers > 0) {
+      summaryBits.push(`Circle ${kilometers.toFixed(2)}km`);
+    }
+  }
+  return summaryBits.length > 0 ? summaryBits.join(' • ') : 'No filters captured yet.';
+};
+
+const formatDeliveryPreferenceLabel = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  if (normalized === 'whatsapp') return 'WhatsApp';
+  if (normalized === 'email') return 'Email';
+  return 'Account preference';
 };
 
 const InstantAlerts = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [settings, setSettings] = useState({
     enabled: false,
-    deliverInApp: true,
-    deliverEmail: false,
+    deliveryPreference: 'account',
+    accountPreferredContactMethod: 'email',
     unreadCount: 0,
   });
   const [savedSearches, setSavedSearches] = useState([]);
   const [inbox, setInbox] = useState([]);
-  const [searchForm, setSearchForm] = useState(emptySearchForm);
 
   const loadAlertsData = async () => {
     setLoading(true);
@@ -76,8 +77,8 @@ const InstantAlerts = () => {
       const alertData = alertState?.data || {};
       setSettings({
         enabled: alertData.enabled === true,
-        deliverInApp: alertData.deliverInApp !== false,
-        deliverEmail: alertData.deliverEmail === true,
+        deliveryPreference: alertData.deliveryPreference || 'account',
+        accountPreferredContactMethod: alertData.accountPreferredContactMethod || user?.preferredContactMethod || 'email',
         unreadCount: Number(alertData.unreadCount || 0),
       });
       setSavedSearches(Array.isArray(alertData.savedSearches) ? alertData.savedSearches : []);
@@ -111,11 +112,11 @@ const InstantAlerts = () => {
       setSettings((previous) => ({
         ...previous,
         enabled: data.enabled === true,
-        deliverInApp: data.deliverInApp !== false,
-        deliverEmail: data.deliverEmail === true,
+        deliveryPreference: data.deliveryPreference || previous.deliveryPreference || 'account',
+        accountPreferredContactMethod: data.accountPreferredContactMethod || previous.accountPreferredContactMethod || 'email',
         unreadCount: Number(data.unreadCount || previous.unreadCount || 0),
       }));
-      setStatusMessage('Instant alert settings updated.');
+      setStatusMessage('Saved search settings updated.');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update alert settings.');
     } finally {
@@ -123,66 +124,26 @@ const InstantAlerts = () => {
     }
   };
 
-  const handleSearchInput = (field, value) => {
-    setSearchForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleCriteriaInput = (field, value) => {
-    setSearchForm((prev) => ({
-      ...prev,
-      criteria: {
-        ...prev.criteria,
-        [field]: value,
-      },
-    }));
-  };
-
-  const submitSearch = async (event) => {
-    event.preventDefault();
+  const toggleSearchEnabled = async (search) => {
+    if (!search || !search._id) return;
     setSaving(true);
     setError('');
     setStatusMessage('');
     try {
-      const payload = {
-        searchId: searchForm.searchId || undefined,
-        name: searchForm.name,
-        enabled: searchForm.enabled,
-        criteria: {
-          ...searchForm.criteria,
-          minPrice: toInputNumber(searchForm.criteria.minPrice),
-          maxPrice: toInputNumber(searchForm.criteria.maxPrice),
-        },
-      };
-      await upsertMyInstantAlertSearch(payload);
-      setSearchForm(emptySearchForm);
+      await upsertMyInstantAlertSearch({
+        searchId: search._id,
+        name: search.name,
+        enabled: !(search.enabled !== false),
+        criteria: search.criteria || {},
+        sourceContext: search.sourceContext || {},
+      });
       await loadAlertsData();
-      setStatusMessage('Instant alert search saved.');
+      setStatusMessage('Saved search updated.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save instant alert search.');
+      setError(err.response?.data?.message || 'Failed to update saved search.');
     } finally {
       setSaving(false);
     }
-  };
-
-  const startEditingSearch = (search) => {
-    setSearchForm({
-      searchId: search._id,
-      name: search.name || '',
-      enabled: search.enabled !== false,
-      criteria: {
-        type: search.criteria?.type || '',
-        city: search.criteria?.city || '',
-        minPrice: toInputNumber(search.criteria?.minPrice),
-        maxPrice: toInputNumber(search.criteria?.maxPrice),
-        rooms: search.criteria?.rooms || '',
-        baths: search.criteria?.baths || '',
-      },
-    });
-    setStatusMessage('');
-    setError('');
   };
 
   const deleteSearch = async (searchId) => {
@@ -192,13 +153,10 @@ const InstantAlerts = () => {
     setStatusMessage('');
     try {
       await deleteMyInstantAlertSearch(searchId);
-      if (searchForm.searchId === searchId) {
-        setSearchForm(emptySearchForm);
-      }
       await loadAlertsData();
-      setStatusMessage('Instant alert search deleted.');
+      setStatusMessage('Saved search deleted.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete instant alert search.');
+      setError(err.response?.data?.message || 'Failed to delete saved search.');
     } finally {
       setSaving(false);
     }
@@ -222,11 +180,11 @@ const InstantAlerts = () => {
   return (
     <div className="alerts-page">
       <div className="alerts-card">
-        <h2>Instant Alerts</h2>
+        <h2>Saved Search</h2>
         <p className="form-helper-text">
-          Opt in to instant apartment alerts and define the exact criteria you want.
+          Your filters and map circle are captured from your active search. Click "Save Search" in the header to save criteria without re-entering fields.
         </p>
-        {loading && <p className="status-message">Loading your alert preferences…</p>}
+        {loading && <p className="status-message">Loading your saved search preferences...</p>}
         {!loading && (
           <>
             {error && <p className="status-message status-message-error">{error}</p>}
@@ -239,29 +197,28 @@ const InstantAlerts = () => {
                   onChange={(event) => updateSettings({ enabled: event.target.checked })}
                   disabled={saving}
                 />
-                Enable instant alerts
+                Enable saved search alerts
               </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={settings.deliverInApp}
-                  onChange={(event) => updateSettings({ deliverInApp: event.target.checked })}
+              <label className="alerts-delivery-preference">
+                <span>Notify via</span>
+                <select
+                  value={settings.deliveryPreference}
+                  onChange={(event) => updateSettings({ deliveryPreference: event.target.value })}
                   disabled={saving}
-                />
-                Deliver in-app
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={settings.deliverEmail}
-                  onChange={(event) => updateSettings({ deliverEmail: event.target.checked })}
-                  disabled={saving}
-                />
-                Email-ready setting
+                >
+                  <option value="account">
+                    Account preference ({formatDeliveryPreferenceLabel(settings.accountPreferredContactMethod)})
+                  </option>
+                  <option value="email">Email</option>
+                  <option value="whatsapp">WhatsApp</option>
+                </select>
               </label>
             </div>
             <p className="alerts-meta-line">
               Inbox alerts: {inboxStats.total} total, {inboxStats.unread} unread
+            </p>
+            <p className="form-helper-text">
+              Account contact preference: {formatDeliveryPreferenceLabel(settings.accountPreferredContactMethod)}.
             </p>
           </>
         )}
@@ -269,130 +226,22 @@ const InstantAlerts = () => {
 
       {!loading && (
         <div className="alerts-card">
-          <h3>{searchForm.searchId ? 'Edit alert criteria' : 'Add alert criteria'}</h3>
-          <form onSubmit={submitSearch} className="alerts-form-grid">
-            <div className="input-field">
-              <label>Alert name</label>
-              <input
-                type="text"
-                value={searchForm.name}
-                onChange={(event) => handleSearchInput('name', event.target.value)}
-                placeholder="Tel Aviv rentals under 10,000"
-                required
-              />
-            </div>
-            <div className="input-field">
-              <label>Listing type</label>
-              <select
-                value={searchForm.criteria.type}
-                onChange={(event) => handleCriteriaInput('type', event.target.value)}
-              >
-                {TYPE_OPTIONS.map((option) => (
-                  <option key={option.value || 'all-types'} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="input-field">
-              <label>City</label>
-              <input
-                type="text"
-                value={searchForm.criteria.city}
-                onChange={(event) => handleCriteriaInput('city', event.target.value)}
-                placeholder="Tel Aviv"
-              />
-            </div>
-            <div className="input-field">
-              <label>Minimum price (₪)</label>
-              <input
-                type="number"
-                min="0"
-                value={searchForm.criteria.minPrice}
-                onChange={(event) => handleCriteriaInput('minPrice', event.target.value)}
-              />
-            </div>
-            <div className="input-field">
-              <label>Maximum price (₪)</label>
-              <input
-                type="number"
-                min="0"
-                value={searchForm.criteria.maxPrice}
-                onChange={(event) => handleCriteriaInput('maxPrice', event.target.value)}
-              />
-            </div>
-            <div className="input-field">
-              <label>Bedrooms</label>
-              <select
-                value={searchForm.criteria.rooms}
-                onChange={(event) => handleCriteriaInput('rooms', event.target.value)}
-              >
-                {ROOM_OPTIONS.map((option) => (
-                  <option key={option.value || 'any-bedrooms'} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="input-field">
-              <label>Bathrooms</label>
-              <select
-                value={searchForm.criteria.baths}
-                onChange={(event) => handleCriteriaInput('baths', event.target.value)}
-              >
-                {BATH_OPTIONS.map((option) => (
-                  <option key={option.value || 'any-bathrooms'} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <label className="alerts-inline-toggle">
-              <input
-                type="checkbox"
-                checked={searchForm.enabled}
-                onChange={(event) => handleSearchInput('enabled', event.target.checked)}
-              />
-              Keep this criteria active
-            </label>
-            <div className="alerts-form-actions">
-              <button type="submit" className="primary-btn" disabled={saving}>
-                {saving ? 'Saving…' : (searchForm.searchId ? 'Update Criteria' : 'Save Criteria')}
-              </button>
-              {searchForm.searchId && (
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => setSearchForm(emptySearchForm)}
-                  disabled={saving}
-                >
-                  Cancel Edit
-                </button>
-              )}
-            </div>
-          </form>
           <div className="alerts-search-list">
-            <h4>Saved criteria</h4>
+            <h3>Saved criteria</h3>
             {savedSearches.length === 0 && (
-              <p className="form-helper-text">No criteria saved yet.</p>
+              <p className="form-helper-text">No saved criteria yet. Apply filters on listings, then click "Save Search".</p>
             )}
             {savedSearches.map((search) => (
               <div key={search._id} className="alerts-search-item">
                 <div>
                   <p><strong>{search.name}</strong> {search.enabled ? '' : '(Paused)'}</p>
                   <p className="alerts-search-item-details">
-                    {search.criteria?.type ? `Type: ${search.criteria.type}` : 'Type: any'} •
-                    {' '}
-                    {search.criteria?.city ? `City: ${search.criteria.city}` : 'City: any'} •
-                    {' '}
-                    {search.criteria?.minPrice ? `Min ₪${Number(search.criteria.minPrice).toLocaleString()}` : 'Min: none'} •
-                    {' '}
-                    {search.criteria?.maxPrice ? `Max ₪${Number(search.criteria.maxPrice).toLocaleString()}` : 'Max: none'}
+                    {summarizeSearchCriteria(search)}
                   </p>
                 </div>
                 <div className="alerts-search-item-actions">
-                  <button type="button" className="secondary-btn" onClick={() => startEditingSearch(search)} disabled={saving}>
-                    Edit
+                  <button type="button" className="secondary-btn" onClick={() => toggleSearchEnabled(search)} disabled={saving}>
+                    {search.enabled ? 'Pause' : 'Resume'}
                   </button>
                   <button type="button" className="secondary-btn" onClick={() => deleteSearch(search._id)} disabled={saving}>
                     Delete
@@ -412,13 +261,15 @@ const InstantAlerts = () => {
             {inbox.map((item) => (
               <div key={item._id} className={`alerts-inbox-item ${item.readAt ? 'is-read' : 'is-unread'}`}>
                 <div>
-                  <p className="alerts-inbox-title">{item.message || 'Apartment alert received.'}</p>
+                  <p className="alerts-inbox-title">{item.message || 'Saved search match received.'}</p>
                   <p className="alerts-inbox-meta">
                     {item.propertySnapshot?.title || 'Listing'} •
                     {' '}
                     {item.propertySnapshot?.city || 'Israel'} •
                     {' '}
-                    {item.propertySnapshot?.price ? `₪${Number(item.propertySnapshot.price).toLocaleString()}` : 'Price unavailable'}
+                    {item.propertySnapshot?.price ? `₪${Number(item.propertySnapshot.price).toLocaleString()}` : 'Price unavailable'} •
+                    {' '}
+                    {formatDeliveryPreferenceLabel(item.deliveryChannel)}
                   </p>
                 </div>
                 <div className="alerts-inbox-actions">
