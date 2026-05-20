@@ -3884,18 +3884,18 @@ legend {
   margin: 0;
   color: #0f172a;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(1.6rem, 2.3vw, 2.6rem);
+  font-size: clamp(1.8rem, 2.7vw, 3rem);
   font-weight: 500;
-  letter-spacing: -0.028em;
-  line-height: 1.08;
+  letter-spacing: -0.022em;
+  line-height: 1.05;
 }
 
 .property-list-page .google-listings-map-copy-block p {
   color: #1e293b;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(0.94rem, 1.15vw, 1.32rem);
+  font-size: clamp(1.02rem, 1.35vw, 1.65rem);
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.004em;
   line-height: 1.25;
   white-space: nowrap;
   margin: 8px 0 0;
@@ -4014,15 +4014,16 @@ legend {
   color: #334155;
   flex-shrink: 0;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(0.92rem, 0.95vw, 1.2rem);
+  font-size: clamp(1.02rem, 1.2vw, 1.45rem);
   font-weight: 500;
   line-height: 1;
 }
 
 .property-list-page .google-listings-map-search-count-icon {
-  width: clamp(1.15rem, 1.2vw, 1.45rem);
+  width: clamp(1.3rem, 1.45vw, 1.75rem);
   height: auto;
   display: block;
+  color: #0f172a;
 }
 
 .property-list-page .google-listings-map-search-count span {
