@@ -863,6 +863,107 @@ const GoogleListingsMap = ({
   }, [mapReady, touchLikeUiMode]);
 
   useEffect(() => {
+    if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
+    if (!touchLikeUiMode || drawMode || !activeCircleRef.current || circleRadiusMeters <= 0) return undefined;
+    const mapsApi = window.google.maps;
+    let draggingCircle = false;
+
+    const toLatLngPoint = (latLngLike) => {
+      if (!latLngLike) return null;
+      const lat = typeof latLngLike.lat === 'function'
+        ? Number(latLngLike.lat())
+        : Number(latLngLike.lat);
+      const lng = typeof latLngLike.lng === 'function'
+        ? Number(latLngLike.lng())
+        : Number(latLngLike.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng };
+    };
+
+    const isInsideActiveCircle = (latLngLike) => {
+      if (!activeCircleRef.current || !latLngLike) return false;
+      const centerPoint = toLatLngPoint(activeCircleRef.current.getCenter && activeCircleRef.current.getCenter());
+      const probePoint = toLatLngPoint(latLngLike);
+      const radiusMeters = Number(
+        activeCircleRef.current.getRadius && activeCircleRef.current.getRadius()
+      );
+      if (!centerPoint || !probePoint || !Number.isFinite(radiusMeters) || radiusMeters <= 0) return false;
+      return getDistanceMeters(centerPoint, probePoint) <= radiusMeters;
+    };
+
+    const lockMapPanning = () => {
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: false,
+        gestureHandling: 'none',
+        disableDoubleClickZoom: true,
+      });
+    };
+
+    const unlockMapPanning = () => {
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
+    };
+
+    const beginCircleDrag = (event) => {
+      if (!event || !event.latLng || !activeCircleRef.current) return;
+      if (!isInsideActiveCircle(event.latLng)) return;
+      draggingCircle = true;
+      lockMapPanning();
+      activeCircleRef.current.setCenter(event.latLng);
+      applyCircleFilter();
+      if (event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const continueCircleDrag = (event) => {
+      if (!draggingCircle || !event || !event.latLng || !activeCircleRef.current) return;
+      activeCircleRef.current.setCenter(event.latLng);
+      applyCircleFilter();
+      if (event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const endCircleDrag = (event) => {
+      if (!draggingCircle) return;
+      draggingCircle = false;
+      unlockMapPanning();
+      applyCircleFilter();
+      if (event && event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const dragListeners = [
+      mapsApi.event.addListener(mapRef.current, 'mousedown', beginCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchstart', beginCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'mousemove', continueCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchmove', continueCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'mouseup', endCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchend', endCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchcancel', endCircleDrag),
+    ];
+
+    return () => {
+      dragListeners.forEach((listener) => {
+        if (!listener) return;
+        if (typeof listener.remove === 'function') listener.remove();
+        else mapsApi.event.removeListener(listener);
+      });
+      unlockMapPanning();
+    };
+  }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
+
+  useEffect(() => {
     if (!clearSignalInitializedRef.current) {
       clearSignalInitializedRef.current = true;
       return;
