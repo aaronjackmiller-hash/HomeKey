@@ -1007,6 +1007,20 @@ const GoogleListingsMap = ({
     });
   }, []);
 
+  if (touchLikeUiMode) {
+    return (
+      <ConnectedListingsMapFallback
+        properties={properties}
+        favoritePropertyIds={favoritePropertyIds}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+        isVisible={isVisible}
+      />
+    );
+  }
+
   if (!apiKey) {
     return (
       <ConnectedListingsMapFallback
