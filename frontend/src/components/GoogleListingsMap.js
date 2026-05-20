@@ -1152,12 +1152,12 @@ const GoogleListingsMap = ({
             <div className="google-listings-map-search-count" aria-label={`${formattedSearchCount} listings found`}>
               <svg
                 className="google-listings-map-search-count-icon"
-                viewBox="0 0 36 24"
+                viewBox="0 0 42 24"
                 role="img"
                 aria-hidden="true"
               >
                 <path
-                  d="M4 12.6L12.1 5.3L20.2 12.6V21H4V12.6Z"
+                  d="M3.8 13.3L10.4 7.4L17 13.3V20.4H3.8V13.3Z"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -1165,7 +1165,7 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M6.8 10.2L12.1 5.3L17.4 10.2"
+                  d="M2.9 13.5L10.4 6.8L17.9 13.5"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -1173,7 +1173,7 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M10.2 21V16.8H13.9V21"
+                  d="M7.8 20.4V15.9H13V20.4"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.4"
@@ -1181,18 +1181,18 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M22.7 7.1L25.4 9.8M25.9 5.6L23.8 7.7"
+                  d="M20.6 12.3C20.6 9.5 22.9 7.2 25.7 7.2C28.5 7.2 30.8 9.5 30.8 12.3C30.8 15.1 28.5 17.4 25.7 17.4C22.9 17.4 20.6 15.1 20.6 12.3Z"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.4"
+                  strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M22.2 12.6C24.6 10 28.5 9.9 30.9 12.3C33.3 14.7 33.2 18.6 30.6 21"
+                  d="M29.4 16L35 21.1M23.2 10.9H26.5"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.6"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
