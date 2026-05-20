@@ -2886,21 +2886,23 @@ legend {
   }
 
   .premium-header__search-pill {
-    grid-template-columns: 1fr;
-    border-radius: 24px;
-    min-height: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-radius: 14px;
+    min-height: 0;
   }
 
   .premium-header__search-segment {
-    padding: 8px 12px;
+    padding: 6px 10px;
   }
 
   .premium-header__search-segment + .premium-header__search-segment::before {
-    display: none;
+    display: block;
+    top: 8px;
+    bottom: 8px;
   }
 
   .premium-header__search-segment + .premium-header__search-segment {
-    border-top: 1px solid #e6e1d8;
+    border-top: none;
   }
 
   .premium-header__brand-cell {
@@ -3843,6 +3845,94 @@ legend {
 }
 
 @media (max-width: 767px) {
+  .premium-header {
+    padding: 0 8px;
+  }
+
+  .premium-header__inner {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 8px;
+    padding: 6px 0 8px;
+  }
+
+  .premium-header__brand-cell {
+    grid-column: 1 / -1;
+    justify-self: center;
+    padding-left: 0;
+  }
+
+  .premium-header__brand {
+    justify-content: center;
+  }
+
+  .premium-header__brand-image {
+    height: 46px;
+    max-width: min(172px, 55vw);
+    margin: 0 auto;
+  }
+
+  .premium-header__likes-cell {
+    display: none;
+  }
+
+  .premium-header__search-cell {
+    grid-column: 1 / -1;
+  }
+
+  .premium-header__search-pill {
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-radius: 14px;
+    min-height: 48px;
+    box-shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
+  }
+
+  .premium-header__search-segment--price,
+  .premium-header__search-segment--rooms {
+    display: none;
+  }
+
+  .premium-header__search-segment--location {
+    padding-left: 8px;
+  }
+
+  .premium-header__search-segment--all-filters {
+    padding-right: 6px;
+  }
+
+  .premium-header__search-segment input,
+  .premium-header__search-segment .premium-header__filters-toggle {
+    height: 34px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+
+  .premium-header__search-segment .premium-header__filters-toggle {
+    min-width: 104px;
+    justify-content: center;
+    background: #f8fafc;
+    border: 1px solid #d1d5db;
+    font-weight: 600;
+  }
+
+  .premium-header__search-segment .premium-header__filters-toggle.is-active {
+    border-color: #1a1a1a;
+    background: #f1ede3;
+  }
+
+  .premium-header__search-segment + .premium-header__search-segment::before {
+    top: 8px;
+    bottom: 8px;
+  }
+
+  .premium-header__search-segment .premium-header__price-toggle,
+  .premium-header__search-segment .premium-header__rooms-toggle {
+    display: none;
+  }
+
   .property-list-page {
     padding: 8px 0 104px;
     background: var(--hk-brand-cream);
@@ -4002,7 +4092,27 @@ legend {
   }
 
   .property-list-page .homepage-hero-shell {
-    display: none;
+    display: block;
+    margin: 0 0 8px;
+  }
+
+  .property-list-page .hero-banner {
+    min-height: 166px;
+    margin-bottom: 8px;
+    padding: 12px;
+  }
+
+  .property-list-page .hero-banner h1 {
+    margin: 74px 0 0;
+    font-size: clamp(1.35rem, 6vw, 1.75rem);
+  }
+
+  .property-list-page .hero-banner-logo {
+    top: 12px;
+    right: 12px;
+    width: clamp(70px, 22vw, 96px);
+    height: clamp(70px, 22vw, 96px);
+    min-height: clamp(70px, 22vw, 96px);
   }
 
   .mobile-listing-header {
