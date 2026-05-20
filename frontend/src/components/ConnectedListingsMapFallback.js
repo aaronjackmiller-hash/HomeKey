@@ -545,8 +545,8 @@ const ConnectedListingsMapFallback = ({
       applyCircleFilter();
     };
 
-    map.on('mousedown', beginCircleDrag);
-    map.on('touchstart', beginCircleDrag);
+    activeCircle.on('mousedown', beginCircleDrag);
+    activeCircle.on('touchstart', beginCircleDrag);
     map.on('mousemove', continueCircleDrag);
     map.on('touchmove', continueCircleDrag);
     map.on('mouseup', endCircleDrag);
@@ -554,8 +554,8 @@ const ConnectedListingsMapFallback = ({
     map.on('touchcancel', endCircleDrag);
 
     return () => {
-      map.off('mousedown', beginCircleDrag);
-      map.off('touchstart', beginCircleDrag);
+      activeCircle.off('mousedown', beginCircleDrag);
+      activeCircle.off('touchstart', beginCircleDrag);
       map.off('mousemove', continueCircleDrag);
       map.off('touchmove', continueCircleDrag);
       map.off('mouseup', endCircleDrag);
