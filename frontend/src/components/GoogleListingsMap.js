@@ -272,11 +272,14 @@ const createHousePinIcon = (mapsApi, preset) => {
 
 const isCoarsePointerDevice = () => {
   if (typeof window === 'undefined') return false;
-  if (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) {
-    return true;
-  }
+  const supportsMatchMedia = typeof window.matchMedia === 'function';
+  const hasFinePointer = supportsMatchMedia && window.matchMedia('(any-pointer: fine)').matches;
+  const primaryCoarsePointer = supportsMatchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (hasFinePointer) return false;
+  if (primaryCoarsePointer) return true;
   const touchPoints = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints) : 0;
-  return 'ontouchstart' in window || touchPoints > 0;
+  const hasHoverPointer = supportsMatchMedia && window.matchMedia('(hover: hover)').matches;
+  return touchPoints > 0 && !hasHoverPointer;
 };
 
 const GoogleListingsMap = ({
