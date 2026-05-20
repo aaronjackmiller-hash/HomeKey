@@ -270,6 +270,15 @@ const createHousePinIcon = (mapsApi, preset) => {
   };
 };
 
+const isCoarsePointerDevice = () => {
+  if (typeof window === 'undefined') return false;
+  if (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) {
+    return true;
+  }
+  const touchPoints = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints) : 0;
+  return 'ontouchstart' in window || touchPoints > 0;
+};
+
 const GoogleListingsMap = ({
   properties = [],
   favoritePropertyIds = [],
@@ -291,6 +300,8 @@ const GoogleListingsMap = ({
   const activeCircleRef = useRef(null);
   const draftCircleRef = useRef(null);
   const drawStartRef = useRef(null);
+  const lastDraftPointerRef = useRef(null);
+  const lastCompletionTimestampRef = useRef(0);
   const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
   const [mapError, setMapError] = useState('');
@@ -331,6 +342,7 @@ const GoogleListingsMap = ({
       draftCircleRef.current = null;
     }
     drawStartRef.current = null;
+    lastDraftPointerRef.current = null;
   };
 
   const applyCircleFilter = () => {
@@ -649,16 +661,43 @@ const GoogleListingsMap = ({
       disableDoubleClickZoom: true,
     });
 
-    const onMouseMove = mapsApi.event.addListener(mapRef.current, 'mousemove', (event) => {
-      if (!drawStartRef.current || !draftCircleRef.current || !event || !event.latLng) return;
-      const radiusMeters = getDistanceMeters(drawStartRef.current, {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
-      });
-      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
-    });
+    const getEventPoint = (event) => {
+      if (!event || !event.latLng) return null;
+      const latValue = event.latLng;
+      const lat = typeof latValue.lat === 'function' ? Number(latValue.lat()) : Number(latValue.lat);
+      const lng = typeof latValue.lng === 'function' ? Number(latValue.lng()) : Number(latValue.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng, latLng: event.latLng };
+    };
 
-    const completeDraftCircle = () => {
+    const startDraftCircle = (point) => {
+      if (!point) return;
+      removeDraftCircle();
+      drawStartRef.current = { lat: point.lat, lng: point.lng };
+      lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
+      draftCircleRef.current = new mapsApi.Circle({
+        map: mapRef.current,
+        center: point.latLng || { lat: point.lat, lng: point.lng },
+        radius: MIN_CIRCLE_RADIUS_METERS,
+        strokeColor: '#0e8a88',
+        strokeOpacity: 0.9,
+        strokeWeight: 2,
+        fillColor: '#0e8a88',
+        fillOpacity: 0.12,
+        clickable: false,
+      });
+    };
+
+    const updateDraftCircleRadius = (point) => {
+      if (!point || !drawStartRef.current || !draftCircleRef.current) return;
+      const radiusMeters = getDistanceMeters(drawStartRef.current, { lat: point.lat, lng: point.lng });
+      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
+      lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
+    };
+
+    const completeDraftCircle = (event) => {
+      const point = getEventPoint(event);
+      if (point) updateDraftCircleRadius(point);
       if (!draftCircleRef.current) return;
       if (activeCircleRef.current) {
         mapsApi.event.clearInstanceListeners(activeCircleRef.current);
@@ -684,29 +723,54 @@ const GoogleListingsMap = ({
         gestureHandling: 'greedy',
         disableDoubleClickZoom: false,
       });
+      lastCompletionTimestampRef.current = Date.now();
       applyCircleFilter();
     };
 
-    const onMouseDown = mapsApi.event.addListener(mapRef.current, 'mousedown', (event) => {
-      if (!event || !event.latLng) return;
-      removeDraftCircle();
-      drawStartRef.current = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-      draftCircleRef.current = new mapsApi.Circle({
-        map: mapRef.current,
-        center: event.latLng,
-        radius: MIN_CIRCLE_RADIUS_METERS,
-        strokeColor: '#0e8a88',
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: '#0e8a88',
-        fillOpacity: 0.12,
-        clickable: false,
-      });
-    });
+    const handlePointerDown = (event) => {
+      const point = getEventPoint(event);
+      if (!point) return;
+      startDraftCircle(point);
+    };
 
-    const onMouseUp = mapsApi.event.addListener(mapRef.current, 'mouseup', completeDraftCircle);
+    const handlePointerMove = (event) => {
+      const point = getEventPoint(event);
+      if (!point) return;
+      updateDraftCircleRadius(point);
+    };
 
-    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp];
+    const handleTapFallback = (event) => {
+      if (Date.now() - lastCompletionTimestampRef.current < 250) return;
+      const point = getEventPoint(event);
+      if (!point) return;
+      if (!drawStartRef.current || !draftCircleRef.current) {
+        startDraftCircle(point);
+        return;
+      }
+      completeDraftCircle(event);
+    };
+
+    const registerDrawListener = (eventName, handler) => {
+      try {
+        return mapsApi.event.addListener(mapRef.current, eventName, handler);
+      } catch (_err) {
+        return null;
+      }
+    };
+
+    const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
+    const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
+    const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
+    const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
+    const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
+    const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
+
+    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp, onTouchStart, onTouchMove, onTouchEnd]
+      .filter(Boolean);
+    if (isCoarsePointerDevice()) {
+      const onTapFallback = registerDrawListener('click', handleTapFallback);
+      if (onTapFallback) drawListenersRef.current.push(onTapFallback);
+    }
 
     return () => {
       clearDrawListeners();
