@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useHistory, Link } from 'react-router-dom';
-import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import {
   getPasskeyAuthenticationOptions,
   getPasskeyRegistrationOptions,
@@ -11,6 +10,7 @@ import {
   verifyPasskeyRegistration,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { startAuthentication, startRegistration } from '../utils/webauthn';
 
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
