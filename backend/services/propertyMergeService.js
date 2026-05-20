@@ -87,7 +87,7 @@ const buildPropertyIdentityKey = (propertyLike = {}) => {
         street,
         streetNumber,
         bedrooms,
-        Math.round(size),
+        Math.round(size / 5) * 5,
     ].join('|');
 };
 
@@ -246,6 +246,29 @@ const isStrongPropertyIdentityMatch = (candidate, payload) => {
     const payloadUrl = normalizeUrl(payload?.externalUrl);
     if (candidateUrl && payloadUrl && candidateUrl === payloadUrl) {
         return true;
+    }
+
+    const candidateCity = normalizeAddressPart(candidate?.address?.city);
+    const payloadCity = normalizeAddressPart(payload?.address?.city);
+    const { street: candidateStreet, streetNumber: candidateStreetNumber } = extractStreetAndNumber(candidate?.address || {});
+    const { street: payloadStreet, streetNumber: payloadStreetNumber } = extractStreetAndNumber(payload?.address || {});
+    const sameAddress =
+        candidateCity &&
+        payloadCity &&
+        candidateStreet &&
+        payloadStreet &&
+        candidateStreetNumber &&
+        payloadStreetNumber &&
+        candidateCity === payloadCity &&
+        candidateStreet === payloadStreet &&
+        candidateStreetNumber === payloadStreetNumber;
+    if (sameAddress) {
+        const bedroomsDelta = Math.abs(Number(candidate?.bedrooms || 0) - Number(payload?.bedrooms || 0));
+        const sizeRatio = getPriceDifferenceRatio(candidate?.size, payload?.size);
+        const priceRatio = getPriceDifferenceRatio(candidate?.price, payload?.price);
+        if (bedroomsDelta <= 1 && sizeRatio <= 0.18 && priceRatio <= 0.35) {
+            return true;
+        }
     }
 
     return false;
