@@ -18,6 +18,21 @@ const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
 const MOBILE_LAYOUT_BREAKPOINT = 767;
+const DEBUG_LOG_PREFIX = '__HK_DEBUG__';
+const debugLog = (hypothesisId, location, message, data = {}) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.console.info(DEBUG_LOG_PREFIX + JSON.stringify({
+      hypothesisId,
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }));
+  } catch (_err) {
+    // Ignore debug logging errors.
+  }
+};
 const SUPPORTED_ALL_FILTERS = new Set([
   '',
   'newest',
@@ -669,6 +684,14 @@ const PropertyList = () => {
         const hasUserFilters = Object.keys(params).length > 1;
         const result = await getProperties(params);
         const data = result.data || [];
+        // #region agent log
+        debugLog('H3', 'PropertyList.js:686', 'fetch_properties_success', {
+          count: data.length,
+          hasUserFilters,
+          retryCount,
+          filter,
+        });
+        // #endregion
         setProperties(data);
         // If the API returns 0 results with no filters, the database itself is empty.
         // Keep the flag set until real data actually arrives so filtered searches
@@ -730,6 +753,17 @@ const PropertyList = () => {
         } else {
           setError(`Failed to load properties (HTTP ${status || 'unknown'}). Please try again.`);
         }
+        // #region agent log
+        debugLog('H4', 'PropertyList.js:749', 'fetch_properties_error', {
+          status: status || null,
+          code: err.code || null,
+          hasResponse: Boolean(err.response),
+          isTransient,
+          isTimeout,
+          canFallbackToDemo,
+          usedCachedLiveListings,
+        });
+        // #endregion
       } finally {
         clearTimeout(slowTimer);
         setSlowLoad(false);
@@ -865,7 +899,18 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
+  useEffect(() => {
+    // #region agent log
+    debugLog('H2', 'PropertyList.js:903', 'display_properties_derived', {
+      mapSourceCount: mapSourceProperties.length,
+      displayCount: displayProperties.length,
+      circleActive: circleSelection.active,
+      circlePropertyCount: circleSelection.propertyIds.length,
+    });
+    // #endregion
+  }, [mapSourceProperties.length, displayProperties.length, circleSelection.active, circleSelection.propertyIds.length]);
   const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
+  const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
 
   const openMobileFilters = () => {
     if (typeof window === 'undefined') return;
@@ -1236,6 +1281,7 @@ const PropertyList = () => {
               onCircleSelectionChange={handleCircleSelectionChange}
               clearSignal={clearCircleSignal}
               drawModeToggleSignal={0}
+              isVisible={isMapPanelVisible}
             />
           </section>
         </div>

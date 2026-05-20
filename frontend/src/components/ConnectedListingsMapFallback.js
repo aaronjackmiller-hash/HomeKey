@@ -7,6 +7,21 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
+const DEBUG_LOG_PREFIX = '__HK_DEBUG__';
+const debugLog = (hypothesisId, location, message, data = {}) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.console.info(DEBUG_LOG_PREFIX + JSON.stringify({
+      hypothesisId,
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }));
+  } catch (_err) {
+    // Ignore debug logging errors.
+  }
+};
 const FAVORITE_PRICE_PIN_STYLE = {
   pinBackground: '#FF0000',
   pinBorderColor: '#000000',
@@ -237,6 +252,7 @@ const ConnectedListingsMapFallback = ({
   clearSignal = 0,
   drawModeToggleSignal = 0,
   onDrawModeChange,
+  isVisible = true,
 }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -312,6 +328,15 @@ const ConnectedListingsMapFallback = ({
     setTotalMarkerCount(markersRef.current.length);
     setHasActiveCircle(hasAreaFilter);
     setCircleRadiusMeters(hasAreaFilter ? radius : 0);
+    // #region agent log
+    debugLog('H2', 'ConnectedListingsMapFallback.js:331', 'apply_circle_filter', {
+      hasAreaFilter,
+      radiusMeters: radius,
+      markerCount: markersRef.current.length,
+      selectedCount: selectedPropertyIds.length,
+      zoom: typeof map.getZoom === 'function' ? map.getZoom() : null,
+    });
+    // #endregion
     emitCircleSelection({
       active: hasAreaFilter,
       propertyIds: selectedPropertyIds,
@@ -455,6 +480,28 @@ const ConnectedListingsMapFallback = ({
 
   useEffect(() => {
     const map = mapInstanceRef.current;
+    if (!map || !isVisible) return undefined;
+    const rafId = window.requestAnimationFrame(() => {
+      map.invalidateSize();
+      if (markersRef.current.length > 1) {
+        const bounds = L.featureGroup(markersRef.current.map((entry) => entry.marker)).getBounds();
+        map.fitBounds(bounds, { padding: [36, 36] });
+      } else if (markersRef.current.length === 1) {
+        map.setView(markersRef.current[0].marker.getLatLng(), 13);
+      } else {
+        map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
+      }
+      applyCircleFilter();
+    });
+    return () => {
+      if (typeof window.cancelAnimationFrame === 'function') {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [isVisible, totalMarkerCount]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
     if (!map) return undefined;
     const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
     if (!drawMode) {
@@ -486,6 +533,13 @@ const ConnectedListingsMapFallback = ({
         fillOpacity: 0.16,
         weight: 2,
       }).addTo(map);
+      // #region agent log
+      debugLog('H1', 'ConnectedListingsMapFallback.js:499', 'start_draft_circle', {
+        lat: Number(latLng.lat.toFixed(6)),
+        lng: Number(latLng.lng.toFixed(6)),
+        touchLikeDrawMode,
+      });
+      // #endregion
     };
 
     const updateDraftRadius = (latLng) => {
@@ -505,6 +559,25 @@ const ConnectedListingsMapFallback = ({
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = Date.now();
+      // #region agent log
+      debugLog('H1', 'ConnectedListingsMapFallback.js:527', 'complete_draft_circle', {
+        eventType: event && event.type ? event.type : null,
+        touchLikeDrawMode,
+        radiusMeters: Number(activeCircleRef.current.getRadius()),
+        center: activeCircleRef.current && activeCircleRef.current.getLatLng
+          ? {
+            lat: Number(activeCircleRef.current.getLatLng().lat.toFixed(6)),
+            lng: Number(activeCircleRef.current.getLatLng().lng.toFixed(6)),
+          }
+          : null,
+        edgePoint: latLng
+          ? {
+            lat: Number(latLng.lat.toFixed(6)),
+            lng: Number(latLng.lng.toFixed(6)),
+          }
+          : null,
+      });
+      // #endregion
       setDrawMode(false);
       applyCircleFilter();
     };
@@ -534,12 +607,9 @@ const ConnectedListingsMapFallback = ({
 
     if (touchLikeDrawMode) {
       map.on('touchmove', onPointerMove);
-      map.on('touchstart', onPointerDown);
-      map.on('touchend', completeDraftCircle);
       map.on('click', onTapFallback);
       map.on('mousemove', onPointerMove);
-      map.on('mousedown', onPointerDown);
-      map.on('mouseup', completeDraftCircle);
+      // In touch mode, complete only on explicit second tap to avoid one-tap min-radius circles.
     } else {
       map.on('mousemove', onPointerMove);
       map.on('mousedown', onPointerDown);
@@ -551,8 +621,6 @@ const ConnectedListingsMapFallback = ({
       map.off('mousedown', onPointerDown);
       map.off('mouseup', completeDraftCircle);
       map.off('touchmove', onPointerMove);
-      map.off('touchstart', onPointerDown);
-      map.off('touchend', completeDraftCircle);
       map.off('click', onTapFallback);
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
