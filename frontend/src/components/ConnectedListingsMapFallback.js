@@ -262,6 +262,10 @@ const ConnectedListingsMapFallback = ({
   const markerPreset = getFallbackMarkerStylePreset(markerPresetKey);
   const coarsePointerDevice = isCoarsePointerDevice();
   const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
+  const formattedSearchCount = useMemo(
+    () => Number(properties.length || 0).toLocaleString('en-US'),
+    [properties.length]
+  );
   const favoritePropertyIdSet = useMemo(
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
@@ -748,7 +752,7 @@ const ConnectedListingsMapFallback = ({
           ) : null}
           {!isOverlayCollapsed ? (
             <div className="google-listings-map-copy-block">
-              <h2>Find Your Next Home.</h2>
+              <h2>Find Your Next Home</h2>
               <p>Your perfect neighborhood is just a circle away.</p>
             </div>
           ) : null}
@@ -760,7 +764,7 @@ const ConnectedListingsMapFallback = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {drawMode ? 'Draw Mode' : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw Search Circle'}
             </button>
             <button
               type="button"
@@ -770,6 +774,56 @@ const ConnectedListingsMapFallback = ({
             >
               Clear Area
             </button>
+            <div className="google-listings-map-search-count" aria-label={`${formattedSearchCount} listings found`}>
+              <svg
+                className="google-listings-map-search-count-icon"
+                viewBox="0 0 36 24"
+                role="img"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 12.6L12.1 5.3L20.2 12.6V21H4V12.6Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M6.8 10.2L12.1 5.3L17.4 10.2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M10.2 21V16.8H13.9V21"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M22.7 7.1L25.4 9.8M25.9 5.6L23.8 7.7"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M22.2 12.6C24.6 10 28.5 9.9 30.9 12.3C33.3 14.7 33.2 18.6 30.6 21"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>{formattedSearchCount}</span>
+            </div>
           </div>
         ) : null}
       </div>
