@@ -7,21 +7,6 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
-const DEBUG_LOG_PREFIX = '__HK_DEBUG__';
-const debugLog = (hypothesisId, location, message, data = {}) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.console.info(DEBUG_LOG_PREFIX + JSON.stringify({
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }));
-  } catch (_err) {
-    // Ignore debug logging errors.
-  }
-};
 const FAVORITE_PRICE_PIN_STYLE = {
   pinBackground: '#FF0000',
   pinBorderColor: '#000000',
@@ -328,15 +313,6 @@ const ConnectedListingsMapFallback = ({
     setTotalMarkerCount(markersRef.current.length);
     setHasActiveCircle(hasAreaFilter);
     setCircleRadiusMeters(hasAreaFilter ? radius : 0);
-    // #region agent log
-    debugLog('H2', 'ConnectedListingsMapFallback.js:331', 'apply_circle_filter', {
-      hasAreaFilter,
-      radiusMeters: radius,
-      markerCount: markersRef.current.length,
-      selectedCount: selectedPropertyIds.length,
-      zoom: typeof map.getZoom === 'function' ? map.getZoom() : null,
-    });
-    // #endregion
     emitCircleSelection({
       active: hasAreaFilter,
       propertyIds: selectedPropertyIds,
@@ -533,13 +509,6 @@ const ConnectedListingsMapFallback = ({
         fillOpacity: 0.16,
         weight: 2,
       }).addTo(map);
-      // #region agent log
-      debugLog('H1', 'ConnectedListingsMapFallback.js:499', 'start_draft_circle', {
-        lat: Number(latLng.lat.toFixed(6)),
-        lng: Number(latLng.lng.toFixed(6)),
-        touchLikeDrawMode,
-      });
-      // #endregion
     };
 
     const updateDraftRadius = (latLng) => {
@@ -559,25 +528,6 @@ const ConnectedListingsMapFallback = ({
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = Date.now();
-      // #region agent log
-      debugLog('H1', 'ConnectedListingsMapFallback.js:527', 'complete_draft_circle', {
-        eventType: event && event.type ? event.type : null,
-        touchLikeDrawMode,
-        radiusMeters: Number(activeCircleRef.current.getRadius()),
-        center: activeCircleRef.current && activeCircleRef.current.getLatLng
-          ? {
-            lat: Number(activeCircleRef.current.getLatLng().lat.toFixed(6)),
-            lng: Number(activeCircleRef.current.getLatLng().lng.toFixed(6)),
-          }
-          : null,
-        edgePoint: latLng
-          ? {
-            lat: Number(latLng.lat.toFixed(6)),
-            lng: Number(latLng.lng.toFixed(6)),
-          }
-          : null,
-      });
-      // #endregion
       setDrawMode(false);
       applyCircleFilter();
     };

@@ -12,21 +12,6 @@ const PAN_STEP_PX = 130;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.12;
-const DEBUG_LOG_PREFIX = '__HK_DEBUG__';
-const debugLog = (hypothesisId, location, message, data = {}) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.console.info(DEBUG_LOG_PREFIX + JSON.stringify({
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }));
-  } catch (_err) {
-    // Ignore debug logging errors.
-  }
-};
 const FAVORITE_PRICE_PIN_STYLE = {
   pinColor: '#FF0000',
   pinStrokeColor: '#000000',
@@ -393,17 +378,6 @@ const GoogleListingsMap = ({
     setMarkerCount(visibleMarkers);
     setTotalMarkerCount(markerEntriesRef.current.length);
     setCircleRadiusMeters(effectiveAreaFilter ? radiusMeters : 0);
-    // #region agent log
-    debugLog('H2', 'GoogleListingsMap.js:393', 'apply_circle_filter', {
-      hasAreaFilter,
-      shouldDeferSelection,
-      effectiveAreaFilter,
-      hydratedMarkerCount,
-      expectedMarkerCount: expectedMarkerCountRef.current,
-      selectedCount: selectedPropertyIds.length,
-      radiusMeters,
-    });
-    // #endregion
     emitCircleSelection({
       active: effectiveAreaFilter,
       propertyIds: selectedPropertyIds,
@@ -779,15 +753,6 @@ const GoogleListingsMap = ({
         disableDoubleClickZoom: false,
       });
       lastCompletionTimestampRef.current = Date.now();
-      // #region agent log
-      debugLog('H1', 'GoogleListingsMap.js:748', 'complete_draft_circle', {
-        eventType: event && event.domEvent && event.domEvent.type ? event.domEvent.type : null,
-        touchLikeDrawMode,
-        radiusMeters: activeCircleRef.current && typeof activeCircleRef.current.getRadius === 'function'
-          ? Number(activeCircleRef.current.getRadius())
-          : 0,
-      });
-      // #endregion
       applyCircleFilter();
     };
 
