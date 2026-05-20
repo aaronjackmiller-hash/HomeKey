@@ -4,6 +4,7 @@ const Property = require('../models/Property');
 const {
     appendSourceIfMissing,
     findDuplicateCandidate,
+    isStrongPropertyIdentityMatch,
 } = require('./propertyMergeService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -702,10 +703,14 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                     summary.updated += 1;
                 } else {
                     const duplicate = await findDuplicateCandidate(payload);
+                    const hasStrongIdentityMatch = Boolean(duplicate) && isStrongPropertyIdentityMatch(duplicate, payload);
                     const shouldMergeIntoDuplicate = Boolean(duplicate) && (
                         // Preserve the manual-owner workflow by merging feed updates into a
                         // manually created listing that represents the same home.
                         hasManualSource(duplicate)
+                        // Cross-source imports can also represent the same listing with different
+                        // source IDs. Merge only when identity matching is high-confidence.
+                        || hasStrongIdentityMatch
                         // Rows without external IDs cannot be safely upserted and may still
                         // require fuzzy duplicate matching to avoid repeated inserts.
                         || !externalId
