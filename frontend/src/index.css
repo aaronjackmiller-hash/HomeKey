@@ -3851,7 +3851,7 @@ legend {
   outline: 1px solid rgba(30, 41, 59, 0.9);
   outline-offset: -1px;
   border-radius: var(--hk-radius-container);
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(249, 247, 242, 0.97);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
@@ -3967,7 +3967,7 @@ legend {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
   padding: 6px 12px 12px;
   border-top: 1px solid rgba(148, 163, 184, 0.34);
   background: transparent;
@@ -4007,7 +4007,7 @@ legend {
 }
 
 .property-list-page .google-listings-map-search-count {
-  margin-left: auto;
+  margin-left: 10px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -4030,6 +4030,7 @@ legend {
   min-width: 3ch;
   text-align: right;
   color: #334155;
+  white-space: nowrap;
 }
 
 .property-list-page .map-marker-presets {
