@@ -4188,6 +4188,13 @@ legend {
     min-height: clamp(70px, 22vw, 96px);
   }
 
+  .image-lightbox-image-media .detail-h-badge--lightbox {
+    top: 64px;
+    right: 4px;
+    width: 128px;
+    height: 84px;
+  }
+
   .mobile-listing-header {
     position: sticky;
     top: 6px;
