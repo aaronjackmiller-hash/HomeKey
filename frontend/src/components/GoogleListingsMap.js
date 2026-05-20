@@ -310,6 +310,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [mobileMoveCircleMode, setMobileMoveCircleMode] = useState(false);
   const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
@@ -394,6 +395,7 @@ const GoogleListingsMap = ({
       activeCircleRef.current = null;
     }
     setDrawMode(false);
+    setMobileMoveCircleMode(false);
     if (mapRef.current) {
       mapRef.current.setOptions({
         draggableCursor: null,
@@ -640,6 +642,7 @@ const GoogleListingsMap = ({
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
+    const coarsePointer = isCoarsePointerDevice();
     clearDrawListeners();
     if (!drawMode) {
       removeDraftCircle();
@@ -657,7 +660,7 @@ const GoogleListingsMap = ({
     mapRef.current.setOptions({
       draggableCursor: null,
       draggable: false,
-      gestureHandling: 'none',
+      gestureHandling: coarsePointer ? 'greedy' : 'none',
       disableDoubleClickZoom: true,
     });
 
@@ -727,6 +730,17 @@ const GoogleListingsMap = ({
       applyCircleFilter();
     };
 
+    const handleTapFallback = (event) => {
+      if (Date.now() - lastCompletionTimestampRef.current < 250) return;
+      const point = getEventPoint(event);
+      if (!point) return;
+      if (!drawStartRef.current || !draftCircleRef.current) {
+        startDraftCircle(point);
+        return;
+      }
+      completeDraftCircle(event);
+    };
+
     const handlePointerDown = (event) => {
       const point = getEventPoint(event);
       if (!point) return;
@@ -739,17 +753,6 @@ const GoogleListingsMap = ({
       updateDraftCircleRadius(point);
     };
 
-    const handleTapFallback = (event) => {
-      if (Date.now() - lastCompletionTimestampRef.current < 250) return;
-      const point = getEventPoint(event);
-      if (!point) return;
-      if (!drawStartRef.current || !draftCircleRef.current) {
-        startDraftCircle(point);
-        return;
-      }
-      completeDraftCircle(event);
-    };
-
     const registerDrawListener = (eventName, handler) => {
       try {
         return mapsApi.event.addListener(mapRef.current, eventName, handler);
@@ -758,18 +761,17 @@ const GoogleListingsMap = ({
       }
     };
 
-    const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
-    const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
-    const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
-    const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
-    const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
-    const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
-
-    drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp, onTouchStart, onTouchMove, onTouchEnd]
-      .filter(Boolean);
-    if (isCoarsePointerDevice()) {
+    if (coarsePointer) {
+      const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
+      const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
+      const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
       const onTapFallback = registerDrawListener('click', handleTapFallback);
-      if (onTapFallback) drawListenersRef.current.push(onTapFallback);
+      drawListenersRef.current = [onTouchStart, onTouchMove, onTouchEnd, onTapFallback].filter(Boolean);
+    } else {
+      const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
+      const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
+      const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
+      drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp].filter(Boolean);
     }
 
     return () => {
@@ -784,6 +786,23 @@ const GoogleListingsMap = ({
       }
     };
   }, [drawMode, mapReady]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
+    if (!mobileMoveCircleMode || drawMode || !activeCircleRef.current || !isCoarsePointerDevice()) return undefined;
+    const mapsApi = window.google.maps;
+    const onMapTapToMove = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
+      if (!event || !event.latLng || !activeCircleRef.current) return;
+      activeCircleRef.current.setCenter(event.latLng);
+      setMobileMoveCircleMode(false);
+      applyCircleFilter();
+    });
+    return () => {
+      if (!onMapTapToMove) return;
+      if (typeof onMapTapToMove.remove === 'function') onMapTapToMove.remove();
+      else mapsApi.event.removeListener(onMapTapToMove);
+    };
+  }, [drawMode, mapReady, mobileMoveCircleMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -838,6 +857,7 @@ const GoogleListingsMap = ({
   }
 
   const toggleDrawMode = () => {
+    setMobileMoveCircleMode(false);
     setDrawMode((value) => {
       const nextValue = !value;
       if (mapRef.current) {
@@ -863,6 +883,7 @@ const GoogleListingsMap = ({
     if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
     mapRef.current.panBy(x, y);
   };
+  const coarsePointerDevice = isCoarsePointerDevice();
 
   return (
     <div className="google-listings-map-shell">
@@ -893,8 +914,19 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {drawMode ? 'Draw Mode' : 'Draw search circle'}
+              {drawMode
+                ? (coarsePointerDevice ? 'Tap center, then edge' : 'Draw Mode')
+                : 'Draw search circle'}
             </button>
+            {coarsePointerDevice && !drawMode && activeCircleRef.current ? (
+              <button
+                type="button"
+                className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
+                onClick={() => setMobileMoveCircleMode((value) => !value)}
+              >
+                {mobileMoveCircleMode ? 'Tap map to place area' : 'Move circle'}
+              </button>
+            ) : null}
             <button
               type="button"
               className="secondary-btn map-draw-btn"
@@ -947,7 +979,9 @@ const GoogleListingsMap = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
-        {circleRadiusMeters > 0
+        {drawMode && coarsePointerDevice
+          ? 'Tap once for center, then tap again on the edge to apply the area.'
+          : circleRadiusMeters > 0
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
           : markerCount > 0
             ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
