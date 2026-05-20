@@ -26,6 +26,40 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
+export const loginWithGoogle = async ({ idToken, name }) => {
+  const response = await api.post('/auth/oauth/google', {
+    idToken,
+    credential: idToken,
+    name,
+  });
+  return response.data;
+};
+
+export const loginWithApple = async ({ idToken, name }) => {
+  const response = await api.post('/auth/oauth/apple', { idToken, name });
+  return response.data;
+};
+
+export const getPasskeyRegistrationOptions = async () => {
+  const response = await api.post('/auth/passkeys/register/options');
+  return response.data;
+};
+
+export const verifyPasskeyRegistration = async (credential) => {
+  const response = await api.post('/auth/passkeys/register/verify', { credential });
+  return response.data;
+};
+
+export const getPasskeyAuthenticationOptions = async (email) => {
+  const response = await api.post('/auth/passkeys/authenticate/options', { email });
+  return response.data;
+};
+
+export const verifyPasskeyAuthentication = async ({ email, credential }) => {
+  const response = await api.post('/auth/passkeys/authenticate/verify', { email, credential });
+  return response.data;
+};
+
 export const requestPasswordReset = async ({ email }) => {
   const response = await api.post('/auth/forgot-password', { email });
   return response.data;

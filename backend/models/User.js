@@ -40,6 +40,18 @@ const UserSchema = new mongoose.Schema(
             enum: ['buyer', 'seller', 'agent', 'admin'],
             default: 'buyer',
         },
+        googleSub: {
+            type: String,
+            unique: true,
+            sparse: true,
+            trim: true,
+        },
+        appleSub: {
+            type: String,
+            unique: true,
+            sparse: true,
+            trim: true,
+        },
         agency: {
             type: String,
             trim: true,
@@ -59,6 +71,52 @@ const UserSchema = new mongoose.Schema(
             select: false,
         },
         resetPasswordExpiresAt: {
+            type: Date,
+            select: false,
+        },
+        passkeys: [
+            {
+                credentialID: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+                publicKey: {
+                    type: String,
+                    required: true,
+                    select: false,
+                },
+                counter: {
+                    type: Number,
+                    default: 0,
+                    min: 0,
+                },
+                transports: [{
+                    type: String,
+                    trim: true,
+                }],
+                deviceType: {
+                    type: String,
+                    trim: true,
+                },
+                backedUp: {
+                    type: Boolean,
+                    default: false,
+                },
+                createdAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                lastUsedAt: {
+                    type: Date,
+                },
+            },
+        ],
+        passkeyChallenge: {
+            type: String,
+            select: false,
+        },
+        passkeyChallengeExpiresAt: {
             type: Date,
             select: false,
         },
