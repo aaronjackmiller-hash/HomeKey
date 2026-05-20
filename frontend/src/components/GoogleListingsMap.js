@@ -672,6 +672,7 @@ const GoogleListingsMap = ({
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
     const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
+    let isDraftDrawing = false;
     clearDrawListeners();
     if (!drawMode) {
       removeDraftCircle();
@@ -707,6 +708,7 @@ const GoogleListingsMap = ({
       removeDraftCircle();
       drawStartRef.current = { lat: point.lat, lng: point.lng };
       lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
+      isDraftDrawing = true;
       draftCircleRef.current = new mapsApi.Circle({
         map: mapRef.current,
         center: point.latLng || { lat: point.lat, lng: point.lng },
@@ -731,6 +733,7 @@ const GoogleListingsMap = ({
       const point = getEventPoint(event);
       if (point) updateDraftCircleRadius(point);
       if (!draftCircleRef.current) return;
+      isDraftDrawing = false;
       if (activeCircleRef.current) {
         mapsApi.event.clearInstanceListeners(activeCircleRef.current);
         activeCircleRef.current.setMap(null);
@@ -830,8 +833,22 @@ const GoogleListingsMap = ({
       drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp].filter(Boolean);
     }
 
+    const completeDraftFromWindow = () => {
+      if (!isDraftDrawing) return;
+      completeDraftCircle();
+    };
+    if (!touchLikeDrawMode) {
+      window.addEventListener('mouseup', completeDraftFromWindow, true);
+      window.addEventListener('pointerup', completeDraftFromWindow, true);
+      window.addEventListener('blur', completeDraftFromWindow);
+    }
+
     return () => {
       clearDrawListeners();
+      isDraftDrawing = false;
+      window.removeEventListener('mouseup', completeDraftFromWindow, true);
+      window.removeEventListener('pointerup', completeDraftFromWindow, true);
+      window.removeEventListener('blur', completeDraftFromWindow);
       if (mapRef.current) {
         mapRef.current.setOptions({
           draggableCursor: null,

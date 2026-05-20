@@ -596,6 +596,7 @@ const ConnectedListingsMapFallback = ({
     const map = mapInstanceRef.current;
     if (!map) return undefined;
     const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
+    let isDraftDrawing = false;
     if (!drawMode) {
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
@@ -618,6 +619,7 @@ const ConnectedListingsMapFallback = ({
       removeActiveCircle();
       pendingCenterRef.current = latLng;
       lastPointerLatLngRef.current = latLng;
+      isDraftDrawing = true;
       activeCircleRef.current = L.circle(latLng, {
         radius: MIN_CIRCLE_RADIUS_METERS,
         color: '#0e8a88',
@@ -641,6 +643,7 @@ const ConnectedListingsMapFallback = ({
       const latLng = getEventLatLng(event) || lastPointerLatLngRef.current;
       if (!pendingCenterRef.current || !activeCircleRef.current) return;
       if (latLng) updateDraftRadius(latLng);
+      isDraftDrawing = false;
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = Date.now();
@@ -682,12 +685,26 @@ const ConnectedListingsMapFallback = ({
       map.on('mouseup', completeDraftCircle);
     }
 
+    const completeDraftFromWindow = () => {
+      if (!isDraftDrawing) return;
+      completeDraftCircle();
+    };
+    if (!touchLikeDrawMode) {
+      window.addEventListener('mouseup', completeDraftFromWindow, true);
+      window.addEventListener('pointerup', completeDraftFromWindow, true);
+      window.addEventListener('blur', completeDraftFromWindow);
+    }
+
     return () => {
+      isDraftDrawing = false;
       map.off('mousemove', onPointerMove);
       map.off('mousedown', onPointerDown);
       map.off('mouseup', completeDraftCircle);
       map.off('touchmove', onPointerMove);
       map.off('click', onTapFallback);
+      window.removeEventListener('mouseup', completeDraftFromWindow, true);
+      window.removeEventListener('pointerup', completeDraftFromWindow, true);
+      window.removeEventListener('blur', completeDraftFromWindow);
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
     };
