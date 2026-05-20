@@ -500,31 +500,92 @@ const ConnectedListingsMapFallback = ({
 
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !touchLikeUiMode || drawMode || !hasActiveCircle || !activeCircleRef.current) return undefined;
-    let previousCenter = null;
-    const handleMoveStart = () => {
-      if (!mapInstanceRef.current) return;
-      previousCenter = mapInstanceRef.current.getCenter();
+    const activeCircle = activeCircleRef.current;
+    if (!map || !activeCircle || drawMode || !touchLikeUiMode) return undefined;
+    const container = map.getContainer();
+    let draggingCircle = false;
+
+    const getLatLngFromEvent = (event) => {
+      if (!event || !map) return null;
+      if (event.latlng) return event.latlng;
+      const touch = event.touches && event.touches[0]
+        ? event.touches[0]
+        : event.changedTouches && event.changedTouches[0]
+          ? event.changedTouches[0]
+          : null;
+      if (!touch) return null;
+      const rect = container.getBoundingClientRect();
+      const point = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+      return map.containerPointToLatLng(point);
     };
-    const handleMove = () => {
-      if (!mapInstanceRef.current || !activeCircleRef.current || !previousCenter) return;
-      const currentCenter = mapInstanceRef.current.getCenter();
-      const latDelta = Number(currentCenter.lat) - Number(previousCenter.lat);
-      const lngDelta = Number(currentCenter.lng) - Number(previousCenter.lng);
-      if (!Number.isFinite(latDelta) || !Number.isFinite(lngDelta)) return;
-      const circleCenter = activeCircleRef.current.getLatLng();
-      activeCircleRef.current.setLatLng({
-        lat: Number(circleCenter.lat) + latDelta,
-        lng: Number(circleCenter.lng) + lngDelta,
-      });
-      previousCenter = currentCenter;
+
+    const startDragAt = (latLng, nativeEvent) => {
+      if (!latLng || !activeCircleRef.current) return;
+      const radius = Number(activeCircleRef.current.getRadius());
+      const distance = map.distance(latLng, activeCircleRef.current.getLatLng());
+      if (!Number.isFinite(radius) || distance > radius) return;
+      draggingCircle = true;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      if (map.dragging) map.dragging.disable();
+      if (map.doubleClickZoom) map.doubleClickZoom.disable();
+      activeCircleRef.current.setLatLng(latLng);
       applyCircleFilter();
     };
-    map.on('movestart', handleMoveStart);
-    map.on('move', handleMove);
+
+    const continueDragAt = (latLng, nativeEvent) => {
+      if (!draggingCircle || !latLng || !activeCircleRef.current) return;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      activeCircleRef.current.setLatLng(latLng);
+      applyCircleFilter();
+    };
+
+    const endDrag = (nativeEvent) => {
+      if (!draggingCircle) return;
+      draggingCircle = false;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      if (!drawMode) {
+        if (map.dragging) map.dragging.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      }
+      applyCircleFilter();
+    };
+
+    const onMouseDown = (event) => startDragAt(getLatLngFromEvent(event), event.originalEvent || null);
+    const onMouseMove = (event) => continueDragAt(getLatLngFromEvent(event), event.originalEvent || null);
+    const onMouseUp = (event) => endDrag(event && event.originalEvent ? event.originalEvent : null);
+    const onTouchStart = (event) => startDragAt(getLatLngFromEvent(event), event);
+    const onTouchMove = (event) => continueDragAt(getLatLngFromEvent(event), event);
+    const onTouchEnd = (event) => endDrag(event);
+
+    map.on('mousedown', onMouseDown);
+    map.on('mousemove', onMouseMove);
+    map.on('mouseup', onMouseUp);
+    container.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    container.addEventListener('touchend', onTouchEnd, { passive: false, capture: true });
+    container.addEventListener('touchcancel', onTouchEnd, { passive: false, capture: true });
+
     return () => {
-      map.off('movestart', handleMoveStart);
-      map.off('move', handleMove);
+      map.off('mousedown', onMouseDown);
+      map.off('mousemove', onMouseMove);
+      map.off('mouseup', onMouseUp);
+      container.removeEventListener('touchstart', onTouchStart, { capture: true });
+      container.removeEventListener('touchmove', onTouchMove, { capture: true });
+      container.removeEventListener('touchend', onTouchEnd, { capture: true });
+      container.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+      if (!drawMode) {
+        if (map.dragging) map.dragging.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      }
     };
   }, [drawMode, hasActiveCircle, touchLikeUiMode]);
 
