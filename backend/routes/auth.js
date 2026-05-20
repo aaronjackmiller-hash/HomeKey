@@ -3,9 +3,16 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const {
     register,
     login,
+    loginWithGoogle,
+    loginWithApple,
+    getPasskeyRegistrationOptions,
+    verifyPasskeyRegistration,
+    getPasskeyAuthenticationOptions,
+    verifyPasskeyAuthentication,
     forgotPassword,
     resetPassword,
 } = require('../controllers/authController');
@@ -37,6 +44,56 @@ const validateResetPassword = [
         .withMessage('New password is required'),
 ];
 
+const validateOAuthGoogle = [
+    body().custom((_, { req }) => {
+        if (typeof req.body?.idToken === 'string' || typeof req.body?.credential === 'string') {
+            return true;
+        }
+        throw new Error('Google credential is required');
+    }),
+    body('idToken')
+        .optional()
+        .isString()
+        .withMessage('Google idToken must be a string'),
+    body('credential')
+        .optional()
+        .isString()
+        .withMessage('Google credential must be a string'),
+];
+
+const validateOAuthApple = [
+    body('idToken')
+        .isString()
+        .withMessage('Apple idToken is required')
+        .notEmpty()
+        .withMessage('Apple idToken is required'),
+];
+
+const validatePasskeyAuthOptions = [
+    body('email')
+        .isEmail()
+        .withMessage('Email must be valid')
+        .notEmpty()
+        .withMessage('Email is required'),
+];
+
+const validatePasskeyVerify = [
+    body('email')
+        .isEmail()
+        .withMessage('Email must be valid')
+        .notEmpty()
+        .withMessage('Email is required'),
+    body('credential')
+        .isObject()
+        .withMessage('Credential payload is required'),
+];
+
+const validatePasskeyRegisterVerify = [
+    body('credential')
+        .isObject()
+        .withMessage('Credential payload is required'),
+];
+
 const validateInput = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -50,6 +107,24 @@ router.post('/register', validateRegister, validateInput, register);
 
 // POST /api/auth/login
 router.post('/login', validateLogin, validateInput, login);
+
+// POST /api/auth/oauth/google
+router.post('/oauth/google', validateOAuthGoogle, validateInput, loginWithGoogle);
+
+// POST /api/auth/oauth/apple
+router.post('/oauth/apple', validateOAuthApple, validateInput, loginWithApple);
+
+// POST /api/auth/passkeys/register/options
+router.post('/passkeys/register/options', protect, getPasskeyRegistrationOptions);
+
+// POST /api/auth/passkeys/register/verify
+router.post('/passkeys/register/verify', protect, validatePasskeyRegisterVerify, validateInput, verifyPasskeyRegistration);
+
+// POST /api/auth/passkeys/authenticate/options
+router.post('/passkeys/authenticate/options', validatePasskeyAuthOptions, validateInput, getPasskeyAuthenticationOptions);
+
+// POST /api/auth/passkeys/authenticate/verify
+router.post('/passkeys/authenticate/verify', validatePasskeyVerify, validateInput, verifyPasskeyAuthentication);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', validateForgotPassword, validateInput, forgotPassword);

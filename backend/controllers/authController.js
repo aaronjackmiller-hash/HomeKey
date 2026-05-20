@@ -3,7 +3,18 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const {
+    generateAuthenticationOptions,
+    generateRegistrationOptions,
+    verifyAuthenticationResponse,
+    verifyRegistrationResponse,
+} = require('@simplewebauthn/server');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+
+const PASSKEY_CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const APPLE_JWKS_URL = new URL('https://appleid.apple.com/auth/keys');
+let appleJwksResolver = null;
 
 const assertJwtSecretConfigured = () => {
     if (typeof process.env.JWT_SECRET !== 'string' || process.env.JWT_SECRET.trim().length === 0) {
@@ -34,13 +45,117 @@ const getResetCookieOptions = (minutes) => ({
     maxAge: minutes * 60 * 1000,
 });
 
-// POST /api/auth/register
 const parsePreferredContactMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
     if (['email', 'whatsapp', 'phone'].includes(normalized)) return normalized;
     return 'email';
 };
 
+const normalizeEmail = (value) => String(value || '').toLowerCase().trim();
+
+const toSafeAuthData = (user) => ({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    whatsapp: user.whatsapp,
+    preferredContactMethod: parsePreferredContactMethod(user.preferredContactMethod),
+    role: user.role,
+    hasPasskey: Array.isArray(user.passkeys) && user.passkeys.length > 0,
+});
+
+const buildAuthSuccessResponse = (user) => {
+    const token = generateToken(user._id);
+    return {
+        success: true,
+        token,
+        data: toSafeAuthData(user),
+    };
+};
+
+const parsePasskeyOrigins = () => {
+    const raw = String(process.env.PASSKEY_ORIGIN || '').trim();
+    if (!raw) return ['http://localhost:3000'];
+    return raw.split(',').map((item) => item.trim()).filter(Boolean);
+};
+
+const getPasskeyRpId = () => String(process.env.PASSKEY_RP_ID || 'localhost').trim();
+
+const getPasskeyRpName = () => String(process.env.PASSKEY_RP_NAME || 'HomeKey').trim();
+
+const setPasskeyChallenge = (user, challenge) => {
+    user.passkeyChallenge = String(challenge);
+    user.passkeyChallengeExpiresAt = new Date(Date.now() + PASSKEY_CHALLENGE_TTL_MS);
+};
+
+const clearPasskeyChallenge = (user) => {
+    user.passkeyChallenge = undefined;
+    user.passkeyChallengeExpiresAt = undefined;
+};
+
+const isPasskeyChallengeValid = (user) => {
+    if (!user || !user.passkeyChallenge || !user.passkeyChallengeExpiresAt) return false;
+    return new Date(user.passkeyChallengeExpiresAt).getTime() > Date.now();
+};
+
+const getGoogleClientId = () => String(process.env.GOOGLE_CLIENT_ID || '').trim();
+
+const getAppleClientId = () => String(process.env.APPLE_CLIENT_ID || '').trim();
+
+const getJoseModule = async () => import('jose');
+
+const getAppleJwks = async () => {
+    if (appleJwksResolver) return appleJwksResolver;
+    const { createRemoteJWKSet } = await getJoseModule();
+    appleJwksResolver = createRemoteJWKSet(APPLE_JWKS_URL);
+    return appleJwksResolver;
+};
+
+const upsertOAuthUser = async ({ provider, providerSub, email, name }) => {
+    const providerField = provider === 'google' ? 'googleSub' : 'appleSub';
+    const normalizedEmail = normalizeEmail(email);
+    let user = await User.findOne({ [providerField]: providerSub });
+
+    if (!user && normalizedEmail) {
+        user = await User.findOne({ email: normalizedEmail });
+    }
+
+    if (!user) {
+        if (!normalizedEmail) {
+            const err = new Error(`No ${provider} email was provided for account creation.`);
+            err.code = 'OAUTH_EMAIL_REQUIRED';
+            throw err;
+        }
+        const randomPassword = crypto.randomBytes(48).toString('hex');
+        const hashedPassword = await bcrypt.hash(randomPassword, 12);
+        user = await User.create({
+            name: String(name || normalizedEmail.split('@')[0] || 'HomeKey User').trim(),
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: 'buyer',
+            [providerField]: providerSub,
+        });
+        return user;
+    }
+
+    let changed = false;
+    if (!user[providerField]) {
+        user[providerField] = providerSub;
+        changed = true;
+    }
+    if ((!user.name || user.name.trim().length === 0) && name) {
+        user.name = String(name).trim();
+        changed = true;
+    }
+    if (changed) {
+        await user.save();
+    }
+    return user;
+};
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+// POST /api/auth/register
 const register = async (req, res) => {
     const {
         name,
@@ -54,7 +169,8 @@ const register = async (req, res) => {
         bio,
     } = req.body;
     try {
-        const existing = await User.findOne({ email: String(email) });
+        const normalizedEmail = normalizeEmail(email);
+        const existing = await User.findOne({ email: normalizedEmail });
         if (existing) {
             return res.status(400).json({ success: false, message: 'Email already in use' });
         }
@@ -62,7 +178,7 @@ const register = async (req, res) => {
         const hashed = await bcrypt.hash(password, 12);
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             password: hashed,
             phone,
             whatsapp,
@@ -72,20 +188,7 @@ const register = async (req, res) => {
             bio,
         });
 
-        const token = generateToken(user._id);
-        res.status(201).json({
-            success: true,
-            token,
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                whatsapp: user.whatsapp,
-                preferredContactMethod: user.preferredContactMethod,
-                role: user.role,
-            },
-        });
+        res.status(201).json(buildAuthSuccessResponse(user));
     } catch (err) {
         if (err.code === 'JWT_CONFIG_MISSING') {
             return res.status(503).json({
@@ -109,7 +212,8 @@ const login = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
     try {
-        const user = await User.findOne({ email: String(email) }).select('+password');
+        const normalizedEmail = normalizeEmail(email);
+        const user = await User.findOne({ email: normalizedEmail }).select('+password');
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
@@ -119,21 +223,7 @@ const login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        const token = generateToken(user._id);
-        const preferredContactMethod = parsePreferredContactMethod(user.preferredContactMethod);
-        res.json({
-            success: true,
-            token,
-            data: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                whatsapp: user.whatsapp,
-                preferredContactMethod,
-                role: user.role,
-            },
-        });
+        res.json(buildAuthSuccessResponse(user));
     } catch (err) {
         if (err.code === 'JWT_CONFIG_MISSING') {
             return res.status(503).json({
@@ -143,6 +233,267 @@ const login = async (req, res) => {
             });
         }
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+};
+
+// POST /api/auth/oauth/google
+const loginWithGoogle = async (req, res) => {
+    const idToken = String(req.body.idToken || req.body.credential || '').trim();
+    const explicitName = String(req.body.name || '').trim();
+    if (!idToken) {
+        return res.status(400).json({ success: false, message: 'Google credential is required.' });
+    }
+    const clientId = getGoogleClientId();
+    if (!clientId) {
+        return res.status(503).json({
+            success: false,
+            message: 'Google sign-in is not configured. Set GOOGLE_CLIENT_ID.',
+        });
+    }
+    try {
+        const oauthClient = new OAuth2Client(clientId);
+        const ticket = await oauthClient.verifyIdToken({ idToken, audience: clientId });
+        const payload = ticket.getPayload();
+        const providerSub = String(payload?.sub || '').trim();
+        if (!providerSub) {
+            return res.status(400).json({ success: false, message: 'Google token is missing subject.' });
+        }
+        const user = await upsertOAuthUser({
+            provider: 'google',
+            providerSub,
+            email: payload?.email,
+            name: explicitName || payload?.name,
+        });
+        return res.json(buildAuthSuccessResponse(user));
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            message: 'Google sign-in failed.',
+            error: err.message,
+        });
+    }
+};
+
+// POST /api/auth/oauth/apple
+const loginWithApple = async (req, res) => {
+    const idToken = String(req.body.idToken || '').trim();
+    const explicitName = String(req.body.name || '').trim();
+    if (!idToken) {
+        return res.status(400).json({ success: false, message: 'Apple identity token is required.' });
+    }
+    const clientId = getAppleClientId();
+    if (!clientId) {
+        return res.status(503).json({
+            success: false,
+            message: 'Apple sign-in is not configured. Set APPLE_CLIENT_ID.',
+        });
+    }
+    try {
+        const { jwtVerify } = await getJoseModule();
+        const jwks = await getAppleJwks();
+        const verification = await jwtVerify(idToken, jwks, {
+            issuer: 'https://appleid.apple.com',
+            audience: clientId,
+        });
+        const payload = verification.payload || {};
+        const providerSub = String(payload.sub || '').trim();
+        if (!providerSub) {
+            return res.status(400).json({ success: false, message: 'Apple token is missing subject.' });
+        }
+        const user = await upsertOAuthUser({
+            provider: 'apple',
+            providerSub,
+            email: payload.email,
+            name: explicitName,
+        });
+        return res.json(buildAuthSuccessResponse(user));
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            message: 'Apple sign-in failed.',
+            error: err.message,
+        });
+    }
+};
+
+// POST /api/auth/passkeys/register/options
+const getPasskeyRegistrationOptions = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('+passkeyChallenge +passkeyChallengeExpiresAt');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User account not found.' });
+        }
+        const options = await generateRegistrationOptions({
+            rpName: getPasskeyRpName(),
+            rpID: getPasskeyRpId(),
+            userName: user.email,
+            userDisplayName: user.name,
+            userID: Buffer.from(String(user._id), 'utf8'),
+            timeout: 60000,
+            attestationType: 'none',
+            excludeCredentials: asArray(user.passkeys).map((passkey) => ({
+                id: passkey.credentialID,
+                transports: asArray(passkey.transports),
+            })),
+            authenticatorSelection: {
+                residentKey: 'preferred',
+                userVerification: 'preferred',
+            },
+        });
+        setPasskeyChallenge(user, options.challenge);
+        await user.save();
+        return res.json({ success: true, options });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Failed to prepare passkey registration.', error: err.message });
+    }
+};
+
+// POST /api/auth/passkeys/register/verify
+const verifyPasskeyRegistration = async (req, res) => {
+    const response = req.body.credential;
+    if (!response || typeof response !== 'object') {
+        return res.status(400).json({ success: false, message: 'Passkey credential response is required.' });
+    }
+    try {
+        const user = await User.findById(req.user.id).select('+passkeyChallenge +passkeyChallengeExpiresAt +passkeys.publicKey');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User account not found.' });
+        }
+        if (!isPasskeyChallengeValid(user)) {
+            clearPasskeyChallenge(user);
+            await user.save();
+            return res.status(400).json({
+                success: false,
+                message: 'Passkey registration challenge expired. Please try again.',
+            });
+        }
+
+        const verification = await verifyRegistrationResponse({
+            response,
+            expectedChallenge: user.passkeyChallenge,
+            expectedOrigin: parsePasskeyOrigins(),
+            expectedRPID: getPasskeyRpId(),
+            requireUserVerification: false,
+        });
+        if (!verification.verified || !verification.registrationInfo) {
+            return res.status(400).json({ success: false, message: 'Unable to verify passkey registration.' });
+        }
+
+        const registration = verification.registrationInfo;
+        const credentialID = registration.credential.id;
+        const publicKey = Buffer.from(registration.credential.publicKey).toString('base64url');
+        const existingPasskey = asArray(user.passkeys).some((passkey) => passkey.credentialID === credentialID);
+        if (!existingPasskey) {
+            user.passkeys.push({
+                credentialID,
+                publicKey,
+                counter: registration.credential.counter,
+                transports: asArray(response.response?.transports),
+                deviceType: registration.credentialDeviceType,
+                backedUp: Boolean(registration.credentialBackedUp),
+                lastUsedAt: new Date(),
+            });
+        }
+        clearPasskeyChallenge(user);
+        await user.save();
+        return res.json({
+            success: true,
+            message: 'Passkey is ready for faster sign-in.',
+            passkeys: asArray(user.passkeys).length,
+        });
+    } catch (err) {
+        return res.status(400).json({ success: false, message: 'Passkey verification failed.', error: err.message });
+    }
+};
+
+// POST /api/auth/passkeys/authenticate/options
+const getPasskeyAuthenticationOptions = async (req, res) => {
+    const email = normalizeEmail(req.body.email);
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Email is required for passkey sign-in.' });
+    }
+    try {
+        const user = await User.findOne({ email }).select('+passkeyChallenge +passkeyChallengeExpiresAt');
+        if (!user || asArray(user.passkeys).length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No passkey is registered for this account.',
+            });
+        }
+        const options = await generateAuthenticationOptions({
+            rpID: getPasskeyRpId(),
+            timeout: 60000,
+            userVerification: 'preferred',
+            allowCredentials: asArray(user.passkeys).map((passkey) => ({
+                id: passkey.credentialID,
+                transports: asArray(passkey.transports),
+            })),
+        });
+        setPasskeyChallenge(user, options.challenge);
+        await user.save();
+        return res.json({ success: true, options });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Failed to prepare passkey sign-in.', error: err.message });
+    }
+};
+
+// POST /api/auth/passkeys/authenticate/verify
+const verifyPasskeyAuthentication = async (req, res) => {
+    const email = normalizeEmail(req.body.email);
+    const response = req.body.credential;
+    if (!email || !response || typeof response !== 'object') {
+        return res.status(400).json({
+            success: false,
+            message: 'Email and passkey credential response are required.',
+        });
+    }
+    try {
+        const user = await User.findOne({ email }).select('+passkeyChallenge +passkeyChallengeExpiresAt +passkeys.publicKey');
+        if (!user || asArray(user.passkeys).length === 0) {
+            return res.status(404).json({ success: false, message: 'No passkey is registered for this account.' });
+        }
+        if (!isPasskeyChallengeValid(user)) {
+            clearPasskeyChallenge(user);
+            await user.save();
+            return res.status(400).json({
+                success: false,
+                message: 'Passkey sign-in challenge expired. Please try again.',
+            });
+        }
+
+        const passkey = asArray(user.passkeys).find((item) => item.credentialID === response.id);
+        if (!passkey) {
+            return res.status(400).json({
+                success: false,
+                message: 'This passkey is not registered for the requested account.',
+            });
+        }
+
+        const verification = await verifyAuthenticationResponse({
+            response,
+            expectedChallenge: user.passkeyChallenge,
+            expectedOrigin: parsePasskeyOrigins(),
+            expectedRPID: getPasskeyRpId(),
+            credential: {
+                id: passkey.credentialID,
+                publicKey: Buffer.from(passkey.publicKey, 'base64url'),
+                counter: Number(passkey.counter || 0),
+                transports: asArray(passkey.transports),
+            },
+            requireUserVerification: false,
+        });
+
+        if (!verification.verified) {
+            return res.status(401).json({ success: false, message: 'Passkey sign-in could not be verified.' });
+        }
+
+        passkey.counter = verification.authenticationInfo.newCounter;
+        passkey.lastUsedAt = new Date();
+        clearPasskeyChallenge(user);
+        await user.save();
+        return res.json(buildAuthSuccessResponse(user));
+    } catch (err) {
+        return res.status(401).json({ success: false, message: 'Passkey sign-in failed.', error: err.message });
     }
 };
 
@@ -186,7 +537,6 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-// POST /api/auth/reset-password
 const resetPassword = async (req, res) => {
     const parsedCookies = req.cookies || {};
     const email = String(req.body.email || parsedCookies.homekey_reset_email || '').toLowerCase().trim();
@@ -240,4 +590,15 @@ const resetPassword = async (req, res) => {
     }
 };
 
-module.exports = { register, login, forgotPassword, resetPassword };
+module.exports = {
+    register,
+    login,
+    loginWithGoogle,
+    loginWithApple,
+    getPasskeyRegistrationOptions,
+    verifyPasskeyRegistration,
+    getPasskeyAuthenticationOptions,
+    verifyPasskeyAuthentication,
+    forgotPassword,
+    resetPassword,
+};
