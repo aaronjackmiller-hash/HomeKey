@@ -507,7 +507,7 @@ const ConnectedListingsMapFallback = ({
     const canStartDragAt = (latLng) => {
       if (!latLng || !activeCircleRef.current) return false;
       const distanceFromCenter = map.distance(latLng, activeCircleRef.current.getLatLng());
-      return distanceFromCenter <= Number(activeCircleRef.current.getRadius());
+      return distanceFromCenter <= (Number(activeCircleRef.current.getRadius()) + 120);
     };
     const beginCircleDrag = (event) => {
       if (!event || !event.latlng || !activeCircleRef.current) return;
@@ -567,6 +567,19 @@ const ConnectedListingsMapFallback = ({
       }
     };
   }, [drawMode, hasActiveCircle]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return undefined;
+    if (!touchLikeUiMode || drawMode || !hasActiveCircle) return undefined;
+    if (map.dragging) map.dragging.disable();
+    if (map.doubleClickZoom) map.doubleClickZoom.disable();
+    return () => {
+      if (!mapInstanceRef.current || drawMode) return;
+      if (mapInstanceRef.current.dragging) mapInstanceRef.current.dragging.enable();
+      if (mapInstanceRef.current.doubleClickZoom) mapInstanceRef.current.doubleClickZoom.enable();
+    };
+  }, [drawMode, hasActiveCircle, touchLikeUiMode]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
