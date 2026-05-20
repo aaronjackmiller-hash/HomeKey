@@ -13,6 +13,7 @@ const {
     appendSourceIfMissing,
     findDuplicateCandidate,
 } = require('../services/propertyMergeService');
+const { queueInstantAlertsForProperties } = require('../services/instantAlertService');
 const { getRequestUserRole } = require('../utils/authorization');
 
 // Allowed fields for property updates
@@ -332,6 +333,7 @@ const createProperty = async (req, res) => {
             { _id: owner._id },
             { $addToSet: { listings: property._id } }
         );
+        await queueInstantAlertsForProperties([property.toObject()]);
         await sendThankYouForListing({ user: owner.toObject(), property: property.toObject() });
         res.status(201).json({ success: true, data: property });
     } catch (err) {

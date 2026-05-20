@@ -13,6 +13,7 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import PropertyInquiryCard from './components/PropertyInquiryCard';
+import InstantAlerts from './components/InstantAlerts';
 import './index.css';
 
 const PrivateRoute = ({ children, ...rest }) => {
@@ -52,6 +53,9 @@ const AppRoutes = () => {
           </PrivateRoute>
           <PrivateRoute path="/admin/import-yad2">
             <AdminYad2Import />
+          </PrivateRoute>
+          <PrivateRoute path="/alerts">
+            <InstantAlerts />
           </PrivateRoute>
           <Redirect to="/" />
         </Switch>

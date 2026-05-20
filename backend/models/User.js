@@ -2,6 +2,103 @@
 
 const mongoose = require('mongoose');
 
+const AlertCriteriaSchema = new mongoose.Schema(
+    {
+        type: {
+            type: String,
+            enum: ['sale', 'rental'],
+        },
+        city: {
+            type: String,
+            trim: true,
+        },
+        minPrice: {
+            type: Number,
+            min: 0,
+        },
+        maxPrice: {
+            type: Number,
+            min: 0,
+        },
+        rooms: {
+            type: String,
+            trim: true,
+        },
+        baths: {
+            type: String,
+            trim: true,
+        },
+    },
+    { _id: false }
+);
+
+const SavedAlertSearchSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+            default: 'My Instant Alert',
+        },
+        enabled: {
+            type: Boolean,
+            default: true,
+        },
+        criteria: {
+            type: AlertCriteriaSchema,
+            default: () => ({}),
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
+        updatedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
+    { _id: true }
+);
+
+const InstantAlertInboxItemSchema = new mongoose.Schema(
+    {
+        searchId: {
+            type: mongoose.Schema.Types.ObjectId,
+        },
+        searchName: {
+            type: String,
+            trim: true,
+        },
+        propertyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Property',
+            required: true,
+        },
+        propertySnapshot: {
+            title: { type: String, trim: true },
+            type: { type: String, trim: true },
+            city: { type: String, trim: true },
+            price: { type: Number, min: 0 },
+            bedrooms: { type: Number, min: 0 },
+            bathrooms: { type: Number, min: 0 },
+            image: { type: String, trim: true },
+            createdAt: { type: Date },
+        },
+        message: {
+            type: String,
+            trim: true,
+        },
+        readAt: {
+            type: Date,
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
+    { _id: true }
+);
+
 const UserSchema = new mongoose.Schema(
     {
         name: {
@@ -34,6 +131,19 @@ const UserSchema = new mongoose.Schema(
         notifications: {
             sendThankYou: { type: Boolean, default: true },
             sendExpiryReminder: { type: Boolean, default: true },
+        },
+        instantAlerts: {
+            enabled: { type: Boolean, default: false },
+            deliverInApp: { type: Boolean, default: true },
+            deliverEmail: { type: Boolean, default: false },
+            savedSearches: {
+                type: [SavedAlertSearchSchema],
+                default: [],
+            },
+            inbox: {
+                type: [InstantAlertInboxItemSchema],
+                default: [],
+            },
         },
         role: {
             type: String,

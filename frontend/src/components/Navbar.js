@@ -713,6 +713,7 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
+          {isAuthenticated && <Link to="/alerts" className="premium-header__alerts-link">Instant Alerts</Link>}
           {shouldShowGreeting ? (
             <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
               <span className="premium-header__greeting-label">Hello</span>
