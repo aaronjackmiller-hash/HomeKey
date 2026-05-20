@@ -11,6 +11,7 @@ const {
 } = require('../services/propertyLifecycleService');
 const {
     appendSourceIfMissing,
+    dedupePropertiesForDisplay,
     findDuplicateCandidate,
 } = require('../services/propertyMergeService');
 const { getRequestUserRole } = require('../utils/authorization');
@@ -50,6 +51,30 @@ const normalizeVirtualTourUrl = (value) => {
     } catch (_err) {
         return '';
     }
+};
+
+const sanitizeExternalSource = (value) => {
+    const normalized = String(value || '').trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    return normalized || '';
+};
+
+const sanitizeExternalId = (value) => {
+    const normalized = pickFirstNonEmpty(value);
+    return normalized ? normalized.slice(0, 120) : '';
+};
+
+const extractManualSourceMetadata = (body = {}) => {
+    const externalSource = sanitizeExternalSource(
+        body.externalSource || body.sourceTag || body.source || body.channel
+    );
+    const externalId = sanitizeExternalId(body.externalId || body.sourceId || body.channelListingId);
+    const externalUrl = normalizeVirtualTourUrl(body.externalUrl || body.sourceUrl || body.channelUrl);
+
+    return {
+        ...(externalSource ? { externalSource } : {}),
+        ...(externalId ? { externalId } : {}),
+        ...(externalUrl ? { externalUrl } : {}),
+    };
 };
 
 const sanitizeShowings = (showings = []) => {
@@ -218,11 +243,12 @@ const getAllProperties = async (req, res) => {
         const properties = await Property.find(filter)
             .populate('agent', 'name email phone whatsapp agency')
             .sort({ createdAt: -1 });
+        const dedupedProperties = dedupePropertiesForDisplay(properties);
 
         res.json({
             success: true,
-            count: properties.length,
-            data: properties,
+            count: dedupedProperties.length,
+            data: dedupedProperties,
         });
     } catch (err) {
         console.error('Property Fetch Error:', err);
@@ -262,6 +288,7 @@ const createProperty = async (req, res) => {
         if (!owner) {
             return res.status(401).json({ success: false, message: 'User not found for property creation' });
         }
+        const sourceMetadata = extractManualSourceMetadata(req.body);
 
         const payload = {
             ...req.body,
@@ -277,9 +304,11 @@ const createProperty = async (req, res) => {
             sources: [
                 {
                     sourceType: 'manual',
+                    ...sourceMetadata,
                     addedAt: new Date(),
                 },
             ],
+            ...sourceMetadata,
         };
 
         const duplicate = await findDuplicateCandidate(payload);
@@ -311,6 +340,7 @@ const createProperty = async (req, res) => {
             }
             appendSourceIfMissing(duplicate, {
                 sourceType: 'manual',
+                ...sourceMetadata,
                 addedAt: new Date(),
             });
             await duplicate.save();
