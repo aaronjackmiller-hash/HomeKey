@@ -311,11 +311,12 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const [mobileMoveCircleMode, setMobileMoveCircleMode] = useState(false);
   const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
+  const coarsePointerDevice = isCoarsePointerDevice();
+  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
   const favoritePropertyIdSet = useMemo(
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
@@ -396,7 +397,6 @@ const GoogleListingsMap = ({
       activeCircleRef.current = null;
     }
     setDrawMode(false);
-    setMobileMoveCircleMode(false);
     if (mapRef.current) {
       mapRef.current.setOptions({
         draggableCursor: null,
@@ -744,6 +744,29 @@ const GoogleListingsMap = ({
       });
       mapsApi.event.addListener(activeCircleRef.current, 'radius_changed', applyCircleFilter);
       mapsApi.event.addListener(activeCircleRef.current, 'center_changed', applyCircleFilter);
+      const lockMapPanningForCircleDrag = () => {
+        if (!touchLikeDrawMode || !mapRef.current) return;
+        mapRef.current.setOptions({
+          draggable: false,
+          gestureHandling: 'none',
+          disableDoubleClickZoom: true,
+        });
+      };
+      const unlockMapPanningForCircleDrag = () => {
+        if (!touchLikeDrawMode || !mapRef.current) return;
+        mapRef.current.setOptions({
+          draggable: true,
+          gestureHandling: 'greedy',
+          disableDoubleClickZoom: false,
+        });
+      };
+      mapsApi.event.addListener(activeCircleRef.current, 'mousedown', lockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragstart', lockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'mouseup', unlockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragend', () => {
+        unlockMapPanningForCircleDrag();
+        applyCircleFilter();
+      });
 
       setDrawMode(false);
       mapRef.current.setOptions({
@@ -818,26 +841,26 @@ const GoogleListingsMap = ({
   }, [drawMode, isMobileOverlay, mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
-    if (
-      !mobileMoveCircleMode
-      || drawMode
-      || !activeCircleRef.current
-      || (!isMobileOverlay && !isCoarsePointerDevice())
-    ) return undefined;
-    const mapsApi = window.google.maps;
-    const onMapTapToMove = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
-      if (!event || !event.latLng || !activeCircleRef.current) return;
-      activeCircleRef.current.setCenter(event.latLng);
-      setMobileMoveCircleMode(false);
-      applyCircleFilter();
-    });
-    return () => {
-      if (!onMapTapToMove) return;
-      if (typeof onMapTapToMove.remove === 'function') onMapTapToMove.remove();
-      else mapsApi.event.removeListener(onMapTapToMove);
+    if (!mapReady || !mapContainerRef.current) return undefined;
+    const onContextMenu = (event) => {
+      if (touchLikeUiMode) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     };
-  }, [drawMode, isMobileOverlay, mapReady, mobileMoveCircleMode]);
+    const onDragStart = (event) => {
+      if (!touchLikeUiMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    mapContainerRef.current.addEventListener('contextmenu', onContextMenu, true);
+    mapContainerRef.current.addEventListener('dragstart', onDragStart, true);
+    return () => {
+      if (!mapContainerRef.current) return;
+      mapContainerRef.current.removeEventListener('contextmenu', onContextMenu, true);
+      mapContainerRef.current.removeEventListener('dragstart', onDragStart, true);
+    };
+  }, [mapReady, touchLikeUiMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -894,7 +917,6 @@ const GoogleListingsMap = ({
   }
 
   const toggleDrawMode = () => {
-    setMobileMoveCircleMode(false);
     setDrawMode((value) => {
       const nextValue = !value;
       if (mapRef.current) {
@@ -920,8 +942,6 @@ const GoogleListingsMap = ({
     if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
     mapRef.current.panBy(x, y);
   };
-  const coarsePointerDevice = isCoarsePointerDevice();
-  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
 
   return (
     <div className="google-listings-map-shell">
@@ -952,19 +972,8 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {drawMode
-                ? (touchLikeUiMode ? 'Tap center, then edge' : 'Draw Mode')
-                : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
-            {touchLikeUiMode && !drawMode && activeCircleRef.current ? (
-              <button
-                type="button"
-                className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
-                onClick={() => setMobileMoveCircleMode((value) => !value)}
-              >
-                {mobileMoveCircleMode ? 'Tap map to place area' : 'Move circle'}
-              </button>
-            ) : null}
             <button
               type="button"
               className="secondary-btn map-draw-btn"
@@ -1017,9 +1026,7 @@ const GoogleListingsMap = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
-        {drawMode && touchLikeUiMode
-          ? 'Tap once for center, then tap again on the edge to apply the area.'
-          : circleRadiusMeters > 0
+        {circleRadiusMeters > 0
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
           : markerCount > 0
             ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
