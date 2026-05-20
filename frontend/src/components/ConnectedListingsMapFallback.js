@@ -223,11 +223,14 @@ const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}) => (pr
 
 const isCoarsePointerDevice = () => {
   if (typeof window === 'undefined') return false;
-  if (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) {
-    return true;
-  }
+  const supportsMatchMedia = typeof window.matchMedia === 'function';
+  const hasFinePointer = supportsMatchMedia && window.matchMedia('(any-pointer: fine)').matches;
+  const primaryCoarsePointer = supportsMatchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (hasFinePointer) return false;
+  if (primaryCoarsePointer) return true;
   const touchPoints = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints) : 0;
-  return 'ontouchstart' in window || touchPoints > 0;
+  const hasHoverPointer = supportsMatchMedia && window.matchMedia('(hover: hover)').matches;
+  return touchPoints > 0 && !hasHoverPointer;
 };
 
 const ConnectedListingsMapFallback = ({
@@ -253,11 +256,12 @@ const ConnectedListingsMapFallback = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
   const [hasActiveCircle, setHasActiveCircle] = useState(false);
-  const [mobileMoveCircleMode, setMobileMoveCircleMode] = useState(false);
   const markerPresetKey = DEFAULT_FALLBACK_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getFallbackMarkerStylePreset(markerPresetKey);
+  const coarsePointerDevice = isCoarsePointerDevice();
+  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
   const favoritePropertyIdSet = useMemo(
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
@@ -324,7 +328,6 @@ const ConnectedListingsMapFallback = ({
   const clearCircleFilter = () => {
     removeActiveCircle();
     setDrawMode(false);
-    setMobileMoveCircleMode(false);
     const map = mapInstanceRef.current;
     if (map) {
       if (map.dragging) map.dragging.enable();
@@ -334,7 +337,6 @@ const ConnectedListingsMapFallback = ({
   };
 
   const toggleDrawMode = () => {
-    setMobileMoveCircleMode(false);
     setDrawMode((value) => {
       const nextValue = !value;
       const map = mapInstanceRef.current;
@@ -478,8 +480,123 @@ const ConnectedListingsMapFallback = ({
 
   useEffect(() => {
     const map = mapInstanceRef.current;
+    if (!map || !mapContainerRef.current) return undefined;
+    const onContextMenu = (event) => {
+      if (touchLikeUiMode) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const onDragStart = (event) => {
+      if (!touchLikeUiMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    mapContainerRef.current.addEventListener('contextmenu', onContextMenu, true);
+    mapContainerRef.current.addEventListener('dragstart', onDragStart, true);
+    return () => {
+      if (!mapContainerRef.current) return;
+      mapContainerRef.current.removeEventListener('contextmenu', onContextMenu, true);
+      mapContainerRef.current.removeEventListener('dragstart', onDragStart, true);
+    };
+  }, [touchLikeUiMode]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const activeCircle = activeCircleRef.current;
+    if (!map || !activeCircle || drawMode || !touchLikeUiMode) return undefined;
+    const container = map.getContainer();
+    let draggingCircle = false;
+
+    const getLatLngFromEvent = (event) => {
+      if (!event || !map) return null;
+      if (event.latlng) return event.latlng;
+      const touch = event.touches && event.touches[0]
+        ? event.touches[0]
+        : event.changedTouches && event.changedTouches[0]
+          ? event.changedTouches[0]
+          : null;
+      if (!touch) return null;
+      const rect = container.getBoundingClientRect();
+      const point = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+      return map.containerPointToLatLng(point);
+    };
+
+    const startDragAt = (latLng, nativeEvent) => {
+      if (!latLng || !activeCircleRef.current) return;
+      const radius = Number(activeCircleRef.current.getRadius());
+      const distance = map.distance(latLng, activeCircleRef.current.getLatLng());
+      if (!Number.isFinite(radius) || distance > radius) return;
+      draggingCircle = true;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      if (map.dragging) map.dragging.disable();
+      if (map.doubleClickZoom) map.doubleClickZoom.disable();
+      activeCircleRef.current.setLatLng(latLng);
+      applyCircleFilter();
+    };
+
+    const continueDragAt = (latLng, nativeEvent) => {
+      if (!draggingCircle || !latLng || !activeCircleRef.current) return;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      activeCircleRef.current.setLatLng(latLng);
+      applyCircleFilter();
+    };
+
+    const endDrag = (nativeEvent) => {
+      if (!draggingCircle) return;
+      draggingCircle = false;
+      if (nativeEvent) {
+        nativeEvent.preventDefault();
+        nativeEvent.stopPropagation();
+      }
+      if (!drawMode) {
+        if (map.dragging) map.dragging.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      }
+      applyCircleFilter();
+    };
+
+    const onMouseDown = (event) => startDragAt(getLatLngFromEvent(event), event.originalEvent || null);
+    const onMouseMove = (event) => continueDragAt(getLatLngFromEvent(event), event.originalEvent || null);
+    const onMouseUp = (event) => endDrag(event && event.originalEvent ? event.originalEvent : null);
+    const onTouchStart = (event) => startDragAt(getLatLngFromEvent(event), event);
+    const onTouchMove = (event) => continueDragAt(getLatLngFromEvent(event), event);
+    const onTouchEnd = (event) => endDrag(event);
+
+    map.on('mousedown', onMouseDown);
+    map.on('mousemove', onMouseMove);
+    map.on('mouseup', onMouseUp);
+    container.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    container.addEventListener('touchend', onTouchEnd, { passive: false, capture: true });
+    container.addEventListener('touchcancel', onTouchEnd, { passive: false, capture: true });
+
+    return () => {
+      map.off('mousedown', onMouseDown);
+      map.off('mousemove', onMouseMove);
+      map.off('mouseup', onMouseUp);
+      container.removeEventListener('touchstart', onTouchStart, { capture: true });
+      container.removeEventListener('touchmove', onTouchMove, { capture: true });
+      container.removeEventListener('touchend', onTouchEnd, { capture: true });
+      container.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+      if (!drawMode) {
+        if (map.dragging) map.dragging.enable();
+        if (map.doubleClickZoom) map.doubleClickZoom.enable();
+      }
+    };
+  }, [drawMode, hasActiveCircle, touchLikeUiMode]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
     if (!map) return undefined;
     const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
+    let isDraftDrawing = false;
     if (!drawMode) {
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
@@ -502,6 +619,7 @@ const ConnectedListingsMapFallback = ({
       removeActiveCircle();
       pendingCenterRef.current = latLng;
       lastPointerLatLngRef.current = latLng;
+      isDraftDrawing = true;
       activeCircleRef.current = L.circle(latLng, {
         radius: MIN_CIRCLE_RADIUS_METERS,
         color: '#0e8a88',
@@ -525,6 +643,7 @@ const ConnectedListingsMapFallback = ({
       const latLng = getEventLatLng(event) || lastPointerLatLngRef.current;
       if (!pendingCenterRef.current || !activeCircleRef.current) return;
       if (latLng) updateDraftRadius(latLng);
+      isDraftDrawing = false;
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = Date.now();
@@ -566,41 +685,30 @@ const ConnectedListingsMapFallback = ({
       map.on('mouseup', completeDraftCircle);
     }
 
+    const completeDraftFromWindow = () => {
+      if (!isDraftDrawing) return;
+      completeDraftCircle();
+    };
+    if (!touchLikeDrawMode) {
+      window.addEventListener('mouseup', completeDraftFromWindow, true);
+      window.addEventListener('pointerup', completeDraftFromWindow, true);
+      window.addEventListener('blur', completeDraftFromWindow);
+    }
+
     return () => {
+      isDraftDrawing = false;
       map.off('mousemove', onPointerMove);
       map.off('mousedown', onPointerDown);
       map.off('mouseup', completeDraftCircle);
       map.off('touchmove', onPointerMove);
       map.off('click', onTapFallback);
+      window.removeEventListener('mouseup', completeDraftFromWindow, true);
+      window.removeEventListener('pointerup', completeDraftFromWindow, true);
+      window.removeEventListener('blur', completeDraftFromWindow);
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
     };
   }, [drawMode, isMobileOverlay]);
-
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (
-      !map
-      || !mobileMoveCircleMode
-      || drawMode
-      || !activeCircleRef.current
-      || (!isMobileOverlay && !isCoarsePointerDevice())
-    ) {
-      return undefined;
-    }
-
-    const onTapToMoveCircle = (event) => {
-      if (!event || !event.latlng || !activeCircleRef.current) return;
-      activeCircleRef.current.setLatLng(event.latlng);
-      setMobileMoveCircleMode(false);
-      applyCircleFilter();
-    };
-
-    map.on('click', onTapToMoveCircle);
-    return () => {
-      map.off('click', onTapToMoveCircle);
-    };
-  }, [drawMode, isMobileOverlay, mobileMoveCircleMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -622,8 +730,6 @@ const ConnectedListingsMapFallback = ({
       mapInstanceRef.current = null;
     }
   }, []);
-  const coarsePointerDevice = isCoarsePointerDevice();
-  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
 
   return (
     <div className="google-listings-map-shell">
@@ -654,19 +760,8 @@ const ConnectedListingsMapFallback = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {drawMode
-                ? (touchLikeUiMode ? 'Tap center, then edge' : 'Draw Mode')
-                : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
-            {touchLikeUiMode && !drawMode && activeCircleRef.current ? (
-              <button
-                type="button"
-                className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
-                onClick={() => setMobileMoveCircleMode((value) => !value)}
-              >
-                {mobileMoveCircleMode ? 'Tap map to place area' : 'Move circle'}
-              </button>
-            ) : null}
             <button
               type="button"
               className="secondary-btn map-draw-btn"
@@ -685,9 +780,7 @@ const ConnectedListingsMapFallback = ({
         />
       </div>
       <p className="google-listings-map-caption">
-        {drawMode && touchLikeUiMode
-          ? 'Tap once for center, then tap again on the edge to apply the area.'
-          : hasActiveCircle
+        {hasActiveCircle
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
           : markerCount > 0
             ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
