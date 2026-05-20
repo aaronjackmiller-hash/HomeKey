@@ -311,11 +311,12 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
-  const [mobileMoveCircleMode, setMobileMoveCircleMode] = useState(false);
   const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getMarkerStylePreset(markerPresetKey);
+  const coarsePointerDevice = isCoarsePointerDevice();
+  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
   const favoritePropertyIdSet = useMemo(
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
@@ -396,7 +397,6 @@ const GoogleListingsMap = ({
       activeCircleRef.current = null;
     }
     setDrawMode(false);
-    setMobileMoveCircleMode(false);
     if (mapRef.current) {
       mapRef.current.setOptions({
         draggableCursor: null,
@@ -738,12 +738,35 @@ const GoogleListingsMap = ({
 
       activeCircleRef.current.setOptions({
         clickable: true,
-        editable: true,
+        editable: !touchLikeDrawMode,
         draggable: true,
         fillOpacity: 0.16,
       });
       mapsApi.event.addListener(activeCircleRef.current, 'radius_changed', applyCircleFilter);
       mapsApi.event.addListener(activeCircleRef.current, 'center_changed', applyCircleFilter);
+      const lockMapPanningForCircleDrag = () => {
+        if (!touchLikeDrawMode || !mapRef.current) return;
+        mapRef.current.setOptions({
+          draggable: false,
+          gestureHandling: 'none',
+          disableDoubleClickZoom: true,
+        });
+      };
+      const unlockMapPanningForCircleDrag = () => {
+        if (!touchLikeDrawMode || !mapRef.current) return;
+        mapRef.current.setOptions({
+          draggable: true,
+          gestureHandling: 'greedy',
+          disableDoubleClickZoom: false,
+        });
+      };
+      mapsApi.event.addListener(activeCircleRef.current, 'mousedown', lockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragstart', lockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'mouseup', unlockMapPanningForCircleDrag);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragend', () => {
+        unlockMapPanningForCircleDrag();
+        applyCircleFilter();
+      });
 
       setDrawMode(false);
       mapRef.current.setOptions({
@@ -818,26 +841,145 @@ const GoogleListingsMap = ({
   }, [drawMode, isMobileOverlay, mapReady]);
 
   useEffect(() => {
+    if (!mapReady || !mapContainerRef.current) return undefined;
+    const onContextMenu = (event) => {
+      if (touchLikeUiMode) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const onDragStart = (event) => {
+      if (!touchLikeUiMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    mapContainerRef.current.addEventListener('contextmenu', onContextMenu, true);
+    mapContainerRef.current.addEventListener('dragstart', onDragStart, true);
+    return () => {
+      if (!mapContainerRef.current) return;
+      mapContainerRef.current.removeEventListener('contextmenu', onContextMenu, true);
+      mapContainerRef.current.removeEventListener('dragstart', onDragStart, true);
+    };
+  }, [mapReady, touchLikeUiMode]);
+
+  useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
-    if (
-      !mobileMoveCircleMode
-      || drawMode
-      || !activeCircleRef.current
-      || (!isMobileOverlay && !isCoarsePointerDevice())
-    ) return undefined;
+    if (!touchLikeUiMode || drawMode || !activeCircleRef.current || circleRadiusMeters <= 0) return undefined;
     const mapsApi = window.google.maps;
-    const onMapTapToMove = mapsApi.event.addListener(mapRef.current, 'click', (event) => {
+    let draggingCircle = false;
+
+    const toLatLngPoint = (latLngLike) => {
+      if (!latLngLike) return null;
+      const lat = typeof latLngLike.lat === 'function'
+        ? Number(latLngLike.lat())
+        : Number(latLngLike.lat);
+      const lng = typeof latLngLike.lng === 'function'
+        ? Number(latLngLike.lng())
+        : Number(latLngLike.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return { lat, lng };
+    };
+
+    const isInsideActiveCircle = (latLngLike) => {
+      if (!activeCircleRef.current || !latLngLike) return false;
+      const centerPoint = toLatLngPoint(activeCircleRef.current.getCenter && activeCircleRef.current.getCenter());
+      const probePoint = toLatLngPoint(latLngLike);
+      const radiusMeters = Number(
+        activeCircleRef.current.getRadius && activeCircleRef.current.getRadius()
+      );
+      if (!centerPoint || !probePoint || !Number.isFinite(radiusMeters) || radiusMeters <= 0) return false;
+      return getDistanceMeters(centerPoint, probePoint) <= (radiusMeters + 90);
+    };
+
+    const lockMapPanning = () => {
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: false,
+        gestureHandling: 'none',
+        disableDoubleClickZoom: true,
+      });
+    };
+
+    const unlockMapPanning = () => {
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
+    };
+
+    const beginCircleDrag = (event) => {
       if (!event || !event.latLng || !activeCircleRef.current) return;
+      if (!isInsideActiveCircle(event.latLng)) return;
+      draggingCircle = true;
+      lockMapPanning();
       activeCircleRef.current.setCenter(event.latLng);
-      setMobileMoveCircleMode(false);
       applyCircleFilter();
+      if (event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const continueCircleDrag = (event) => {
+      if (!draggingCircle || !event || !event.latLng || !activeCircleRef.current) return;
+      activeCircleRef.current.setCenter(event.latLng);
+      applyCircleFilter();
+      if (event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const endCircleDrag = (event) => {
+      if (!draggingCircle) return;
+      draggingCircle = false;
+      unlockMapPanning();
+      applyCircleFilter();
+      if (event && event.domEvent) {
+        event.domEvent.preventDefault();
+        event.domEvent.stopPropagation();
+      }
+    };
+
+    const dragListeners = [
+      mapsApi.event.addListener(mapRef.current, 'mousedown', beginCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchstart', beginCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'mousemove', continueCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchmove', continueCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'mouseup', endCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchend', endCircleDrag),
+      mapsApi.event.addListener(mapRef.current, 'touchcancel', endCircleDrag),
+    ];
+
+    return () => {
+      dragListeners.forEach((listener) => {
+        if (!listener) return;
+        if (typeof listener.remove === 'function') listener.remove();
+        else mapsApi.event.removeListener(listener);
+      });
+      unlockMapPanning();
+    };
+  }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined;
+    if (!touchLikeUiMode || drawMode || circleRadiusMeters <= 0) return undefined;
+    mapRef.current.setOptions({
+      draggable: false,
+      gestureHandling: 'none',
+      disableDoubleClickZoom: true,
     });
     return () => {
-      if (!onMapTapToMove) return;
-      if (typeof onMapTapToMove.remove === 'function') onMapTapToMove.remove();
-      else mapsApi.event.removeListener(onMapTapToMove);
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
     };
-  }, [drawMode, isMobileOverlay, mapReady, mobileMoveCircleMode]);
+  }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
 
   useEffect(() => {
     if (!clearSignalInitializedRef.current) {
@@ -864,6 +1006,20 @@ const GoogleListingsMap = ({
       center: null,
     });
   }, []);
+
+  if (touchLikeUiMode) {
+    return (
+      <ConnectedListingsMapFallback
+        properties={properties}
+        favoritePropertyIds={favoritePropertyIds}
+        onCircleSelectionChange={onCircleSelectionChange}
+        clearSignal={clearSignal}
+        drawModeToggleSignal={drawModeToggleSignal}
+        onDrawModeChange={onDrawModeChange}
+        isVisible={isVisible}
+      />
+    );
+  }
 
   if (!apiKey) {
     return (
@@ -894,7 +1050,6 @@ const GoogleListingsMap = ({
   }
 
   const toggleDrawMode = () => {
-    setMobileMoveCircleMode(false);
     setDrawMode((value) => {
       const nextValue = !value;
       if (mapRef.current) {
@@ -920,8 +1075,6 @@ const GoogleListingsMap = ({
     if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
     mapRef.current.panBy(x, y);
   };
-  const coarsePointerDevice = isCoarsePointerDevice();
-  const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
 
   return (
     <div className="google-listings-map-shell">
@@ -952,19 +1105,8 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {drawMode
-                ? (touchLikeUiMode ? 'Tap center, then edge' : 'Draw Mode')
-                : 'Draw search circle'}
+              {drawMode ? 'Draw Mode' : 'Draw search circle'}
             </button>
-            {touchLikeUiMode && !drawMode && activeCircleRef.current ? (
-              <button
-                type="button"
-                className={`secondary-btn map-draw-btn ${mobileMoveCircleMode ? 'is-active' : ''}`}
-                onClick={() => setMobileMoveCircleMode((value) => !value)}
-              >
-                {mobileMoveCircleMode ? 'Tap map to place area' : 'Move circle'}
-              </button>
-            ) : null}
             <button
               type="button"
               className="secondary-btn map-draw-btn"
@@ -1017,9 +1159,7 @@ const GoogleListingsMap = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
-        {drawMode && touchLikeUiMode
-          ? 'Tap once for center, then tap again on the edge to apply the area.'
-          : circleRadiusMeters > 0
+        {circleRadiusMeters > 0
           ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
           : markerCount > 0
             ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`

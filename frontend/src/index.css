@@ -3757,6 +3757,18 @@ legend {
 /* The Map Container */
 .map-viewport {
   cursor: crosshair;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.map-viewport * {
+  -webkit-touch-callout: none;
+}
+
+.map-viewport img {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 /* When the user starts drawing the circle */
