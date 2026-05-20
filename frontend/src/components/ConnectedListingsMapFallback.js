@@ -234,6 +234,7 @@ const ConnectedListingsMapFallback = ({
   const markersRef = useRef([]);
   const activeCircleRef = useRef(null);
   const pendingCenterRef = useRef(null);
+  const lastPointerLatLngRef = useRef(null);
   const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
   const [drawMode, setDrawMode] = useState(false);
@@ -268,6 +269,7 @@ const ConnectedListingsMapFallback = ({
   const removeActiveCircle = () => {
     const map = mapInstanceRef.current;
     pendingCenterRef.current = null;
+    lastPointerLatLngRef.current = null;
     if (activeCircleRef.current && map) {
       map.removeLayer(activeCircleRef.current);
       activeCircleRef.current = null;
@@ -442,6 +444,7 @@ const ConnectedListingsMapFallback = ({
     if (!map) return undefined;
     if (!drawMode) {
       pendingCenterRef.current = null;
+      lastPointerLatLngRef.current = null;
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
       return undefined;
@@ -450,19 +453,17 @@ const ConnectedListingsMapFallback = ({
     if (map.dragging) map.dragging.disable();
     if (map.doubleClickZoom) map.doubleClickZoom.disable();
 
-    const onMouseMove = (event) => {
-      if (!pendingCenterRef.current || !activeCircleRef.current) return;
-      const radius = Math.max(
-        MIN_CIRCLE_RADIUS_METERS,
-        map.distance(pendingCenterRef.current, event.latlng)
-      );
-      activeCircleRef.current.setRadius(radius);
+    const getEventLatLng = (event) => {
+      if (!event || !event.latlng) return null;
+      return event.latlng;
     };
 
-    const onMouseDown = (event) => {
+    const startDraftCircle = (latLng) => {
+      if (!latLng) return;
       removeActiveCircle();
-      pendingCenterRef.current = event.latlng;
-      activeCircleRef.current = L.circle(event.latlng, {
+      pendingCenterRef.current = latLng;
+      lastPointerLatLngRef.current = latLng;
+      activeCircleRef.current = L.circle(latLng, {
         radius: MIN_CIRCLE_RADIUS_METERS,
         color: '#0e8a88',
         fillColor: '#0e8a88',
@@ -471,26 +472,52 @@ const ConnectedListingsMapFallback = ({
       }).addTo(map);
     };
 
-    const onMouseUp = (event) => {
-      if (!pendingCenterRef.current || !activeCircleRef.current) return;
+    const updateDraftRadius = (latLng) => {
+      if (!latLng || !pendingCenterRef.current || !activeCircleRef.current) return;
       const radius = Math.max(
         MIN_CIRCLE_RADIUS_METERS,
-        map.distance(pendingCenterRef.current, event.latlng)
+        map.distance(pendingCenterRef.current, latLng)
       );
       activeCircleRef.current.setRadius(radius);
+      lastPointerLatLngRef.current = latLng;
+    };
+
+    const completeDraftCircle = (event) => {
+      const latLng = getEventLatLng(event) || lastPointerLatLngRef.current;
+      if (!pendingCenterRef.current || !activeCircleRef.current) return;
+      if (latLng) updateDraftRadius(latLng);
       pendingCenterRef.current = null;
+      lastPointerLatLngRef.current = null;
       setDrawMode(false);
       applyCircleFilter();
     };
 
-    map.on('mousemove', onMouseMove);
-    map.on('mousedown', onMouseDown);
-    map.on('mouseup', onMouseUp);
+    const onPointerMove = (event) => {
+      const latLng = getEventLatLng(event);
+      if (!latLng) return;
+      updateDraftRadius(latLng);
+    };
+
+    const onPointerDown = (event) => {
+      const latLng = getEventLatLng(event);
+      if (!latLng) return;
+      startDraftCircle(latLng);
+    };
+
+    map.on('mousemove', onPointerMove);
+    map.on('mousedown', onPointerDown);
+    map.on('mouseup', completeDraftCircle);
+    map.on('touchmove', onPointerMove);
+    map.on('touchstart', onPointerDown);
+    map.on('touchend', completeDraftCircle);
 
     return () => {
-      map.off('mousemove', onMouseMove);
-      map.off('mousedown', onMouseDown);
-      map.off('mouseup', onMouseUp);
+      map.off('mousemove', onPointerMove);
+      map.off('mousedown', onPointerDown);
+      map.off('mouseup', completeDraftCircle);
+      map.off('touchmove', onPointerMove);
+      map.off('touchstart', onPointerDown);
+      map.off('touchend', completeDraftCircle);
       if (map.dragging) map.dragging.enable();
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
     };
