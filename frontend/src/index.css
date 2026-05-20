@@ -3847,7 +3847,9 @@ legend {
   right: 10px;
   z-index: 1200;
   width: min(760px, calc(100% - 20px));
-  border: 1px solid rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(30, 41, 59, 0.9) !important;
+  outline: 1px solid rgba(30, 41, 59, 0.9);
+  outline-offset: -1px;
   border-radius: var(--hk-radius-container);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
@@ -3882,7 +3884,7 @@ legend {
   margin: 0;
   color: #0f172a;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(1.7rem, 2.7vw, 3rem);
+  font-size: clamp(1.6rem, 2.3vw, 2.6rem);
   font-weight: 500;
   letter-spacing: -0.028em;
   line-height: 1.08;
@@ -3891,7 +3893,7 @@ legend {
 .property-list-page .google-listings-map-copy-block p {
   color: #1e293b;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(1rem, 1.4vw, 1.9rem);
+  font-size: clamp(0.94rem, 1.15vw, 1.32rem);
   font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1.25;
@@ -3975,8 +3977,8 @@ legend {
 .property-list-page .map-draw-btn,
 .property-list-page .map-marker-preset-btn {
   min-height: 44px;
-  padding: 8px 20px;
-  font-size: clamp(0.95rem, 1vw, 1.9rem);
+  padding: 8px 16px;
+  font-size: clamp(0.9rem, 0.85vw, 1.2rem);
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-weight: 500;
   white-space: nowrap;
@@ -4012,13 +4014,13 @@ legend {
   color: #334155;
   flex-shrink: 0;
   font-family: "Avenir Next", "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(1rem, 1.1vw, 1.7rem);
+  font-size: clamp(0.92rem, 0.95vw, 1.2rem);
   font-weight: 500;
   line-height: 1;
 }
 
 .property-list-page .google-listings-map-search-count-icon {
-  width: clamp(1.25rem, 1.5vw, 1.95rem);
+  width: clamp(1.15rem, 1.2vw, 1.45rem);
   height: auto;
   display: block;
 }

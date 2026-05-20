@@ -266,6 +266,13 @@ const ConnectedListingsMapFallback = ({
     () => Number(properties.length || 0).toLocaleString('en-US'),
     [properties.length]
   );
+  const overlayCardStyle = useMemo(
+    () => ({
+      border: '1px solid rgba(30, 41, 59, 0.9)',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+    }),
+    []
+  );
   const favoritePropertyIdSet = useMemo(
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
@@ -737,7 +744,10 @@ const ConnectedListingsMapFallback = ({
 
   return (
     <div className="google-listings-map-shell">
-      <div className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}>
+      <div
+        className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}
+        style={overlayCardStyle}
+      >
         <header className="google-listings-map-header">
           {isMobileOverlay ? (
             <div className="google-listings-map-header-top">
