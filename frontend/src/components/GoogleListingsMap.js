@@ -964,6 +964,24 @@ const GoogleListingsMap = ({
   }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
 
   useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined;
+    if (!touchLikeUiMode || drawMode || circleRadiusMeters <= 0) return undefined;
+    mapRef.current.setOptions({
+      draggable: false,
+      gestureHandling: 'none',
+      disableDoubleClickZoom: true,
+    });
+    return () => {
+      if (!mapRef.current) return;
+      mapRef.current.setOptions({
+        draggable: true,
+        gestureHandling: 'greedy',
+        disableDoubleClickZoom: false,
+      });
+    };
+  }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
+
+  useEffect(() => {
     if (!clearSignalInitializedRef.current) {
       clearSignalInitializedRef.current = true;
       return;
