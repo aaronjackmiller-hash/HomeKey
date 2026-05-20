@@ -549,22 +549,22 @@ const ConnectedListingsMapFallback = ({
       applyCircleFilter();
     };
 
-    mapContainer.addEventListener('mousedown', beginCircleDrag, { passive: false });
-    mapContainer.addEventListener('touchstart', beginCircleDrag, { passive: false });
-    mapContainer.addEventListener('mousemove', continueCircleDrag, { passive: false });
-    mapContainer.addEventListener('touchmove', continueCircleDrag, { passive: false });
-    window.addEventListener('mouseup', endCircleDrag, { passive: false });
-    window.addEventListener('touchend', endCircleDrag, { passive: false });
-    window.addEventListener('touchcancel', endCircleDrag, { passive: false });
+    mapContainer.addEventListener('mousedown', beginCircleDrag, { passive: false, capture: true });
+    mapContainer.addEventListener('touchstart', beginCircleDrag, { passive: false, capture: true });
+    mapContainer.addEventListener('mousemove', continueCircleDrag, { passive: false, capture: true });
+    mapContainer.addEventListener('touchmove', continueCircleDrag, { passive: false, capture: true });
+    window.addEventListener('mouseup', endCircleDrag, { passive: false, capture: true });
+    window.addEventListener('touchend', endCircleDrag, { passive: false, capture: true });
+    window.addEventListener('touchcancel', endCircleDrag, { passive: false, capture: true });
 
     return () => {
-      mapContainer.removeEventListener('mousedown', beginCircleDrag);
-      mapContainer.removeEventListener('touchstart', beginCircleDrag);
-      mapContainer.removeEventListener('mousemove', continueCircleDrag);
-      mapContainer.removeEventListener('touchmove', continueCircleDrag);
-      window.removeEventListener('mouseup', endCircleDrag);
-      window.removeEventListener('touchend', endCircleDrag);
-      window.removeEventListener('touchcancel', endCircleDrag);
+      mapContainer.removeEventListener('mousedown', beginCircleDrag, true);
+      mapContainer.removeEventListener('touchstart', beginCircleDrag, true);
+      mapContainer.removeEventListener('mousemove', continueCircleDrag, true);
+      mapContainer.removeEventListener('touchmove', continueCircleDrag, true);
+      window.removeEventListener('mouseup', endCircleDrag, true);
+      window.removeEventListener('touchend', endCircleDrag, true);
+      window.removeEventListener('touchcancel', endCircleDrag, true);
     };
   }, [drawMode, hasActiveCircle, touchLikeUiMode]);
 
