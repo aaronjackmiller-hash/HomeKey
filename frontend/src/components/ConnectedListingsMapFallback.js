@@ -500,55 +500,71 @@ const ConnectedListingsMapFallback = ({
 
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const activeCircle = activeCircleRef.current;
-    if (!map || !activeCircle || drawMode || !touchLikeUiMode || !hasActiveCircle) return undefined;
+    const mapContainer = mapContainerRef.current;
+    if (!map || !mapContainer || drawMode || !touchLikeUiMode || !hasActiveCircle) return undefined;
 
     let draggingCircle = false;
-    const beginCircleDrag = (event) => {
-      if (!event || !event.latlng || !activeCircleRef.current) return;
-      draggingCircle = true;
-      if (event.originalEvent) {
-        event.originalEvent.preventDefault();
-        event.originalEvent.stopPropagation();
+    const getPointerLikeEvent = (event) => {
+      if (!event) return null;
+      if (event.touches && event.touches[0]) return event.touches[0];
+      if (event.changedTouches && event.changedTouches[0]) return event.changedTouches[0];
+      return event;
+    };
+    const toLatLng = (event) => {
+      const pointerEvent = getPointerLikeEvent(event);
+      if (!pointerEvent || !mapInstanceRef.current || typeof mapInstanceRef.current.mouseEventToLatLng !== 'function') return null;
+      try {
+        return mapInstanceRef.current.mouseEventToLatLng(pointerEvent);
+      } catch (_err) {
+        return null;
       }
-      activeCircleRef.current.setLatLng(event.latlng);
+    };
+
+    const beginCircleDrag = (event) => {
+      if (!activeCircleRef.current) return;
+      draggingCircle = true;
+      event.preventDefault();
+      event.stopPropagation();
+      const latLng = toLatLng(event);
+      if (!latLng) return;
+      activeCircleRef.current.setLatLng(latLng);
       applyCircleFilter();
     };
     const continueCircleDrag = (event) => {
-      if (!draggingCircle || !event || !event.latlng || !activeCircleRef.current) return;
-      if (event.originalEvent) {
-        event.originalEvent.preventDefault();
-        event.originalEvent.stopPropagation();
-      }
-      activeCircleRef.current.setLatLng(event.latlng);
+      if (!draggingCircle || !activeCircleRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const latLng = toLatLng(event);
+      if (!latLng) return;
+      activeCircleRef.current.setLatLng(latLng);
       applyCircleFilter();
     };
     const endCircleDrag = (event) => {
       if (!draggingCircle) return;
       draggingCircle = false;
-      if (event && event.originalEvent) {
-        event.originalEvent.preventDefault();
-        event.originalEvent.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
       applyCircleFilter();
     };
 
-    map.on('mousedown', beginCircleDrag);
-    map.on('touchstart', beginCircleDrag);
-    map.on('mousemove', continueCircleDrag);
-    map.on('touchmove', continueCircleDrag);
-    map.on('mouseup', endCircleDrag);
-    map.on('touchend', endCircleDrag);
-    map.on('touchcancel', endCircleDrag);
+    mapContainer.addEventListener('mousedown', beginCircleDrag, { passive: false });
+    mapContainer.addEventListener('touchstart', beginCircleDrag, { passive: false });
+    mapContainer.addEventListener('mousemove', continueCircleDrag, { passive: false });
+    mapContainer.addEventListener('touchmove', continueCircleDrag, { passive: false });
+    window.addEventListener('mouseup', endCircleDrag, { passive: false });
+    window.addEventListener('touchend', endCircleDrag, { passive: false });
+    window.addEventListener('touchcancel', endCircleDrag, { passive: false });
 
     return () => {
-      map.off('mousedown', beginCircleDrag);
-      map.off('touchstart', beginCircleDrag);
-      map.off('mousemove', continueCircleDrag);
-      map.off('touchmove', continueCircleDrag);
-      map.off('mouseup', endCircleDrag);
-      map.off('touchend', endCircleDrag);
-      map.off('touchcancel', endCircleDrag);
+      mapContainer.removeEventListener('mousedown', beginCircleDrag);
+      mapContainer.removeEventListener('touchstart', beginCircleDrag);
+      mapContainer.removeEventListener('mousemove', continueCircleDrag);
+      mapContainer.removeEventListener('touchmove', continueCircleDrag);
+      window.removeEventListener('mouseup', endCircleDrag);
+      window.removeEventListener('touchend', endCircleDrag);
+      window.removeEventListener('touchcancel', endCircleDrag);
     };
   }, [drawMode, hasActiveCircle, touchLikeUiMode]);
 
