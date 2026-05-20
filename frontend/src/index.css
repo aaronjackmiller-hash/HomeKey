@@ -3859,13 +3859,19 @@ legend {
   }
 
   .premium-header__brand-cell {
-    grid-column: 1;
+    grid-column: 1 / -1;
+    justify-self: center;
     padding-left: 0;
+  }
+
+  .premium-header__brand {
+    justify-content: center;
   }
 
   .premium-header__brand-image {
     height: 46px;
     max-width: min(172px, 55vw);
+    margin: 0 auto;
   }
 
   .premium-header__likes-cell {
