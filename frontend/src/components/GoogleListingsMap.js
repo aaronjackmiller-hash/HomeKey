@@ -738,7 +738,7 @@ const GoogleListingsMap = ({
 
       activeCircleRef.current.setOptions({
         clickable: true,
-        editable: true,
+        editable: !touchLikeDrawMode,
         draggable: true,
         fillOpacity: 0.16,
       });
@@ -888,7 +888,7 @@ const GoogleListingsMap = ({
         activeCircleRef.current.getRadius && activeCircleRef.current.getRadius()
       );
       if (!centerPoint || !probePoint || !Number.isFinite(radiusMeters) || radiusMeters <= 0) return false;
-      return getDistanceMeters(centerPoint, probePoint) <= radiusMeters;
+      return getDistanceMeters(centerPoint, probePoint) <= (radiusMeters + 90);
     };
 
     const lockMapPanning = () => {
