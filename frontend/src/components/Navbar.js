@@ -4,8 +4,6 @@ import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj
 import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
-import { saveMyCurrentSearchAlert } from '../services/api';
-import { readSavedSearchContext } from '../utils/savedSearchContext';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
@@ -221,6 +219,26 @@ const Navbar = () => {
       window.clearTimeout(saveSearchFeedbackTimerRef.current);
       saveSearchFeedbackTimerRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleSaveSearchResult = (event) => {
+      const success = Boolean(event?.detail?.success);
+      setIsSavingSearch(false);
+      setSaveSearchStatus(success ? 'Saved' : 'Failed');
+      if (saveSearchFeedbackTimerRef.current) {
+        window.clearTimeout(saveSearchFeedbackTimerRef.current);
+      }
+      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
+        setSaveSearchStatus('');
+        saveSearchFeedbackTimerRef.current = null;
+      }, success ? 2800 : 3200);
+    };
+    window.addEventListener('homekey:save-current-search-result', handleSaveSearchResult);
+    return () => {
+      window.removeEventListener('homekey:save-current-search-result', handleSaveSearchResult);
+    };
   }, []);
 
   useEffect(() => {
@@ -452,76 +470,11 @@ const Navbar = () => {
   const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
   const canSaveCurrentSearch = isAuthenticated && location.pathname === '/';
 
-  const handleSaveCurrentSearch = async () => {
+  const handleSaveCurrentSearch = () => {
     if (!canSaveCurrentSearch || isSavingSearch) return;
-    const externalSearchContext = readSavedSearchContext();
-    const circleContext = externalSearchContext && externalSearchContext.circle && externalSearchContext.circle.active
-      ? {
-        center: externalSearchContext.circle.center || null,
-        radiusMeters: Number(externalSearchContext.circle.radiusMeters) || 0,
-        cityHints: Array.isArray(externalSearchContext.circle.cityHints)
-          ? externalSearchContext.circle.cityHints
-          : [],
-      }
-      : null;
-    const fallbackAreaName = circleContext && Array.isArray(circleContext.cityHints) && circleContext.cityHints[0]
-      ? circleContext.cityHints[0]
-      : '';
-    const locationLabel = city.trim() || fallbackAreaName || 'My';
-    const typeLabel = listingType === 'sale' ? 'Sale' : listingType === 'rental' ? 'Rental' : 'Search';
-    const generatedName = `${locationLabel} ${typeLabel} ${new Date().toLocaleDateString('en-CA')}`;
-    const criteria = {
-      type: listingType !== 'all' ? listingType : '',
-      city: city.trim(),
-      minPrice: minPriceInput > PRICE_SLIDER_MIN ? minPriceInput : '',
-      maxPrice: maxPriceInput < PRICE_SLIDER_MAX ? maxPriceInput : '',
-      rooms: rooms || '',
-      baths: baths || '',
-      searchText: city.trim(),
-      cityHints: circleContext?.cityHints || [],
-      circle: circleContext && circleContext.center && circleContext.radiusMeters > 0
-        ? {
-          center: circleContext.center,
-          radiusMeters: circleContext.radiusMeters,
-        }
-        : undefined,
-    };
-    const sourceContext = {
-      searchText: city.trim(),
-      propertyCategory,
-      featureFilters,
-      likedOnly,
-      circle: circleContext || undefined,
-    };
     setIsSavingSearch(true);
-    setSaveSearchStatus('');
-    try {
-      await saveMyCurrentSearchAlert({
-        name: generatedName,
-        enabled: true,
-        criteria,
-        sourceContext,
-      });
-      setSaveSearchStatus('Saved');
-      if (saveSearchFeedbackTimerRef.current) {
-        window.clearTimeout(saveSearchFeedbackTimerRef.current);
-      }
-      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
-        setSaveSearchStatus('');
-        saveSearchFeedbackTimerRef.current = null;
-      }, 2800);
-    } catch (_err) {
-      setSaveSearchStatus('Failed');
-      if (saveSearchFeedbackTimerRef.current) {
-        window.clearTimeout(saveSearchFeedbackTimerRef.current);
-      }
-      saveSearchFeedbackTimerRef.current = window.setTimeout(() => {
-        setSaveSearchStatus('');
-        saveSearchFeedbackTimerRef.current = null;
-      }, 3200);
-    } finally {
-      setIsSavingSearch(false);
-    }
+    setSaveSearchStatus('Saving...');
+    window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
   };
 
   return (

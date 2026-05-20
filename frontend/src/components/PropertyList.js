@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { getProperties, getPublicYad2SyncStatus } from '../services/api';
+import { getProperties, getPublicYad2SyncStatus, saveMyCurrentSearchAlert } from '../services/api';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
@@ -930,6 +930,80 @@ const PropertyList = () => {
       });
     return prioritizeFavorites(visibleProperties, favoriteIdSet);
   }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleSaveCurrentSearch = async () => {
+      const cityLabel = citySearch.trim() || circleCityHints[0] || '';
+      const typeLabel = filter === 'sale' ? 'Sale' : filter === 'rental' ? 'Rental' : 'Search';
+      const generatedName = `${cityLabel || 'My'} ${typeLabel} ${new Date().toLocaleDateString('en-CA')}`;
+      const payload = {
+        name: generatedName,
+        enabled: true,
+        criteria: {
+          type: filter !== 'all' ? filter : '',
+          city: citySearch.trim(),
+          minPrice: minPrice !== '' ? Number(minPrice) : '',
+          maxPrice: maxPrice !== '' ? Number(maxPrice) : '',
+          rooms: roomsSearch.trim(),
+          baths: bathsSearch.trim(),
+          searchText: citySearch.trim(),
+          cityHints: circleCityHints,
+          circle: circleSelection.active && circleSelection.center && Number(circleSelection.radiusMeters) > 0
+            ? {
+              center: circleSelection.center,
+              radiusMeters: Number(circleSelection.radiusMeters),
+            }
+            : undefined,
+        },
+        sourceContext: {
+          searchText: citySearch.trim(),
+          propertyCategory: propertyCategorySearch.trim(),
+          featureFilters: featureSearch,
+          likedOnly: favoritesOnly,
+          circle: circleSelection.active && circleSelection.center && Number(circleSelection.radiusMeters) > 0
+            ? {
+              center: circleSelection.center,
+              radiusMeters: Number(circleSelection.radiusMeters),
+              cityHints: circleCityHints,
+            }
+            : undefined,
+        },
+      };
+      try {
+        await saveMyCurrentSearchAlert(payload);
+        window.dispatchEvent(new CustomEvent('homekey:save-current-search-result', {
+          detail: { success: true },
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('homekey:save-current-search-result', {
+          detail: {
+            success: false,
+            message: err.response?.data?.message || 'Unable to save this search right now.',
+          },
+        }));
+      }
+    };
+    window.addEventListener('homekey:save-current-search', handleSaveCurrentSearch);
+    return () => {
+      window.removeEventListener('homekey:save-current-search', handleSaveCurrentSearch);
+    };
+  }, [
+    citySearch,
+    circleCityHints,
+    circleSelection.active,
+    circleSelection.center,
+    circleSelection.radiusMeters,
+    favoritesOnly,
+    featureSearch,
+    filter,
+    maxPrice,
+    minPrice,
+    propertyCategorySearch,
+    roomsSearch,
+    bathsSearch,
+  ]);
+
   const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
 
