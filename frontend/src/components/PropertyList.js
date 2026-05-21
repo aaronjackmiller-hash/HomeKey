@@ -1372,6 +1372,7 @@ const PropertyList = () => {
           <section className="google-listings-map-card" aria-label="Apartment location map">
             <GoogleListingsMap
               properties={loading ? [] : mapSourceProperties}
+              searchResultCount={loading ? 0 : displayProperties.length}
               favoritePropertyIds={interestSummary.favoriteIds}
               onCircleSelectionChange={handleCircleSelectionChange}
               clearSignal={clearCircleSignal}

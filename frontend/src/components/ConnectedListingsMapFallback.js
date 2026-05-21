@@ -235,6 +235,7 @@ const isCoarsePointerDevice = () => {
 
 const ConnectedListingsMapFallback = ({
   properties = [],
+  searchResultCount = null,
   favoritePropertyIds = [],
   onCircleSelectionChange,
   clearSignal = 0,
@@ -262,9 +263,14 @@ const ConnectedListingsMapFallback = ({
   const markerPreset = getFallbackMarkerStylePreset(markerPresetKey);
   const coarsePointerDevice = isCoarsePointerDevice();
   const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
+  const resolvedSearchCount = useMemo(() => {
+    const parsedCount = Number(searchResultCount);
+    if (Number.isFinite(parsedCount) && parsedCount >= 0) return parsedCount;
+    return Number(properties.length || 0);
+  }, [properties.length, searchResultCount]);
   const formattedSearchCount = useMemo(
-    () => Number(properties.length || 0).toLocaleString('en-US'),
-    [properties.length]
+    () => resolvedSearchCount.toLocaleString('en-US'),
+    [resolvedSearchCount]
   );
   const overlayCardStyle = useMemo(
     () => ({
