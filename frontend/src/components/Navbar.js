@@ -468,7 +468,7 @@ const Navbar = () => {
   const likedCount = (interestSummary.favoriteIds || []).length;
   const userFirstName = getUserFirstName(user);
   const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
-  const canSaveCurrentSearch = isAuthenticated && location.pathname === '/';
+  const isListingsRoute = location.pathname === '/';
   const alertsOverlayTarget = useMemo(() => {
     const params = new URLSearchParams(location.pathname === '/' ? location.search : '');
     params.set('alerts', '1');
@@ -480,7 +480,11 @@ const Navbar = () => {
   }, [location.pathname, location.search]);
 
   const handleSaveCurrentSearch = () => {
-    if (!canSaveCurrentSearch || isSavingSearch) return;
+    if (!isListingsRoute || isSavingSearch) return;
+    if (!isAuthenticated) {
+      history.push('/login');
+      return;
+    }
     setIsSavingSearch(true);
     setSaveSearchStatus('Saving...');
     window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
@@ -753,14 +757,14 @@ const Navbar = () => {
         </div>
 
         <div className="premium-header__actions premium-header__actions-cell">
-          {canSaveCurrentSearch && (
+          {isListingsRoute && (
             <button
               type="button"
               className={`premium-header__save-search-btn ${saveSearchStatus === 'Saved' ? 'is-success' : ''}`}
               onClick={handleSaveCurrentSearch}
               disabled={isSavingSearch}
             >
-              {isSavingSearch ? 'Saving...' : (saveSearchStatus || 'Save Search')}
+              {!isAuthenticated ? 'Sign in to Save' : (isSavingSearch ? 'Saving...' : (saveSearchStatus || 'Save Search'))}
             </button>
           )}
           <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
@@ -770,7 +774,7 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
-          {isAuthenticated && <Link to={alertsOverlayTarget} className="premium-header__alerts-link">Saved Search</Link>}
+          <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">Saved Search</Link>
           {shouldShowGreeting ? (
             <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
               <span className="premium-header__greeting-label">Hello</span>
