@@ -30,6 +30,7 @@ const isProtectedRequestPath = (method = 'GET', requestPath = '') => {
   if (path.startsWith('/auth/passkeys/register')) return true;
   if (/^\/properties\/[^/]+\/engagement$/.test(path)) return true;
   if (path === '/properties' && normalizedMethod !== 'GET') return true;
+  if (/^\/properties\/[^/]+$/.test(path) && (normalizedMethod === 'PUT' || normalizedMethod === 'DELETE')) return true;
   return false;
 };
 
