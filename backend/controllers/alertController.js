@@ -31,9 +31,44 @@ const toValidDateOrFallback = (value, fallbackDate) => {
     return Number.isNaN(parsed.getTime()) ? fallbackDate : parsed;
 };
 
-const sanitizeSavedSearches = (savedSearches = []) =>
+const getTimeOrFallback = (value, fallback = 0) => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? fallback : parsed.getTime();
+};
+
+const isDefaultSavedSearchName = (value) => /^saved search \d+$/i.test(normalizeText(value));
+
+const mergeDuplicateSavedSearch = (current, incoming) => {
+    const currentUpdatedAt = getTimeOrFallback(current.updatedAt);
+    const incomingUpdatedAt = getTimeOrFallback(incoming.updatedAt);
+    const currentCreatedAt = getTimeOrFallback(current.createdAt, currentUpdatedAt);
+    const incomingCreatedAt = getTimeOrFallback(incoming.createdAt, incomingUpdatedAt);
+    const incomingName = normalizeText(incoming.name);
+    const currentName = normalizeText(current.name);
+
+    current.enabled = current.enabled !== false || incoming.enabled !== false;
+    if (!currentName || (isDefaultSavedSearchName(currentName) && incomingName && !isDefaultSavedSearchName(incomingName))) {
+        current.name = incoming.name;
+    } else if (incomingUpdatedAt > currentUpdatedAt && incomingName) {
+        current.name = incoming.name;
+    }
+
+    if (incomingUpdatedAt > currentUpdatedAt) {
+        current.criteria = incoming.criteria;
+        current.sourceContext = incoming.sourceContext;
+        current.sourceSignature = incoming.sourceSignature;
+    }
+
+    current.createdAt = new Date(Math.min(currentCreatedAt, incomingCreatedAt));
+    current.updatedAt = new Date(Math.max(currentUpdatedAt, incomingUpdatedAt));
+};
+
+const sanitizeSavedSearches = (savedSearches = []) => {
+    const deduped = [];
+    const dedupeIndexBySignature = new Map();
+
     (Array.isArray(savedSearches) ? savedSearches : [])
-        .map((search, index) => {
+        .forEach((search, index) => {
             const fallbackName = `Saved Search ${index + 1}`;
             const criteria = normalizeAlertCriteria(search && search.criteria ? search.criteria : {});
             const sourceContext = normalizeSourceContext(
@@ -44,7 +79,7 @@ const sanitizeSavedSearches = (savedSearches = []) =>
             const sourceSignature = normalizeText(search && search.sourceSignature)
                 || buildSourceSignature({ criteria, sourceContext });
             const now = new Date();
-            return {
+            const normalized = {
                 _id: search && search._id ? search._id : undefined,
                 name: normalizeText(search && search.name) || fallbackName,
                 enabled: search ? search.enabled !== false : true,
@@ -54,7 +89,18 @@ const sanitizeSavedSearches = (savedSearches = []) =>
                 createdAt: toValidDateOrFallback(search && search.createdAt, now),
                 updatedAt: toValidDateOrFallback(search && search.updatedAt, now),
             };
+            const dedupeKey = sourceSignature || buildSourceSignature({ criteria, sourceContext });
+            const existingIndex = dedupeIndexBySignature.get(dedupeKey);
+            if (existingIndex == null) {
+                dedupeIndexBySignature.set(dedupeKey, deduped.length);
+                deduped.push(normalized);
+                return;
+            }
+            mergeDuplicateSavedSearch(deduped[existingIndex], normalized);
         });
+
+    return deduped;
+};
 
 const sanitizeInstantAlertsState = (instantAlerts = {}) => {
     const alerts = instantAlerts && typeof instantAlerts === 'object' ? instantAlerts : {};
