@@ -429,6 +429,16 @@ const GoogleListingsMap = ({
     applyCircleFilter();
   };
 
+  const setActiveCircleInteractive = (interactive, touchLikeMode = touchLikeUiMode) => {
+    const activeCircle = activeCircleRef.current;
+    if (!activeCircle || typeof activeCircle.setOptions !== 'function') return;
+    activeCircle.setOptions({
+      clickable: interactive,
+      draggable: interactive,
+      editable: interactive && !touchLikeMode,
+    });
+  };
+
   const propertiesWithAddress = useMemo(() => properties
     .map((property) => ({
       property,
@@ -692,6 +702,7 @@ const GoogleListingsMap = ({
     clearDrawListeners();
     if (!drawMode) {
       removeDraftCircle();
+      setActiveCircleInteractive(true, touchLikeDrawMode);
       if (mapRef.current) {
         mapRef.current.setOptions({
           draggableCursor: null,
@@ -703,6 +714,7 @@ const GoogleListingsMap = ({
       return undefined;
     }
 
+    setActiveCircleInteractive(false, touchLikeDrawMode);
     mapRef.current.setOptions({
       draggableCursor: null,
       draggable: false,
