@@ -6,6 +6,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
+const ZOOM_STEP = 1;
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const FAVORITE_PRICE_PIN_STYLE = {
   pinBackground: '#FF0000',
@@ -383,6 +384,14 @@ const ConnectedListingsMapFallback = ({
     });
   };
 
+  const adjustMapZoom = (delta) => {
+    const map = mapInstanceRef.current;
+    if (!map || typeof map.getZoom !== 'function' || typeof map.setZoom !== 'function') return;
+    const currentZoom = Number(map.getZoom());
+    if (!Number.isFinite(currentZoom)) return;
+    map.setZoom(currentZoom + delta);
+  };
+
   const propertiesWithAddress = useMemo(() => properties
     .map((property) => ({
       property,
@@ -432,7 +441,6 @@ const ConnectedListingsMapFallback = ({
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map);
-    L.control.zoom({ position: 'bottomleft' }).addTo(map);
     mapInstanceRef.current = map;
     window.setTimeout(() => {
       if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
@@ -862,6 +870,27 @@ const ConnectedListingsMapFallback = ({
           ref={mapContainerRef}
           className={`google-listings-map-canvas connected-map-fallback-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
         />
+        <div className="google-listings-map-zoom-overlay" aria-label="Map zoom controls">
+          <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
+          <div className="google-listings-map-zoom-controls">
+            <button
+              type="button"
+              className="google-listings-map-zoom-btn"
+              onClick={() => adjustMapZoom(ZOOM_STEP)}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="google-listings-map-zoom-btn"
+              onClick={() => adjustMapZoom(-ZOOM_STEP)}
+              aria-label="Zoom out"
+            >
+              -
+            </button>
+          </div>
+        </div>
       </div>
       <p className="google-listings-map-caption">
         {hasActiveCircle

@@ -4108,6 +4108,92 @@ legend {
   display: none;
 }
 
+.property-list-page .google-listings-map-zoom-overlay {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  z-index: 1100;
+  width: 108px;
+  height: 132px;
+  pointer-events: none;
+}
+
+.property-list-page .google-listings-map-zoom-controls {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.property-list-page .google-listings-map-zoom-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 102, 140, 0.9);
+  background: linear-gradient(180deg, #4f8fc1 0%, #3d739f 100%);
+  color: #f8fafc;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.35);
+}
+
+.property-list-page .google-listings-map-zoom-btn:hover {
+  background: linear-gradient(180deg, #5a9bcf 0%, #417aa9 100%);
+}
+
+.property-list-page .google-listings-map-zoom-btn:focus-visible {
+  outline: 2px solid #e2e8f0;
+  outline-offset: 2px;
+}
+
+.property-list-page .google-listings-map-zoom-flourish {
+  position: absolute;
+  left: 8px;
+  top: 40px;
+  width: 60px;
+  height: 56px;
+  border-radius: 56% 44% 62% 38% / 50% 36% 64% 50%;
+  background: radial-gradient(circle at 30% 32%, rgba(238, 247, 253, 0.96), rgba(166, 196, 216, 0.88));
+  border: 1px solid rgba(115, 150, 173, 0.6);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.82), 0 10px 20px rgba(15, 23, 42, 0.18);
+}
+
+.property-list-page .google-listings-map-zoom-flourish::before,
+.property-list-page .google-listings-map-zoom-flourish::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transform: rotate(45deg);
+}
+
+.property-list-page .google-listings-map-zoom-flourish::before {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.96), rgba(177, 206, 226, 0.88));
+  border: 1px solid rgba(134, 171, 196, 0.72);
+}
+
+.property-list-page .google-listings-map-zoom-flourish::after {
+  width: 10px;
+  height: 10px;
+  top: -30px;
+  right: -14px;
+  border-radius: 3px;
+  background: rgba(228, 242, 251, 0.95);
+  border: 1px solid rgba(141, 179, 203, 0.72);
+}
+
 .property-list-page .google-listings-map-toolbar {
   display: flex;
   align-items: center;
