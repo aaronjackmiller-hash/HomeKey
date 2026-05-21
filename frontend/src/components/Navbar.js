@@ -469,6 +469,15 @@ const Navbar = () => {
   const userFirstName = getUserFirstName(user);
   const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
   const canSaveCurrentSearch = isAuthenticated && location.pathname === '/';
+  const alertsOverlayTarget = useMemo(() => {
+    const params = new URLSearchParams(location.pathname === '/' ? location.search : '');
+    params.set('alerts', '1');
+    const serialized = params.toString();
+    return {
+      pathname: '/',
+      search: serialized ? `?${serialized}` : '?alerts=1',
+    };
+  }, [location.pathname, location.search]);
 
   const handleSaveCurrentSearch = () => {
     if (!canSaveCurrentSearch || isSavingSearch) return;
@@ -761,7 +770,7 @@ const Navbar = () => {
             <span className="premium-header__language-text">He</span>
           </button>
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
-          {isAuthenticated && <Link to="/alerts" className="premium-header__alerts-link">Saved Search</Link>}
+          {isAuthenticated && <Link to={alertsOverlayTarget} className="premium-header__alerts-link">Saved Search</Link>}
           {shouldShowGreeting ? (
             <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
               <span className="premium-header__greeting-label">Hello</span>
