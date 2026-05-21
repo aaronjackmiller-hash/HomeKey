@@ -345,7 +345,7 @@ a {
 }
 
 .filter-menu {
-  background: #f9f7f2;
+  background: #f3ede2;
   color: #1a1a1a;
   padding: 20px;
   border-radius: 12px;
@@ -3839,6 +3839,7 @@ legend {
 .property-list-page .google-listings-map-header {
   margin: 0;
   padding: 8px 12px 6px;
+  background: #f3ede2;
 }
 
 .property-list-page .google-listings-map-overlay-info {
@@ -3970,7 +3971,7 @@ legend {
   gap: 8px;
   padding: 6px 12px 12px;
   border-top: 1px solid rgba(148, 163, 184, 0.34);
-  background: transparent;
+  background: #f3ede2;
   overflow-x: auto;
 }
 
