@@ -991,19 +991,28 @@ const PropertyList = () => {
     location.search,
   ]);
 
-  const displayProperties = useMemo(() => {
+  const activeDisplayProperties = useMemo(() => {
     const visibleProperties = !circleSelection.active
       ? mapSourceProperties
       : mapSourceProperties.filter((property) => {
         const propertyId = getPropertyId(property);
         return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
       });
+    return prioritizeFavorites(visibleProperties, favoriteIdSet);
+  }, [
+    circleSelection.active,
+    circlePropertyIdSet,
+    favoriteIdSet,
+    mapSourceProperties,
+  ]);
+
+  const displayProperties = useMemo(() => {
     const mergedWithHistory = (() => {
       if (!savedSearchHistoryMode || savedSearchHistoryMatches.length === 0) {
-        return visibleProperties;
+        return activeDisplayProperties;
       }
       const visiblePropertyIdSet = new Set(
-        visibleProperties
+        activeDisplayProperties
           .map((property) => String(getPropertyId(property) || '').trim())
           .filter(Boolean)
       );
@@ -1012,14 +1021,12 @@ const PropertyList = () => {
         if (!sourcePropertyId) return true;
         return !visiblePropertyIdSet.has(sourcePropertyId);
       });
-      return [...visibleProperties, ...uniqueHistoryMatches];
+      return [...activeDisplayProperties, ...uniqueHistoryMatches];
     })();
     return prioritizeFavorites(mergedWithHistory, favoriteIdSet);
   }, [
-    circleSelection.active,
-    circlePropertyIdSet,
+    activeDisplayProperties,
     favoriteIdSet,
-    mapSourceProperties,
     savedSearchHistoryMatches,
     savedSearchHistoryMode,
   ]);
@@ -1165,7 +1172,7 @@ const PropertyList = () => {
         {savedSearchHistoryMode && (
           <div className="saved-search-history-cap">
             <p>
-              {`Showing ${displayProperties.length.toLocaleString()} active and previous matches for your saved search area`}
+              {`Showing ${activeDisplayProperties.length.toLocaleString()} active and previous matches for your saved search area`}
             </p>
           </div>
         )}
