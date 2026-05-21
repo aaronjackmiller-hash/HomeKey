@@ -3118,10 +3118,31 @@ legend {
 
   .premium-header__actions {
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .premium-header__actions-cell {
+    display: inline-flex;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .premium-header__language-toggle,
+  .premium-header__cta,
+  .premium-header__greeting,
+  .premium-header__login {
     display: none;
+  }
+
+  .premium-header__save-search-btn {
+    min-height: 32px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+
+  .premium-header__alerts-link {
+    font-size: 0.82rem;
   }
 
   .premium-header__likes-cell {
