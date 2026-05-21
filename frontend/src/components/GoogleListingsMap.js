@@ -1152,12 +1152,12 @@ const GoogleListingsMap = ({
             <div className="google-listings-map-search-count" aria-label={`${formattedSearchCount} listings found`}>
               <svg
                 className="google-listings-map-search-count-icon"
-                viewBox="0 0 44 24"
+                viewBox="0 0 24 24"
                 role="img"
                 aria-hidden="true"
               >
                 <path
-                  d="M2.8 12.4L10.5 5.5L18.2 12.4V21H2.8V12.4Z"
+                  d="M5 12L12 5.7L19 12V20.2H5V12Z"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
@@ -1165,7 +1165,7 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M1.9 12.6L10.5 4.9L19.1 12.6"
+                  d="M3.6 12.2L12 4.7L20.4 12.2"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
@@ -1173,7 +1173,7 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M7.6 21V16.5H13.3V21M14.2 8.3V6"
+                  d="M9.7 20.2V16H14.3V20.2"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -1181,18 +1181,15 @@ const GoogleListingsMap = ({
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M24.1 12.2C24.1 9.5 26.3 7.3 29 7.3C31.7 7.3 33.9 9.5 33.9 12.2C33.9 14.9 31.7 17.1 29 17.1C26.3 17.1 24.1 14.9 24.1 12.2Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  d="M12 13.9C11.2 12.7 9.5 13.1 9.5 14.7C9.5 15.8 10.6 16.7 12 17.8C13.4 16.7 14.5 15.8 14.5 14.7C14.5 13.1 12.8 12.7 12 13.9Z"
+                  fill="currentColor"
+                  stroke="none"
                 />
                 <path
-                  d="M32.7 15.9L39.2 21.2M26.8 12.2H31.2"
+                  d="M16.4 7.8V6.1"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.6"
+                  strokeWidth="1.4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
