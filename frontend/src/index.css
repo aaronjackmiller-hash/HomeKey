@@ -1293,11 +1293,20 @@ a {
   font-weight: 600;
 }
 
-.status-banner--saved-search-history {
-  margin-bottom: 12px;
-  border-color: #f59e0b;
-  background: #fffbeb;
-  color: #78350f;
+.saved-search-history-cap {
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  text-align: center;
+}
+
+.saved-search-history-cap p {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .property-card-stats {
