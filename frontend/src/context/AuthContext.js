@@ -1,10 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext({ user: null, token: null, login: () => {}, logout: () => {}, isAuthenticated: false });
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+
+  const clearSession = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -25,11 +32,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
+    clearSession();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleSessionExpired = () => {
+      clearSession();
+    };
+    window.addEventListener('homekey:auth-session-expired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('homekey:auth-session-expired', handleSessionExpired);
+    };
+  }, [clearSession]);
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>

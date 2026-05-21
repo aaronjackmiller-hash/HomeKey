@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   deleteMyInstantAlertSearch,
   getMyInstantAlertInbox,
@@ -51,8 +52,9 @@ const formatDeliveryPreferenceLabel = (value) => {
   return 'Account preference';
 };
 
-const InstantAlerts = () => {
-  const { user } = useAuth();
+const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
+  const history = useHistory();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -65,6 +67,25 @@ const InstantAlerts = () => {
   });
   const [savedSearches, setSavedSearches] = useState([]);
   const [inbox, setInbox] = useState([]);
+
+  const handleClose = useCallback(() => {
+    if (typeof onClose === 'function') {
+      onClose();
+      return;
+    }
+    history.replace('/');
+  }, [history, onClose]);
+
+  const handleAlertApiError = useCallback((err, fallbackMessage) => {
+    const statusCode = Number(err?.response?.status || 0);
+    if (statusCode === 401) {
+      setError('Your session has expired. Please sign in again.');
+      logout();
+      if (isOverlay) handleClose();
+      return;
+    }
+    setError(err.response?.data?.message || fallbackMessage);
+  }, [handleClose, isOverlay, logout]);
 
   const loadAlertsData = async () => {
     setLoading(true);
@@ -84,7 +105,7 @@ const InstantAlerts = () => {
       setSavedSearches(Array.isArray(alertData.savedSearches) ? alertData.savedSearches : []);
       setInbox(Array.isArray(inboxState?.data) ? inboxState.data : []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Unable to load your instant alerts right now.');
+      handleAlertApiError(err, 'Unable to load your instant alerts right now.');
     } finally {
       setLoading(false);
     }
@@ -93,6 +114,21 @@ const InstantAlerts = () => {
   useEffect(() => {
     loadAlertsData();
   }, []);
+
+  useEffect(() => {
+    if (!isOverlay || typeof document === 'undefined') return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        handleClose();
+      }
+    };
+    document.body.classList.add('alerts-overlay-open');
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.classList.remove('alerts-overlay-open');
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleClose, isOverlay]);
 
   const refreshInbox = async () => {
     const inboxState = await getMyInstantAlertInbox();
@@ -118,7 +154,7 @@ const InstantAlerts = () => {
       }));
       setStatusMessage('Saved search settings updated.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update alert settings.');
+      handleAlertApiError(err, 'Failed to update alert settings.');
     } finally {
       setSaving(false);
     }
@@ -140,7 +176,7 @@ const InstantAlerts = () => {
       await loadAlertsData();
       setStatusMessage('Saved search updated.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update saved search.');
+      handleAlertApiError(err, 'Failed to update saved search.');
     } finally {
       setSaving(false);
     }
@@ -156,7 +192,7 @@ const InstantAlerts = () => {
       await loadAlertsData();
       setStatusMessage('Saved search deleted.');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete saved search.');
+      handleAlertApiError(err, 'Failed to delete saved search.');
     } finally {
       setSaving(false);
     }
@@ -168,7 +204,7 @@ const InstantAlerts = () => {
       await markMyInstantAlertReadState(alertId, read);
       await refreshInbox();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update alert status.');
+      handleAlertApiError(err, 'Failed to update alert status.');
     }
   };
 
@@ -177,10 +213,10 @@ const InstantAlerts = () => {
     return { total: inbox.length, unread };
   }, [inbox]);
 
-  return (
-    <div className="alerts-page">
+  const pageContent = (
+    <div className={`alerts-page ${isOverlay ? 'alerts-page--overlay' : ''}`}>
       <div className="alerts-card">
-        <h2>Saved Search</h2>
+        {isOverlay ? <h3>Search alert settings</h3> : <h2>Saved Search</h2>}
         <p className="form-helper-text">
           Your filters and map circle are captured from your active search. Click "Save Search" in the header to save criteria without re-entering fields.
         </p>
@@ -288,6 +324,23 @@ const InstantAlerts = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+
+  if (!isOverlay) return pageContent;
+
+  return (
+    <div className="alerts-overlay" role="dialog" aria-modal="true" aria-label="Saved search settings">
+      <button type="button" className="alerts-overlay-backdrop" onClick={handleClose} aria-label="Close saved search overlay" />
+      <div className="alerts-overlay-panel">
+        <div className="alerts-overlay-header">
+          <h2>Saved Search</h2>
+          <button type="button" className="alerts-overlay-close" onClick={handleClose}>
+            Back to Map
+          </button>
+        </div>
+        {pageContent}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Redirect, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Redirect,
+  useHistory,
+  useLocation,
+} from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import PropertyList from './components/PropertyList';
@@ -26,6 +33,44 @@ const PrivateRoute = ({ children, ...rest }) => {
   );
 };
 
+const ListingsWithAlertsOverlay = () => {
+  const history = useHistory();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const searchParams = new URLSearchParams(location.search);
+  const hasAlertsOverlay = searchParams.get('alerts') === '1';
+
+  React.useEffect(() => {
+    if (!hasAlertsOverlay || isAuthenticated) return;
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete('alerts');
+    const nextSearch = nextParams.toString();
+    history.replace({
+      pathname: '/',
+      search: nextSearch ? `?${nextSearch}` : '',
+    });
+  }, [hasAlertsOverlay, history, isAuthenticated, location.search]);
+
+  const closeAlertsOverlay = () => {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete('alerts');
+    const nextSearch = nextParams.toString();
+    history.replace({
+      pathname: '/',
+      search: nextSearch ? `?${nextSearch}` : '',
+    });
+  };
+
+  return (
+    <>
+      <PropertyList />
+      {hasAlertsOverlay && isAuthenticated && (
+        <InstantAlerts isOverlay onClose={closeAlertsOverlay} />
+      )}
+    </>
+  );
+};
+
 const AppRoutes = () => {
   const location = useLocation();
   const isBlueprintRoute = location.pathname === '/blueprint-inquiry';
@@ -35,7 +80,7 @@ const AppRoutes = () => {
       {!isBlueprintRoute && <Navbar />}
       <main className="app-main" style={isBlueprintRoute ? { minHeight: '100vh' } : undefined}>
         <Switch>
-          <Route exact path="/" component={PropertyList} />
+          <Route exact path="/" component={ListingsWithAlertsOverlay} />
           <Route path="/properties/:id" component={PropertyDetail} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
@@ -54,8 +99,8 @@ const AppRoutes = () => {
           <PrivateRoute path="/admin/import-yad2">
             <AdminYad2Import />
           </PrivateRoute>
-          <PrivateRoute path="/alerts">
-            <InstantAlerts />
+          <PrivateRoute exact path="/alerts">
+            <Redirect to="/?alerts=1" />
           </PrivateRoute>
           <Redirect to="/" />
         </Switch>

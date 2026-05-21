@@ -15,6 +15,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = Number(error?.response?.status || 0);
+    const apiMessage = String(error?.response?.data?.message || '');
+    const isTokenAuthFailure = status === 401 && /token (invalid|missing)/i.test(apiMessage);
+    if (isTokenAuthFailure && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('homekey:auth-session-expired'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth
 export const registerUser = async (data) => {
   const response = await api.post('/auth/register', data);
