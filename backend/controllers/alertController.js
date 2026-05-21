@@ -6,6 +6,7 @@ const {
     normalizeAlertCriteria,
     normalizeSourceContext,
     normalizeSearchPayload,
+    buildSourceSignature,
 } = require('../services/instantAlertService');
 
 const normalizeBoolean = (value, fallback = false) => {
@@ -23,6 +24,48 @@ const normalizeDeliveryPreference = (value, fallback = 'account') => {
     const normalized = normalizeText(value).toLowerCase();
     if (['account', 'email', 'whatsapp'].includes(normalized)) return normalized;
     return fallback;
+};
+
+const toValidDateOrFallback = (value, fallbackDate) => {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? fallbackDate : parsed;
+};
+
+const sanitizeSavedSearches = (savedSearches = []) =>
+    (Array.isArray(savedSearches) ? savedSearches : [])
+        .map((search, index) => {
+            const fallbackName = `Saved Search ${index + 1}`;
+            const criteria = normalizeAlertCriteria(search && search.criteria ? search.criteria : {});
+            const sourceContext = normalizeSourceContext(
+                search && search.sourceContext ? search.sourceContext : {},
+                criteria,
+                { includeCapturedAt: false }
+            );
+            const sourceSignature = normalizeText(search && search.sourceSignature)
+                || buildSourceSignature({ criteria, sourceContext });
+            const now = new Date();
+            return {
+                _id: search && search._id ? search._id : undefined,
+                name: normalizeText(search && search.name) || fallbackName,
+                enabled: search ? search.enabled !== false : true,
+                criteria,
+                sourceSignature,
+                sourceContext,
+                createdAt: toValidDateOrFallback(search && search.createdAt, now),
+                updatedAt: toValidDateOrFallback(search && search.updatedAt, now),
+            };
+        });
+
+const sanitizeInstantAlertsState = (instantAlerts = {}) => {
+    const alerts = instantAlerts && typeof instantAlerts === 'object' ? instantAlerts : {};
+    return {
+        enabled: alerts.enabled === true,
+        deliverInApp: alerts.deliverInApp !== false,
+        deliverEmail: alerts.deliverEmail === true,
+        deliveryPreference: normalizeDeliveryPreference(alerts.deliveryPreference, 'account'),
+        savedSearches: sanitizeSavedSearches(alerts.savedSearches),
+        inbox: Array.isArray(alerts.inbox) ? alerts.inbox : [],
+    };
 };
 
 const serializeInstantAlerts = (instantAlerts = {}) => {
@@ -74,16 +117,7 @@ const serializeInstantAlerts = (instantAlerts = {}) => {
 const loadUserAlertsState = async (userId) => {
     const user = await User.findById(userId).select('instantAlerts preferredContactMethod');
     if (!user) return null;
-    if (!user.instantAlerts || typeof user.instantAlerts !== 'object') {
-        user.instantAlerts = {
-            enabled: false,
-            deliverInApp: true,
-            deliverEmail: false,
-            deliveryPreference: 'account',
-            savedSearches: [],
-            inbox: [],
-        };
-    }
+    user.instantAlerts = sanitizeInstantAlertsState(user.instantAlerts);
     return user;
 };
 
