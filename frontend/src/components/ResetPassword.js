@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { resetPassword } from '../services/api';
+import PasswordField from './PasswordField';
 
 const ResetPassword = () => {
   const history = useHistory();
@@ -47,26 +48,26 @@ const ResetPassword = () => {
       {success && <p className="status-message">{success}</p>}
 
       <form onSubmit={handleSubmit}>
-        <div className="input-field">
-          <label>New Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
-            required
-          />
-        </div>
-        <div className="input-field">
-          <label>Confirm New Password</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            minLength={6}
-            required
-          />
-        </div>
+        <PasswordField
+          label="New Password"
+          name="newPassword"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          minLength={6}
+          required
+          disabled={loading}
+          autoComplete="new-password"
+        />
+        <PasswordField
+          label="Confirm New Password"
+          name="confirmPassword"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          minLength={6}
+          required
+          disabled={loading}
+          autoComplete="new-password"
+        />
         <button type="submit" disabled={loading}>
           {loading ? 'Updating…' : 'Set New Password'}
         </button>

@@ -11,6 +11,7 @@ import {
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { startAuthentication, startRegistration } from '../utils/webauthn';
+import PasswordField from './PasswordField';
 
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
@@ -299,17 +300,15 @@ const Login = () => {
             disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
           />
         </div>
-        <div className="input-field">
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
-          />
-        </div>
+        <PasswordField
+          label="Password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
+          autoComplete="current-password"
+        />
         <button type="submit" disabled={loading || socialLoading.length > 0 || passkeySetupOpen}>{loading ? 'Signing in…' : 'Sign In'}</button>
         <label className="auth-passkey-row" htmlFor="enable-passkey-login">
           <input

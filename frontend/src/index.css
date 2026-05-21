@@ -1097,6 +1097,54 @@ a {
   box-shadow: 0 0 0 3px rgba(45, 62, 80, 0.16);
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 42px;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.password-visibility-toggle:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.password-visibility-toggle:focus-visible {
+  outline: 2px solid #475569;
+  outline-offset: 1px;
+}
+
+.password-visibility-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.password-visibility-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
 .primary-btn,
 .primary-button {
   border: 1px solid var(--hk-brand-charcoal);
