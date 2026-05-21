@@ -52,6 +52,74 @@ const formatDeliveryPreferenceLabel = (value) => {
   return 'Account preference';
 };
 
+const normalizeBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (value == null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on'].includes(normalized);
+};
+
+const SUPPORTED_PROPERTY_CATEGORIES = new Set(['apartments', 'houses']);
+const SUPPORTED_FEATURE_FILTERS = new Set([
+  'elevator',
+  'parking',
+  'pets',
+  'disabled-access',
+  'renovated',
+  'furnished',
+  'mamad',
+]);
+
+const buildSavedSearchQuery = (search = {}) => {
+  const criteria = search && typeof search === 'object' && search.criteria && typeof search.criteria === 'object'
+    ? search.criteria
+    : {};
+  const sourceContext = search && typeof search === 'object' && search.sourceContext && typeof search.sourceContext === 'object'
+    ? search.sourceContext
+    : {};
+  const params = new URLSearchParams();
+  const listingType = String(criteria.type || '').trim().toLowerCase();
+  if (listingType === 'sale' || listingType === 'rental') {
+    params.set('type', listingType);
+  }
+  const searchText = String(criteria.city || criteria.searchText || sourceContext.searchText || '').trim();
+  if (searchText) {
+    params.set('q', searchText);
+  }
+  const rooms = String(criteria.rooms || '').trim();
+  if (rooms) {
+    params.set('rooms', rooms);
+  }
+  const baths = String(criteria.baths || '').trim();
+  if (baths) {
+    params.set('baths', baths);
+  }
+  const minPrice = Number(criteria.minPrice);
+  if (Number.isFinite(minPrice) && minPrice > 0) {
+    params.set('minPrice', String(minPrice));
+  }
+  const maxPrice = Number(criteria.maxPrice);
+  if (Number.isFinite(maxPrice) && maxPrice > 0) {
+    params.set('maxPrice', String(maxPrice));
+  }
+  const propertyCategory = String(sourceContext.propertyCategory || '').trim().toLowerCase();
+  if (SUPPORTED_PROPERTY_CATEGORIES.has(propertyCategory)) {
+    params.set('propertyCategory', propertyCategory);
+  }
+  const featureFilters = Array.isArray(sourceContext.featureFilters)
+    ? sourceContext.featureFilters
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter((value) => SUPPORTED_FEATURE_FILTERS.has(value))
+    : [];
+  if (featureFilters.length > 0) {
+    params.set('features', featureFilters.join(','));
+  }
+  if (normalizeBoolean(sourceContext.likedOnly)) {
+    params.set('liked', '1');
+  }
+  return params.toString();
+};
+
 const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
   const history = useHistory();
   const { user, logout } = useAuth();
@@ -208,6 +276,14 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
     }
   };
 
+  const openSavedSearch = (search) => {
+    const serializedQuery = buildSavedSearchQuery(search);
+    history.replace({
+      pathname: '/',
+      search: serializedQuery ? `?${serializedQuery}` : '',
+    });
+  };
+
   const inboxStats = useMemo(() => {
     const unread = inbox.filter((item) => !item.readAt).length;
     return { total: inbox.length, unread };
@@ -270,7 +346,17 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
             {savedSearches.map((search) => (
               <div key={search._id} className="alerts-search-item">
                 <div>
-                  <p><strong>{search.name}</strong> {search.enabled ? '' : '(Paused)'}</p>
+                  <p className="alerts-search-item-title-line">
+                    <button
+                      type="button"
+                      className="alerts-search-item-link"
+                      onClick={() => openSavedSearch(search)}
+                      disabled={saving}
+                    >
+                      {search.name}
+                    </button>
+                    {search.enabled ? '' : ' (Paused)'}
+                  </p>
                   <p className="alerts-search-item-details">
                     {summarizeSearchCriteria(search)}
                   </p>
