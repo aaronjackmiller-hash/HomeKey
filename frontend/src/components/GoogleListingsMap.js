@@ -8,7 +8,7 @@ const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const EARTH_RADIUS_METERS = 6371000;
-const PAN_STEP_PX = 130;
+const ZOOM_STEP = 1;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.12;
@@ -1122,9 +1122,11 @@ const GoogleListingsMap = ({
     });
   };
 
-  const panMapBy = (x, y) => {
-    if (!mapRef.current || typeof mapRef.current.panBy !== 'function') return;
-    mapRef.current.panBy(x, y);
+  const adjustMapZoom = (delta) => {
+    if (!mapRef.current || typeof mapRef.current.getZoom !== 'function') return;
+    const currentZoom = Number(mapRef.current.getZoom());
+    if (!Number.isFinite(currentZoom)) return;
+    mapRef.current.setZoom(currentZoom + delta);
   };
 
   return (
@@ -1224,39 +1226,26 @@ const GoogleListingsMap = ({
           ref={mapContainerRef}
           className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
         />
-        <div className="google-listings-map-pan-controls" aria-label="Pan map">
-          <button
-            type="button"
-            className="google-listings-map-pan-btn up"
-            onClick={() => panMapBy(0, -PAN_STEP_PX)}
-            aria-label="Pan up"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            className="google-listings-map-pan-btn left"
-            onClick={() => panMapBy(-PAN_STEP_PX, 0)}
-            aria-label="Pan left"
-          >
-            ◀
-          </button>
-          <button
-            type="button"
-            className="google-listings-map-pan-btn right"
-            onClick={() => panMapBy(PAN_STEP_PX, 0)}
-            aria-label="Pan right"
-          >
-            ▶
-          </button>
-          <button
-            type="button"
-            className="google-listings-map-pan-btn down"
-            onClick={() => panMapBy(0, PAN_STEP_PX)}
-            aria-label="Pan down"
-          >
-            ▼
-          </button>
+        <div className="google-listings-map-zoom-overlay" aria-label="Map zoom controls">
+          <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
+          <div className="google-listings-map-zoom-controls">
+            <button
+              type="button"
+              className="google-listings-map-zoom-btn"
+              onClick={() => adjustMapZoom(ZOOM_STEP)}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="google-listings-map-zoom-btn"
+              onClick={() => adjustMapZoom(-ZOOM_STEP)}
+              aria-label="Zoom out"
+            >
+              -
+            </button>
+          </div>
         </div>
       </div>
       <p className="google-listings-map-caption">
