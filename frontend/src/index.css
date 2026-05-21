@@ -4254,18 +4254,6 @@ legend {
   border: 1px solid #94a3b8;
 }
 
-.property-list-page .google-listings-map-toolbar .map-draw-btn:first-of-type {
-  color: #ffffff;
-  border-color: #1e293b;
-  background: #1f2937;
-}
-
-.property-list-page .google-listings-map-toolbar .map-draw-btn:first-of-type:hover,
-.property-list-page .google-listings-map-toolbar .map-draw-btn:first-of-type:focus-visible {
-  border-color: #0f172a;
-  background: #0f172a;
-}
-
 .property-list-page .map-draw-btn.is-active {
   border-color: #0f172a;
   background: #0f172a;
