@@ -353,6 +353,18 @@ const ConnectedListingsMapFallback = ({
     applyCircleFilter();
   };
 
+  const setActiveCircleInteractive = (interactive) => {
+    const activeCircle = activeCircleRef.current;
+    if (!activeCircle) return;
+    activeCircle.options.interactive = interactive;
+    if (typeof activeCircle.getElement === 'function') {
+      const circleElement = activeCircle.getElement();
+      if (circleElement) {
+        circleElement.style.pointerEvents = interactive ? 'auto' : 'none';
+      }
+    }
+  };
+
   const toggleDrawMode = () => {
     setDrawMode((value) => {
       const nextValue = !value;
@@ -615,6 +627,7 @@ const ConnectedListingsMapFallback = ({
     const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
     let isDraftDrawing = false;
     if (!drawMode) {
+      setActiveCircleInteractive(true);
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = 0;
@@ -623,6 +636,7 @@ const ConnectedListingsMapFallback = ({
       return undefined;
     }
 
+    setActiveCircleInteractive(false);
     if (map.dragging) map.dragging.disable();
     if (map.doubleClickZoom) map.doubleClickZoom.disable();
 
@@ -643,6 +657,7 @@ const ConnectedListingsMapFallback = ({
         fillColor: '#0e8a88',
         fillOpacity: 0.16,
         weight: 2,
+        interactive: false,
       }).addTo(map);
     };
 
@@ -664,6 +679,7 @@ const ConnectedListingsMapFallback = ({
       pendingCenterRef.current = null;
       lastPointerLatLngRef.current = null;
       lastCompletionTimestampRef.current = Date.now();
+      setActiveCircleInteractive(true);
       setDrawMode(false);
       applyCircleFilter();
     };
