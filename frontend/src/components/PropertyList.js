@@ -1163,10 +1163,9 @@ const PropertyList = () => {
     return (
       <div className='container'>
         {savedSearchHistoryMode && (
-          <div className="status-banner status-banner--saved-search-history">
+          <div className="saved-search-history-cap">
             <p>
-              Showing apartments currently available and previous matches from this saved search area.
-              {savedSearchHistoryMatches.length > 0 ? ` (${savedSearchHistoryMatches.length} previous matches)` : ''}
+              {`Showing ${displayProperties.length.toLocaleString()} active and previous matches for your saved search area`}
             </p>
           </div>
         )}
