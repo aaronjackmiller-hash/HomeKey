@@ -3851,7 +3851,7 @@ legend {
   outline: 1px solid rgba(30, 41, 59, 0.9);
   outline-offset: -1px;
   border-radius: var(--hk-radius-container);
-  background: rgba(249, 247, 242, 0.97);
+  background: #f9f7f2;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
