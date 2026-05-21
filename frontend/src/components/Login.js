@@ -46,18 +46,47 @@ const Login = () => {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const maybeEnrollPasskey = async () => {
-    if (!enablePasskey || !supportsWebAuthn()) {
-      return;
+  const maybeEnrollPasskey = async ({ force = false } = {}) => {
+    if ((!enablePasskey && !force) || !supportsWebAuthn()) {
+      return { attempted: false, success: false, message: '' };
     }
     try {
       const optionsResponse = await getPasskeyRegistrationOptions();
       const credential = await startRegistration({ optionsJSON: optionsResponse.options });
       await verifyPasskeyRegistration(credential);
-      setNotice('Passkey saved. You can use passkey sign-in next time.');
+      return {
+        attempted: true,
+        success: true,
+        message: 'Passkey saved. You can use passkey sign-in next time.',
+      };
     } catch (err) {
-      setNotice(err.response?.data?.message || 'Signed in. Passkey setup was skipped.');
+      const browserMessage = String(err?.message || '').trim();
+      const isUserCancelled = (
+        err?.name === 'NotAllowedError'
+        || err?.name === 'AbortError'
+        || /cancel|aborted|not allowed|denied/i.test(browserMessage)
+      );
+      return {
+        attempted: true,
+        success: false,
+        message: isUserCancelled
+          ? 'Signed in. Passkey setup was cancelled before completion.'
+          : err.response?.data?.message || browserMessage || 'Signed in. Passkey setup was skipped.',
+      };
     }
+  };
+
+  const loginWithPassword = async ({ enrollPasskey = false } = {}) => {
+    const data = await loginUser(form);
+    login(data);
+    if (!enrollPasskey) {
+      return data;
+    }
+    const enrollment = await maybeEnrollPasskey({ force: true });
+    if (enrollment.message) {
+      setNotice(enrollment.message);
+    }
+    return data;
   };
 
   const handleSubmit = async (e) => {
@@ -66,9 +95,7 @@ const Login = () => {
     setNotice('');
     setLoading(true);
     try {
-      const data = await loginUser(form);
-      login(data);
-      await maybeEnrollPasskey();
+      await loginWithPassword({ enrollPasskey: enablePasskey });
       history.push('/');
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
@@ -100,6 +127,24 @@ const Login = () => {
       login(data);
       history.push('/');
     } catch (err) {
+      const status = Number(err.response?.status || 0);
+      const apiMessage = String(err.response?.data?.message || '').trim();
+      if (status === 404 && /No passkey is registered for this account\./i.test(apiMessage)) {
+        if (!form.password.trim()) {
+          setError('No passkey is registered yet. Enter your password and sign in once to save a passkey.');
+          return;
+        }
+        try {
+          setNotice('No passkey was found. We are signing you in with password so you can save one now.');
+          await loginWithPassword({ enrollPasskey: true });
+          history.push('/');
+          return;
+        } catch (fallbackErr) {
+          const fallbackMsg = fallbackErr.response?.data?.message || 'Could not sign in with password to set up a passkey.';
+          setError(fallbackMsg);
+          return;
+        }
+      }
       const msg = err.response?.data?.message || err.message || 'Passkey sign-in failed. Try email + password.';
       setError(msg);
     } finally {
