@@ -1453,7 +1453,7 @@ const PropertyList = () => {
               <div className="hero-banner-grid">
                 <div className="hero-banner-copy">
                   <div className="hero-banner-copy-text">
-                    <h1>Find Your Next Home in Israel.</h1>
+                    <h1>Find Your Next Home in Israel</h1>
                   </div>
                   <div className="hero-banner-logo" aria-hidden="true" />
                 </div>
