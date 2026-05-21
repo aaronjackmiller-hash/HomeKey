@@ -1286,6 +1286,20 @@ a {
   min-height: 0;
 }
 
+.property-card-history-note {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-banner--saved-search-history {
+  margin-bottom: 12px;
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #78350f;
+}
+
 .property-card-stats {
   margin: 0 0 12px;
   display: grid;
@@ -3854,6 +3868,12 @@ legend {
   font-weight: 600;
   line-height: 1;
   padding: 3px 6px;
+}
+
+.property-list-page .property-card-listing-badge--history {
+  border-color: rgba(180, 83, 9, 0.65);
+  background: rgba(255, 251, 235, 0.95);
+  color: #92400e;
 }
 
 .property-list-page .property-card-listing-badge svg {
