@@ -6,6 +6,41 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const normalizeRequestPath = (urlValue = '') => {
+  const raw = String(urlValue || '').trim();
+  if (!raw) return '';
+  try {
+    if (/^https?:\/\//i.test(raw)) return new URL(raw).pathname;
+  } catch (_err) {
+    // Fall through to relative-path parsing.
+  }
+  const withoutOrigin = raw.replace(/^[a-z]+:\/\/[^/]+/i, '');
+  const [pathname] = withoutOrigin.split('?');
+  if (!pathname) return '';
+  return pathname.startsWith('/') ? pathname : `/${pathname}`;
+};
+
+const isProtectedRequestPath = (method = 'GET', requestPath = '') => {
+  const normalizedMethod = String(method || 'GET').toUpperCase();
+  const path = String(requestPath || '');
+  if (!path) return false;
+  if (path.startsWith('/alerts')) return true;
+  if (path.startsWith('/users')) return true;
+  if (path.startsWith('/admin')) return true;
+  if (path.startsWith('/auth/passkeys/register')) return true;
+  if (/^\/properties\/[^/]+\/engagement$/.test(path)) return true;
+  if (path === '/properties' && normalizedMethod !== 'GET') return true;
+  return false;
+};
+
+const getAuthorizationHeaderValue = (headers) => {
+  if (!headers) return '';
+  if (typeof headers.get === 'function') {
+    return String(headers.get('Authorization') || headers.get('authorization') || '');
+  }
+  return String(headers.Authorization || headers.authorization || '');
+};
+
 // Attach JWT token to every request if present
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -21,7 +56,14 @@ api.interceptors.response.use(
     const status = Number(error?.response?.status || 0);
     const apiMessage = String(error?.response?.data?.message || '');
     const isTokenAuthFailure = status === 401 && /token (invalid|missing)/i.test(apiMessage);
-    if (isTokenAuthFailure && typeof window !== 'undefined') {
+    const requestPath = normalizeRequestPath(error?.config?.url || '');
+    const requestMethod = String(error?.config?.method || 'GET').toUpperCase();
+    const authHeaderValue = getAuthorizationHeaderValue(error?.config?.headers);
+    const hadBearerAuthHeader = /^Bearer\s+/i.test(authHeaderValue);
+    const shouldExpireSession = isTokenAuthFailure
+      && hadBearerAuthHeader
+      && isProtectedRequestPath(requestMethod, requestPath);
+    if (shouldExpireSession && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('homekey:auth-session-expired'));
     }
     return Promise.reject(error);
