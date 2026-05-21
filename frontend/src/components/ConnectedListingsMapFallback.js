@@ -246,6 +246,7 @@ const ConnectedListingsMapFallback = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const hasInitializedViewportRef = useRef(false);
   const activeCircleRef = useRef(null);
   const pendingCenterRef = useRef(null);
   const lastPointerLatLngRef = useRef(null);
@@ -462,12 +463,15 @@ const ConnectedListingsMapFallback = ({
       if (!mapInstanceRef.current) return;
       map.invalidateSize();
       setTotalMarkerCount(markersRef.current.length);
-      if (bounds.length > 1) {
-        map.fitBounds(bounds, { padding: [36, 36] });
-      } else if (bounds.length === 1) {
-        map.setView(bounds[0], 13);
-      } else {
-        map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
+      if (!hasInitializedViewportRef.current) {
+        if (bounds.length > 1) {
+          map.fitBounds(bounds, { padding: [36, 36] });
+        } else if (bounds.length === 1) {
+          map.setView(bounds[0], 13);
+        } else {
+          map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
+        }
+        hasInitializedViewportRef.current = true;
       }
       applyCircleFilter();
     }, 0);
@@ -477,14 +481,11 @@ const ConnectedListingsMapFallback = ({
     const map = mapInstanceRef.current;
     if (!map || !isVisible) return undefined;
     const rafId = window.requestAnimationFrame(() => {
+      const currentCenter = typeof map.getCenter === 'function' ? map.getCenter() : null;
+      const currentZoom = typeof map.getZoom === 'function' ? map.getZoom() : null;
       map.invalidateSize();
-      if (markersRef.current.length > 1) {
-        const bounds = L.featureGroup(markersRef.current.map((entry) => entry.marker)).getBounds();
-        map.fitBounds(bounds, { padding: [36, 36] });
-      } else if (markersRef.current.length === 1) {
-        map.setView(markersRef.current[0].marker.getLatLng(), 13);
-      } else {
-        map.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 10);
+      if (currentCenter && Number.isFinite(currentZoom)) {
+        map.setView(currentCenter, currentZoom, { animate: false });
       }
       applyCircleFilter();
     });
@@ -493,7 +494,7 @@ const ConnectedListingsMapFallback = ({
         window.cancelAnimationFrame(rafId);
       }
     };
-  }, [isVisible, totalMarkerCount]);
+  }, [isVisible]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

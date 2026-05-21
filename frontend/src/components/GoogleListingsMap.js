@@ -300,6 +300,7 @@ const GoogleListingsMap = ({
   const markerEntriesRef = useRef([]);
   const markerHydrationInProgressRef = useRef(false);
   const expectedMarkerCountRef = useRef(0);
+  const hasInitializedViewportRef = useRef(false);
   const geocodeCacheRef = useRef(readGeocodeCache());
   const drawListenersRef = useRef([]);
   const activeCircleRef = useRef(null);
@@ -632,14 +633,17 @@ const GoogleListingsMap = ({
 
       if (cacheChanged) writeGeocodeCache(geocodeCacheRef.current);
 
-      if (placed === 1 && markerEntriesRef.current[0]) {
-        map.setCenter(markerEntriesRef.current[0].marker.getPosition());
-        map.setZoom(13);
-      } else if (placed > 1) {
-        map.fitBounds(bounds, 42);
-      } else {
-        map.setCenter(DEFAULT_CENTER);
-        map.setZoom(10);
+      if (!hasInitializedViewportRef.current) {
+        if (placed === 1 && markerEntriesRef.current[0]) {
+          map.setCenter(markerEntriesRef.current[0].marker.getPosition());
+          map.setZoom(13);
+        } else if (placed > 1) {
+          map.fitBounds(bounds, 42);
+        } else {
+          map.setCenter(DEFAULT_CENTER);
+          map.setZoom(10);
+        }
+        hasInitializedViewportRef.current = true;
       }
 
       markerHydrationInProgressRef.current = false;
@@ -664,17 +668,12 @@ const GoogleListingsMap = ({
     if (!isVisible || !mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
     const rafId = window.requestAnimationFrame(() => {
+      const currentCenter = typeof mapRef.current.getCenter === 'function' ? mapRef.current.getCenter() : null;
+      const currentZoom = typeof mapRef.current.getZoom === 'function' ? mapRef.current.getZoom() : null;
       mapsApi.event.trigger(mapRef.current, 'resize');
-      if (markerEntriesRef.current.length === 1 && markerEntriesRef.current[0]) {
-        mapRef.current.setCenter(markerEntriesRef.current[0].marker.getPosition());
-        mapRef.current.setZoom(13);
-      } else if (markerEntriesRef.current.length > 1) {
-        const bounds = new mapsApi.LatLngBounds();
-        markerEntriesRef.current.forEach((entry) => bounds.extend(entry.coords));
-        mapRef.current.fitBounds(bounds, 42);
-      } else {
-        mapRef.current.setCenter(DEFAULT_CENTER);
-        mapRef.current.setZoom(10);
+      if (currentCenter && Number.isFinite(currentZoom)) {
+        mapRef.current.setCenter(currentCenter);
+        mapRef.current.setZoom(currentZoom);
       }
       applyCircleFilter();
     });
@@ -683,7 +682,7 @@ const GoogleListingsMap = ({
         window.cancelAnimationFrame(rafId);
       }
     };
-  }, [isVisible, mapReady, totalMarkerCount]);
+  }, [isVisible, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
