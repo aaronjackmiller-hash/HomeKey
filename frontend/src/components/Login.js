@@ -43,6 +43,8 @@ const Login = () => {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [enablePasskey, setEnablePasskey] = useState(false);
+  const [passkeySetupStep, setPasskeySetupStep] = useState('');
+  const passkeySetupOpen = passkeySetupStep.length > 0;
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -76,17 +78,39 @@ const Login = () => {
     }
   };
 
-  const loginWithPassword = async ({ enrollPasskey = false } = {}) => {
+  const loginWithPassword = async () => {
     const data = await loginUser(form);
     login(data);
-    if (!enrollPasskey) {
-      return data;
-    }
-    const enrollment = await maybeEnrollPasskey({ force: true });
-    if (enrollment.message) {
-      setNotice(enrollment.message);
-    }
     return data;
+  };
+
+  const closePasskeySetup = () => {
+    setPasskeySetupStep('');
+    setEnablePasskey(false);
+  };
+
+  const handleSkipPasskeySetup = () => {
+    closePasskeySetup();
+    history.push('/');
+  };
+
+  const handleCreatePasskeyNow = async () => {
+    setError('');
+    setNotice('');
+    setSocialLoading('passkey-setup');
+    try {
+      const enrollment = await maybeEnrollPasskey({ force: true });
+      closePasskeySetup();
+      if (enrollment.message) {
+        setNotice(enrollment.message);
+      }
+      history.push('/');
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Passkey setup failed.';
+      setError(msg);
+    } finally {
+      setSocialLoading('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -95,7 +119,12 @@ const Login = () => {
     setNotice('');
     setLoading(true);
     try {
-      await loginWithPassword({ enrollPasskey: enablePasskey });
+      await loginWithPassword();
+      if (enablePasskey && supportsWebAuthn()) {
+        setNotice('Choose whether to add a passkey now. This step can be skipped.');
+        setPasskeySetupStep('method');
+        return;
+      }
       history.push('/');
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
@@ -135,9 +164,9 @@ const Login = () => {
           return;
         }
         try {
-          setNotice('No passkey was found. We are signing you in with password so you can save one now.');
-          await loginWithPassword({ enrollPasskey: true });
-          history.push('/');
+          await loginWithPassword();
+          setNotice('No passkey was found. Choose whether to create one now, or skip.');
+          setPasskeySetupStep('method');
           return;
         } catch (fallbackErr) {
           const fallbackMsg = fallbackErr.response?.data?.message || 'Could not sign in with password to set up a passkey.';
@@ -261,20 +290,34 @@ const Login = () => {
       <form onSubmit={handleSubmit}>
         <div className="input-field">
           <label>Email</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} required />
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
+          />
         </div>
         <div className="input-field">
           <label>Password</label>
-          <input type="password" name="password" value={form.password} onChange={handleChange} required />
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
+          />
         </div>
-        <button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign In'}</button>
+        <button type="submit" disabled={loading || socialLoading.length > 0 || passkeySetupOpen}>{loading ? 'Signing in…' : 'Sign In'}</button>
         <label className="auth-passkey-row" htmlFor="enable-passkey-login">
           <input
             id="enable-passkey-login"
             type="checkbox"
             checked={enablePasskey}
             onChange={(event) => setEnablePasskey(event.target.checked)}
-            disabled={!supportsWebAuthn() || loading}
+            disabled={!supportsWebAuthn() || loading || socialLoading.length > 0 || passkeySetupOpen}
           />
           <span>Sign in faster next time with a passkey</span>
         </label>
@@ -282,10 +325,69 @@ const Login = () => {
           className="secondary-button auth-passkey-action"
           type="button"
           onClick={handlePasskeySignIn}
-          disabled={socialLoading.length > 0}
+          disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
         >
           {socialLoading === 'passkey' ? 'Checking passkey…' : 'Sign In with Passkey'}
         </button>
+        {passkeySetupOpen && (
+          <div className="auth-passkey-template" role="dialog" aria-live="polite" aria-label="Passkey setup steps">
+            {passkeySetupStep === 'method' ? (
+              <>
+                <p className="auth-passkey-template__step">Step 1: Choose authentication method</p>
+                <h3>Secure your account</h3>
+                <button
+                  type="button"
+                  className="auth-passkey-template__option"
+                  onClick={() => setPasskeySetupStep('create')}
+                  disabled={socialLoading.length > 0}
+                >
+                  <strong>Passkey</strong>
+                  <span>Verify your identity the same way you unlock your device.</span>
+                </button>
+                <p className="auth-passkey-template__coming-soon">SMS and authenticator app options are coming soon.</p>
+                <button
+                  type="button"
+                  className="auth-passkey-template__skip"
+                  onClick={handleSkipPasskeySetup}
+                  disabled={socialLoading.length > 0}
+                >
+                  Skip for now
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="auth-passkey-template__step">Step 2: Create a passkey</p>
+                <h3>Create a passkey</h3>
+                <p className="auth-passkey-template__copy">
+                  Add a passkey for faster, password-free sign-in using your device&apos;s built-in security.
+                </p>
+                <ul className="auth-passkey-template__benefits">
+                  <li><strong>Seamless:</strong> Sign in with just a look or touch.</li>
+                  <li><strong>Phishing-resistant:</strong> Passkeys cannot be stolen or reused by attackers.</li>
+                  <li><strong>Private:</strong> Biometrics and PINs stay on your device.</li>
+                </ul>
+                <div className="auth-passkey-template__actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleCreatePasskeyNow}
+                    disabled={socialLoading.length > 0}
+                  >
+                    {socialLoading === 'passkey-setup' ? 'Opening prompt…' : 'Next'}
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-passkey-template__skip"
+                    onClick={handleSkipPasskeySetup}
+                    disabled={socialLoading.length > 0}
+                  >
+                    Skip
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </form>
       <p><Link to="/forgot-password">Forgot password?</Link></p>
       <div className="auth-divider" aria-hidden="true"><span>or</span></div>
@@ -293,7 +395,7 @@ const Login = () => {
         type="button"
         className="auth-oauth-btn"
         onClick={handleGoogleSignIn}
-        disabled={socialLoading.length > 0}
+        disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
       >
         <span className="auth-oauth-icon" aria-hidden="true">G</span>
         {socialLoading === 'google' ? 'Connecting Google…' : 'Continue with Google'}
@@ -302,7 +404,7 @@ const Login = () => {
         type="button"
         className="auth-oauth-btn"
         onClick={handleAppleSignIn}
-        disabled={socialLoading.length > 0}
+        disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
       >
         <span className="auth-oauth-icon" aria-hidden="true"></span>
         {socialLoading === 'apple' ? 'Connecting Apple…' : 'Continue with Apple'}
