@@ -350,14 +350,21 @@ const getMyInstantAlertInbox = async (req, res) => {
         }
         const serialized = serializeInstantAlerts(user.instantAlerts || {});
         const unreadOnly = normalizeBoolean(req.query.unreadOnly, false);
+        const searchId = normalizeText(req.query.searchId);
+        if (searchId && !mongoose.Types.ObjectId.isValid(searchId)) {
+            return res.status(400).json({ success: false, message: 'Invalid search ID' });
+        }
         const data = unreadOnly
             ? serialized.inbox.filter((item) => !item.readAt)
             : serialized.inbox;
+        const filteredBySearch = searchId
+            ? data.filter((item) => String(item.searchId || '') === searchId)
+            : data;
         return res.json({
             success: true,
-            count: data.length,
-            unreadCount: serialized.unreadCount,
-            data,
+            count: filteredBySearch.length,
+            unreadCount: filteredBySearch.filter((item) => !item.readAt).length,
+            data: filteredBySearch,
         });
     } catch (err) {
         return res.status(500).json({ success: false, message: 'Server Error', error: err.message });

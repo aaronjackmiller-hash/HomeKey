@@ -77,12 +77,27 @@ const buildSavedSearchQuery = (search = {}) => {
   const sourceContext = search && typeof search === 'object' && search.sourceContext && typeof search.sourceContext === 'object'
     ? search.sourceContext
     : {};
+  const normalizeAreaHints = (values = []) => {
+    const seen = new Set();
+    return (Array.isArray(values) ? values : [])
+      .map((value) => String(value || '').trim())
+      .filter((value) => {
+        if (!value) return false;
+        const key = value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  };
   const params = new URLSearchParams();
   const listingType = String(criteria.type || '').trim().toLowerCase();
   if (listingType === 'sale' || listingType === 'rental') {
     params.set('type', listingType);
   }
-  const searchText = String(criteria.city || criteria.searchText || sourceContext.searchText || '').trim();
+  const criteriaCityHints = normalizeAreaHints(criteria.cityHints);
+  const sourceCityHints = normalizeAreaHints(sourceContext?.circle?.cityHints);
+  const areaHints = normalizeAreaHints([...criteriaCityHints, ...sourceCityHints]);
+  const searchText = String(criteria.city || criteria.searchText || sourceContext.searchText || areaHints[0] || '').trim();
   if (searchText) {
     params.set('q', searchText);
   }
@@ -116,6 +131,11 @@ const buildSavedSearchQuery = (search = {}) => {
   }
   if (normalizeBoolean(sourceContext.likedOnly)) {
     params.set('liked', '1');
+  }
+  const searchId = String(search && search._id ? search._id : '').trim();
+  if (searchId) {
+    params.set('savedSearchId', searchId);
+    params.set('history', '1');
   }
   return params.toString();
 };

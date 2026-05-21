@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { getProperties, getPublicYad2SyncStatus, saveMyCurrentSearchAlert } from '../services/api';
+import {
+  getMyInstantAlertInbox,
+  getProperties,
+  getPublicYad2SyncStatus,
+  saveMyCurrentSearchAlert,
+} from '../services/api';
 import GoogleListingsMap from './GoogleListingsMap';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
@@ -19,6 +24,8 @@ const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
 const MOBILE_LAYOUT_BREAKPOINT = 767;
+const SAVED_SEARCH_HISTORY_QUERY_KEY = 'history';
+const SAVED_SEARCH_ID_QUERY_KEY = 'savedSearchId';
 const SUPPORTED_ALL_FILTERS = new Set([
   '',
   'newest',
@@ -100,6 +107,38 @@ const formatTimestamp = (isoValue) => {
   const parsed = new Date(isoValue);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toLocaleString();
+};
+
+const formatHistoryBadgeDate = (isoValue) => {
+  if (!isoValue) return '';
+  const parsed = new Date(isoValue);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toLocaleDateString();
+};
+
+const toHistoricalMatchProperty = (alertItem = {}, index = 0) => {
+  const snapshot = alertItem && typeof alertItem === 'object' && alertItem.propertySnapshot && typeof alertItem.propertySnapshot === 'object'
+    ? alertItem.propertySnapshot
+    : {};
+  const sourcePropertyId = String(alertItem.propertyId || '').trim();
+  const alertId = String(alertItem._id || '').trim();
+  const syntheticId = sourcePropertyId ? `history:${sourcePropertyId}` : (alertId || `history-match-${index}`);
+  return {
+    _id: syntheticId,
+    sourcePropertyId,
+    isHistoricalMatch: true,
+    historyMatchedAt: alertItem.createdAt || snapshot.createdAt || null,
+    title: String(snapshot.title || alertItem.message || 'Saved search match').trim(),
+    type: String(snapshot.type || '').trim().toLowerCase(),
+    price: Number.isFinite(Number(snapshot.price)) ? Number(snapshot.price) : undefined,
+    bedrooms: Number.isFinite(Number(snapshot.bedrooms)) ? Number(snapshot.bedrooms) : undefined,
+    bathrooms: Number.isFinite(Number(snapshot.bathrooms)) ? Number(snapshot.bathrooms) : undefined,
+    address: {
+      city: String(snapshot.city || '').trim(),
+    },
+    images: snapshot.image ? [String(snapshot.image)] : [],
+    createdAt: alertItem.createdAt || snapshot.createdAt || null,
+  };
 };
 
 const readCachedLiveListings = () => {
@@ -540,6 +579,9 @@ const PropertyList = () => {
     typeof window !== 'undefined' ? window.innerWidth <= MOBILE_LAYOUT_BREAKPOINT : false
   );
   const [interestVersion, setInterestVersion] = useState(0);
+  const [savedSearchHistoryMode, setSavedSearchHistoryMode] = useState(false);
+  const [savedSearchId, setSavedSearchId] = useState('');
+  const [savedSearchHistoryMatches, setSavedSearchHistoryMatches] = useState([]);
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -643,6 +685,8 @@ const PropertyList = () => {
       nextMaxPrice = high;
     }
     const nextFavoritesOnly = params.get('liked') === '1';
+    const nextSavedSearchHistoryMode = params.get(SAVED_SEARCH_HISTORY_QUERY_KEY) === '1';
+    const nextSavedSearchId = String(params.get(SAVED_SEARCH_ID_QUERY_KEY) || '').trim();
 
     setCitySearch(nextCity);
     setRoomsSearch(nextRooms);
@@ -654,7 +698,33 @@ const PropertyList = () => {
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
     setFavoritesOnly(nextFavoritesOnly);
+    setSavedSearchHistoryMode(nextSavedSearchHistoryMode && Boolean(nextSavedSearchId));
+    setSavedSearchId(nextSavedSearchId);
   }, [location.search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSavedSearchHistoryMatches = async () => {
+      if (!savedSearchHistoryMode || !savedSearchId) {
+        setSavedSearchHistoryMatches([]);
+        return;
+      }
+      try {
+        const inboxState = await getMyInstantAlertInbox({ searchId: savedSearchId });
+        if (cancelled) return;
+        const historicalMatches = Array.isArray(inboxState?.data)
+          ? inboxState.data.map((item, index) => toHistoricalMatchProperty(item, index))
+          : [];
+        setSavedSearchHistoryMatches(historicalMatches);
+      } catch (_err) {
+        if (!cancelled) setSavedSearchHistoryMatches([]);
+      }
+    };
+    loadSavedSearchHistoryMatches();
+    return () => {
+      cancelled = true;
+    };
+  }, [savedSearchHistoryMode, savedSearchId]);
 
   useEffect(() => {
     clearTimers();
@@ -928,8 +998,31 @@ const PropertyList = () => {
         const propertyId = getPropertyId(property);
         return propertyId ? circlePropertyIdSet.has(String(propertyId)) : false;
       });
-    return prioritizeFavorites(visibleProperties, favoriteIdSet);
-  }, [circleSelection.active, circlePropertyIdSet, favoriteIdSet, mapSourceProperties]);
+    const mergedWithHistory = (() => {
+      if (!savedSearchHistoryMode || savedSearchHistoryMatches.length === 0) {
+        return visibleProperties;
+      }
+      const visiblePropertyIdSet = new Set(
+        visibleProperties
+          .map((property) => String(getPropertyId(property) || '').trim())
+          .filter(Boolean)
+      );
+      const uniqueHistoryMatches = savedSearchHistoryMatches.filter((historyProperty) => {
+        const sourcePropertyId = String(historyProperty?.sourcePropertyId || '').trim();
+        if (!sourcePropertyId) return true;
+        return !visiblePropertyIdSet.has(sourcePropertyId);
+      });
+      return [...visibleProperties, ...uniqueHistoryMatches];
+    })();
+    return prioritizeFavorites(mergedWithHistory, favoriteIdSet);
+  }, [
+    circleSelection.active,
+    circlePropertyIdSet,
+    favoriteIdSet,
+    mapSourceProperties,
+    savedSearchHistoryMatches,
+    savedSearchHistoryMode,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -1069,6 +1162,14 @@ const PropertyList = () => {
 
     return (
       <div className='container'>
+        {savedSearchHistoryMode && (
+          <div className="status-banner status-banner--saved-search-history">
+            <p>
+              Showing apartments currently available and previous matches from this saved search area.
+              {savedSearchHistoryMatches.length > 0 ? ` (${savedSearchHistoryMatches.length} previous matches)` : ''}
+            </p>
+          </div>
+        )}
         {dbIsEmpty && (
           <div className="status-banner">
             <p>
@@ -1101,10 +1202,14 @@ const PropertyList = () => {
         {!dbIsEmpty && displayProperties.length === 0 && <p className="status-message">No properties found.</p>}
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
+          const isHistoricalMatch = property.isHistoricalMatch === true;
           const propertyId = getPropertyId(property);
-          const canOpenDetail = Boolean(propertyId);
+          const interestPropertyId = String(
+            isHistoricalMatch ? (property.sourcePropertyId || '') : propertyId
+          ).trim();
+          const canOpenDetail = Boolean(propertyId) && !isHistoricalMatch;
           const isYad2Media = isYad2LikeListing(property);
-          const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;
+          const isFavorite = interestPropertyId ? favoriteIdSet.has(interestPropertyId) : false;
           const key = propertyId || `property-${index}`;
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
@@ -1130,6 +1235,7 @@ const PropertyList = () => {
           const virtualTourHref = normalizeVirtualTourUrl(property.virtualTourUrl);
           const hasVirtualTour = Boolean(virtualTourHref);
           const whatsappButtonLabel = 'WhatsApp';
+          const historicalMatchDate = formatHistoryBadgeDate(property.historyMatchedAt);
           const openPropertyDetail = () => {
             if (!canOpenDetail) return;
             history.push(`/properties/${propertyId}`, { previewProperty: property });
@@ -1144,21 +1250,28 @@ const PropertyList = () => {
               <div className="property-card-image-wrap">
                 <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || 'Property listing'} />
                 <div className="property-card-top-tags">
-                  <span className="property-card-listing-badge">
-                    <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-                      <path d="m2.2 6.4 2.2 2.3 5.4-5.4" />
-                    </svg>
-                    <span>Verified Listing</span>
+                  <span className={`property-card-listing-badge ${isHistoricalMatch ? 'property-card-listing-badge--history' : ''}`}>
+                    {isHistoricalMatch ? (
+                      <span>Past match</span>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                          <path d="m2.2 6.4 2.2 2.3 5.4-5.4" />
+                        </svg>
+                        <span>Verified Listing</span>
+                      </>
+                    )}
                   </span>
                   <button
                     type="button"
                     className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
                     aria-label={isFavorite ? 'Remove favorite from listing' : 'Add favorite to listing'}
                     aria-pressed={isFavorite}
+                    disabled={!interestPropertyId}
                     onClick={(event) => {
                       event.stopPropagation();
-                      if (!propertyId) return;
-                      toggleFavoriteProperty(propertyId);
+                      if (!interestPropertyId) return;
+                      toggleFavoriteProperty(interestPropertyId);
                       incrementHeartClickCount();
                       setInterestVersion((value) => value + 1);
                     }}
@@ -1179,6 +1292,11 @@ const PropertyList = () => {
                   <p className="property-card-price">{formatCardPrice(property)}</p>
                   <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                   {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
+                  {isHistoricalMatch && (
+                    <p className="property-card-history-note">
+                      Previously available{historicalMatchDate ? ` • matched ${historicalMatchDate}` : ''}
+                    </p>
+                  )}
                 </div>
                 <div className="property-card-stats" aria-label="Property highlights">
                   <span className="property-card-stat">
