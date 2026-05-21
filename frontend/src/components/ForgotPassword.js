@@ -85,6 +85,7 @@ const ForgotPassword = () => {
             type="button"
             onClick={() => {
               setRequestSubmitted(false);
+              setHumanVerified(false);
               setError('');
             }}
           >
