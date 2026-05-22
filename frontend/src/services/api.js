@@ -23,9 +23,10 @@ const normalizeRequestPath = (urlValue = '') => {
 const isProtectedRequestPath = (method = 'GET', requestPath = '') => {
   const normalizedMethod = String(method || 'GET').toUpperCase();
   const path = String(requestPath || '');
+  const isReadOnlyMethod = normalizedMethod === 'GET' || normalizedMethod === 'HEAD';
   if (!path) return false;
-  if (path.startsWith('/alerts')) return true;
-  if (path.startsWith('/users')) return true;
+  if (path.startsWith('/alerts')) return !isReadOnlyMethod;
+  if (path.startsWith('/users')) return !isReadOnlyMethod;
   if (path.startsWith('/admin')) return true;
   if (path.startsWith('/auth/passkeys/register')) return true;
   if (/^\/properties\/[^/]+\/engagement$/.test(path)) return true;
