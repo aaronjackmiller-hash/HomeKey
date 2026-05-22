@@ -98,7 +98,11 @@ const isPasskeyChallengeValid = (user) => {
     return new Date(user.passkeyChallengeExpiresAt).getTime() > Date.now();
 };
 
-const getGoogleClientId = () => String(process.env.GOOGLE_CLIENT_ID || '').trim();
+const getGoogleClientId = () => String(
+    process.env.GOOGLE_CLIENT_ID
+    || process.env.REACT_APP_GOOGLE_CLIENT_ID
+    || ''
+).trim();
 
 const getAppleClientId = () => String(process.env.APPLE_CLIENT_ID || '').trim();
 
