@@ -1592,10 +1592,9 @@ a {
 }
 
 .property-detail-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 12px clamp(8px, 1.6vw, 22px) 30px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 24px 30px;
 }
 
 .detail-shell {
