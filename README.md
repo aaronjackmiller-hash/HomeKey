@@ -43,6 +43,22 @@ A full-stack MLS application for the Israeli real estate market built with React
 > **Auth configuration tip:** set `JWT_SECRET` in Render Environment for stable sign-in sessions across restarts.  
 > If omitted, HomeKey now auto-generates a temporary in-memory JWT secret at startup so auth still works, but all sessions are invalidated on each restart/redeploy.
 
+### Optional auth providers (Google + Passkey)
+
+If Google sign-in or passkeys are enabled in UI, configure these Render environment variables:
+
+- `GOOGLE_CLIENT_ID` (backend token verification)
+- `REACT_APP_GOOGLE_CLIENT_ID` (frontend Google SDK initialization)
+- `PASSKEY_RP_NAME` (usually `HomeKey`)
+- `PASSKEY_RP_ID` (your deploy host, for example `homekey-2.onrender.com`)
+- `PASSKEY_ORIGIN` (full origin, for example `https://homekey-2.onrender.com`)
+
+Notes:
+
+- For Google, use the same Web OAuth client ID value for both `GOOGLE_CLIENT_ID` and `REACT_APP_GOOGLE_CLIENT_ID`.
+- `REACT_APP_GOOGLE_CLIENT_ID` is a build-time frontend variable; redeploy after changing it.
+- If `PASSKEY_RP_ID` / `PASSKEY_ORIGIN` are not set in production, passkey verification defaults to localhost-only settings.
+
 ---
 
 ## 💻 Run Locally with Docker Compose
