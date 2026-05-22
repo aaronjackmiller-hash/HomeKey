@@ -509,12 +509,15 @@ const forgotPassword = async (req, res) => {
         const user = await User.findOne({ email: normalizedEmail });
         const resetMinutes = Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30);
         const resetCookieOptions = getResetCookieOptions(resetMinutes);
+        const responsePayload = {
+            success: true,
+            message: 'Request received. If an account exists for that email, a password reset link has been sent.',
+        };
 
         if (!user) {
-            return res.json({
-                success: true,
-                message: 'If an account with that email exists, password reset is now ready. Continue to Reset Password.',
-            });
+            res.clearCookie('homekey_reset_token', resetCookieOptions);
+            res.clearCookie('homekey_reset_email', resetCookieOptions);
+            return res.json(responsePayload);
         }
 
         const { rawToken, tokenHash } = buildPasswordResetToken();
@@ -527,11 +530,12 @@ const forgotPassword = async (req, res) => {
         // Keep the reset token out of public UI by storing it in an httpOnly cookie.
         res.cookie('homekey_reset_token', rawToken, resetCookieOptions);
         res.cookie('homekey_reset_email', normalizedEmail, resetCookieOptions);
-        return res.json({
-            success: true,
-            message: 'Password reset is ready. Continue to the Reset Password page within 30 minutes.',
-            expiresAt,
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            const frontendOrigin = String(process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+            responsePayload.previewResetUrl = `${frontendOrigin}/reset-password?token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(normalizedEmail)}`;
+            responsePayload.expiresAt = expiresAt;
+        }
+        return res.json(responsePayload);
     } catch (err) {
         return res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }

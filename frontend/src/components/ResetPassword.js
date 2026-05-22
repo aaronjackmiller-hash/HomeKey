@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import { resetPassword } from '../services/api';
 import PasswordField from './PasswordField';
 
 const ResetPassword = () => {
   const history = useHistory();
+  const location = useLocation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const queryParams = new URLSearchParams(location.search);
+  const resetToken = String(queryParams.get('token') || '').trim();
+  const resetEmail = String(queryParams.get('email') || '').trim();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,6 +33,8 @@ const ResetPassword = () => {
     try {
       await resetPassword({
         newPassword: password,
+        token: resetToken,
+        email: resetEmail,
       });
       setSuccess('Password updated successfully. Redirecting to sign in...');
       setTimeout(() => history.push('/login'), 1200);
@@ -43,6 +49,11 @@ const ResetPassword = () => {
     <div className="form-container">
       <h2>Reset Password</h2>
       <p className="auth-help-text">Choose a new password for your account.</p>
+      {!resetToken && (
+        <p className="auth-help-text">
+          Tip: open this page from your password-reset link, or request a new reset first.
+        </p>
+      )}
 
       {error && <p className="status-message status-message-error">{error}</p>}
       {success && <p className="status-message">{success}</p>}
