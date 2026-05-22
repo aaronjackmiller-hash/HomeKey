@@ -53,6 +53,29 @@ const resolveGoogleClientId = async () => {
   }
 };
 
+const resolveAppleConfig = async () => {
+  const envClientId = String(process.env.REACT_APP_APPLE_CLIENT_ID || '').trim();
+  const envRedirectUri = String(process.env.REACT_APP_APPLE_REDIRECT_URI || '').trim();
+  if (envClientId && envRedirectUri) {
+    return {
+      clientId: envClientId,
+      redirectUri: envRedirectUri,
+    };
+  }
+  try {
+    const config = await loadOAuthConfig();
+    return {
+      clientId: envClientId || String(config?.data?.appleClientId || '').trim(),
+      redirectUri: envRedirectUri || String(config?.data?.appleRedirectUri || '').trim(),
+    };
+  } catch (_err) {
+    return {
+      clientId: envClientId,
+      redirectUri: envRedirectUri,
+    };
+  }
+};
+
 const supportsWebAuthn = () => (
   typeof window !== 'undefined' &&
   typeof window.PublicKeyCredential !== 'undefined'
@@ -264,10 +287,9 @@ const Login = () => {
   };
 
   const handleAppleSignIn = async () => {
-    const appleClientId = process.env.REACT_APP_APPLE_CLIENT_ID;
-    const appleRedirectUri = process.env.REACT_APP_APPLE_REDIRECT_URI;
+    const { clientId: appleClientId, redirectUri: appleRedirectUri } = await resolveAppleConfig();
     if (!appleClientId || !appleRedirectUri) {
-      setError('Apple sign-in is not configured. Set REACT_APP_APPLE_CLIENT_ID and REACT_APP_APPLE_REDIRECT_URI.');
+      setError('Apple sign-in is not configured. Set APPLE_CLIENT_ID + APPLE_REDIRECT_URI (backend) or REACT_APP_APPLE_CLIENT_ID + REACT_APP_APPLE_REDIRECT_URI (frontend).');
       return;
     }
     setError('');
