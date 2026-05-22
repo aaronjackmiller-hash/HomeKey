@@ -158,7 +158,7 @@ const buildSearchQuery = ({
 const Navbar = () => {
   const history = useHistory();
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const parsedFromLocation = useMemo(
     () => parseSearchFromLocation(location.search),
     [location.search]
@@ -490,6 +490,11 @@ const Navbar = () => {
     window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
   };
 
+  const handleLogoutFromGreeting = () => {
+    logout();
+    history.push('/');
+  };
+
   return (
     <nav className="premium-header" aria-label="Primary navigation">
       <div className="premium-header__inner">
@@ -776,10 +781,16 @@ const Navbar = () => {
           <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
           <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">Saved Search</Link>
           {shouldShowGreeting ? (
-            <div className="premium-header__greeting" aria-label={`Hello ${userFirstName}`}>
+            <button
+              type="button"
+              className="premium-header__greeting"
+              aria-label={`Log out ${userFirstName}`}
+              title={`Log out ${userFirstName}`}
+              onClick={handleLogoutFromGreeting}
+            >
               <span className="premium-header__greeting-label">Hello</span>
               <span className="premium-header__greeting-name">{userFirstName}</span>
-            </div>
+            </button>
           ) : (
             <Link to="/login" className="premium-header__login">Login</Link>
           )}

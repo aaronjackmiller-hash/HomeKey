@@ -942,8 +942,24 @@ a {
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
   color: #111827;
   line-height: 1.05;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: right;
+}
+
+.premium-header__greeting:hover .premium-header__greeting-name {
+  color: #1d4ed8;
+}
+
+.premium-header__greeting:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 .premium-header__greeting-label {
