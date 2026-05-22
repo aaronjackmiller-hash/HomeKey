@@ -3,6 +3,7 @@ import { useHistory, Link } from 'react-router-dom';
 import {
   getPasskeyAuthenticationOptions,
   getPasskeyRegistrationOptions,
+  getOAuthConfig,
   loginUser,
   loginWithApple,
   loginWithGoogle,
@@ -15,6 +16,7 @@ import PasswordField from './PasswordField';
 
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+let oauthConfigPromise;
 
 const loadExternalScript = (src, id) => new Promise((resolve, reject) => {
   if (document.getElementById(id)) {
@@ -29,6 +31,27 @@ const loadExternalScript = (src, id) => new Promise((resolve, reject) => {
   script.onerror = () => reject(new Error(`Failed to load ${src}`));
   document.head.appendChild(script);
 });
+
+const loadOAuthConfig = async () => {
+  if (!oauthConfigPromise) {
+    oauthConfigPromise = getOAuthConfig().catch((err) => {
+      oauthConfigPromise = undefined;
+      throw err;
+    });
+  }
+  return oauthConfigPromise;
+};
+
+const resolveGoogleClientId = async () => {
+  const envClientId = String(process.env.REACT_APP_GOOGLE_CLIENT_ID || '').trim();
+  if (envClientId) return envClientId;
+  try {
+    const config = await loadOAuthConfig();
+    return String(config?.data?.googleClientId || '').trim();
+  } catch (_err) {
+    return '';
+  }
+};
 
 const supportsWebAuthn = () => (
   typeof window !== 'undefined' &&
@@ -183,9 +206,9 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    const googleClientId = await resolveGoogleClientId();
     if (!googleClientId) {
-      setError('Google sign-in is not configured. Set REACT_APP_GOOGLE_CLIENT_ID.');
+      setError('Google sign-in is not configured. Set GOOGLE_CLIENT_ID (backend) or REACT_APP_GOOGLE_CLIENT_ID (frontend).');
       return;
     }
     setError('');

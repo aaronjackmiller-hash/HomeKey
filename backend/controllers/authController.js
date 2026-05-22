@@ -102,6 +102,8 @@ const getGoogleClientId = () => String(process.env.GOOGLE_CLIENT_ID || '').trim(
 
 const getAppleClientId = () => String(process.env.APPLE_CLIENT_ID || '').trim();
 
+const getAppleRedirectUri = () => String(process.env.APPLE_REDIRECT_URI || '').trim();
+
 const getJoseModule = async () => import('jose');
 
 const getAppleJwks = async () => {
@@ -272,6 +274,18 @@ const loginWithGoogle = async (req, res) => {
             error: err.message,
         });
     }
+};
+
+// GET /api/auth/oauth/config
+const getOAuthConfig = async (_req, res) => {
+    return res.json({
+        success: true,
+        data: {
+            googleClientId: getGoogleClientId(),
+            appleClientId: getAppleClientId(),
+            appleRedirectUri: getAppleRedirectUri(),
+        },
+    });
 };
 
 // POST /api/auth/oauth/apple
@@ -597,6 +611,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
     register,
     login,
+    getOAuthConfig,
     loginWithGoogle,
     loginWithApple,
     getPasskeyRegistrationOptions,

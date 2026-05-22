@@ -7,6 +7,7 @@ const { protect } = require('../middleware/auth');
 const {
     register,
     login,
+    getOAuthConfig,
     loginWithGoogle,
     loginWithApple,
     getPasskeyRegistrationOptions,
@@ -110,6 +111,9 @@ router.post('/login', validateLogin, validateInput, login);
 
 // POST /api/auth/oauth/google
 router.post('/oauth/google', validateOAuthGoogle, validateInput, loginWithGoogle);
+
+// GET /api/auth/oauth/config
+router.get('/oauth/config', getOAuthConfig);
 
 // POST /api/auth/oauth/apple
 router.post('/oauth/apple', validateOAuthApple, validateInput, loginWithApple);

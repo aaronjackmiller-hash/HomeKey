@@ -83,6 +83,11 @@ export const loginUser = async (data) => {
   return response.data;
 };
 
+export const getOAuthConfig = async () => {
+  const response = await api.get('/auth/oauth/config');
+  return response.data;
+};
+
 export const loginWithGoogle = async ({ idToken, name }) => {
   const response = await api.post('/auth/oauth/google', {
     idToken,
