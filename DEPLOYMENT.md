@@ -76,8 +76,19 @@ In your Render service → **Environment** tab, add:
 | `JWT_SECRET` | A long random string (use a password manager to generate one) |
 | `JWT_EXPIRES_IN` | `7d` |
 | `NODE_ENV` | `production` |
+| `GOOGLE_CLIENT_ID` | Google Web OAuth client ID (required for backend Google auth) |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Same Google Web OAuth client ID (required for frontend Google button) |
+| `PASSKEY_RP_NAME` | `HomeKey` (or your product name) |
+| `PASSKEY_RP_ID` | Your deploy host, e.g. `homekey-2.onrender.com` |
+| `PASSKEY_ORIGIN` | Full origin, e.g. `https://homekey-2.onrender.com` |
 
 After saving, Render will automatically redeploy your service.
+
+Important:
+
+- `REACT_APP_*` variables are baked into the frontend build. If changed, trigger a redeploy.
+- For Google sign-in, both `GOOGLE_CLIENT_ID` and `REACT_APP_GOOGLE_CLIENT_ID` must be set.
+- For passkeys in production, `PASSKEY_RP_ID` and `PASSKEY_ORIGIN` must match the actual site domain/origin.
 
 ---
 

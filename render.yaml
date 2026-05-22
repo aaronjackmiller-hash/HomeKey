@@ -59,6 +59,19 @@ services:
         value: 90000
       - key: APIFY_DATASET_CLEAN
         value: true
+      # Google OAuth sign-in (required for "Continue with Google")
+      # Use the same Web OAuth client ID value for both keys.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
+      # Passkey/WebAuthn settings (required outside localhost)
+      - key: PASSKEY_RP_NAME
+        value: HomeKey
+      - key: PASSKEY_RP_ID
+        sync: false
+      - key: PASSKEY_ORIGIN
+        sync: false
       # Google Maps Platform browser key for homepage listing map markers
       - key: REACT_APP_GOOGLE_MAPS_API_KEY
         sync: false
