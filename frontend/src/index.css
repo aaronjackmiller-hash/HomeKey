@@ -1097,6 +1097,54 @@ a {
   box-shadow: 0 0 0 3px rgba(45, 62, 80, 0.16);
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 42px;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.password-visibility-toggle:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.password-visibility-toggle:focus-visible {
+  outline: 2px solid #475569;
+  outline-offset: 1px;
+}
+
+.password-visibility-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.password-visibility-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
 .primary-btn,
 .primary-button {
   border: 1px solid var(--hk-brand-charcoal);
@@ -3077,6 +3125,104 @@ body.alerts-overlay-open {
 .auth-passkey-action {
   width: 100%;
   margin-top: 8px;
+}
+
+.auth-passkey-template {
+  margin-top: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  display: grid;
+  gap: 10px;
+}
+
+.auth-passkey-template h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.35rem;
+}
+
+.auth-passkey-template__step {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.auth-passkey-template__option {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  background: #ffffff;
+  color: #0f172a;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.auth-passkey-template__option strong {
+  font-size: 1rem;
+}
+
+.auth-passkey-template__option span {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.auth-passkey-template__option:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.auth-passkey-template__coming-soon {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.auth-passkey-template__copy {
+  margin: 0;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.auth-passkey-template__benefits {
+  margin: 0;
+  padding-left: 18px;
+  color: #1e293b;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.auth-passkey-template__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-passkey-template__skip {
+  border: 0;
+  background: transparent;
+  color: #0284c7;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.auth-passkey-template__skip:hover {
+  color: #0369a1;
+}
+
+.auth-passkey-template__skip:disabled,
+.auth-passkey-template__option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .auth-divider {

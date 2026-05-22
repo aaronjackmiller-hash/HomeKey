@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import PasswordField from './PasswordField';
 
 const Register = () => {
   const { login } = useAuth();
@@ -53,10 +54,16 @@ const Register = () => {
           <label>Email</label>
           <input type="email" name="email" value={form.email} onChange={handleChange} required />
         </div>
-        <div className="input-field">
-          <label>Password</label>
-          <input type="password" name="password" value={form.password} onChange={handleChange} required minLength={6} />
-        </div>
+        <PasswordField
+          label="Password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          minLength={6}
+          disabled={loading}
+          autoComplete="new-password"
+        />
         <div className="input-field">
           <label>Phone (optional)</label>
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} />
