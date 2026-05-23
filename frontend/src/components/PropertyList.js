@@ -1318,7 +1318,7 @@ const PropertyList = () => {
               </div>
               <div className="property-card-body">
                 <div className="property-card-text-stack">
-                  <p className="property-card-price">
+                  <p className="property-card-price" dir="ltr">
                     {formatCardPrice(property, locale, t('propertyList.priceUnavailable'))}
                   </p>
                   <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
