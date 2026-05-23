@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getPropertyId } from '../utils/propertyIdentity';
+import { useLanguage } from '../context/LanguageContext';
 
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
@@ -98,10 +99,10 @@ const toAddressQuery = (property = {}) => {
   return [streetLine, city, state, country].filter(Boolean).join(', ');
 };
 
-const formatMarkerPrice = (price) => {
+const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return 'N/A';
-  return `₪${parsedPrice.toLocaleString()}`;
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
+  return `₪${parsedPrice.toLocaleString(locale)}`;
 };
 
 const hashString = (value) => {
@@ -244,6 +245,7 @@ const ConnectedListingsMapFallback = ({
   onDrawModeChange,
   isVisible = true,
 }) => {
+  const { t, locale } = useLanguage();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -271,8 +273,8 @@ const ConnectedListingsMapFallback = ({
     return Number(properties.length || 0);
   }, [properties.length, searchResultCount]);
   const formattedSearchCount = useMemo(
-    () => resolvedSearchCount.toLocaleString('en-US'),
-    [resolvedSearchCount]
+    () => resolvedSearchCount.toLocaleString(locale),
+    [resolvedSearchCount, locale]
   );
   const overlayCardStyle = useMemo(
     () => ({
@@ -463,13 +465,13 @@ const ConnectedListingsMapFallback = ({
       const propertyId = String(item.propertyId);
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
       const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
-      const priceText = formatMarkerPrice(item.property.price);
+      const priceText = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
         icon: createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides),
       });
       marker.bindPopup(
-        `<strong>${safeText(item.property.title) || 'Property listing'}</strong><br/>${priceText}<br/>${item.addressQuery}`
+        `<strong>${safeText(item.property.title) || t('map.propertyListing')}</strong><br/>${priceText}<br/>${item.addressQuery}`
       );
       marker.addTo(map);
       markersRef.current.push({
@@ -495,7 +497,7 @@ const ConnectedListingsMapFallback = ({
       }
       applyCircleFilter();
     }, 0);
-  }, [markerPreset, propertiesWithAddress, favoritePropertyIdSet]);
+  }, [markerPreset, propertiesWithAddress, favoritePropertyIdSet, locale, t]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -787,14 +789,14 @@ const ConnectedListingsMapFallback = ({
                 className="secondary-btn google-listings-map-collapse-btn"
                 onClick={() => setIsOverlayCollapsed((value) => !value)}
               >
-                {isOverlayCollapsed ? 'Expand' : 'Collapse'}
+                {isOverlayCollapsed ? t('map.expand') : t('map.collapse')}
               </button>
             </div>
           ) : null}
           {!isOverlayCollapsed ? (
             <div className="google-listings-map-copy-block">
-              <h2>Find Your Next Home</h2>
-              <p>Your perfect neighborhood is just a circle away.</p>
+              <h2>{t('map.title')}</h2>
+              <p>{t('map.subtitle')}</p>
             </div>
           ) : null}
         </header>
@@ -805,7 +807,7 @@ const ConnectedListingsMapFallback = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              Draw Search Circle
+              {t('map.drawSearchCircle')}
             </button>
             <button
               type="button"
@@ -813,9 +815,12 @@ const ConnectedListingsMapFallback = ({
               onClick={clearCircleFilter}
               disabled={!drawMode && !activeCircleRef.current}
             >
-              Clear Area
+              {t('map.clearArea')}
             </button>
-            <div className="google-listings-map-search-count" aria-label={`${formattedSearchCount} listings found`}>
+            <div
+              className="google-listings-map-search-count"
+              aria-label={t('map.listingsFoundAriaLabel', { count: formattedSearchCount })}
+            >
               <svg
                 className="google-listings-map-search-count-icon"
                 viewBox="0 0 24 24"
@@ -870,14 +875,14 @@ const ConnectedListingsMapFallback = ({
           ref={mapContainerRef}
           className={`google-listings-map-canvas connected-map-fallback-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
         />
-        <div className="google-listings-map-zoom-overlay" aria-label="Map zoom controls">
+        <div className="google-listings-map-zoom-overlay" aria-label={t('map.zoomControlsAriaLabel')}>
           <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
           <div className="google-listings-map-zoom-controls">
             <button
               type="button"
               className="google-listings-map-zoom-btn"
               onClick={() => adjustMapZoom(ZOOM_STEP)}
-              aria-label="Zoom in"
+              aria-label={t('map.zoomInAriaLabel')}
             >
               +
             </button>
@@ -885,7 +890,7 @@ const ConnectedListingsMapFallback = ({
               type="button"
               className="google-listings-map-zoom-btn"
               onClick={() => adjustMapZoom(-ZOOM_STEP)}
-              aria-label="Zoom out"
+              aria-label={t('map.zoomOutAriaLabel')}
             >
               -
             </button>
@@ -894,10 +899,17 @@ const ConnectedListingsMapFallback = ({
       </div>
       <p className="google-listings-map-caption">
         {hasActiveCircle
-          ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
+          ? t('map.showingInsideRadius', {
+            visible: markerCount,
+            total: totalMarkerCount,
+            radiusKm: (circleRadiusMeters / 1000).toFixed(2),
+          })
           : markerCount > 0
-            ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
-            : 'Map is ready. Matching listing markers will appear as addresses resolve.'}
+            ? t('map.showingMappedListings', {
+              visible: markerCount,
+              listingWord: markerCount > 1 ? t('map.listingWordPlural') : t('map.listingWordSingular'),
+            })
+            : t('map.mapReady')}
       </p>
     </div>
   );
