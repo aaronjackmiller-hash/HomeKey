@@ -32,6 +32,8 @@ const FEATURE_FILTER_OPTIONS = [
   'furnished',
   'mamad',
 ];
+const SAVE_SEARCH_AUTH_INTENT = 'save-search';
+const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
 const clampPriceValue = (value) => {
   const asNumber = Number(value);
@@ -478,11 +480,35 @@ const Navbar = () => {
       search: serialized ? `?${serialized}` : '?alerts=1',
     };
   }, [location.pathname, location.search]);
+  const loginForSaveSearchTarget = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('intent', SAVE_SEARCH_AUTH_INTENT);
+    const redirectPath = `${location.pathname || '/'}${location.search || ''}`;
+    params.set('redirect', redirectPath.startsWith('/') ? redirectPath : '/');
+    const serialized = params.toString();
+    return {
+      pathname: '/login',
+      search: serialized ? `?${serialized}` : '',
+    };
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isAuthenticated || !isListingsRoute) return;
+    if (window.sessionStorage.getItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY) !== '1') return;
+    window.sessionStorage.removeItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY);
+    setIsSavingSearch(true);
+    setSaveSearchStatus('Saving...');
+    window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+  }, [isAuthenticated, isListingsRoute]);
 
   const handleSaveCurrentSearch = () => {
     if (!isListingsRoute || isSavingSearch) return;
     if (!isAuthenticated) {
-      history.push('/login');
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY, '1');
+      }
+      history.push(loginForSaveSearchTarget);
       return;
     }
     setIsSavingSearch(true);
