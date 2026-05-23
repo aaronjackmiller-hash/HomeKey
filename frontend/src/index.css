@@ -21,6 +21,31 @@ body {
   color: var(--hk-brand-charcoal);
 }
 
+html[dir="rtl"] body {
+  direction: rtl;
+}
+
+html[dir="rtl"] .premium-header__brand,
+html[dir="rtl"] .premium-header__brand-image {
+  direction: ltr;
+}
+
+html[dir="rtl"] .premium-header__search-pill {
+  direction: rtl;
+}
+
+html[dir="rtl"] .premium-header__search-segment + .premium-header__search-segment::before {
+  right: 0;
+  left: auto;
+}
+
+html[dir="rtl"] .premium-header__search-segment input,
+html[dir="rtl"] .premium-header__price-toggle,
+html[dir="rtl"] .premium-header__rooms-toggle,
+html[dir="rtl"] .premium-header__filters-toggle {
+  text-align: right;
+}
+
 main {
   max-width: 1220px;
   margin: 0 auto;
@@ -3354,7 +3379,6 @@ legend {
     justify-self: end;
   }
 
-  .premium-header__language-toggle,
   .premium-header__cta,
   .premium-header__greeting,
   .premium-header__login {

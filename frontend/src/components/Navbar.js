@@ -4,24 +4,13 @@ import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj
 import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
-const ROOM_OPTIONS = [
-  { value: '', label: 'Any' },
-  { value: 'studio', label: 'Studio' },
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '4+', label: '4+' },
-];
-const BATH_OPTIONS = [
-  { value: '', label: 'Any' },
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3+', label: '3+' },
-];
+const ROOM_OPTION_VALUES = ['', 'studio', '1', '2', '3', '4+'];
+const BATH_OPTION_VALUES = ['', '1', '2', '3+'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
@@ -41,15 +30,15 @@ const clampPriceValue = (value) => {
   return Math.min(PRICE_SLIDER_MAX, Math.max(PRICE_SLIDER_MIN, asNumber));
 };
 
-const formatPriceSliderLabel = (value, isUpper = false) => {
+const formatPriceSliderLabel = (value, isUpper = false, locale = 'en-US') => {
   const normalized = clampPriceValue(value);
-  if (isUpper && normalized >= PRICE_SLIDER_MAX) return `₪ ${normalized.toLocaleString()}+`;
-  return `₪ ${normalized.toLocaleString()}`;
+  if (isUpper && normalized >= PRICE_SLIDER_MAX) return `₪ ${normalized.toLocaleString(locale)}+`;
+  return `₪ ${normalized.toLocaleString(locale)}`;
 };
 
-const getPriceSummaryLabel = (minValue, maxValue) => {
-  const minLabel = formatPriceSliderLabel(minValue);
-  const maxLabel = formatPriceSliderLabel(maxValue, true);
+const getPriceSummaryLabel = (minValue, maxValue, locale = 'en-US') => {
+  const minLabel = formatPriceSliderLabel(minValue, false, locale);
+  const maxLabel = formatPriceSliderLabel(maxValue, true, locale);
   return `${minLabel} - ${maxLabel}`;
 };
 
@@ -59,15 +48,21 @@ const sanitizeListingType = (rawValue) => {
   return 'all';
 };
 
-const getRoomsBathsSummaryLabel = (rooms = '', baths = '') => {
+const getRoomsBathsSummaryLabel = ({
+  rooms = '',
+  baths = '',
+  roomOptions = [],
+  bathOptions = [],
+  t,
+}) => {
   const normalizedRooms = String(rooms || '').trim();
   const normalizedBaths = String(baths || '').trim();
-  if (!normalizedRooms && !normalizedBaths) return 'Bedrooms/Baths';
-  const roomOption = ROOM_OPTIONS.find((option) => option.value === normalizedRooms);
-  const bathOption = BATH_OPTIONS.find((option) => option.value === normalizedBaths);
+  if (!normalizedRooms && !normalizedBaths) return t('navbar.roomsBathsDefault');
+  const roomOption = roomOptions.find((option) => option.value === normalizedRooms);
+  const bathOption = bathOptions.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
-  if (roomOption) summaryParts.push(`${roomOption.label}BR`);
-  if (bathOption) summaryParts.push(`${bathOption.label}BA`);
+  if (roomOption) summaryParts.push(`${roomOption.label}${t('navbar.roomSummarySuffix')}`);
+  if (bathOption) summaryParts.push(`${bathOption.label}${t('navbar.bathSummarySuffix')}`);
   return summaryParts.join(' / ');
 };
 
@@ -161,6 +156,7 @@ const Navbar = () => {
   const history = useHistory();
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
+  const { language, locale, toggleLanguage, t } = useLanguage();
   const parsedFromLocation = useMemo(
     () => parseSearchFromLocation(location.search),
     [location.search]
@@ -233,7 +229,7 @@ const Navbar = () => {
     const handleSaveSearchResult = (event) => {
       const success = Boolean(event?.detail?.success);
       setIsSavingSearch(false);
-      setSaveSearchStatus(success ? 'Saved' : 'Failed');
+      setSaveSearchStatus(success ? 'saved' : 'failed');
       if (saveSearchFeedbackTimerRef.current) {
         window.clearTimeout(saveSearchFeedbackTimerRef.current);
       }
@@ -470,7 +466,22 @@ const Navbar = () => {
   };
 
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
-  const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel(rooms, baths);
+  const roomOptions = useMemo(() => ROOM_OPTION_VALUES.map((value) => {
+    if (value === '') return { value: '', label: t('common.any') };
+    if (value === 'studio') return { value: 'studio', label: t('navbar.studio') };
+    return { value, label: value };
+  }), [t]);
+  const bathOptions = useMemo(() => BATH_OPTION_VALUES.map((value) => ({
+    value,
+    label: value === '' ? t('common.any') : value,
+  })), [t]);
+  const roomsBathsSummaryLabel = getRoomsBathsSummaryLabel({
+    rooms,
+    baths,
+    roomOptions,
+    bathOptions,
+    t,
+  });
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const likedCount = (interestSummary.favoriteIds || []).length;
   const userFirstName = getUserFirstName(user);
@@ -523,7 +534,7 @@ const Navbar = () => {
       return;
     }
     setIsSavingSearch(true);
-    setSaveSearchStatus('Saving...');
+    setSaveSearchStatus('saving');
     window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
   };
 
@@ -532,23 +543,45 @@ const Navbar = () => {
     history.push('/');
   };
 
+  const likedStateMessage = likedOnly
+    ? t('navbar.likedOnlyStateMessage')
+    : t('navbar.allListingsStateMessage');
+  const likedAriaLabel = t('navbar.likedAriaLabel', {
+    count: likedCount,
+    stateMessage: likedStateMessage,
+  });
+  const saveSearchButtonLabel = !isAuthenticated
+    ? t('navbar.signInToSave')
+    : (isSavingSearch
+      ? t('navbar.saveSearchSaving')
+      : (saveSearchStatus === 'saved'
+        ? t('navbar.saveSearchSaved')
+        : (saveSearchStatus === 'failed' ? t('navbar.saveSearchFailed') : t('navbar.saveSearch'))));
+  const languageTarget = language === 'he' ? 'English' : 'עברית';
+  const languageDisplayCode = language === 'he' ? 'HE' : 'EN';
+  const homeKeyBrand = t('brand.homeKey');
+
   return (
-    <nav className="premium-header" aria-label="Primary navigation">
+    <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
       <div className="premium-header__inner">
         <div className="premium-header__brand-cell">
-          <Link to="/" className="premium-header__brand" aria-label="HomeKey home">
-            <img className="premium-header__brand-image" src={homeKeyWordmark} alt="HomeKey logo" />
+          <Link
+            to="/"
+            className="premium-header__brand"
+            aria-label={t('navbar.homeAriaLabel', { brand: homeKeyBrand })}
+          >
+            <img className="premium-header__brand-image" src={homeKeyWordmark} alt={`${homeKeyBrand} logo`} />
           </Link>
         </div>
 
         <div className="premium-header__search-cell">
           <form className="premium-header__search-form" onSubmit={handleHeaderSearchSubmit}>
-            <div className="premium-header__search-pill" role="group" aria-label="Property search">
+            <div className="premium-header__search-pill" role="group" aria-label={t('navbar.propertySearchAriaLabel')}>
               <div className="premium-header__search-segment premium-header__search-segment--location">
                 <input
                   id="header-search-query"
                   type="text"
-                  placeholder="Search city, neighborhood or listing"
+                  placeholder={t('navbar.searchPlaceholder')}
                   className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
@@ -570,16 +603,16 @@ const Navbar = () => {
                     setPriceExpanded((isExpanded) => !isExpanded);
                   }}
                 >
-                  <span>Price</span>
+                  <span>{t('navbar.price')}</span>
                 </button>
                 <div
                   id="header-price-slider-panel"
                   className={`premium-header__price-panel ${priceExpanded ? 'is-open' : ''}`}
                 >
                   <div className="premium-header__price-values" aria-hidden="true">
-                    <span>{formatPriceSliderLabel(minPriceInput)}</span>
+                    <span>{formatPriceSliderLabel(minPriceInput, false, locale)}</span>
                     <span>—</span>
-                    <span>{formatPriceSliderLabel(maxPriceInput, true)}</span>
+                    <span>{formatPriceSliderLabel(maxPriceInput, true, locale)}</span>
                   </div>
                   <div
                     className="premium-header__price-track"
@@ -603,7 +636,7 @@ const Navbar = () => {
                       onKeyUp={handlePriceInteractionEnd}
                       onBlur={handlePriceInteractionEnd}
                       className={`premium-header__price-slider premium-header__price-slider--min ${activePriceHandle === 'min' ? 'is-active' : ''}`}
-                      aria-label="Minimum price"
+                      aria-label={t('navbar.minimumPriceAriaLabel')}
                     />
                     <input
                       type="range"
@@ -620,7 +653,7 @@ const Navbar = () => {
                       onKeyUp={handlePriceInteractionEnd}
                       onBlur={handlePriceInteractionEnd}
                       className={`premium-header__price-slider premium-header__price-slider--max ${activePriceHandle === 'max' ? 'is-active' : ''}`}
-                      aria-label="Maximum price"
+                      aria-label={t('navbar.maximumPriceAriaLabel')}
                     />
                   </div>
                 </div>
@@ -652,9 +685,9 @@ const Navbar = () => {
                   className={`premium-header__rooms-panel ${roomsBathsExpanded ? 'is-open' : ''}`}
                 >
                   <div className="premium-header__rooms-section">
-                    <p className="premium-header__rooms-section-title">Bedrooms</p>
+                    <p className="premium-header__rooms-section-title">{t('navbar.bedrooms')}</p>
                     <div className="premium-header__rooms-options-grid">
-                      {ROOM_OPTIONS.map((option) => (
+                      {roomOptions.map((option) => (
                         <button
                           key={option.value || 'any-rooms'}
                           type="button"
@@ -667,9 +700,9 @@ const Navbar = () => {
                     </div>
                   </div>
                   <div className="premium-header__rooms-section">
-                    <p className="premium-header__rooms-section-title">Bathrooms</p>
+                    <p className="premium-header__rooms-section-title">{t('navbar.bathrooms')}</p>
                     <div className="premium-header__rooms-options-grid premium-header__rooms-options-grid--baths">
-                      {BATH_OPTIONS.map((option) => (
+                      {bathOptions.map((option) => (
                         <button
                           key={option.value || 'any-baths'}
                           type="button"
@@ -693,7 +726,7 @@ const Navbar = () => {
                         applySearch({ nextRooms: '', nextBaths: '' });
                       }}
                     >
-                      Clear All Selections
+                      {t('navbar.clearSelections')}
                     </button>
                     <button
                       type="button"
@@ -705,7 +738,7 @@ const Navbar = () => {
                         setRoomsBathsExpanded(false);
                       }}
                     >
-                      Done
+                      {t('navbar.done')}
                     </button>
                   </div>
                 </div>
@@ -723,7 +756,7 @@ const Navbar = () => {
                   aria-expanded={filtersExpanded}
                   aria-controls="header-filters-panel"
                 >
-                  <span>All Filters</span>
+                  <span>{t('navbar.allFilters')}</span>
                 </button>
                 <div
                   id="header-filters-panel"
@@ -746,7 +779,7 @@ const Navbar = () => {
                     className="mobile-filter-sheet-close-btn"
                     onClick={() => setFiltersExpanded(false)}
                   >
-                    Show Results
+                    {t('navbar.showResults')}
                   </button>
                 </div>
                 {filtersExpanded && (
@@ -768,7 +801,9 @@ const Navbar = () => {
                 )}
               </div>
             </div>
-            <button type="submit" className="premium-header__search-submit" aria-label="Apply search">Search</button>
+            <button type="submit" className="premium-header__search-submit" aria-label={t('navbar.applySearchAriaLabel')}>
+              {t('navbar.search')}
+            </button>
           </form>
         </div>
 
@@ -782,7 +817,7 @@ const Navbar = () => {
               applySearch({ nextLikedOnly });
             }}
             aria-live="polite"
-            aria-label={`Liked apartments ${likedCount}. ${likedOnly ? 'Showing only liked apartments.' : 'Showing all apartments.'}`}
+            aria-label={likedAriaLabel}
             aria-pressed={likedOnly}
           >
             <span className={`premium-header__likes-heart ${likedOnly ? 'is-active' : ''}`} aria-hidden="true">
@@ -793,7 +828,7 @@ const Navbar = () => {
               </span>
             </span>
             <div className="premium-header__likes-copy">
-              <span>Liked {likedCount}</span>
+              <span>{t('navbar.likedCount', { count: likedCount })}</span>
             </div>
           </button>
         </div>
@@ -802,34 +837,42 @@ const Navbar = () => {
           {isListingsRoute && (
             <button
               type="button"
-              className={`premium-header__save-search-btn ${saveSearchStatus === 'Saved' ? 'is-success' : ''}`}
+              className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
               onClick={handleSaveCurrentSearch}
               disabled={isSavingSearch}
             >
-              {!isAuthenticated ? 'Sign in to Save' : (isSavingSearch ? 'Saving...' : (saveSearchStatus || 'Save Search'))}
+              {saveSearchButtonLabel}
             </button>
           )}
-          <button className="premium-header__language-toggle" type="button" aria-label="Toggle language">
+          <button
+            className="premium-header__language-toggle"
+            type="button"
+            aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+            title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+            onClick={toggleLanguage}
+          >
             <span className="premium-header__flag-icon" aria-hidden="true">
               <span className="premium-header__flag-star">✡</span>
             </span>
-            <span className="premium-header__language-text">He</span>
+            <span className="premium-header__language-text">{languageDisplayCode}</span>
           </button>
-          <Link to="/add-listing" className="premium-header__cta">List a Property</Link>
-          <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">Saved Search</Link>
+          <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+          <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
+            {t('navbar.savedSearch')}
+          </Link>
           {shouldShowGreeting ? (
             <button
               type="button"
               className="premium-header__greeting"
-              aria-label={`Log out ${userFirstName}`}
-              title={`Log out ${userFirstName}`}
+              aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
+              title={t('navbar.logoutAriaLabel', { name: userFirstName })}
               onClick={handleLogoutFromGreeting}
             >
-              <span className="premium-header__greeting-label">Hello</span>
+              <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
               <span className="premium-header__greeting-name">{userFirstName}</span>
             </button>
           ) : (
-            <Link to="/login" className="premium-header__login">Login</Link>
+            <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
           )}
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   useLocation,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/Navbar';
 import PropertyList from './components/PropertyList';
 import PropertyDetail from './components/PropertyDetail';
@@ -112,9 +113,11 @@ const AppRoutes = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <LanguageProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </LanguageProvider>
     </AuthProvider>
   );
 };
