@@ -16,6 +16,7 @@ import {
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName } from '../utils/contactMessaging';
 import { writeSavedSearchContext } from '../utils/savedSearchContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -59,15 +60,15 @@ const FEATURE_KEYWORDS = {
   mamad: ['mamad', 'security room', 'safe room', 'ממד', 'ממ״ד'],
 };
 
-const formatCurrency = (value) => {
+const formatCurrency = (value, locale = 'en-US') => {
   if (value == null || Number.isNaN(Number(value))) return '—';
-  return `₪${Number(value).toLocaleString()}`;
+  return `₪${Number(value).toLocaleString(locale)}`;
 };
 
-const formatCardPrice = (property = {}) => {
+const formatCardPrice = (property = {}, locale = 'en-US', unavailableLabel = 'Price unavailable') => {
   const asNumber = Number(property.price);
-  if (Number.isNaN(asNumber)) return 'Price unavailable';
-  const base = `₪${asNumber.toLocaleString()}`;
+  if (Number.isNaN(asNumber)) return unavailableLabel;
+  const base = `₪${asNumber.toLocaleString(locale)}`;
   return String(property.type || '').toLowerCase() === 'rental' ? `${base}/mo` : base;
 };
 
@@ -543,6 +544,8 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
 };
 
 const PropertyList = () => {
+  const { t, locale } = useLanguage();
+  const homeKeyBrand = t('brand.homeKey');
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
   const [citySearch, setCitySearch] = useState('');
@@ -609,7 +612,7 @@ const PropertyList = () => {
         unavailableReason:
           statusErr.response?.data?.message ||
           statusErr.message ||
-          'Unable to load live Yad2 sync diagnostics.',
+          t('diagnostics.unableToLoadLiveSync'),
       });
     }
   };
@@ -619,19 +622,21 @@ const PropertyList = () => {
       return liveSyncStatus.unavailableReason.trim();
     }
     if (liveSyncStatus && typeof liveSyncStatus.lastError === 'string' && liveSyncStatus.lastError.trim()) {
-      return `Last sync failed: ${liveSyncStatus.lastError.trim()}.`;
+      return t('diagnostics.lastSyncFailed', { error: liveSyncStatus.lastError.trim() });
     }
     if (liveSyncStatus && liveSyncStatus.lastResult?.skipped) {
-      return `Last sync was skipped: ${liveSyncStatus.lastResult.reason || 'Unknown reason'}.`;
+      return t('diagnostics.lastSyncSkipped', {
+        reason: liveSyncStatus.lastResult.reason || t('diagnostics.unknownReason'),
+      });
     }
     if (liveSyncStatus && liveSyncStatus.lastResult?.fetched === 0) {
-      return 'Last sync returned zero listings from the feed.';
+      return t('diagnostics.lastSyncZeroResults');
     }
     if (liveSyncStatus && !liveSyncStatus.lastFinishedAt) {
-      return 'A live Yad2 sync has not completed yet.';
+      return t('diagnostics.syncNotCompleted');
     }
     if (error && error !== '__starting_up__') return error;
-    return 'Retry shortly while live feed diagnostics refresh.';
+    return t('diagnostics.retryShortly');
   };
 
   const getTopSyncErrorReasons = () => {
@@ -644,13 +649,15 @@ const PropertyList = () => {
   const getLiveSyncSummary = () => {
     if (!liveSyncStatus || typeof liveSyncStatus !== 'object') return '';
     const summary = [];
-    summary.push(`Feed URL: ${liveSyncStatus.feedUrlConfigured ? 'configured' : 'missing'}`);
+    summary.push(t('diagnostics.feedUrlStatus', {
+      state: liveSyncStatus.feedUrlConfigured ? t('diagnostics.configured') : t('diagnostics.missing'),
+    }));
     const lastFinished = formatTimestamp(liveSyncStatus.lastFinishedAt);
-    if (lastFinished) summary.push(`Last sync: ${lastFinished}`);
+    if (lastFinished) summary.push(t('diagnostics.lastSyncSummary', { value: lastFinished }));
     const fetched = liveSyncStatus.lastResult?.fetched;
-    if (typeof fetched === 'number') summary.push(`Fetched: ${fetched}`);
+    if (typeof fetched === 'number') summary.push(t('diagnostics.fetchedSummary', { value: fetched }));
     const pruned = liveSyncStatus.lastResult?.pruned;
-    if (typeof pruned === 'number') summary.push(`Pruned: ${pruned}`);
+    if (typeof pruned === 'number') summary.push(t('diagnostics.prunedSummary', { value: pruned }));
     return summary.join(' • ');
   };
 
@@ -798,15 +805,15 @@ const PropertyList = () => {
           if (!usedCachedLiveListings) setError('__starting_up__');
         } else if (canFallbackToDemo) {
           if (!usedCachedLiveListings) {
-            setError('Using demo listings while the database is unavailable.');
+            setError(t('diagnostics.demoFallback'));
           } else {
             // Cached listings keep the experience usable; avoid blocking error state.
             setError('');
           }
         } else if (isTimeout) {
-          setError('The server is taking too long to respond. It may still be starting up — please try again in a moment.');
+          setError(t('diagnostics.serverTimeout'));
         } else {
-          setError(`Failed to load properties (HTTP ${status || 'unknown'}). Please try again.`);
+          setError(t('diagnostics.failedToLoadProperties', { status: status || 'unknown' }));
         }
       } finally {
         clearTimeout(slowTimer);
@@ -816,7 +823,7 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, retryCount]);
+  }, [filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, retryCount, t]);
 
   useEffect(() => () => {
     if (listScrollTimeoutRef.current) {
@@ -1035,8 +1042,12 @@ const PropertyList = () => {
     if (typeof window === 'undefined') return undefined;
     const handleSaveCurrentSearch = async () => {
       const cityLabel = citySearch.trim() || circleCityHints[0] || '';
-      const typeLabel = filter === 'sale' ? 'Sale' : filter === 'rental' ? 'Rental' : 'Search';
-      const generatedName = `${cityLabel || 'My'} ${typeLabel} ${new Date().toLocaleDateString('en-CA')}`;
+      const typeLabel = filter === 'sale'
+        ? t('propertyList.sale')
+        : filter === 'rental'
+          ? t('propertyList.rental')
+          : t('propertyList.searchNameType');
+      const generatedName = `${cityLabel || t('propertyList.my')} ${typeLabel} ${new Date().toLocaleDateString(locale)}`;
       const payload = {
         name: generatedName,
         enabled: true,
@@ -1079,7 +1090,7 @@ const PropertyList = () => {
         window.dispatchEvent(new CustomEvent('homekey:save-current-search-result', {
           detail: {
             success: false,
-            message: err.response?.data?.message || 'Unable to save this search right now.',
+            message: err.response?.data?.message || t('diagnostics.saveSearchFailed'),
           },
         }));
       }
@@ -1102,9 +1113,13 @@ const PropertyList = () => {
     propertyCategorySearch,
     roomsSearch,
     bathsSearch,
+    locale,
+    t,
   ]);
 
-  const mobileListingHeaderTitle = loading ? 'Loading homes...' : `${displayProperties.length} homes`;
+  const mobileListingHeaderTitle = loading
+    ? t('propertyList.loadingHomes')
+    : t('propertyList.homesCount', { count: displayProperties.length.toLocaleString(locale) });
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
 
   const openMobileFilters = () => {
@@ -1150,8 +1165,8 @@ const PropertyList = () => {
       return (
         <p className="status-message">
           {slowLoad
-            ? 'Server is taking a moment to respond… please wait.'
-            : 'Loading properties…'}
+            ? t('propertyList.serverTakingMoment')
+            : t('propertyList.loadingProperties')}
         </p>
       );
     }
@@ -1161,7 +1176,7 @@ const PropertyList = () => {
         <div className="status-panel">
           <p className="status-message status-message-error">{error}</p>
           <button className="secondary-btn" onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
-            Try Again
+            {t('propertyList.tryAgain')}
           </button>
         </div>
       );
@@ -1172,7 +1187,9 @@ const PropertyList = () => {
         {savedSearchHistoryMode && (
           <div className="saved-search-history-cap">
             <p>
-              {`Showing ${activeDisplayProperties.length.toLocaleString()} active and previous matches for your saved search area`}
+              {t('propertyList.savedSearchHistorySummary', {
+                activeCount: activeDisplayProperties.length.toLocaleString(locale),
+              })}
             </p>
           </div>
         )}
@@ -1180,8 +1197,8 @@ const PropertyList = () => {
           <div className="status-banner">
             <p>
               {error === '__starting_up__'
-                ? `⏳ Connecting to database… retrying in ${autoRetrySecondsLeft}s. Showing demo listings in the meantime.`
-                : '⚡ Live Yad2 feed is currently unavailable.'}
+                ? `⏳ ${t('propertyList.connectingToDatabase', { seconds: autoRetrySecondsLeft })}`
+                : `⚡ ${t('propertyList.liveFeedUnavailable')}`}
             </p>
             {error !== '__starting_up__' && (
               <p>{getLiveUnavailableReason()}</p>
@@ -1189,7 +1206,7 @@ const PropertyList = () => {
             {error !== '__starting_up__' && getLiveSyncSummary() && <p>{getLiveSyncSummary()}</p>}
             {error !== '__starting_up__' && getTopSyncErrorReasons().length > 0 && (
               <div>
-                <p><strong>Top sync error reasons:</strong></p>
+                <p><strong>{t('propertyList.topSyncErrorReasons')}</strong></p>
                 <ol>
                   {getTopSyncErrorReasons().map((reason, idx) => (
                     <li key={`sync-reason-${idx}`}>{reason}</li>
@@ -1201,11 +1218,13 @@ const PropertyList = () => {
               className="secondary-btn"
               onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}
             >
-              Retry Connection
+              {t('propertyList.retryConnection')}
             </button>
           </div>
         )}
-        {!dbIsEmpty && displayProperties.length === 0 && <p className="status-message">No properties found.</p>}
+        {!dbIsEmpty && displayProperties.length === 0 && (
+          <p className="status-message">{t('propertyList.noPropertiesFound')}</p>
+        )}
         {displayProperties.map((property, index) => {
           if (!property || typeof property !== 'object') return null;
           const isHistoricalMatch = property.isHistoricalMatch === true;
@@ -1226,7 +1245,7 @@ const PropertyList = () => {
           const bathroomCount = getBathroomCount(property);
           const titleFromData = sanitizeReadableText(property, property.title);
           const displayLocation = sanitizeReadableText(property, locationLine);
-          const displayTitle = displayStreet || titleFromData || displayLocation || 'Property listing';
+          const displayTitle = displayStreet || titleFromData || displayLocation || t('propertyList.propertyListingFallback');
           const shouldShowLocation = Boolean(
             displayLocation
             && displayLocation.toLowerCase() !== displayTitle.toLowerCase()
@@ -1240,7 +1259,7 @@ const PropertyList = () => {
             : '';
           const virtualTourHref = normalizeVirtualTourUrl(property.virtualTourUrl);
           const hasVirtualTour = Boolean(virtualTourHref);
-          const whatsappButtonLabel = 'WhatsApp';
+          const whatsappButtonLabel = t('propertyList.whatsapp');
           const historicalMatchDate = formatHistoryBadgeDate(property.historyMatchedAt);
           const openPropertyDetail = () => {
             if (!canOpenDetail) return;
@@ -1254,24 +1273,28 @@ const PropertyList = () => {
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
               <div className="property-card-image-wrap">
-                <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || 'Property listing'} />
+                <img
+                  className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
+                  src={imageSrc}
+                  alt={displayTitle || t('propertyList.propertyListingFallback')}
+                />
                 <div className="property-card-top-tags">
                   <span className={`property-card-listing-badge ${isHistoricalMatch ? 'property-card-listing-badge--history' : ''}`}>
                     {isHistoricalMatch ? (
-                      <span>Past match</span>
+                      <span>{t('propertyList.pastMatch')}</span>
                     ) : (
                       <>
                         <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
                           <path d="m2.2 6.4 2.2 2.3 5.4-5.4" />
                         </svg>
-                        <span>Verified Listing</span>
+                        <span>{t('propertyList.verifiedListing')}</span>
                       </>
                     )}
                   </span>
                   <button
                     type="button"
                     className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
-                    aria-label={isFavorite ? 'Remove favorite from listing' : 'Add favorite to listing'}
+                    aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
                     aria-pressed={isFavorite}
                     disabled={!interestPropertyId}
                     onClick={(event) => {
@@ -1295,16 +1318,19 @@ const PropertyList = () => {
               </div>
               <div className="property-card-body">
                 <div className="property-card-text-stack">
-                  <p className="property-card-price">{formatCardPrice(property)}</p>
+                  <p className="property-card-price">
+                    {formatCardPrice(property, locale, t('propertyList.priceUnavailable'))}
+                  </p>
                   <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>
                   {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
                   {isHistoricalMatch && (
                     <p className="property-card-history-note">
-                      Previously available{historicalMatchDate ? ` • matched ${historicalMatchDate}` : ''}
+                      {t('propertyList.previouslyAvailable')}
+                      {historicalMatchDate ? ` • ${t('propertyList.matched')} ${historicalMatchDate}` : ''}
                     </p>
                   )}
                 </div>
-                <div className="property-card-stats" aria-label="Property highlights">
+                <div className="property-card-stats" aria-label={t('propertyList.propertyHighlights')}>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                       <path d="M3.5 12v5" />
@@ -1313,7 +1339,7 @@ const PropertyList = () => {
                       <path d="M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12" />
                       <path d="M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
                     </svg>
-                    <span>{bedroomCount ?? '—'} Beds</span>
+                    <span>{bedroomCount ?? '—'} {t('propertyList.beds')}</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -1321,7 +1347,7 @@ const PropertyList = () => {
                       <path d="M8 12V9.5A2.5 2.5 0 0 1 10.5 7h2A1.5 1.5 0 0 1 14 8.5v0A1.5 1.5 0 0 1 12.5 10H11" />
                       <path d="M7.5 19v1.5M16.5 19v1.5" />
                     </svg>
-                    <span>{bathroomCount ?? '—'} Baths</span>
+                    <span>{bathroomCount ?? '—'} {t('propertyList.baths')}</span>
                   </span>
                   <span className="property-card-stat">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -1330,7 +1356,7 @@ const PropertyList = () => {
                       <path d="M5 14h2v3h3v2H5z" />
                       <path d="M17 17v-3h2v5h-5v-2z" />
                     </svg>
-                    <span>{property.size ?? '—'} sqm</span>
+                    <span>{property.size ?? '—'} {t('propertyList.sqm')}</span>
                   </span>
                 </div>
                 <div className="property-card-actions">
@@ -1344,7 +1370,7 @@ const PropertyList = () => {
                         window.open(virtualTourHref, '_blank', 'noopener,noreferrer');
                       }}
                     >
-                      3D Tour
+                      {t('propertyList.tour3d')}
                     </button>
                   )}
                   <button
@@ -1356,7 +1382,7 @@ const PropertyList = () => {
                     }}
                     disabled={!canOpenDetail}
                   >
-                    View Details
+                    {t('propertyList.viewDetails')}
                   </button>
                   {!isMobileViewport && (
                     <button
@@ -1377,7 +1403,7 @@ const PropertyList = () => {
                     </button>
                   )}
                   {isMobileViewport && (hasVirtualTour || agentHasWhatsApp) && (
-                    <div className="property-card-mobile-quick-actions" aria-label="Quick property actions">
+                    <div className="property-card-mobile-quick-actions" aria-label={t('propertyList.quickPropertyActions')}>
                       {hasVirtualTour && (
                         <button
                           type="button"
@@ -1388,7 +1414,7 @@ const PropertyList = () => {
                             window.open(virtualTourHref, '_blank', 'noopener,noreferrer');
                           }}
                         >
-                          3D Tour
+                          {t('propertyList.tour3d')}
                         </button>
                       )}
                       {agentHasWhatsApp && (
@@ -1401,14 +1427,16 @@ const PropertyList = () => {
                             window.open(cardWhatsAppHref, '_blank', 'noopener,noreferrer');
                           }}
                         >
-                          WhatsApp
+                          {t('propertyList.whatsapp')}
                         </button>
                       )}
                     </div>
                   )}
                 </div>
                 {monthly != null && (
-                  <p className="property-card-extra">Estimated monthly: {formatCurrency(monthly)}</p>
+                  <p className="property-card-extra">
+                    {t('propertyList.estimatedMonthly', { value: formatCurrency(monthly, locale) })}
+                  </p>
                 )}
               </div>
             </div>
@@ -1422,15 +1450,17 @@ const PropertyList = () => {
     <div className="property-list-page">
       <section
         className={`desktop-discovery-layout ${mobileDiscoveryView === 'list' ? 'mobile-list-active' : 'mobile-map-active'}`}
-        aria-label="Listings and map layout"
+        aria-label={t('propertyList.listingMapLayoutAriaLabel')}
       >
         <div
           className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`}
           onScroll={handleListScroll}
         >
-          <section className="mobile-listing-header" aria-label="Listing quick controls">
+          <section className="mobile-listing-header" aria-label={t('propertyList.listingQuickControlsAriaLabel')}>
             <div className="mobile-listing-header-copy">
-              <p className="mobile-listing-header-eyebrow">HomeKey listings</p>
+              <p className="mobile-listing-header-eyebrow">
+                {t('propertyList.mobileHeaderEyebrow', { brand: homeKeyBrand })}
+              </p>
               <h2>{mobileListingHeaderTitle}</h2>
             </div>
             <button
@@ -1438,7 +1468,7 @@ const PropertyList = () => {
               className="mobile-listing-header-filter-btn"
               onClick={openMobileFilters}
             >
-              Filters
+              {t('propertyList.filters')}
             </button>
           </section>
           <div className="homepage-hero-shell">
@@ -1453,7 +1483,7 @@ const PropertyList = () => {
               <div className="hero-banner-grid">
                 <div className="hero-banner-copy">
                   <div className="hero-banner-copy-text">
-                    <h1>Find Your Next Home in Israel</h1>
+                    <h1>{t('propertyList.heroTitle')}</h1>
                   </div>
                   <div className="hero-banner-logo" aria-hidden="true" />
                 </div>
@@ -1479,13 +1509,13 @@ const PropertyList = () => {
                 });
               }}
             >
-              {favoritesOnly ? 'Show All Listings' : 'Show Favorites Only'}
+              {favoritesOnly ? t('propertyList.showAllListings') : t('propertyList.showFavoritesOnly')}
             </button>
           </div>
           <div className="property-interest-summary" aria-live="polite">
             <div className="property-interest-summary-counts">
-              <span>Favorites: {favoritesCount}</span>
-              <span>Saved file: {savedCount}</span>
+              <span>{t('propertyList.favorites')}: {favoritesCount}</span>
+              <span>{t('propertyList.savedFile')}: {savedCount}</span>
             </div>
           </div>
           <div className="desktop-discovery-list-scroll">
@@ -1493,7 +1523,7 @@ const PropertyList = () => {
           </div>
         </div>
         <div className="desktop-discovery-map-column">
-          <section className="google-listings-map-card" aria-label="Apartment location map">
+          <section className="google-listings-map-card" aria-label={t('propertyList.apartmentLocationMap')}>
             <GoogleListingsMap
               properties={loading ? [] : mapSourceProperties}
               searchResultCount={loading ? 0 : displayProperties.length}
@@ -1506,15 +1536,15 @@ const PropertyList = () => {
           </section>
         </div>
       </section>
-      <div className="mobile-thumb-zone-controls" aria-label="Thumb-zone map controls">
-        <div className="mobile-discovery-toggle" role="group" aria-label="Switch between map and list views">
+      <div className="mobile-thumb-zone-controls" aria-label={t('propertyList.thumbZoneMapControls')}>
+        <div className="mobile-discovery-toggle" role="group" aria-label={t('propertyList.switchBetweenMapAndList')}>
           <button
             type="button"
             className={`mobile-discovery-toggle-btn ${mobileDiscoveryView === 'map' ? 'is-active' : ''}`}
             onClick={() => setMobileDiscoveryView('map')}
             aria-pressed={mobileDiscoveryView === 'map'}
           >
-            Map
+            {t('common.map')}
           </button>
           <button
             type="button"
@@ -1522,7 +1552,7 @@ const PropertyList = () => {
             onClick={() => setMobileDiscoveryView('list')}
             aria-pressed={mobileDiscoveryView === 'list'}
           >
-            List
+            {t('common.list')}
           </button>
         </div>
       </div>

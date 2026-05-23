@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import { getPropertyId } from '../utils/propertyIdentity';
+import { useLanguage } from '../context/LanguageContext';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -177,10 +178,10 @@ const getMarkerImageUrl = (property, propertyId) => {
 const getMarkerStylePreset = (presetKey) =>
   MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
 
-const formatMarkerPrice = (price) => {
+const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return 'N/A';
-  return `₪${parsedPrice.toLocaleString()}`;
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
+  return `₪${parsedPrice.toLocaleString(locale)}`;
 };
 
 const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}) => {
@@ -292,6 +293,7 @@ const GoogleListingsMap = ({
   onDrawModeChange,
   isVisible = true,
 }) => {
+  const { t, locale } = useLanguage();
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -328,8 +330,8 @@ const GoogleListingsMap = ({
     return Number(properties.length || 0);
   }, [properties.length, searchResultCount]);
   const formattedSearchCount = useMemo(
-    () => resolvedSearchCount.toLocaleString('en-US'),
-    [resolvedSearchCount]
+    () => resolvedSearchCount.toLocaleString(locale),
+    [resolvedSearchCount, locale]
   );
   const overlayCardStyle = useMemo(
     () => ({
@@ -512,13 +514,13 @@ const GoogleListingsMap = ({
       })
       .catch((err) => {
         if (cancelled) return;
-        setMapError(err.message || 'Unable to load Google Maps.');
+        setMapError(err.message || t('map.unableToLoadMap'));
       });
 
     return () => {
       cancelled = true;
     };
-  }, [apiKey]);
+  }, [apiKey, t]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !geocoderRef.current || !window.google || !window.google.maps) return undefined;
@@ -569,7 +571,7 @@ const GoogleListingsMap = ({
         const propertyId = String(item.propertyId);
         const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
         const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
-        const markerPrice = formatMarkerPrice(item.property.price);
+        const markerPrice = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const markerIcon = isHousePinPreset
           ? createHousePinIcon(mapsApi, markerPreset)
@@ -601,8 +603,10 @@ const GoogleListingsMap = ({
         });
 
         marker.addListener('click', () => {
-          const title = safeText(item.property.title) || 'Property listing';
-          const price = item.property.price != null ? `₪${Number(item.property.price).toLocaleString()}` : 'Price unavailable';
+          const title = safeText(item.property.title) || t('map.propertyListing');
+          const price = item.property.price != null
+            ? `₪${Number(item.property.price).toLocaleString(locale)}`
+            : t('map.priceUnavailable');
           const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
           const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
           const safeTitle = escapeHtml(title);
@@ -615,7 +619,7 @@ const GoogleListingsMap = ({
               <a href="${safeListingHref}" style="display:block;color:inherit;text-decoration:none;">
                 <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:96px;object-fit:cover;border-radius:8px;margin:0 0 8px;" />
                 <strong>${safeTitle}</strong><br />${safePrice}<br /><span>${safeAddress}</span>
-                <div style="margin-top:8px;color:#0e8a88;font-weight:700;">View full listing ›</div>
+                <div style="margin-top:8px;color:#0e8a88;font-weight:700;">${escapeHtml(t('map.infoWindowCta'))} ›</div>
               </a>
             </div>`
           );
@@ -672,7 +676,7 @@ const GoogleListingsMap = ({
       markerHydrationInProgressRef.current = false;
       expectedMarkerCountRef.current = 0;
     };
-  }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet]);
+  }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t]);
 
   useEffect(() => {
     if (!isVisible || !mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
@@ -1143,14 +1147,14 @@ const GoogleListingsMap = ({
                 className="secondary-btn google-listings-map-collapse-btn"
                 onClick={() => setIsOverlayCollapsed((value) => !value)}
               >
-                {isOverlayCollapsed ? 'Expand' : 'Collapse'}
+                {isOverlayCollapsed ? t('map.expand') : t('map.collapse')}
               </button>
             </div>
           ) : null}
           {!isOverlayCollapsed ? (
             <div className="google-listings-map-copy-block">
-              <h2>Find Your Next Home</h2>
-              <p>Your perfect neighborhood is just a circle away.</p>
+              <h2>{t('map.title')}</h2>
+              <p>{t('map.subtitle')}</p>
             </div>
           ) : null}
         </header>
@@ -1161,7 +1165,7 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              Draw Search Circle
+              {t('map.drawSearchCircle')}
             </button>
             <button
               type="button"
@@ -1169,9 +1173,12 @@ const GoogleListingsMap = ({
               onClick={clearCircleFilter}
               disabled={!drawMode && !activeCircleRef.current}
             >
-              Clear Area
+              {t('map.clearArea')}
             </button>
-            <div className="google-listings-map-search-count" aria-label={`${formattedSearchCount} listings found`}>
+            <div
+              className="google-listings-map-search-count"
+              aria-label={t('map.listingsFoundAriaLabel', { count: formattedSearchCount })}
+            >
               <svg
                 className="google-listings-map-search-count-icon"
                 viewBox="0 0 24 24"
@@ -1226,14 +1233,14 @@ const GoogleListingsMap = ({
           ref={mapContainerRef}
           className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
         />
-        <div className="google-listings-map-zoom-overlay" aria-label="Map zoom controls">
+        <div className="google-listings-map-zoom-overlay" aria-label={t('map.zoomControlsAriaLabel')}>
           <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
           <div className="google-listings-map-zoom-controls">
             <button
               type="button"
               className="google-listings-map-zoom-btn"
               onClick={() => adjustMapZoom(ZOOM_STEP)}
-              aria-label="Zoom in"
+              aria-label={t('map.zoomInAriaLabel')}
             >
               +
             </button>
@@ -1241,7 +1248,7 @@ const GoogleListingsMap = ({
               type="button"
               className="google-listings-map-zoom-btn"
               onClick={() => adjustMapZoom(-ZOOM_STEP)}
-              aria-label="Zoom out"
+              aria-label={t('map.zoomOutAriaLabel')}
             >
               -
             </button>
@@ -1250,10 +1257,17 @@ const GoogleListingsMap = ({
       </div>
       <p className="google-listings-map-caption">
         {circleRadiusMeters > 0
-          ? `Showing ${markerCount} of ${totalMarkerCount} mapped listings inside ${(circleRadiusMeters / 1000).toFixed(2)} km.`
+          ? t('map.showingInsideRadius', {
+            visible: markerCount,
+            total: totalMarkerCount,
+            radiusKm: (circleRadiusMeters / 1000).toFixed(2),
+          })
           : markerCount > 0
-            ? `Showing ${markerCount} mapped listing${markerCount > 1 ? 's' : ''}.`
-            : 'Map is ready. Matching listing markers will appear as addresses resolve.'}
+            ? t('map.showingMappedListings', {
+              visible: markerCount,
+              listingWord: markerCount > 1 ? t('map.listingWordPlural') : t('map.listingWordSingular'),
+            })
+            : t('map.mapReady')}
       </p>
     </div>
   );
