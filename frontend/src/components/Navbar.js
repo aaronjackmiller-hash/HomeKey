@@ -191,6 +191,7 @@ const Navbar = () => {
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
+  const deferredAutoSaveTimerRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -220,6 +221,10 @@ const Navbar = () => {
     if (saveSearchFeedbackTimerRef.current) {
       window.clearTimeout(saveSearchFeedbackTimerRef.current);
       saveSearchFeedbackTimerRef.current = null;
+    }
+    if (deferredAutoSaveTimerRef.current) {
+      window.clearTimeout(deferredAutoSaveTimerRef.current);
+      deferredAutoSaveTimerRef.current = null;
     }
   }, []);
 
@@ -497,9 +502,15 @@ const Navbar = () => {
     if (!isAuthenticated || !isListingsRoute) return;
     if (window.sessionStorage.getItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY) !== '1') return;
     window.sessionStorage.removeItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY);
+    if (deferredAutoSaveTimerRef.current) {
+      window.clearTimeout(deferredAutoSaveTimerRef.current);
+    }
     setIsSavingSearch(true);
     setSaveSearchStatus('Saving...');
-    window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+    deferredAutoSaveTimerRef.current = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+      deferredAutoSaveTimerRef.current = null;
+    }, 180);
   }, [isAuthenticated, isListingsRoute]);
 
   const handleSaveCurrentSearch = () => {
