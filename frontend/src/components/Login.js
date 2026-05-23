@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { useHistory, Link, useLocation } from 'react-router-dom';
 import {
   getPasskeyAuthenticationOptions,
   getPasskeyRegistrationOptions,
@@ -16,7 +16,18 @@ import PasswordField from './PasswordField';
 
 const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+const SAVE_SEARCH_AUTH_INTENT = 'save-search';
+const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 let oauthConfigPromise;
+
+const resolveSafeRedirectPath = (rawValue) => {
+  const fallback = '/';
+  const candidate = String(rawValue || '').trim();
+  if (!candidate) return fallback;
+  if (!candidate.startsWith('/')) return fallback;
+  if (candidate.startsWith('//')) return fallback;
+  return candidate;
+};
 
 const loadExternalScript = (src, id) => new Promise((resolve, reject) => {
   if (document.getElementById(id)) {
@@ -61,6 +72,7 @@ const supportsWebAuthn = () => (
 const Login = () => {
   const { login } = useAuth();
   const history = useHistory();
+  const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [socialLoading, setSocialLoading] = useState('');
   const [error, setError] = useState('');
@@ -69,8 +81,33 @@ const Login = () => {
   const [enablePasskey, setEnablePasskey] = useState(false);
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
   const passkeySetupOpen = passkeySetupStep.length > 0;
+  const authDestination = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const intent = String(params.get('intent') || '').trim().toLowerCase();
+    const redirect = resolveSafeRedirectPath(params.get('redirect'));
+    return {
+      intent,
+      redirectPath: redirect,
+      isSaveSearchIntent: intent === SAVE_SEARCH_AUTH_INTENT,
+    };
+  }, [location.search]);
+  const registerRoute = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const serialized = params.toString();
+    return {
+      pathname: '/register',
+      search: serialized ? `?${serialized}` : '',
+    };
+  }, [location.search]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const finishAuthAndRedirect = () => {
+    if (typeof window !== 'undefined' && authDestination.isSaveSearchIntent) {
+      window.sessionStorage.setItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY, '1');
+    }
+    history.push(authDestination.redirectPath);
+  };
 
   const maybeEnrollPasskey = async ({ force = false } = {}) => {
     if ((!enablePasskey && !force) || !supportsWebAuthn()) {
@@ -115,7 +152,7 @@ const Login = () => {
 
   const handleSkipPasskeySetup = () => {
     closePasskeySetup();
-    history.push('/');
+    finishAuthAndRedirect();
   };
 
   const handleCreatePasskeyNow = async () => {
@@ -128,7 +165,7 @@ const Login = () => {
       if (enrollment.message) {
         setNotice(enrollment.message);
       }
-      history.push('/');
+      finishAuthAndRedirect();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Passkey setup failed.';
       setError(msg);
@@ -149,7 +186,7 @@ const Login = () => {
         setPasskeySetupStep('method');
         return;
       }
-      history.push('/');
+      finishAuthAndRedirect();
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
       setError(msg);
@@ -178,7 +215,7 @@ const Login = () => {
         credential,
       });
       login(data);
-      history.push('/');
+      finishAuthAndRedirect();
     } catch (err) {
       const status = Number(err.response?.status || 0);
       const apiMessage = String(err.response?.data?.message || '').trim();
@@ -254,7 +291,7 @@ const Login = () => {
 
       const data = await loginWithGoogle({ idToken: credential });
       login(data);
-      history.push('/');
+      finishAuthAndRedirect();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Google sign-in failed.';
       setError(msg);
@@ -296,7 +333,7 @@ const Login = () => {
       }
       const data = await loginWithApple({ idToken, name });
       login(data);
-      history.push('/');
+      finishAuthAndRedirect();
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Apple sign-in failed.';
       setError(msg);
@@ -308,6 +345,9 @@ const Login = () => {
   return (
     <div className="form-container">
       <h2>Sign In</h2>
+      {authDestination.isSaveSearchIntent && (
+        <p className="auth-help-text">Sign in to save this search. We&apos;ll save it right after you sign in.</p>
+      )}
       <p className="auth-help-text">Or, create an account to save listings and contact preferences.</p>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {notice && <p style={{ color: '#166534' }}>{notice}</p>}
@@ -431,7 +471,7 @@ const Login = () => {
         <span className="auth-oauth-icon" aria-hidden="true"></span>
         {socialLoading === 'apple' ? 'Connecting Apple…' : 'Continue with Apple'}
       </button>
-      <p>Don't have an account? <Link to="/register">Register</Link></p>
+      <p>Don't have an account? <Link to={registerRoute}>Register</Link></p>
     </div>
   );
 };

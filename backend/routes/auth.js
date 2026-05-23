@@ -24,6 +24,7 @@ const validateRegister = [
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long').notEmpty().withMessage('Password is required'),
     body('phone').optional().isMobilePhone('any').withMessage('Phone must be a valid mobile number'),
     body('whatsapp').optional().isMobilePhone('any').withMessage('WhatsApp must be a valid mobile number'),
+    body('moveInDate').optional({ checkFalsy: true }).isISO8601().withMessage('Move-in date must be a valid date'),
     body('preferredContactMethod').optional().isIn(['email', 'whatsapp', 'phone']).withMessage('Invalid preferred contact method'),
     body('role').optional().isIn(['buyer', 'seller', 'agent', 'admin']).withMessage('Invalid role'),
 ];

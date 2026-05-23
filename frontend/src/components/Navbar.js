@@ -32,6 +32,8 @@ const FEATURE_FILTER_OPTIONS = [
   'furnished',
   'mamad',
 ];
+const SAVE_SEARCH_AUTH_INTENT = 'save-search';
+const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
 const clampPriceValue = (value) => {
   const asNumber = Number(value);
@@ -189,6 +191,7 @@ const Navbar = () => {
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
+  const deferredAutoSaveTimerRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -218,6 +221,10 @@ const Navbar = () => {
     if (saveSearchFeedbackTimerRef.current) {
       window.clearTimeout(saveSearchFeedbackTimerRef.current);
       saveSearchFeedbackTimerRef.current = null;
+    }
+    if (deferredAutoSaveTimerRef.current) {
+      window.clearTimeout(deferredAutoSaveTimerRef.current);
+      deferredAutoSaveTimerRef.current = null;
     }
   }, []);
 
@@ -478,11 +485,41 @@ const Navbar = () => {
       search: serialized ? `?${serialized}` : '?alerts=1',
     };
   }, [location.pathname, location.search]);
+  const loginForSaveSearchTarget = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('intent', SAVE_SEARCH_AUTH_INTENT);
+    const redirectPath = `${location.pathname || '/'}${location.search || ''}`;
+    params.set('redirect', redirectPath.startsWith('/') ? redirectPath : '/');
+    const serialized = params.toString();
+    return {
+      pathname: '/login',
+      search: serialized ? `?${serialized}` : '',
+    };
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isAuthenticated || !isListingsRoute) return;
+    if (window.sessionStorage.getItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY) !== '1') return;
+    window.sessionStorage.removeItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY);
+    if (deferredAutoSaveTimerRef.current) {
+      window.clearTimeout(deferredAutoSaveTimerRef.current);
+    }
+    setIsSavingSearch(true);
+    setSaveSearchStatus('Saving...');
+    deferredAutoSaveTimerRef.current = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+      deferredAutoSaveTimerRef.current = null;
+    }, 180);
+  }, [isAuthenticated, isListingsRoute]);
 
   const handleSaveCurrentSearch = () => {
     if (!isListingsRoute || isSavingSearch) return;
     if (!isAuthenticated) {
-      history.push('/login');
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY, '1');
+      }
+      history.push(loginForSaveSearchTarget);
       return;
     }
     setIsSavingSearch(true);

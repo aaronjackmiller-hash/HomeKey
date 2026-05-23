@@ -51,6 +51,13 @@ const parsePreferredContactMethod = (value) => {
     return 'email';
 };
 
+const parseOptionalMoveInDate = (value) => {
+    if (value == null || value === '') return undefined;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return undefined;
+    return parsed;
+};
+
 const normalizeEmail = (value) => String(value || '').toLowerCase().trim();
 
 const toSafeAuthData = (user) => ({
@@ -59,6 +66,7 @@ const toSafeAuthData = (user) => ({
     email: user.email,
     phone: user.phone,
     whatsapp: user.whatsapp,
+    moveInDate: user.moveInDate || null,
     preferredContactMethod: parsePreferredContactMethod(user.preferredContactMethod),
     role: user.role,
     hasPasskey: Array.isArray(user.passkeys) && user.passkeys.length > 0,
@@ -169,6 +177,7 @@ const register = async (req, res) => {
         password,
         phone,
         whatsapp,
+        moveInDate,
         preferredContactMethod,
         role,
         agency,
@@ -188,6 +197,7 @@ const register = async (req, res) => {
             password: hashed,
             phone,
             whatsapp,
+            moveInDate: parseOptionalMoveInDate(moveInDate),
             preferredContactMethod: parsePreferredContactMethod(preferredContactMethod),
             role,
             agency,

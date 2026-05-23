@@ -168,6 +168,9 @@ const UserSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        moveInDate: {
+            type: Date,
+        },
         preferredContactMethod: {
             type: String,
             enum: ['email', 'whatsapp', 'phone'],
