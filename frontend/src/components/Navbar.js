@@ -558,7 +558,6 @@ const Navbar = () => {
         ? t('navbar.saveSearchSaved')
         : (saveSearchStatus === 'failed' ? t('navbar.saveSearchFailed') : t('navbar.saveSearch'))));
   const languageTarget = language === 'he' ? 'English' : 'עברית';
-  const languageDisplayCode = language === 'he' ? 'HE' : 'EN';
   const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
 
@@ -847,7 +846,7 @@ const Navbar = () => {
                 <span className="premium-header__flag-icon" aria-hidden="true">
                   <span className="premium-header__flag-star">✡</span>
                 </span>
-                <span className="premium-header__language-text">{languageDisplayCode}</span>
+                <span className="premium-header__language-text">{languageTarget}</span>
               </button>
               <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
               {isListingsRoute && (
@@ -902,7 +901,7 @@ const Navbar = () => {
                 <span className="premium-header__flag-icon" aria-hidden="true">
                   <span className="premium-header__flag-star">✡</span>
                 </span>
-                <span className="premium-header__language-text">{languageDisplayCode}</span>
+                <span className="premium-header__language-text">{languageTarget}</span>
               </button>
               <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
               <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
