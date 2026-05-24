@@ -37,6 +37,16 @@ const SUPPORTED_ALL_FILTERS = new Set([
   'mirpeset',
   'fitness-center',
 ]);
+const SUPPORTED_SOURCE_FILTERS = new Set([
+  'all',
+  'live-yad2',
+  'yad2',
+  'yad2-scrape',
+  'scrape',
+  'yad2-sync',
+  'sync',
+  'manual',
+]);
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
@@ -379,6 +389,12 @@ const normalizeAllFiltersValue = (value) => {
   return SUPPORTED_ALL_FILTERS.has(normalized) ? normalized : '';
 };
 
+const normalizeSourceFilterValue = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return 'live-yad2';
+  return SUPPORTED_SOURCE_FILTERS.has(normalized) ? normalized : 'live-yad2';
+};
+
 const getPropertyAmenityText = (property = {}) => {
   const address = property.address && typeof property.address === 'object' ? property.address : {};
   const details = property.details && typeof property.details === 'object' ? property.details : {};
@@ -559,6 +575,7 @@ const PropertyList = () => {
   const [allFilters, setAllFilters] = useState('');
   const [propertyCategorySearch, setPropertyCategorySearch] = useState('');
   const [featureSearch, setFeatureSearch] = useState([]);
+  const [sourceSearch, setSourceSearch] = useState('live-yad2');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -683,6 +700,7 @@ const PropertyList = () => {
       .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
     const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
+    const nextSource = normalizeSourceFilterValue(params.get('source'));
     const parseOptionalPrice = (rawValue) => {
       if (rawValue == null || rawValue === '') return '';
       const asNumber = Number(rawValue);
@@ -708,6 +726,7 @@ const PropertyList = () => {
     setPropertyCategorySearch(nextPropertyCategory);
     setFeatureSearch(nextFeatureSearch);
     setFilter(nextType);
+    setSourceSearch(nextSource);
     setMinPrice(nextMinPrice);
     setMaxPrice(nextMaxPrice);
     setFavoritesOnly(nextFavoritesOnly);
@@ -753,7 +772,10 @@ const PropertyList = () => {
       setSlowLoad(false);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
-        const params = { source: 'live-yad2' };
+        const params = {};
+        if (sourceSearch !== 'all') {
+          params.source = sourceSearch;
+        }
         if (filter !== 'all') params.type = filter;
         if (citySearch.trim()) params.city = citySearch.trim();
         if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
@@ -835,7 +857,7 @@ const PropertyList = () => {
     };
     fetchProperties();
     return clearTimers;
-  }, [filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, retryCount, t]);
+  }, [sourceSearch, filter, citySearch, roomsSearch, bathsSearch, minPrice, maxPrice, retryCount, t]);
 
   useEffect(() => () => {
     if (listScrollTimeoutRef.current) {

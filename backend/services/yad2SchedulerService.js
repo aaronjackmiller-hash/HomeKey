@@ -399,6 +399,15 @@ const normalizeExternalFeedRows = (payload, sourceUrl) => {
     const rows = normalizeArray(payload);
     return rows.map((row, index) => {
         if (!row || typeof row !== 'object') return null;
+        const contact = row.contact && typeof row.contact === 'object' ? row.contact : undefined;
+        const externalContact = row.externalContact && typeof row.externalContact === 'object' ? row.externalContact : undefined;
+        const agent = row.agent && typeof row.agent === 'object' ? row.agent : undefined;
+        const advertiser = row.advertiser && typeof row.advertiser === 'object' ? row.advertiser : undefined;
+        const manager = row.manager && typeof row.manager === 'object' ? row.manager : undefined;
+        const owner = row.owner && typeof row.owner === 'object' ? row.owner : undefined;
+        const contactDetails = row.contactDetails && typeof row.contactDetails === 'object' ? row.contactDetails : undefined;
+        const address = row.address && typeof row.address === 'object' ? row.address : undefined;
+        const location = row.location && typeof row.location === 'object' ? row.location : undefined;
         const idFromUrl = (() => {
             const rowUrl = String(row.url || row.listingUrl || row.externalUrl || '').trim();
             if (!rowUrl) return '';
@@ -422,6 +431,9 @@ const normalizeExternalFeedRows = (payload, sourceUrl) => {
         const bathrooms = toNumberOrNull(row.bathrooms ?? row.bath ?? row.bathroomCount) || Math.max(1, Math.round(rooms / 2));
         const url = typeof row.url === 'string' ? row.url : sourceUrl;
         return {
+            // Keep original provider fields so import mapping can mine additional
+            // contact signals (including WhatsApp) that are not yet explicitly normalized.
+            ...row,
             id,
             title,
             description: String(row.description ?? row.details ?? 'External fallback listing feed').trim(),
@@ -435,6 +447,64 @@ const normalizeExternalFeedRows = (payload, sourceUrl) => {
             country: String(row.country ?? 'Israel').trim() || 'Israel',
             status: String(row.status ?? 'active').trim() || 'active',
             url,
+            contactName: row.contactName ?? row.agentName ?? row.managerName ?? row.ownerName ?? row.advertiserName
+                ?? row.contactPerson ?? row.contactFullName
+                ?? (contact && (contact.name ?? contact.fullName))
+                ?? (externalContact && (externalContact.name ?? externalContact.fullName))
+                ?? (agent && (agent.name ?? agent.fullName))
+                ?? (manager && (manager.name ?? manager.fullName))
+                ?? (owner && (owner.name ?? owner.fullName))
+                ?? (advertiser && (advertiser.name ?? advertiser.fullName))
+                ?? (contactDetails && (contactDetails.name ?? contactDetails.fullName)),
+            contactPhone: row.contactPhone ?? row.managerPhone ?? row.agentPhone ?? row.ownerPhone ?? row.phone
+                ?? row.contactMobile ?? row.mobile
+                ?? (contact && (contact.phone ?? contact.mobile ?? contact.phoneNumber))
+                ?? (externalContact && (externalContact.phone ?? externalContact.mobile ?? externalContact.phoneNumber))
+                ?? (agent && (agent.phone ?? agent.mobile ?? agent.phoneNumber))
+                ?? (manager && (manager.phone ?? manager.mobile ?? manager.phoneNumber))
+                ?? (owner && (owner.phone ?? owner.mobile ?? owner.phoneNumber))
+                ?? (advertiser && (advertiser.phone ?? advertiser.mobile ?? advertiser.phoneNumber))
+                ?? (contactDetails && (contactDetails.phone ?? contactDetails.mobile ?? contactDetails.phoneNumber)),
+            contactWhatsapp: row.contactWhatsapp ?? row.managerWhatsapp ?? row.agentWhatsapp ?? row.whatsapp ?? row.whatsApp
+                ?? (contact && (contact.whatsapp ?? contact.whatsApp))
+                ?? (externalContact && (externalContact.whatsapp ?? externalContact.whatsApp))
+                ?? (agent && (agent.whatsapp ?? agent.whatsApp))
+                ?? (manager && (manager.whatsapp ?? manager.whatsApp))
+                ?? (owner && (owner.whatsapp ?? owner.whatsApp))
+                ?? (advertiser && (advertiser.whatsapp ?? advertiser.whatsApp))
+                ?? (contactDetails && (contactDetails.whatsapp ?? contactDetails.whatsApp)),
+            contactEmail: row.contactEmail ?? row.managerEmail ?? row.agentEmail ?? row.ownerEmail ?? row.email
+                ?? (contact && (contact.email ?? contact.mail))
+                ?? (externalContact && (externalContact.email ?? externalContact.mail))
+                ?? (agent && (agent.email ?? agent.mail))
+                ?? (manager && (manager.email ?? manager.mail))
+                ?? (owner && (owner.email ?? owner.mail))
+                ?? (advertiser && (advertiser.email ?? advertiser.mail))
+                ?? (contactDetails && (contactDetails.email ?? contactDetails.mail)),
+            contactAgency: row.contactAgency ?? row.agentAgency ?? row.agency
+                ?? (contact && contact.agency)
+                ?? (externalContact && externalContact.agency)
+                ?? (agent && agent.agency)
+                ?? (manager && manager.agency)
+                ?? (owner && owner.agency)
+                ?? (advertiser && advertiser.agency)
+                ?? (contactDetails && contactDetails.agency),
+            preferredContactMethod: row.preferredContactMethod ?? row.preferredMethod
+                ?? (contact && (contact.preferredContactMethod ?? contact.preferredMethod))
+                ?? (externalContact && (externalContact.preferredContactMethod ?? externalContact.preferredMethod))
+                ?? (agent && (agent.preferredContactMethod ?? agent.preferredMethod))
+                ?? (manager && (manager.preferredContactMethod ?? manager.preferredMethod))
+                ?? (owner && (owner.preferredContactMethod ?? owner.preferredMethod))
+                ?? (advertiser && (advertiser.preferredContactMethod ?? advertiser.preferredMethod)),
+            address,
+            location,
+            contact,
+            externalContact,
+            agent,
+            manager,
+            owner,
+            advertiser,
+            contactDetails,
         };
     }).filter(Boolean);
 };
