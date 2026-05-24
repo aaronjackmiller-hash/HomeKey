@@ -790,7 +790,8 @@ a {
 }
 
 .premium-header__actions--hebrew {
-  direction: rtl;
+  direction: ltr;
+  flex-direction: row-reverse;
 }
 
 .premium-header__actions-utility {
