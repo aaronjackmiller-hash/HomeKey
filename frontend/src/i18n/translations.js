@@ -265,7 +265,7 @@ export const translations = {
       sqm: 'מ״ר',
       tour3d: 'סיור תלת ממד',
       viewDetails: 'לפרטים',
-      whatsapp: 'וואטסאפ',
+      whatsapp: 'WhatsApp',
       quickPropertyActions: 'פעולות מהירות לנכס',
       estimatedMonthly: 'תשלום חודשי משוער: {{value}}',
       listingMapLayoutAriaLabel: 'פריסת רשימת נכסים ומפה',
