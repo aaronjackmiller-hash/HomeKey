@@ -1550,6 +1550,7 @@ const PropertyList = () => {
         <div className="desktop-discovery-map-column">
           <section className="google-listings-map-card" aria-label={t('propertyList.apartmentLocationMap')}>
             <GoogleListingsMap
+              key={`google-listings-map-${language}`}
               properties={loading ? [] : mapSourceProperties}
               searchResultCount={loading ? 0 : displayProperties.length}
               favoritePropertyIds={interestSummary.favoriteIds}
