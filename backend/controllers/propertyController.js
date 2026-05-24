@@ -15,6 +15,10 @@ const {
     findDuplicateCandidate,
 } = require('../services/propertyMergeService');
 const { queueInstantAlertsForProperties } = require('../services/instantAlertService');
+const {
+    applyPropertyLocalization,
+    getRequestedContentLanguage,
+} = require('../services/propertyLocalizationService');
 const { getRequestUserRole } = require('../utils/authorization');
 const { buildLocalizedAddress } = require('../utils/addressLocalization');
 
@@ -221,6 +225,7 @@ const toBathroomRangeFromQuery = (bathsQuery) => {
 const getAllProperties = async (req, res) => {
     try {
         const filter = {};
+        const requestedLanguage = getRequestedContentLanguage(req);
 
         if (isLiveYad2OnlyMode()) {
             const liveSourceFilter = { externalSource: getLiveYad2SourceTag() };
@@ -270,7 +275,9 @@ const getAllProperties = async (req, res) => {
             .populate('agent', 'name email phone whatsapp agency')
             .sort({ createdAt: -1 });
         const dedupedProperties = dedupePropertiesForDisplay(properties);
-        const localizedProperties = dedupedProperties.map((property) => withLocalizedAddress(property));
+        const localizedProperties = dedupedProperties.map((property) =>
+            applyPropertyLocalization(withLocalizedAddress(property), requestedLanguage)
+        );
 
         res.json({
             success: true,
@@ -292,11 +299,12 @@ const getAllProperties = async (req, res) => {
 // @access  Public
 const getPropertyById = async (req, res) => {
     try {
+        const requestedLanguage = getRequestedContentLanguage(req);
         const property = await Property.findById(req.params.id).populate('agent', 'name email phone whatsapp agency');
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
-        res.json({ success: true, data: withLocalizedAddress(property) });
+        res.json({ success: true, data: applyPropertyLocalization(withLocalizedAddress(property), requestedLanguage) });
     } catch (err) {
         if (err.name === 'CastError') {
             return res.status(400).json({ success: false, message: 'Invalid property ID' });
