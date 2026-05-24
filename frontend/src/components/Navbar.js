@@ -559,6 +559,7 @@ const Navbar = () => {
         : (saveSearchStatus === 'failed' ? t('navbar.saveSearchFailed') : t('navbar.saveSearch'))));
   const languageTarget = language === 'he' ? 'English' : 'עברית';
   const languageDisplayCode = language === 'he' ? 'HE' : 'EN';
+  const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
 
   return (
@@ -833,46 +834,95 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className="premium-header__actions premium-header__actions-cell">
-          {isListingsRoute && (
-            <button
-              type="button"
-              className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
-              onClick={handleSaveCurrentSearch}
-              disabled={isSavingSearch}
-            >
-              {saveSearchButtonLabel}
-            </button>
-          )}
-          <button
-            className="premium-header__language-toggle"
-            type="button"
-            aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
-            title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
-            onClick={toggleLanguage}
-          >
-            <span className="premium-header__flag-icon" aria-hidden="true">
-              <span className="premium-header__flag-star">✡</span>
-            </span>
-            <span className="premium-header__language-text">{languageDisplayCode}</span>
-          </button>
-          <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
-          <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
-            {t('navbar.savedSearch')}
-          </Link>
-          {shouldShowGreeting ? (
-            <button
-              type="button"
-              className="premium-header__greeting"
-              aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
-              title={t('navbar.logoutAriaLabel', { name: userFirstName })}
-              onClick={handleLogoutFromGreeting}
-            >
-              <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
-              <span className="premium-header__greeting-name">{userFirstName}</span>
-            </button>
+        <div className={`premium-header__actions premium-header__actions-cell${isHebrew ? ' premium-header__actions--hebrew' : ''}`}>
+          {isHebrew ? (
+            <>
+              <button
+                className="premium-header__language-toggle"
+                type="button"
+                aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                onClick={toggleLanguage}
+              >
+                <span className="premium-header__flag-icon" aria-hidden="true">
+                  <span className="premium-header__flag-star">✡</span>
+                </span>
+                <span className="premium-header__language-text">{languageDisplayCode}</span>
+              </button>
+              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+              {isListingsRoute && (
+                <button
+                  type="button"
+                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
+                  onClick={handleSaveCurrentSearch}
+                  disabled={isSavingSearch}
+                >
+                  {saveSearchButtonLabel}
+                </button>
+              )}
+              <span className="premium-header__actions-utility">
+                <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
+                  {t('navbar.savedSearch')}
+                </Link>
+                {shouldShowGreeting ? (
+                  <button
+                    type="button"
+                    className="premium-header__greeting"
+                    aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                    title={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                    onClick={handleLogoutFromGreeting}
+                  >
+                    <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
+                    <span className="premium-header__greeting-name">{userFirstName}</span>
+                  </button>
+                ) : (
+                  <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
+                )}
+              </span>
+            </>
           ) : (
-            <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
+            <>
+              {isListingsRoute && (
+                <button
+                  type="button"
+                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
+                  onClick={handleSaveCurrentSearch}
+                  disabled={isSavingSearch}
+                >
+                  {saveSearchButtonLabel}
+                </button>
+              )}
+              <button
+                className="premium-header__language-toggle"
+                type="button"
+                aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                onClick={toggleLanguage}
+              >
+                <span className="premium-header__flag-icon" aria-hidden="true">
+                  <span className="premium-header__flag-star">✡</span>
+                </span>
+                <span className="premium-header__language-text">{languageDisplayCode}</span>
+              </button>
+              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+              <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
+                {t('navbar.savedSearch')}
+              </Link>
+              {shouldShowGreeting ? (
+                <button
+                  type="button"
+                  className="premium-header__greeting"
+                  aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                  title={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                  onClick={handleLogoutFromGreeting}
+                >
+                  <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
+                  <span className="premium-header__greeting-name">{userFirstName}</span>
+                </button>
+              ) : (
+                <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
+              )}
+            </>
           )}
         </div>
       </div>

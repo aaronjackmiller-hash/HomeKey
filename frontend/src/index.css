@@ -789,6 +789,33 @@ a {
   white-space: nowrap;
 }
 
+.premium-header__actions--hebrew {
+  direction: ltr;
+  flex-direction: row;
+}
+
+.premium-header__actions--hebrew .premium-header__actions-utility {
+  order: 1;
+}
+
+.premium-header__actions--hebrew .premium-header__save-search-btn {
+  order: 2;
+}
+
+.premium-header__actions--hebrew .premium-header__cta {
+  order: 3;
+}
+
+.premium-header__actions--hebrew .premium-header__language-toggle {
+  order: 4;
+}
+
+.premium-header__actions-utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .premium-header__likes {
   -webkit-appearance: none;
   appearance: none;
@@ -3371,6 +3398,10 @@ legend {
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .premium-header__actions-utility {
+    gap: 8px;
   }
 
   .premium-header__actions-cell {
