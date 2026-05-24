@@ -11,6 +11,38 @@ const STREET_TYPE_PREFIXES = [
     { patterns: ['כיכר'], suffix: 'Sq' },
 ];
 
+const STREET_TRANSLITERATION_DICTIONARY_GLOBAL = {
+    'נסים אלוני': 'Nissim Aloni',
+    'ארלוזורוב': 'Arlozorov',
+    'אבן גבירול': 'Ibn Gabirol',
+    'בוגרשוב': 'Bograshov',
+    'החשמונאים': 'Hashmonaim',
+    'הרכבת': 'HaRakevet',
+    'יהודה הלוי': 'Yehuda Halevi',
+    'יגאל אלון': 'Yigal Alon',
+    'יצחק שדה': 'Yitzhak Sadeh',
+    'לבונטין': 'Levontin',
+    'לילינבלום': 'Lilienblum',
+    'מונטיפיורי': 'Montefiore',
+    'נחלת בנימין': 'Nahalat Binyamin',
+    'קפלן': 'Kaplan',
+    'קרליבך': 'Carlebach',
+    'רבין': 'Rabin',
+    'שינקין': 'Shenkin',
+};
+
+const STREET_TRANSLITERATION_DICTIONARY_BY_CITY = {
+    'תל אביב יפו': {
+        'נסים אלוני': 'Nissim Aloni',
+        'יגאל אלון': 'Yigal Alon',
+        'נחלת בנימין': 'Nahalat Binyamin',
+        'יהודה הלוי': 'Yehuda Halevi',
+    },
+    'תל אביב': {
+        'נסים אלוני': 'Nissim Aloni',
+    },
+};
+
 const PHRASE_TRANSLITERATION_OVERRIDES = {
     'תל אביב': 'Tel Aviv',
     'תל אביב יפו': 'Tel Aviv-Yafo',
@@ -121,6 +153,50 @@ const normalizeHebrewForLookup = (value) =>
         .replace(/[״"]/g, '')
         .replace(/[׳']/g, '');
 
+const normalizeHebrewDictionaryKey = (value) =>
+    normalizeHebrewForLookup(value)
+        .replace(/[-־]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const buildNormalizedStreetDictionary = (sourceDictionary = {}) => {
+    const output = {};
+    Object.entries(sourceDictionary).forEach(([rawKey, transliterated]) => {
+        const key = normalizeHebrewDictionaryKey(rawKey);
+        const value = normalizeText(transliterated);
+        if (!key || !value) return;
+        output[key] = value;
+    });
+    return output;
+};
+
+const NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_GLOBAL =
+    buildNormalizedStreetDictionary(STREET_TRANSLITERATION_DICTIONARY_GLOBAL);
+
+const NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_BY_CITY = Object.entries(
+    STREET_TRANSLITERATION_DICTIONARY_BY_CITY
+).reduce((acc, [cityName, entries]) => {
+    const cityKey = normalizeHebrewDictionaryKey(cityName);
+    if (!cityKey || !entries || typeof entries !== 'object') return acc;
+    acc[cityKey] = buildNormalizedStreetDictionary(entries);
+    return acc;
+}, {});
+
+const lookupStreetDictionaryTransliteration = (streetName, cityName) => {
+    const streetKey = normalizeHebrewDictionaryKey(streetName);
+    if (!streetKey) return '';
+
+    const cityKey = normalizeHebrewDictionaryKey(cityName);
+    const cityDictionary = cityKey
+        ? NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_BY_CITY[cityKey]
+        : null;
+    if (cityDictionary && cityDictionary[streetKey]) {
+        return cityDictionary[streetKey];
+    }
+
+    return NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_GLOBAL[streetKey] || '';
+};
+
 const transliterateHebrewToken = (token) => {
     const normalized = normalizeHebrewForLookup(token);
     if (!normalized) return '';
@@ -227,7 +303,7 @@ const extractStreetTypePrefix = (streetName) => {
     };
 };
 
-const toEnglishStreet = (streetName, streetNumber) => {
+const toEnglishStreet = (streetName, streetNumber, cityName) => {
     const normalizedStreet = normalizeText(streetName);
     const normalizedStreetNumber = normalizeText(streetNumber);
     if (!normalizedStreet && !normalizedStreetNumber) return { street: '', streetNumber: '' };
@@ -240,7 +316,8 @@ const toEnglishStreet = (streetName, streetNumber) => {
     }
 
     const { suffix, baseStreetName } = extractStreetTypePrefix(normalizedStreet);
-    const transliteratedBaseName = transliterateHebrewText(baseStreetName);
+    const dictionaryTransliteration = lookupStreetDictionaryTransliteration(baseStreetName, cityName);
+    const transliteratedBaseName = dictionaryTransliteration || transliterateHebrewText(baseStreetName);
     const streetParts = uniqueNonEmpty([transliteratedBaseName, suffix]);
     return {
         street: streetParts.join(' ').trim(),
@@ -259,7 +336,7 @@ const buildLocalizedAddress = (address = {}) => {
     const shouldDefaultToHebrewCountry = containsHebrew(sourceStreet) || containsHebrew(sourceCity) || containsHebrew(sourceState);
     const sourceCountry = normalizeText(sourceAddress.country) || (shouldDefaultToHebrewCountry ? 'ישראל' : 'Israel');
 
-    const englishStreet = toEnglishStreet(sourceStreet, sourceStreetNumber);
+    const englishStreet = toEnglishStreet(sourceStreet, sourceStreetNumber, sourceCity);
     const localizedEn = {
         street: englishStreet.street,
         streetNumber: englishStreet.streetNumber || sourceStreetNumber,
