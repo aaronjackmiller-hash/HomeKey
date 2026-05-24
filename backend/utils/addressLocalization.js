@@ -43,6 +43,19 @@ const STREET_TRANSLITERATION_DICTIONARY_BY_CITY = {
     },
 };
 
+const STREET_TRANSLITERATION_LATIN_ALIASES_GLOBAL = {
+    'nysym alvny': 'Nissim Aloni',
+    'nysim alvny': 'Nissim Aloni',
+    'nisym alvny': 'Nissim Aloni',
+};
+
+const STREET_TRANSLITERATION_LATIN_ALIASES_BY_CITY = {
+    'תל אביב יפו': {
+        'nysym alvny': 'Nissim Aloni',
+        'nysim alvny': 'Nissim Aloni',
+    },
+};
+
 const PHRASE_TRANSLITERATION_OVERRIDES = {
     'תל אביב': 'Tel Aviv',
     'תל אביב יפו': 'Tel Aviv-Yafo',
@@ -159,6 +172,15 @@ const normalizeHebrewDictionaryKey = (value) =>
         .replace(/\s+/g, ' ')
         .trim();
 
+const normalizeLatinDictionaryKey = (value) =>
+    normalizeText(value)
+        .toLowerCase()
+        .replace(/[’'`"]/g, '')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .replace(/[-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
 const buildNormalizedStreetDictionary = (sourceDictionary = {}) => {
     const output = {};
     Object.entries(sourceDictionary).forEach(([rawKey, transliterated]) => {
@@ -167,6 +189,26 @@ const buildNormalizedStreetDictionary = (sourceDictionary = {}) => {
         if (!key || !value) return;
         output[key] = value;
     });
+    return output;
+};
+
+const buildLatinStreetDictionary = ({ transliterationDictionary = {}, aliasDictionary = {} } = {}) => {
+    const output = {};
+
+    Object.values(transliterationDictionary).forEach((canonicalValue) => {
+        const canonical = normalizeText(canonicalValue);
+        const key = normalizeLatinDictionaryKey(canonical);
+        if (!key || !canonical) return;
+        output[key] = canonical;
+    });
+
+    Object.entries(aliasDictionary).forEach(([aliasValue, canonicalValue]) => {
+        const key = normalizeLatinDictionaryKey(aliasValue);
+        const canonical = normalizeText(canonicalValue);
+        if (!key || !canonical) return;
+        output[key] = canonical;
+    });
+
     return output;
 };
 
@@ -182,7 +224,97 @@ const NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_BY_CITY = Object.entries(
     return acc;
 }, {});
 
-const lookupStreetDictionaryTransliteration = (streetName, cityName) => {
+const NORMALIZED_STREET_TRANSLITERATION_LATIN_GLOBAL = buildLatinStreetDictionary({
+    transliterationDictionary: STREET_TRANSLITERATION_DICTIONARY_GLOBAL,
+    aliasDictionary: STREET_TRANSLITERATION_LATIN_ALIASES_GLOBAL,
+});
+
+const NORMALIZED_STREET_TRANSLITERATION_LATIN_BY_CITY = Object.entries(
+    STREET_TRANSLITERATION_DICTIONARY_BY_CITY
+).reduce((acc, [cityName, entries]) => {
+    const cityKey = normalizeHebrewDictionaryKey(cityName);
+    if (!cityKey || !entries || typeof entries !== 'object') return acc;
+    acc[cityKey] = buildLatinStreetDictionary({
+        transliterationDictionary: entries,
+        aliasDictionary: STREET_TRANSLITERATION_LATIN_ALIASES_BY_CITY[cityName] || {},
+    });
+    return acc;
+}, {});
+
+const generateLatinLookupVariants = (value) => {
+    const base = normalizeLatinDictionaryKey(value);
+    if (!base) return [];
+    const variants = new Set([base]);
+    const addVariant = (candidate) => {
+        const normalized = normalizeLatinDictionaryKey(candidate);
+        if (normalized) variants.add(normalized);
+    };
+
+    addVariant(base.replace(/y/g, 'i'));
+    addVariant(base.replace(/v/g, 'o'));
+    addVariant(base.replace(/y/g, 'i').replace(/v/g, 'o'));
+    addVariant(base.replace(/w/g, 'v'));
+    addVariant(base.replace(/([a-z])\1+/g, '$1'));
+    addVariant(base.replace(/y/g, 'i').replace(/([a-z])\1+/g, '$1'));
+
+    return Array.from(variants);
+};
+
+const levenshteinDistance = (a, b) => {
+    const source = String(a || '');
+    const target = String(b || '');
+    if (!source) return target.length;
+    if (!target) return source.length;
+
+    const matrix = Array.from({ length: source.length + 1 }, () => new Array(target.length + 1).fill(0));
+    for (let i = 0; i <= source.length; i += 1) matrix[i][0] = i;
+    for (let j = 0; j <= target.length; j += 1) matrix[0][j] = j;
+
+    for (let i = 1; i <= source.length; i += 1) {
+        for (let j = 1; j <= target.length; j += 1) {
+            const cost = source[i - 1] === target[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(
+                matrix[i - 1][j] + 1,
+                matrix[i][j - 1] + 1,
+                matrix[i - 1][j - 1] + cost
+            );
+        }
+    }
+
+    return matrix[source.length][target.length];
+};
+
+const resolveLatinStreetDictionaryMatch = (dictionary, variants) => {
+    if (!dictionary || typeof dictionary !== 'object' || variants.length === 0) return '';
+
+    for (const variant of variants) {
+        if (dictionary[variant]) return dictionary[variant];
+    }
+
+    let best = null;
+    let second = null;
+    const entries = Object.entries(dictionary);
+    for (const [candidateKey, canonicalValue] of entries) {
+        for (const variant of variants) {
+            const distance = levenshteinDistance(variant, candidateKey);
+            const maxAllowed = Math.max(1, Math.floor(Math.min(variant.length, candidateKey.length) * 0.2));
+            if (distance > maxAllowed) continue;
+            const score = { distance, canonicalValue, candidateKey };
+            if (!best || score.distance < best.distance) {
+                second = best;
+                best = score;
+            } else if (!second || score.distance < second.distance) {
+                second = score;
+            }
+        }
+    }
+
+    if (!best) return '';
+    if (second && second.distance === best.distance) return '';
+    return best.canonicalValue;
+};
+
+const lookupStreetDictionaryTransliterationFromHebrew = (streetName, cityName) => {
     const streetKey = normalizeHebrewDictionaryKey(streetName);
     if (!streetKey) return '';
 
@@ -195,6 +327,20 @@ const lookupStreetDictionaryTransliteration = (streetName, cityName) => {
     }
 
     return NORMALIZED_STREET_TRANSLITERATION_DICTIONARY_GLOBAL[streetKey] || '';
+};
+
+const lookupStreetDictionaryTransliterationFromLatin = (streetName, cityName) => {
+    const variants = generateLatinLookupVariants(streetName);
+    if (variants.length === 0) return '';
+
+    const cityKey = normalizeHebrewDictionaryKey(cityName);
+    const cityDictionary = cityKey
+        ? NORMALIZED_STREET_TRANSLITERATION_LATIN_BY_CITY[cityKey]
+        : null;
+    const cityMatch = resolveLatinStreetDictionaryMatch(cityDictionary, variants);
+    if (cityMatch) return cityMatch;
+
+    return resolveLatinStreetDictionaryMatch(NORMALIZED_STREET_TRANSLITERATION_LATIN_GLOBAL, variants);
 };
 
 const transliterateHebrewToken = (token) => {
@@ -309,14 +455,15 @@ const toEnglishStreet = (streetName, streetNumber, cityName) => {
     if (!normalizedStreet && !normalizedStreetNumber) return { street: '', streetNumber: '' };
 
     if (!containsHebrew(normalizedStreet)) {
+        const dictionaryTransliteration = lookupStreetDictionaryTransliterationFromLatin(normalizedStreet, cityName);
         return {
-            street: normalizedStreet,
+            street: dictionaryTransliteration || normalizedStreet,
             streetNumber: normalizedStreetNumber,
         };
     }
 
     const { suffix, baseStreetName } = extractStreetTypePrefix(normalizedStreet);
-    const dictionaryTransliteration = lookupStreetDictionaryTransliteration(baseStreetName, cityName);
+    const dictionaryTransliteration = lookupStreetDictionaryTransliterationFromHebrew(baseStreetName, cityName);
     const transliteratedBaseName = dictionaryTransliteration || transliterateHebrewText(baseStreetName);
     const streetParts = uniqueNonEmpty([transliteratedBaseName, suffix]);
     return {

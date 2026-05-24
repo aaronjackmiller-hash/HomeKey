@@ -15,6 +15,7 @@ const {
 } = require('./propertyLocalizationService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
+const HEBREW_CHAR_RE = /[א-ת]/;
 
 const parseNumber = (value, fallback = null) => {
     if (value == null || value === '') return fallback;
@@ -234,6 +235,17 @@ const normalizeHumanText = (value) => {
     return raw.replace(/\s+/g, ' ').trim();
 };
 
+const containsHebrew = (value) => HEBREW_CHAR_RE.test(String(value || ''));
+
+const pickPreferredAddressText = (...values) => {
+    const normalizedValues = values
+        .map((value) => normalizeHumanText(value))
+        .filter(Boolean);
+    if (normalizedValues.length === 0) return '';
+    const hebrewMatch = normalizedValues.find((value) => containsHebrew(value));
+    return hebrewMatch || normalizedValues[0];
+};
+
 const pickLocalizedText = (row, language, fieldName) => {
     if (!row || typeof row !== 'object') return '';
     const upperLanguage = language.toUpperCase();
@@ -393,13 +405,31 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.listing_id,
         ''
     ) || ''));
-    const city = normalizeHumanText(pickFirst(
+    const city = pickPreferredAddressText(
+        row.cityHe,
+        row.cityHE,
+        row.city_he,
+        row.cityHebrew,
+        row.cityNameHe,
+        row.cityNameHE,
+        row.city_name_he,
+        row.localityHe,
+        row.localityHE,
+        row.locality_he,
+        row.address && row.address.cityHe,
+        row.address && row.address.cityHE,
+        row.address && row.address.city_he,
+        row.address && row.address.cityHebrew,
+        row.location && row.location.cityHe,
+        row.location && row.location.cityHE,
+        row.location && row.location.city_he,
+        row.location && row.location.cityHebrew,
         row.city,
         row.address && row.address.city,
         row.town,
         row.locality,
         row.location && row.location.city
-    ));
+    );
 
     const title = normalizeHumanText(
         pickFirst(row.title, row.headline, row.propertyTitle, row.listingTitle, row.subject)
@@ -415,7 +445,20 @@ const mapYad2RowToPropertyDoc = (row) => {
         title,
         description,
         city,
-        pickFirst(row.street, row.streetName, row.addressLine, row.addressText)
+        pickPreferredAddressText(
+            row.streetHe,
+            row.streetHE,
+            row.street_he,
+            row.streetHebrew,
+            row.streetNameHe,
+            row.streetNameHE,
+            row.street_name_he,
+            row.streetNameHebrew,
+            row.street,
+            row.streetName,
+            row.addressLine,
+            row.addressText
+        )
     );
     const localizedContent = buildLocalizedContentFromRow({
         row,
@@ -440,7 +483,26 @@ const mapYad2RowToPropertyDoc = (row) => {
     ));
 
     const addressStreet = combineStreetAndNumber(
-        pickFirst(
+        pickPreferredAddressText(
+            row.streetHe,
+            row.streetHE,
+            row.street_he,
+            row.streetHebrew,
+            row.streetNameHe,
+            row.streetNameHE,
+            row.street_name_he,
+            row.streetNameHebrew,
+            row.address && row.address.streetHe,
+            row.address && row.address.streetHE,
+            row.address && row.address.street_he,
+            row.address && row.address.streetHebrew,
+            row.address && row.address.streetNameHe,
+            row.address && row.address.streetNameHE,
+            row.address && row.address.street_name_he,
+            row.location && row.location.streetHe,
+            row.location && row.location.streetHE,
+            row.location && row.location.street_he,
+            row.location && row.location.streetHebrew,
             row.street,
             row.streetName,
             row.streetAddress,

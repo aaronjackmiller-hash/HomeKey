@@ -885,7 +885,30 @@ const normalizeRow = (row) => {
         area: row.area ?? row.size ?? row.squareMeters ?? row.sqm ?? row.areaSqm,
         floor: row.floor ?? row.floorNumber,
         city: row.city ?? (address && address.city) ?? (location && location.city),
+        cityHe: row.cityHe ?? row.cityHE ?? row.city_he ?? row.cityHebrew
+            ?? (address && (address.cityHe ?? address.cityHE ?? address.city_he ?? address.cityHebrew))
+            ?? (location && (location.cityHe ?? location.cityHE ?? location.city_he ?? location.cityHebrew)),
         street: row.street ?? row.streetName ?? (address && (address.street ?? address.streetName)) ?? (location && location.street),
+        streetHe: row.streetHe ?? row.streetHE ?? row.street_he ?? row.streetHebrew
+            ?? row.streetNameHe ?? row.streetNameHE ?? row.street_name_he ?? row.streetNameHebrew
+            ?? (address && (
+                address.streetHe
+                ?? address.streetHE
+                ?? address.street_he
+                ?? address.streetHebrew
+                ?? address.streetNameHe
+                ?? address.streetNameHE
+                ?? address.street_name_he
+            ))
+            ?? (location && (
+                location.streetHe
+                ?? location.streetHE
+                ?? location.street_he
+                ?? location.streetHebrew
+                ?? location.streetNameHe
+                ?? location.streetNameHE
+                ?? location.street_name_he
+            )),
         streetNumber: row.streetNumber ?? row.houseNumber ?? row.buildingNumber
             ?? (address && (address.streetNumber ?? address.houseNumber ?? address.number))
             ?? (location && location.streetNumber),
