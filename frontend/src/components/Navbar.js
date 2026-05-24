@@ -848,11 +848,11 @@ const Navbar = () => {
                 </span>
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
-              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+              <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
               {isListingsRoute && (
                 <button
                   type="button"
-                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
+                  className={`premium-header__save-search-btn premium-header__action-pill ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
                   onClick={handleSaveCurrentSearch}
                   disabled={isSavingSearch}
                 >
@@ -884,7 +884,7 @@ const Navbar = () => {
               {isListingsRoute && (
                 <button
                   type="button"
-                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
+                  className={`premium-header__save-search-btn premium-header__action-pill ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
                   onClick={handleSaveCurrentSearch}
                   disabled={isSavingSearch}
                 >
@@ -903,7 +903,7 @@ const Navbar = () => {
                 </span>
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
-              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+              <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
               <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
                 {t('navbar.savedSearch')}
               </Link>
