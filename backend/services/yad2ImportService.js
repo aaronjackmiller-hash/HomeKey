@@ -7,6 +7,11 @@ const {
     isStrongPropertyIdentityMatch,
 } = require('./propertyMergeService');
 const { queueInstantAlertsForProperties } = require('./instantAlertService');
+const {
+    detectContentLanguage,
+    mergeLocalizedContent,
+    sanitizeLocalizedContent,
+} = require('./propertyLocalizationService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -228,6 +233,48 @@ const normalizeHumanText = (value) => {
     return raw.replace(/\s+/g, ' ').trim();
 };
 
+const pickLocalizedText = (row, language, fieldName) => {
+    if (!row || typeof row !== 'object') return '';
+    const upperLanguage = language.toUpperCase();
+    const titleLanguage = language.charAt(0).toUpperCase() + language.slice(1);
+    const capitalizedField = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    const candidates = [
+        row[`${fieldName}${upperLanguage}`],
+        row[`${fieldName}${titleLanguage}`],
+        row[`${fieldName}${language}`],
+        row[`${fieldName}_${language}`],
+        row[`${language}${capitalizedField}`],
+        row[`${language}_${fieldName}`],
+        row[`${language}-${fieldName}`],
+        row.localizedContent && row.localizedContent[language] && row.localizedContent[language][fieldName],
+        row.localized && row.localized[language] && row.localized[language][fieldName],
+        row.translations && row.translations[language] && row.translations[language][fieldName],
+    ];
+    return normalizeHumanText(pickFirst(...candidates));
+};
+
+const buildLocalizedContentFromRow = ({ row, title, description, contentLanguage }) => {
+    const localizedFromRow = sanitizeLocalizedContent({
+        en: {
+            title: pickLocalizedText(row, 'en', 'title'),
+            description: pickLocalizedText(row, 'en', 'description'),
+        },
+        he: {
+            title: pickLocalizedText(row, 'he', 'title'),
+            description: pickLocalizedText(row, 'he', 'description'),
+        },
+    });
+
+    const localizedFromDetectedLanguage = sanitizeLocalizedContent({
+        [contentLanguage]: {
+            title,
+            description,
+        },
+    });
+
+    return mergeLocalizedContent(localizedFromRow, localizedFromDetectedLanguage);
+};
+
 const parsePositiveNumber = (value) => {
     const parsed = parseNumber(value, null);
     return parsed != null && parsed > 0 ? parsed : null;
@@ -363,6 +410,18 @@ const mapYad2RowToPropertyDoc = (row) => {
     const size = parseNumber(pickFirst(row.size, row.area, row.squareMeters), 1);
 
     const description = normalizeHumanText(pickFirst(row.description, row.body, row.notes, row.details));
+    const contentLanguage = detectContentLanguage(
+        title,
+        description,
+        city,
+        pickFirst(row.street, row.streetName, row.addressLine, row.addressText)
+    );
+    const localizedContent = buildLocalizedContentFromRow({
+        row,
+        title,
+        description,
+        contentLanguage: contentLanguage === 'he' || contentLanguage === 'en' ? contentLanguage : 'unknown',
+    });
 
     const parsedStreetFromText = extractStreetNumberFromText(pickFirst(
         row.addressLine,
@@ -571,6 +630,8 @@ const mapYad2RowToPropertyDoc = (row) => {
     const payload = {
         title,
         description,
+        contentLanguage,
+        localizedContent,
         type,
         price,
         bedrooms,
@@ -689,6 +750,10 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                 if (existing) {
                     const hasManualSource = existing.sourceType === 'manual'
                         || (Array.isArray(existing.sources) && existing.sources.some((source) => source && source.sourceType === 'manual'));
+                    const mergedLocalizedContent = mergeLocalizedContent(
+                        existing.localizedContent,
+                        payload.localizedContent
+                    );
                     appendSourceIfMissing(existing, sourceEntry);
                     Object.assign(existing, payload, {
                         sourceType: hasManualSource ? 'manual' : sourceType,
@@ -696,6 +761,10 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         externalId,
                         ...(segmentKey ? { externalSegmentKey: segmentKey } : {}),
                     });
+                    existing.localizedContent = mergedLocalizedContent;
+                    if (hasManualSource && existing.contentLanguage !== 'he' && existing.contentLanguage !== 'en') {
+                        existing.contentLanguage = existing.contentLanguage || 'unknown';
+                    }
                     existing.contact = mergeContactDetails(existing.contact, payload.contact);
                     if (hasManualSource && existing.contact && existing.owner) {
                         // Keep owner-facing manual contact workflow active when merged with live feed records.
@@ -735,6 +804,13 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                             duplicate.externalSegmentKey = segmentKey;
                         }
                         duplicate.externalUrl = payload.externalUrl || duplicate.externalUrl;
+                        duplicate.localizedContent = mergeLocalizedContent(
+                            duplicate.localizedContent,
+                            payload.localizedContent
+                        );
+                        if (!duplicate.contentLanguage || duplicate.sourceType !== 'manual') {
+                            duplicate.contentLanguage = payload.contentLanguage || duplicate.contentLanguage || 'unknown';
+                        }
                         duplicate.sources = Array.isArray(duplicate.sources) ? duplicate.sources : [];
                         if (!duplicate.title || duplicate.sourceType !== 'manual') {
                             duplicate.title = payload.title;

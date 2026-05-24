@@ -46,8 +46,12 @@ const getAuthorizationHeaderValue = (headers) => {
 // Attach JWT token to every request if present
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  const language = String(localStorage.getItem('homekey:language') || '').trim().toLowerCase();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (language === 'he' || language === 'en') {
+    config.headers['Accept-Language'] = language;
   }
   return config;
 });

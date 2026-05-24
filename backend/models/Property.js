@@ -13,6 +13,21 @@ const PropertySchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        contentLanguage: {
+            type: String,
+            enum: ['en', 'he', 'unknown'],
+            default: 'unknown',
+        },
+        localizedContent: {
+            en: {
+                title: { type: String, trim: true },
+                description: { type: String, trim: true },
+            },
+            he: {
+                title: { type: String, trim: true },
+                description: { type: String, trim: true },
+            },
+        },
         type: {
             type: String,
             enum: ['sale', 'rental'],
