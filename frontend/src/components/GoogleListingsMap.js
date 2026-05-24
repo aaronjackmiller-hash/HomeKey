@@ -72,8 +72,12 @@ const MARKER_STYLE_PRESETS = {
   },
 };
 const DEFAULT_MARKER_PRESET_KEY = 'minimal';
+const DEFAULT_MAP_LANGUAGE = 'en';
+const MAP_LANGUAGE_SET = new Set(['en', 'he']);
 
 let googleMapsLoadPromise;
+let googleMapsLoadedLanguage = null;
+let googleMapsRequestedLanguage = null;
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 const escapeHtml = (value) => String(value || '')
@@ -104,27 +108,76 @@ const writeGeocodeCache = (cacheObj) => {
   }
 };
 
-const loadGoogleMaps = (apiKey) => {
+const resolveMapLanguage = (language) => (MAP_LANGUAGE_SET.has(language) ? language : DEFAULT_MAP_LANGUAGE);
+
+const loadGoogleMaps = (apiKey, requestedLanguage = DEFAULT_MAP_LANGUAGE) => {
   if (!apiKey) return Promise.reject(new Error('Missing Google Maps API key.'));
   if (typeof window === 'undefined') return Promise.reject(new Error('Google Maps can only load in the browser.'));
-  if (window.google && window.google.maps) return Promise.resolve(window.google.maps);
-  if (googleMapsLoadPromise) return googleMapsLoadPromise;
+  const mapLanguage = resolveMapLanguage(requestedLanguage);
+  if (window.google && window.google.maps && googleMapsLoadedLanguage === mapLanguage) {
+    return Promise.resolve(window.google.maps);
+  }
+  if (googleMapsLoadPromise && googleMapsRequestedLanguage === mapLanguage) return googleMapsLoadPromise;
+
+  if (googleMapsLoadedLanguage && googleMapsLoadedLanguage !== mapLanguage) {
+    const existingScript = document.getElementById(MAP_SCRIPT_ID);
+    if (existingScript && existingScript.parentNode) {
+      existingScript.parentNode.removeChild(existingScript);
+    }
+    if (window.google) {
+      try {
+        delete window.google;
+      } catch (_err) {
+        window.google = undefined;
+      }
+    }
+    googleMapsLoadedLanguage = null;
+    googleMapsLoadPromise = undefined;
+  }
 
   googleMapsLoadPromise = new Promise((resolve, reject) => {
+    googleMapsRequestedLanguage = mapLanguage;
     const existingScript = document.getElementById(MAP_SCRIPT_ID);
+    const desiredLanguageParam = `language=${encodeURIComponent(mapLanguage)}`;
+
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(window.google && window.google.maps));
-      existingScript.addEventListener('error', () => reject(new Error('Failed to load Google Maps script.')));
-      return;
+      const existingSrc = String(existingScript.getAttribute('src') || '');
+      const hasMatchingLanguage = existingSrc.includes(desiredLanguageParam);
+      if (hasMatchingLanguage) {
+        if (window.google && window.google.maps) {
+          googleMapsLoadedLanguage = mapLanguage;
+          googleMapsRequestedLanguage = null;
+          resolve(window.google.maps);
+          return;
+        }
+        existingScript.addEventListener('load', () => {
+          googleMapsLoadedLanguage = mapLanguage;
+          googleMapsRequestedLanguage = null;
+          resolve(window.google && window.google.maps);
+        });
+        existingScript.addEventListener('error', () => {
+          googleMapsRequestedLanguage = null;
+          reject(new Error('Failed to load Google Maps script.'));
+        });
+        return;
+      }
+      existingScript.remove();
     }
 
     const script = document.createElement('script');
     script.id = MAP_SCRIPT_ID;
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}`;
-    script.onload = () => resolve(window.google && window.google.maps);
-    script.onerror = () => reject(new Error('Failed to load Google Maps script.'));
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(mapLanguage)}&region=IL`;
+    script.onload = () => {
+      googleMapsLoadedLanguage = mapLanguage;
+      googleMapsRequestedLanguage = null;
+      resolve(window.google && window.google.maps);
+    };
+    script.onerror = () => {
+      googleMapsRequestedLanguage = null;
+      reject(new Error('Failed to load Google Maps script.'));
+    };
     document.head.appendChild(script);
   });
 
@@ -284,6 +337,7 @@ const GoogleListingsMap = ({
   isVisible = true,
 }) => {
   const { t, locale, language } = useLanguage();
+  const mapLanguage = language === 'he' ? 'he' : 'en';
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -483,7 +537,7 @@ const GoogleListingsMap = ({
     if (!apiKey) return;
     let cancelled = false;
 
-    loadGoogleMaps(apiKey)
+    loadGoogleMaps(apiKey, mapLanguage)
       .then((mapsApi) => {
         if (cancelled || !mapsApi || !mapContainerRef.current) return;
         if (!mapRef.current) {
@@ -510,7 +564,7 @@ const GoogleListingsMap = ({
     return () => {
       cancelled = true;
     };
-  }, [apiKey, t]);
+  }, [apiKey, mapLanguage, t]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !geocoderRef.current || !window.google || !window.google.maps) return undefined;
