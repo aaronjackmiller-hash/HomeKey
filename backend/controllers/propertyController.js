@@ -219,6 +219,65 @@ const toBathroomRangeFromQuery = (bathsQuery) => {
     };
 };
 
+const normalizeSourceQueryValue = (value) =>
+    String(value || '')
+        .trim()
+        .toLowerCase();
+
+const getSourceFilterCondition = (sourceValue) => {
+    const normalized = normalizeSourceQueryValue(sourceValue);
+    if (!normalized || normalized === 'all') return null;
+
+    if (normalized === 'live-yad2' || normalized === 'yad2') {
+        const yad2SourceTypes = ['yad2-sync', 'yad2-scrape'];
+        return {
+            $or: [
+                { sourceType: { $in: yad2SourceTypes } },
+                { 'sources.sourceType': { $in: yad2SourceTypes } },
+                { externalSource: { $regex: 'yad2', $options: 'i' } },
+                { 'sources.externalSource': { $regex: 'yad2', $options: 'i' } },
+            ],
+        };
+    }
+
+    if (normalized === 'yad2-scrape' || normalized === 'scrape') {
+        return {
+            $or: [
+                { sourceType: 'yad2-scrape' },
+                { 'sources.sourceType': 'yad2-scrape' },
+                { externalSource: { $regex: 'scrape', $options: 'i' } },
+                { 'sources.externalSource': { $regex: 'scrape', $options: 'i' } },
+            ],
+        };
+    }
+
+    if (normalized === 'yad2-sync' || normalized === 'sync') {
+        return {
+            $or: [
+                { sourceType: 'yad2-sync' },
+                { 'sources.sourceType': 'yad2-sync' },
+                { externalSource: getLiveYad2SourceTag() },
+            ],
+        };
+    }
+
+    if (normalized === 'manual') {
+        return {
+            $or: [
+                { sourceType: 'manual' },
+                { 'sources.sourceType': 'manual' },
+            ],
+        };
+    }
+
+    return {
+        $or: [
+            { externalSource: normalized },
+            { 'sources.externalSource': normalized },
+        ],
+    };
+};
+
 // @desc    Get all properties
 // @route   GET /api/properties
 // @access  Public
@@ -226,6 +285,9 @@ const getAllProperties = async (req, res) => {
     try {
         const filter = {};
         const requestedLanguage = getRequestedContentLanguage(req);
+
+        const sourceFilterCondition = getSourceFilterCondition(req.query.source);
+        applyAndFilter(filter, sourceFilterCondition);
 
         if (isLiveYad2OnlyMode()) {
             const liveSourceFilter = { externalSource: getLiveYad2SourceTag() };
