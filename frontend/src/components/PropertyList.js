@@ -1250,7 +1250,7 @@ const PropertyList = () => {
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address, language);
-          const displayStreet = dedupeRepeatingPhrase(sanitizeReadableText(property, street));
+          const displayStreet = dedupeRepeatingPhrase(safeText(street));
           const bedroomCount = getBedroomCount(property);
           const bathroomCount = getBathroomCount(property);
           const titleFromData = sanitizeReadableText(property, property.title);
@@ -1288,40 +1288,26 @@ const PropertyList = () => {
                   src={imageSrc}
                   alt={displayTitle || t('propertyList.propertyListingFallback')}
                 />
-                <div className="property-card-top-tags">
-                  <span className={`property-card-listing-badge ${isHistoricalMatch ? 'property-card-listing-badge--history' : ''}`}>
-                    {isHistoricalMatch ? (
-                      <span>{t('propertyList.pastMatch')}</span>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
-                          <path d="m2.2 6.4 2.2 2.3 5.4-5.4" />
-                        </svg>
-                        <span>{t('propertyList.verifiedListing')}</span>
-                      </>
-                    )}
+                <button
+                  type="button"
+                  className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
+                  aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
+                  aria-pressed={isFavorite}
+                  disabled={!interestPropertyId}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!interestPropertyId) return;
+                    toggleFavoriteProperty(interestPropertyId);
+                    incrementHeartClickCount();
+                    setInterestVersion((value) => value + 1);
+                  }}
+                >
+                  <span className="property-heart-icon-wrap" aria-hidden="true">
+                    <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
+                      <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+                    </svg>
                   </span>
-                  <button
-                    type="button"
-                    className={`property-card-favorite-btn ${isFavorite ? 'is-active' : ''}`}
-                    aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
-                    aria-pressed={isFavorite}
-                    disabled={!interestPropertyId}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (!interestPropertyId) return;
-                      toggleFavoriteProperty(interestPropertyId);
-                      incrementHeartClickCount();
-                      setInterestVersion((value) => value + 1);
-                    }}
-                  >
-                    <span className="property-heart-icon-wrap" aria-hidden="true">
-                      <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
-                        <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
-                      </svg>
-                    </span>
-                  </button>
-                </div>
+                </button>
                 {isYad2Media && (
                   <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
                 )}
