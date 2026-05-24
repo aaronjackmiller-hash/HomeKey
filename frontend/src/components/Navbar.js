@@ -843,9 +843,6 @@ const Navbar = () => {
                 title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
                 onClick={toggleLanguage}
               >
-                <span className="premium-header__flag-icon" aria-hidden="true">
-                  <span className="premium-header__flag-star">✡</span>
-                </span>
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
               <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
@@ -898,9 +895,6 @@ const Navbar = () => {
                 title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
                 onClick={toggleLanguage}
               >
-                <span className="premium-header__flag-icon" aria-hidden="true">
-                  <span className="premium-header__flag-star">✡</span>
-                </span>
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
               <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
