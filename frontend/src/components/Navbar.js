@@ -837,29 +837,6 @@ const Navbar = () => {
         <div className={`premium-header__actions premium-header__actions-cell${isHebrew ? ' premium-header__actions--hebrew' : ''}`}>
           {isHebrew ? (
             <>
-              <button
-                className="premium-header__language-toggle"
-                type="button"
-                aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
-                title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
-                onClick={toggleLanguage}
-              >
-                <span className="premium-header__flag-icon" aria-hidden="true">
-                  <span className="premium-header__flag-star">✡</span>
-                </span>
-                <span className="premium-header__language-text">{languageDisplayCode}</span>
-              </button>
-              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
-              {isListingsRoute && (
-                <button
-                  type="button"
-                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
-                  onClick={handleSaveCurrentSearch}
-                  disabled={isSavingSearch}
-                >
-                  {saveSearchButtonLabel}
-                </button>
-              )}
               <span className="premium-header__actions-utility">
                 <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
                   {t('navbar.savedSearch')}
@@ -879,6 +856,29 @@ const Navbar = () => {
                   <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
                 )}
               </span>
+              {isListingsRoute && (
+                <button
+                  type="button"
+                  className={`premium-header__save-search-btn ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
+                  onClick={handleSaveCurrentSearch}
+                  disabled={isSavingSearch}
+                >
+                  {saveSearchButtonLabel}
+                </button>
+              )}
+              <Link to="/add-listing" className="premium-header__cta">{t('navbar.listProperty')}</Link>
+              <button
+                className="premium-header__language-toggle"
+                type="button"
+                aria-label={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                title={t('navbar.languageToggleAriaLabel', { targetLanguage: languageTarget })}
+                onClick={toggleLanguage}
+              >
+                <span className="premium-header__flag-icon" aria-hidden="true">
+                  <span className="premium-header__flag-star">✡</span>
+                </span>
+                <span className="premium-header__language-text">{languageDisplayCode}</span>
+              </button>
             </>
           ) : (
             <>
