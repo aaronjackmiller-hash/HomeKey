@@ -789,6 +789,12 @@ a {
   white-space: nowrap;
 }
 
+.premium-header__actions-utility {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .premium-header__likes {
   -webkit-appearance: none;
   appearance: none;
@@ -3371,6 +3377,10 @@ legend {
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .premium-header__actions-utility {
+    gap: 8px;
   }
 
   .premium-header__actions-cell {
