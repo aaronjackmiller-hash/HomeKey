@@ -9,6 +9,7 @@ const {
 const { queueInstantAlertsForProperties } = require('./instantAlertService');
 const {
     detectContentLanguage,
+    enrichLocalizedContentForImport,
     mergeLocalizedContent,
     sanitizeLocalizedContent,
 } = require('./propertyLocalizationService');
@@ -723,6 +724,12 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
         const row = rows[i];
         try {
             const { payload, externalId } = mapYad2RowToPropertyDoc(row);
+            payload.localizedContent = await enrichLocalizedContentForImport({
+                title: payload.title,
+                description: payload.description,
+                contentLanguage: payload.contentLanguage,
+                localizedContent: payload.localizedContent,
+            });
 
             if (!payload.title || payload.price <= 0 || payload.size <= 0) {
                 summary.skipped += 1;
