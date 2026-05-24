@@ -248,18 +248,6 @@ const toEnglishStreet = (streetName, streetNumber) => {
     };
 };
 
-const toEnglishAddressField = (value, fieldName) => {
-    const normalized = normalizeText(value);
-    if (!normalized) return '';
-    if (!containsHebrew(normalized)) return normalized;
-
-    if (fieldName === 'country' && normalizeHebrewForLookup(normalized) === 'ישראל') {
-        return 'Israel';
-    }
-
-    return transliterateHebrewText(normalized);
-};
-
 const buildLocalizedAddress = (address = {}) => {
     const sourceAddress = address && typeof address === 'object' ? address : {};
     const splitStreet = splitStreetAndNumber(sourceAddress.street, sourceAddress.streetNumber);
@@ -275,9 +263,10 @@ const buildLocalizedAddress = (address = {}) => {
     const localizedEn = {
         street: englishStreet.street,
         streetNumber: englishStreet.streetNumber || sourceStreetNumber,
-        city: toEnglishAddressField(sourceCity, 'city'),
-        state: toEnglishAddressField(sourceState, 'state'),
-        country: toEnglishAddressField(sourceCountry, 'country'),
+        // Keep non-street fields in the original source language.
+        city: sourceCity,
+        state: sourceState,
+        country: sourceCountry,
     };
 
     const localizedHe = {
