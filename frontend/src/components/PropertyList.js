@@ -579,6 +579,7 @@ const PropertyList = () => {
   const autoRetryTimerRef = useRef(null);
   const countdownTimerRef = useRef(null);
   const listScrollTimeoutRef = useRef(null);
+  const autoRetryTriggeredRef = useRef(false);
   const history = useHistory();
   const location = useLocation();
   const [isListScrolling, setIsListScrolling] = useState(false);
@@ -741,11 +742,15 @@ const PropertyList = () => {
   useEffect(() => {
     clearTimers();
     const fetchProperties = async () => {
-      setLoading(true);
+      const isAutoRetryAttempt = autoRetryTriggeredRef.current;
+      autoRetryTriggeredRef.current = false;
+      if (!isAutoRetryAttempt) {
+        setLoading(true);
+        setError('');
+        setLiveSyncStatus(null);
+        setAutoRetrySecondsLeft(0);
+      }
       setSlowLoad(false);
-      setError('');
-      setLiveSyncStatus(null);
-      setAutoRetrySecondsLeft(0);
       const slowTimer = setTimeout(() => setSlowLoad(true), 8000);
       try {
         const params = { source: 'live-yad2' };
@@ -758,6 +763,7 @@ const PropertyList = () => {
         const hasUserFilters = Object.keys(params).length > 1;
         const result = await getProperties(params);
         const data = result.data || [];
+        setError('');
         setProperties(data);
         // If the API returns 0 results with no filters, the database itself is empty.
         // Keep the flag set until real data actually arrives so filtered searches
@@ -805,6 +811,7 @@ const PropertyList = () => {
           }, 1000);
           autoRetryTimerRef.current = setTimeout(() => {
             clearInterval(countdownTimerRef.current);
+            autoRetryTriggeredRef.current = true;
             setRetryCount((c) => c + 1);
           }, RETRY_INTERVAL_MS);
           if (!usedCachedLiveListings) setError('__starting_up__');
