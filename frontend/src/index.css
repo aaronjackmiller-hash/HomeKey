@@ -881,7 +881,10 @@ a {
 }
 
 .premium-header__language-text {
-  font-size: 0.98rem;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.01em;
   line-height: 1;
 }
 
