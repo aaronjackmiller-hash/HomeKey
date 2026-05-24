@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
+import { buildAddressQuery } from '../utils/addressLocalization';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
@@ -101,17 +102,6 @@ const writeGeocodeCache = (cacheObj) => {
   } catch (_err) {
     // Ignore localStorage quota errors.
   }
-};
-
-const toAddressQuery = (property = {}) => {
-  const address = property.address && typeof property.address === 'object' ? property.address : {};
-  const street = safeText(address.street);
-  const streetNumber = safeText(address.streetNumber);
-  const city = safeText(address.city);
-  const state = safeText(address.state);
-  const country = safeText(address.country) || 'Israel';
-  const streetLine = [street, streetNumber].filter(Boolean).join(' ');
-  return [streetLine, city, state, country].filter(Boolean).join(', ');
 };
 
 const loadGoogleMaps = (apiKey) => {
@@ -293,7 +283,7 @@ const GoogleListingsMap = ({
   onDrawModeChange,
   isVisible = true,
 }) => {
-  const { t, locale } = useLanguage();
+  const { t, locale, language } = useLanguage();
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -445,9 +435,9 @@ const GoogleListingsMap = ({
     .map((property) => ({
       property,
       propertyId: getPropertyId(property),
-      addressQuery: toAddressQuery(property),
+      addressQuery: buildAddressQuery(property.address, language),
     }))
-    .filter((item) => item.property && item.propertyId && item.addressQuery), [properties]);
+    .filter((item) => item.property && item.propertyId && item.addressQuery), [properties, language]);
 
   useEffect(() => {
     if (typeof onDrawModeChange === 'function') {

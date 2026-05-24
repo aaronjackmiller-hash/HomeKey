@@ -1,6 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const { buildLocalizedAddress } = require('../utils/addressLocalization');
 
 const PropertySchema = new mongoose.Schema(
     {
@@ -30,6 +31,22 @@ const PropertySchema = new mongoose.Schema(
             state: { type: String, trim: true },
             zip: { type: String, trim: true },
             country: { type: String, trim: true, default: 'Israel' },
+            localized: {
+                he: {
+                    street: { type: String, trim: true },
+                    streetNumber: { type: String, trim: true },
+                    city: { type: String, trim: true },
+                    state: { type: String, trim: true },
+                    country: { type: String, trim: true },
+                },
+                en: {
+                    street: { type: String, trim: true },
+                    streetNumber: { type: String, trim: true },
+                    city: { type: String, trim: true },
+                    state: { type: String, trim: true },
+                    country: { type: String, trim: true },
+                },
+            },
         },
         bedrooms: {
             type: Number,
@@ -198,5 +215,11 @@ PropertySchema.index(
         },
     }
 );
+
+PropertySchema.pre('validate', function localizeAddressBeforeValidate(next) {
+    if (!this.address || typeof this.address !== 'object') return next();
+    this.address = buildLocalizedAddress(this.address);
+    return next();
+});
 
 module.exports = mongoose.model('Property', PropertySchema);

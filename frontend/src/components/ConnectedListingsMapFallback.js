@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
+import { buildAddressQuery } from '../utils/addressLocalization';
 
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
@@ -88,17 +89,6 @@ const escapeSvgText = (value) => String(value || '')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
-const toAddressQuery = (property = {}) => {
-  const address = property.address && typeof property.address === 'object' ? property.address : {};
-  const street = safeText(address.street);
-  const streetNumber = safeText(address.streetNumber);
-  const city = safeText(address.city);
-  const state = safeText(address.state);
-  const country = safeText(address.country) || 'Israel';
-  const streetLine = [street, streetNumber].filter(Boolean).join(' ');
-  return [streetLine, city, state, country].filter(Boolean).join(', ');
-};
-
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
   if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
@@ -245,7 +235,7 @@ const ConnectedListingsMapFallback = ({
   onDrawModeChange,
   isVisible = true,
 }) => {
-  const { t, locale } = useLanguage();
+  const { t, locale, language } = useLanguage();
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -398,9 +388,9 @@ const ConnectedListingsMapFallback = ({
     .map((property) => ({
       property,
       propertyId: getPropertyId(property),
-      addressQuery: toAddressQuery(property),
+      addressQuery: buildAddressQuery(property.address, language),
     }))
-    .filter((item) => item.property && item.propertyId && item.addressQuery), [properties]);
+    .filter((item) => item.property && item.propertyId && item.addressQuery), [properties, language]);
 
   useEffect(() => {
     if (typeof onDrawModeChange === 'function') {

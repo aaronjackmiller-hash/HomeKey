@@ -16,6 +16,7 @@ const {
 } = require('../services/propertyMergeService');
 const { queueInstantAlertsForProperties } = require('../services/instantAlertService');
 const { getRequestUserRole } = require('../utils/authorization');
+const { buildLocalizedAddress } = require('../utils/addressLocalization');
 
 // Allowed fields for property updates
 const PROPERTY_UPDATE_FIELDS = [
@@ -156,6 +157,23 @@ const isRealScrapeOnlyMode = () =>
 const isRealScrapedExternalId = (value) =>
     typeof value === 'string' && /^[a-z0-9]{6,}$/i.test(value);
 
+const applyAndFilter = (filter, condition) => {
+    if (!condition || typeof condition !== 'object') return;
+    if (!Array.isArray(filter.$and)) filter.$and = [];
+    filter.$and.push(condition);
+};
+
+const withLocalizedAddress = (property) => {
+    const normalized = property && typeof property.toObject === 'function' ? property.toObject() : property;
+    if (!normalized || typeof normalized !== 'object' || !normalized.address || typeof normalized.address !== 'object') {
+        return normalized;
+    }
+    return {
+        ...normalized,
+        address: buildLocalizedAddress(normalized.address),
+    };
+};
+
 const toBedroomRangeFromRoomsQuery = (roomsQuery) => {
     const normalized = String(roomsQuery || '').trim();
     if (!normalized) return null;
@@ -211,7 +229,7 @@ const getAllProperties = async (req, res) => {
                 // excluding curated/seed fallback identifiers like yad2-il-...
                 liveSourceFilter.externalId = { $regex: '^[a-z0-9]{6,}$', $options: 'i' };
             }
-            filter.$or = [liveSourceFilter];
+            applyAndFilter(filter, { $or: [liveSourceFilter] });
         }
 
         // Basic filtering logic
@@ -224,7 +242,14 @@ const getAllProperties = async (req, res) => {
         if (req.query.city) {
             // Escape special regex characters to prevent regex injection
             const escapedCity = req.query.city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            filter['address.city'] = new RegExp(escapedCity, 'i');
+            const cityPattern = new RegExp(escapedCity, 'i');
+            applyAndFilter(filter, {
+                $or: [
+                    { 'address.city': cityPattern },
+                    { 'address.localized.he.city': cityPattern },
+                    { 'address.localized.en.city': cityPattern },
+                ],
+            });
         }
         if (req.query.minPrice || req.query.maxPrice) {
             filter.price = {};
@@ -245,11 +270,12 @@ const getAllProperties = async (req, res) => {
             .populate('agent', 'name email phone whatsapp agency')
             .sort({ createdAt: -1 });
         const dedupedProperties = dedupePropertiesForDisplay(properties);
+        const localizedProperties = dedupedProperties.map((property) => withLocalizedAddress(property));
 
         res.json({
             success: true,
-            count: dedupedProperties.length,
-            data: dedupedProperties,
+            count: localizedProperties.length,
+            data: localizedProperties,
         });
     } catch (err) {
         console.error('Property Fetch Error:', err);
@@ -270,7 +296,7 @@ const getPropertyById = async (req, res) => {
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
-        res.json({ success: true, data: property });
+        res.json({ success: true, data: withLocalizedAddress(property) });
     } catch (err) {
         if (err.name === 'CastError') {
             return res.status(400).json({ success: false, message: 'Invalid property ID' });
