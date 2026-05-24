@@ -834,7 +834,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className="premium-header__actions premium-header__actions-cell">
+        <div className={`premium-header__actions premium-header__actions-cell${isHebrew ? ' premium-header__actions--hebrew' : ''}`}>
           {isHebrew ? (
             <>
               <button

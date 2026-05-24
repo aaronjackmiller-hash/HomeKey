@@ -789,6 +789,10 @@ a {
   white-space: nowrap;
 }
 
+html[dir="rtl"] .premium-header__actions--hebrew {
+  flex-direction: row-reverse;
+}
+
 .premium-header__actions-utility {
   display: inline-flex;
   align-items: center;
