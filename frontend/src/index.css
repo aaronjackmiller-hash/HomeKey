@@ -791,7 +791,23 @@ a {
 
 .premium-header__actions--hebrew {
   direction: ltr;
-  flex-direction: row-reverse;
+  flex-direction: row;
+}
+
+.premium-header__actions--hebrew .premium-header__actions-utility {
+  order: 1;
+}
+
+.premium-header__actions--hebrew .premium-header__save-search-btn {
+  order: 2;
+}
+
+.premium-header__actions--hebrew .premium-header__cta {
+  order: 3;
+}
+
+.premium-header__actions--hebrew .premium-header__language-toggle {
+  order: 4;
 }
 
 .premium-header__actions-utility {
