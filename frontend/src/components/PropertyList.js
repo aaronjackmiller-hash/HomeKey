@@ -17,6 +17,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getContactFirstName } from '../utils/contactMessaging';
 import { writeSavedSearchContext } from '../utils/savedSearchContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLocalization';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -229,12 +230,16 @@ const normalizeStreetDisplay = (streetValue = '', explicitStreetNumber = '') => 
   return [street, streetNumber].filter(Boolean).join(' ').trim();
 };
 
-const getAddressDisplay = (address = {}) => {
-  const street = normalizeStreetDisplay(address.street, address.streetNumber);
-  const city = safeText(address.city);
-  const state = safeText(address.state);
-  const zip = safeText(address.zip);
-  const nonIsraelCountry = safeText(address.country).toLowerCase() === 'israel' ? '' : safeText(address.country);
+const getAddressDisplay = (address = {}, language = 'en') => {
+  const localizedAddress = getLocalizedAddress(address, language);
+  const normalizedStreet = normalizeStreetDisplay(localizedAddress.street, localizedAddress.streetNumber);
+  const street = language === 'en'
+    ? [safeText(localizedAddress.streetNumber), safeText(localizedAddress.street)].filter(Boolean).join(' ')
+    : normalizedStreet;
+  const city = safeText(localizedAddress.city);
+  const state = safeText(localizedAddress.state);
+  const zip = safeText(localizedAddress.zip);
+  const nonIsraelCountry = safeText(localizedAddress.country).toLowerCase() === 'israel' ? '' : safeText(localizedAddress.country);
   const locationParts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
   const fullAddress = [street, ...locationParts].filter(Boolean).join(', ');
   return { street, fullAddress, locationLine: locationParts.join(', ') };
@@ -544,7 +549,7 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
 };
 
 const PropertyList = () => {
-  const { t, locale } = useLanguage();
+  const { t, locale, language } = useLanguage();
   const homeKeyBrand = t('brand.homeKey');
   const [properties, setProperties] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -871,7 +876,9 @@ const PropertyList = () => {
       if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
       if (citySearch.trim()) {
         const q = citySearch.trim().toLowerCase();
-        samples = samples.filter((p) => p.address?.city?.toLowerCase().includes(q));
+        samples = samples.filter((p) =>
+          getAddressFieldVariants(p.address, 'city').some((cityValue) => cityValue.toLowerCase().includes(q))
+        );
       }
       if (roomsSearch.trim()) {
         samples = samples.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
@@ -894,7 +901,9 @@ const PropertyList = () => {
       if (filter !== 'all') displayProperties = displayProperties.filter((p) => p?.type === filter);
       if (citySearch.trim()) {
         const q = citySearch.trim().toLowerCase();
-        displayProperties = displayProperties.filter((p) => p?.address?.city?.toLowerCase().includes(q));
+        displayProperties = displayProperties.filter((p) =>
+          getAddressFieldVariants(p?.address, 'city').some((cityValue) => cityValue.toLowerCase().includes(q))
+        );
       }
       if (roomsSearch.trim()) {
         displayProperties = displayProperties.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
@@ -947,7 +956,8 @@ const PropertyList = () => {
     mapSourceProperties.forEach((property) => {
       const propertyId = getPropertyId(property);
       if (!propertyId || !circlePropertyIdSet.has(String(propertyId))) return;
-      const city = safeText(property?.address?.city);
+      const localizedAddress = getLocalizedAddress(property?.address, language);
+      const city = safeText(localizedAddress.city);
       if (!city) return;
       const key = city.toLowerCase();
       if (!cityMap.has(key)) {
@@ -955,7 +965,7 @@ const PropertyList = () => {
       }
     });
     return Array.from(cityMap.values()).slice(0, 8);
-  }, [circlePropertyIdSet, circleSelection.active, mapSourceProperties]);
+  }, [circlePropertyIdSet, circleSelection.active, mapSourceProperties, language]);
 
   useEffect(() => {
     const searchContext = {
@@ -1239,7 +1249,7 @@ const PropertyList = () => {
           const imageSrc =
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
-          const { street, locationLine } = getAddressDisplay(property.address);
+          const { street, locationLine } = getAddressDisplay(property.address, language);
           const displayStreet = dedupeRepeatingPhrase(sanitizeReadableText(property, street));
           const bedroomCount = getBedroomCount(property);
           const bathroomCount = getBathroomCount(property);
