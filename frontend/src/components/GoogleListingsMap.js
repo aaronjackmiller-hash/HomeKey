@@ -676,8 +676,6 @@ const GoogleListingsMap = ({
     const markerInputs = propertiesWithAddress.slice(0, MAX_MARKERS);
     markerHydrationInProgressRef.current = true;
     expectedMarkerCountRef.current = markerInputs.length;
-    const supportsDesktopHover = typeof window.matchMedia === 'function'
-      && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     applyCircleFilter();
 
     const updateMarkers = async () => {
@@ -731,8 +729,7 @@ const GoogleListingsMap = ({
             1,
             markerStyleOverrides
           );
-        const markerHoverIcons = supportsDesktopHover
-          && !isHousePinPreset
+        const markerHoverIcons = !isHousePinPreset
           ? [
             createPricePinIcon(
               mapsApi,
