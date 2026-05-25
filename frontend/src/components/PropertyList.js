@@ -608,6 +608,7 @@ const PropertyList = () => {
   const [savedSearchHistoryMode, setSavedSearchHistoryMode] = useState(false);
   const [savedSearchId, setSavedSearchId] = useState('');
   const [savedSearchHistoryMatches, setSavedSearchHistoryMatches] = useState([]);
+  const [hoveredListingId, setHoveredListingId] = useState(null);
 
   // Clear any pending auto-retry timers
   const clearTimers = () => {
@@ -1268,6 +1269,7 @@ const PropertyList = () => {
           if (!property || typeof property !== 'object') return null;
           const isHistoricalMatch = property.isHistoricalMatch === true;
           const propertyId = getPropertyId(property);
+          const hoverTargetId = propertyId ? String(propertyId) : null;
           const interestPropertyId = String(
             isHistoricalMatch ? (property.sourcePropertyId || '') : propertyId
           ).trim();
@@ -1308,6 +1310,15 @@ const PropertyList = () => {
             <div
               key={key}
               className={`property-card ${canOpenDetail ? 'is-clickable' : ''}`}
+              onMouseEnter={() => {
+                if (!hoverTargetId) return;
+                setHoveredListingId((currentHoverId) =>
+                  currentHoverId === hoverTargetId ? currentHoverId : hoverTargetId
+                );
+              }}
+              onMouseLeave={() => {
+                setHoveredListingId((currentHoverId) => (currentHoverId == null ? currentHoverId : null));
+              }}
               onClick={openPropertyDetail}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
@@ -1558,6 +1569,7 @@ const PropertyList = () => {
               clearSignal={clearCircleSignal}
               drawModeToggleSignal={0}
               isVisible={isMapPanelVisible}
+              hoveredListingId={hoveredListingId}
             />
           </section>
         </div>

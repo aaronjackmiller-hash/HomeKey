@@ -4525,23 +4525,96 @@ legend {
   border: none;
 }
 
-.fallback-price-pin span {
+.property-list-page .map-listing-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  transform: translateZ(0) scale(1);
+  transform-origin: center bottom;
+  transition: all 300ms ease-out;
+  will-change: transform;
+}
+
+.property-list-page .map-listing-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translate(-50%, -50%) scale(0.86);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.property-list-page .map-listing-marker__pin {
+  --map-marker-pin-bg: #1a1a1a;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
+  background: var(--map-marker-pin-bg);
   color: #ffffff;
+  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  min-height: 21px;
   line-height: 1;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3);
+  white-space: nowrap;
   padding: 0 8px;
-  transform-origin: center bottom;
-  transition: transform 0.14s ease-out;
+  border: 1px solid rgba(26, 26, 26, 0.9);
+  box-shadow: 0 4px 11px rgba(15, 23, 42, 0.27);
+}
+
+.property-list-page .map-listing-marker__pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--map-marker-pin-bg);
+}
+
+.property-list-page .map-listing-marker.is-favorite .map-listing-marker__pin {
+  --map-marker-pin-bg: #ff0000;
+}
+
+.property-list-page .map-listing-marker.is-hovered {
+  transform: translateZ(0) scale(1.12);
+}
+
+.property-list-page .map-listing-marker.is-hovered::after {
+  animation: map-marker-radar-pulse 1.7s ease-out infinite;
+}
+
+@keyframes map-marker-radar-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.86);
+    opacity: 0.38;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(2.7);
+    opacity: 0;
+  }
+}
+
+.fallback-price-pin .map-listing-marker__pin {
+  padding: 0 8px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .fallback-price-pin span:hover {
-    transform: scale(1.12);
-    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.34);
+  .property-list-page .map-listing-marker:hover {
+    transform: translateZ(0) scale(1.12);
   }
 }
 
