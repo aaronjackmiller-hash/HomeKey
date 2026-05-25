@@ -4523,25 +4523,146 @@ legend {
 .fallback-price-pin {
   background: transparent;
   border: none;
+  overflow: visible !important;
 }
 
-.fallback-price-pin span {
+.fallback-price-pin .map-listing-marker {
+  overflow: visible;
+}
+
+.map-listing-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  transform-origin: center bottom;
+  transition: all 300ms ease-out;
+  will-change: transform, filter;
+}
+
+.map-listing-marker-pin {
+  --map-marker-pin-bg: #1a1a1a;
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
+  background: var(--map-marker-pin-bg);
   color: #ffffff;
+  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  min-height: 21px;
   line-height: 1;
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3);
+  white-space: nowrap;
   padding: 0 8px;
-  transform-origin: center bottom;
-  transition: transform 0.14s ease-out;
+  border: 1px solid rgba(26, 26, 26, 0.9);
+  box-shadow: 0 4px 11px rgba(15, 23, 42, 0.27);
+  cursor: pointer;
+  transition: all 300ms ease-out;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.map-listing-marker-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--map-marker-pin-bg);
+}
+
+.map-listing-marker .radar-pulse-ring {
+  display: block;
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 300ms ease-out;
+}
+
+.map-listing-marker.is-favorite .map-listing-marker-pin {
+  --map-marker-pin-bg: #ff0000;
+}
+
+.map-listing-marker.is-hovered {
+  z-index: 50;
+}
+
+.map-listing-marker.is-hovered .map-listing-marker-pin {
+  --map-marker-pin-bg: #0f3c6d;
+  border-color: #0f3c6d;
+  transform: scale(1.15);
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.26);
+}
+
+.map-listing-marker.is-hovered .radar-pulse-ring {
+  opacity: 1;
+}
+
+.map-hovered-listing-caption {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 14px);
+  transform: translateY(-50%);
+  min-width: 168px;
+  max-width: 240px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+  z-index: 70;
+  pointer-events: none;
+  display: none;
+}
+
+.map-hovered-listing-caption::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-left: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.map-hovered-listing-caption__title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-hovered-listing-caption__meta {
+  margin: 5px 0 0;
+  font-size: 0.68rem;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.map-listing-marker.is-hovered .map-hovered-listing-caption {
+  display: block;
+}
+
+.fallback-price-pin .map-listing-marker-pin {
+  padding: 0 8px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .fallback-price-pin span:hover {
-    transform: scale(1.12);
-    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.34);
+  .map-listing-marker:hover .map-listing-marker-pin {
+    transform: scale(1.08);
   }
 }
 

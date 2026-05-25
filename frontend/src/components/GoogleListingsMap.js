@@ -227,13 +227,60 @@ const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') =>
   return `₪${parsedPrice.toLocaleString(locale)}`;
 };
 
-const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}) => {
+const toMarkerRoomCount = (property = {}) => {
+  const candidates = [property.rooms, property.bedrooms, property.roomCount];
+  for (const candidate of candidates) {
+    const asNumber = Number(candidate);
+    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  }
+  return null;
+};
+
+const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
+  const roomCount = toMarkerRoomCount(property);
+  const roomLabel = roomCount ? `${roomCount} Rooms` : '';
+  const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
+  const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
+  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' • ');
+};
+
+const createListingMarkerElement = (priceText, details = {}, isFavorite = false) => {
+  if (typeof document === 'undefined') return null;
+  const markerDetails = details && typeof details === 'object' ? details : {};
+  const markerElement = document.createElement('div');
+  markerElement.className = 'map-listing-marker';
+  const markerPulseRing = document.createElement('span');
+  markerPulseRing.className = 'radar-pulse-ring';
+  markerElement.appendChild(markerPulseRing);
+  if (isFavorite) markerElement.classList.add('is-favorite');
+  const markerPin = document.createElement('span');
+  markerPin.className = 'map-listing-marker-pin';
+  markerPin.textContent = priceText;
+  markerElement.appendChild(markerPin);
+  const markerCaption = document.createElement('div');
+  markerCaption.className = 'map-hovered-listing-caption animate-fadeIn';
+  const markerCaptionTitle = document.createElement('p');
+  markerCaptionTitle.className = 'map-hovered-listing-caption__title';
+  markerCaptionTitle.textContent = safeText(markerDetails.title) || 'Listing';
+  const markerCaptionMeta = document.createElement('p');
+  markerCaptionMeta.className = 'map-hovered-listing-caption__meta';
+  markerCaptionMeta.textContent = safeText(markerDetails.detailLine) || priceText;
+  markerCaption.appendChild(markerCaptionTitle);
+  markerCaption.appendChild(markerCaptionMeta);
+  markerElement.appendChild(markerCaption);
+  return markerElement;
+};
+
+const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}, options = {}) => {
   const pinHeight = Number(preset.pinHeight) || 26;
   const pointerHeight = Number(preset.pointerHeight) || 10;
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
   const minWidth = Number(preset.minWidth) || 56;
   const fontSize = Number(preset.fontSize) || 12;
   const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const resolvedOptions = options && typeof options === 'object' ? options : {};
+  const showRadarPulse = Boolean(resolvedOptions.showRadarPulse);
+  const pulsePhase = Number(resolvedOptions.pulsePhase) || 0;
   const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
   const pinColor = resolvedStyleOverrides.pinColor || preset.pinColor || '#2563eb';
   const pinStrokeColor = resolvedStyleOverrides.pinStrokeColor || preset.pinStrokeColor || '#1d4ed8';
@@ -257,6 +304,18 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const safeRadius = Math.max(1, radius - halfStroke);
   const pointerLeftX = centerX - pointerHalfWidth;
   const pointerRightX = centerX + pointerHalfWidth;
+  const radarPadding = showRadarPulse ? 66 : 0;
+  const iconWidth = bubbleWidth + (radarPadding * 2);
+  const iconHeight = totalHeight + (radarPadding * 2);
+  const radarCenterX = centerX + radarPadding;
+  const radarCenterY = Math.round((pinHeight / 2) + radarPadding);
+  const radarRadii = pulsePhase % 2 === 0 ? [22, 38, 54] : [26, 44, 62];
+  const radarMarkup = showRadarPulse
+    ? radarRadii.map((radius, index) => {
+      const opacity = [0.36, 0.24, 0.14][index] || 0.12;
+      return `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(15, 60, 109)" stroke-opacity="${opacity}" stroke-width="2.4" />`;
+    }).join('')
+    : '';
   const pinPath = [
     `M${leftX + safeRadius} ${topY}`,
     `H${rightX - safeRadius}`,
@@ -271,19 +330,22 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
     'Z',
   ].join(' ');
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bubbleWidth}" height="${totalHeight}" viewBox="0 0 ${bubbleWidth} ${totalHeight}" overflow="visible">
-    <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
-    <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
+    ${radarMarkup}
+    <g transform="translate(${radarPadding}, ${radarPadding})">
+      <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
+      <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
+    </g>
   </svg>`;
 
   const safeScale = Number(scale) > 0 ? Number(scale) : 1;
-  const scaledWidth = bubbleWidth * safeScale;
-  const scaledHeight = totalHeight * safeScale;
+  const scaledWidth = iconWidth * safeScale;
+  const scaledHeight = iconHeight * safeScale;
 
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new mapsApi.Size(scaledWidth, scaledHeight),
-    anchor: new mapsApi.Point(centerX * safeScale, totalHeight * safeScale),
+    anchor: new mapsApi.Point((centerX + radarPadding) * safeScale, (totalHeight + radarPadding) * safeScale),
   };
 };
 
@@ -335,6 +397,7 @@ const GoogleListingsMap = ({
   drawModeToggleSignal = 0,
   onDrawModeChange,
   isVisible = true,
+  hoveredListingId = null,
 }) => {
   const { t, locale, language } = useLanguage();
   const mapLanguage = language === 'he' ? 'he' : 'en';
@@ -351,6 +414,7 @@ const GoogleListingsMap = ({
   const drawListenersRef = useRef([]);
   const activeCircleRef = useRef(null);
   const draftCircleRef = useRef(null);
+  const hoveredListingIdRef = useRef(hoveredListingId);
   const drawStartRef = useRef(null);
   const lastDraftPointerRef = useRef(null);
   const lastCompletionTimestampRef = useRef(0);
@@ -362,6 +426,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [hoverPulsePhase, setHoverPulsePhase] = useState(0);
   const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
@@ -388,6 +453,21 @@ const GoogleListingsMap = ({
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
   );
+  useEffect(() => {
+    hoveredListingIdRef.current = hoveredListingId == null ? null : String(hoveredListingId);
+  }, [hoveredListingId]);
+  useEffect(() => {
+    if (hoveredListingId == null || typeof window === 'undefined') {
+      setHoverPulsePhase(0);
+      return undefined;
+    }
+    const intervalId = window.setInterval(() => {
+      setHoverPulsePhase((phase) => (phase + 1) % 2);
+    }, 2200);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [hoveredListingId]);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -416,6 +496,8 @@ const GoogleListingsMap = ({
   };
 
   const applyCircleFilter = () => {
+    const mapInstance = mapRef.current;
+    if (!mapInstance) return;
     const activeCircle = activeCircleRef.current;
     const center = activeCircle && activeCircle.getCenter ? activeCircle.getCenter() : null;
     const radiusMeters = activeCircle && typeof activeCircle.getRadius === 'function'
@@ -435,7 +517,11 @@ const GoogleListingsMap = ({
     markerEntriesRef.current.forEach((entry) => {
       const isVisible = !effectiveAreaFilter
         || getDistanceMeters(entry.coords, centerPoint) <= radiusMeters;
-      entry.marker.setVisible(isVisible);
+      if (entry.isAdvancedMarker) {
+        entry.marker.map = isVisible ? mapInstance : null;
+      } else if (typeof entry.marker.setVisible === 'function') {
+        entry.marker.setVisible(isVisible);
+      }
       if (entry.frameMarker) entry.frameMarker.setVisible(isVisible);
       if (isVisible) {
         visibleMarkers += 1;
@@ -572,7 +658,11 @@ const GoogleListingsMap = ({
     let cancelled = false;
 
     markerEntriesRef.current.forEach((entry) => {
-      entry.marker.setMap(null);
+      if (entry.isAdvancedMarker) {
+        entry.marker.map = null;
+      } else if (typeof entry.marker.setMap === 'function') {
+        entry.marker.setMap(null);
+      }
       if (entry.frameMarker) entry.frameMarker.setMap(null);
     });
     markerEntriesRef.current = [];
@@ -586,14 +676,23 @@ const GoogleListingsMap = ({
     const markerInputs = propertiesWithAddress.slice(0, MAX_MARKERS);
     markerHydrationInProgressRef.current = true;
     expectedMarkerCountRef.current = markerInputs.length;
-    const supportsDesktopHover = typeof window.matchMedia === 'function'
-      && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     applyCircleFilter();
 
     const updateMarkers = async () => {
       const bounds = new mapsApi.LatLngBounds();
       let placed = 0;
       let cacheChanged = false;
+      let AdvancedMarkerElementCtor = null;
+      if (typeof mapsApi.importLibrary === 'function') {
+        try {
+          const markerLibrary = await mapsApi.importLibrary('marker');
+          if (markerLibrary && markerLibrary.AdvancedMarkerElement) {
+            AdvancedMarkerElementCtor = markerLibrary.AdvancedMarkerElement;
+          }
+        } catch (_err) {
+          AdvancedMarkerElementCtor = null;
+        }
+      }
 
       for (const item of markerInputs) {
         if (cancelled) {
@@ -616,7 +715,11 @@ const GoogleListingsMap = ({
         const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
         const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
         const markerPrice = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
+        const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
+        const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
         const isHousePinPreset = markerPreset.markerMode === 'house';
+        const isHoveredFromList = hoveredListingIdRef.current === propertyId;
+        const canUseAdvancedMarker = Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
         const markerIcon = isHousePinPreset
           ? createHousePinIcon(mapsApi, markerPreset)
           : createPricePinIcon(
@@ -626,25 +729,53 @@ const GoogleListingsMap = ({
             1,
             markerStyleOverrides
           );
-        const markerHoverIcon = supportsDesktopHover
-          && !isHousePinPreset
-          ? createPricePinIcon(
-            mapsApi,
-            markerPreset,
+        const markerHoverIcons = !isHousePinPreset
+          ? [
+            createPricePinIcon(
+              mapsApi,
+              markerPreset,
+              markerPrice,
+              DESKTOP_MARKER_HOVER_SCALE,
+              markerStyleOverrides,
+              { showRadarPulse: true, pulsePhase: 0 }
+            ),
+            createPricePinIcon(
+              mapsApi,
+              markerPreset,
+              markerPrice,
+              DESKTOP_MARKER_HOVER_SCALE,
+              markerStyleOverrides,
+              { showRadarPulse: true, pulsePhase: 1 }
+            ),
+          ]
+          : [];
+        const markerHoverIcon = markerHoverIcons[0] || null;
+        const markerElement = canUseAdvancedMarker
+          ? createListingMarkerElement(
             markerPrice,
-            DESKTOP_MARKER_HOVER_SCALE,
-            markerStyleOverrides
+            { title: markerListingTitle, detailLine: markerDetailLine },
+            isFavoriteProperty
           )
           : null;
-
-        const marker = new mapsApi.Marker({
-          map,
-          position: coords,
-          title: safeText(item.property.title) || item.addressQuery,
-          icon: markerIcon,
-          zIndex: 2,
-          optimized: true,
-        });
+        if (markerElement) {
+          markerElement.classList.toggle('is-hovered', isHoveredFromList);
+        }
+        const marker = canUseAdvancedMarker
+          ? new AdvancedMarkerElementCtor({
+            map,
+            position: coords,
+            title: safeText(item.property.title) || item.addressQuery,
+            content: markerElement || undefined,
+            zIndex: isHoveredFromList ? 100 : 2,
+          })
+          : new mapsApi.Marker({
+            map,
+            position: coords,
+            title: safeText(item.property.title) || item.addressQuery,
+            icon: isHoveredFromList && markerHoverIcon ? markerHoverIcon : markerIcon,
+            zIndex: isHoveredFromList ? 100 : 2,
+            optimized: true,
+          });
 
         marker.addListener('click', () => {
           const title = safeText(item.property.title) || t('map.propertyListing');
@@ -667,14 +798,22 @@ const GoogleListingsMap = ({
               </a>
             </div>`
           );
-          infoWindow.open(map, marker);
+          if (canUseAdvancedMarker) {
+            infoWindow.open({ map, anchor: marker });
+          } else {
+            infoWindow.open(map, marker);
+          }
         });
-        if (markerHoverIcon) {
+        if (markerHoverIcon && !canUseAdvancedMarker) {
           marker.addListener('mouseover', () => {
             marker.setIcon(markerHoverIcon);
           });
           marker.addListener('mouseout', () => {
-            marker.setIcon(markerIcon);
+            marker.setIcon(
+              hoveredListingIdRef.current === propertyId && markerHoverIcons.length > 0
+                ? markerHoverIcons[hoverPulsePhase % markerHoverIcons.length]
+                : markerIcon
+            );
           });
         }
 
@@ -683,6 +822,11 @@ const GoogleListingsMap = ({
           frameMarker: null,
           propertyId,
           coords,
+          markerElement,
+          isAdvancedMarker: canUseAdvancedMarker,
+          markerIcon,
+          markerHoverIcon,
+          markerHoverIcons,
         });
         if (activeCircleRef.current) applyCircleFilter();
         bounds.extend(coords);
@@ -693,7 +837,7 @@ const GoogleListingsMap = ({
 
       if (!hasInitializedViewportRef.current) {
         if (placed === 1 && markerEntriesRef.current[0]) {
-          map.setCenter(markerEntriesRef.current[0].marker.getPosition());
+          map.setCenter(markerEntriesRef.current[0].coords);
           map.setZoom(13);
         } else if (placed > 1) {
           map.fitBounds(bounds, 42);
@@ -713,7 +857,11 @@ const GoogleListingsMap = ({
     return () => {
       cancelled = true;
       markerEntriesRef.current.forEach((entry) => {
-        entry.marker.setMap(null);
+        if (entry.isAdvancedMarker) {
+          entry.marker.map = null;
+        } else if (typeof entry.marker.setMap === 'function') {
+          entry.marker.setMap(null);
+        }
         if (entry.frameMarker) entry.frameMarker.setMap(null);
       });
       markerEntriesRef.current = [];
@@ -721,6 +869,33 @@ const GoogleListingsMap = ({
       expectedMarkerCountRef.current = 0;
     };
   }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t]);
+
+  useEffect(() => {
+    const activeHoveredListingId = hoveredListingId == null ? '' : String(hoveredListingId);
+    markerEntriesRef.current.forEach((entry) => {
+      const isHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
+      if (entry.markerElement) {
+        entry.markerElement.classList.toggle('is-hovered', isHovered);
+      }
+      if (entry.isAdvancedMarker) {
+        entry.marker.zIndex = isHovered ? 100 : 2;
+        return;
+      }
+      if (typeof entry.marker.setZIndex === 'function') {
+        entry.marker.setZIndex(isHovered ? 100 : 2);
+      }
+      if (entry.markerIcon && typeof entry.marker.setIcon === 'function') {
+        if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+          const nextHoverIcon = entry.markerHoverIcons[hoverPulsePhase % entry.markerHoverIcons.length];
+          entry.marker.setIcon(nextHoverIcon || entry.markerHoverIcon || entry.markerIcon);
+        } else if (isHovered && entry.markerHoverIcon) {
+          entry.marker.setIcon(entry.markerHoverIcon);
+        } else {
+          entry.marker.setIcon(entry.markerIcon);
+        }
+      }
+    });
+  }, [hoveredListingId, hoverPulsePhase]);
 
   useEffect(() => {
     if (!isVisible || !mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
@@ -1114,6 +1289,7 @@ const GoogleListingsMap = ({
         drawModeToggleSignal={drawModeToggleSignal}
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
+        hoveredListingId={hoveredListingId}
       />
     );
   }
@@ -1129,6 +1305,7 @@ const GoogleListingsMap = ({
         drawModeToggleSignal={drawModeToggleSignal}
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
+        hoveredListingId={hoveredListingId}
       />
     );
   }
@@ -1144,6 +1321,7 @@ const GoogleListingsMap = ({
         drawModeToggleSignal={drawModeToggleSignal}
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
+        hoveredListingId={hoveredListingId}
       />
     );
   }

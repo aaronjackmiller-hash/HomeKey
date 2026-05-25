@@ -83,12 +83,34 @@ const CITY_CENTER_HINTS = [
 ];
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const escapeHtml = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 const escapeSvgText = (value) => String(value || '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
+const toMarkerRoomCount = (property = {}) => {
+  const candidates = [property.rooms, property.bedrooms, property.roomCount];
+  for (const candidate of candidates) {
+    const asNumber = Number(candidate);
+    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  }
+  return null;
+};
+
+const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
+  const roomCount = toMarkerRoomCount(property);
+  const roomLabel = roomCount ? `${roomCount} Rooms` : '';
+  const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
+  const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
+  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' • ');
+};
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
   if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
@@ -125,8 +147,13 @@ const buildFallbackCoords = (addressQuery, markerIndex = 0) => {
   };
 };
 
-const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
+const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options = {}) => {
   const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const resolvedOptions = options && typeof options === 'object' ? options : {};
+  const scale = Number.isFinite(Number(resolvedOptions.scale)) && Number(resolvedOptions.scale) > 0
+    ? Number(resolvedOptions.scale)
+    : 1;
+  const isHovered = Boolean(resolvedOptions.hovered);
   const minWidth = Number(preset.minWidth) || 60;
   const height = Number(preset.height) || 24;
   const pointerHeight = Number(preset.pointerHeight) || 8;
@@ -137,43 +164,35 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
   const fontSize = Number(preset.fontSize) || 11;
   const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
   const safePriceText = escapeSvgText(priceText);
-  const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
+  const estimatedTextWidth = Math.ceil(String(priceText || '').length * fontSize * 0.62);
   const pinWidth = Math.max(minWidth, estimatedTextWidth + 16);
-  const totalHeight = height + pointerHeight;
-  const centerX = pinWidth / 2;
-  const pointerHalfWidth = Math.max(5, Math.round(pinWidth * 0.12));
-  const textY = Math.round((height / 2) + (fontSize * 0.36));
-  const radius = Math.round(height / 2);
-  const halfBorder = borderWidth / 2;
-  const leftX = halfBorder;
-  const rightX = pinWidth - halfBorder;
-  const topY = halfBorder;
-  const bubbleBottomY = height - halfBorder;
-  const tipY = totalHeight - halfBorder;
-  const safeRadius = Math.max(1, radius - halfBorder);
-  const pointerLeftX = centerX - pointerHalfWidth;
-  const pointerRightX = centerX + pointerHalfWidth;
-  const pinPath = [
-    `M${leftX + safeRadius} ${topY}`,
-    `H${rightX - safeRadius}`,
-    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
-    `V${bubbleBottomY - safeRadius}`,
-    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
-    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
-    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
-    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
-    `V${topY + safeRadius}`,
-    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
-    'Z',
-  ].join(' ');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pinWidth}" height="${totalHeight}" viewBox="0 0 ${pinWidth} ${totalHeight}" overflow="visible">
-    <path d="${pinPath}" fill="${pinBackground}" stroke="${pinBorderColor}" stroke-width="${borderWidth}" stroke-linejoin="round"/>
-    <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${pinTextColor}">${safePriceText}</text>
-  </svg>`;
-  return L.icon({
-    iconUrl: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    iconSize: [pinWidth, totalHeight],
-    iconAnchor: [pinWidth / 2, totalHeight],
+  const scaledPinWidth = Math.round(pinWidth * scale);
+  const scaledHeight = Math.round(height * scale);
+  const scaledPointerHeight = Math.round(pointerHeight * scale);
+  const scaledFontSize = Math.max(10, Math.round(fontSize * scale));
+  const totalHeight = scaledHeight + scaledPointerHeight;
+  const markerRootClassName = `map-listing-marker${isHovered ? ' is-hovered' : ''}`;
+  const captionTitle = escapeHtml(resolvedOptions.captionTitle || '');
+  const captionMeta = escapeHtml(resolvedOptions.captionMeta || '');
+  const markerPinInlineStyle = [
+    `--map-marker-pin-bg:${pinBackground}`,
+    `min-width:${scaledPinWidth}px`,
+    `height:${scaledHeight}px`,
+    `background:${pinBackground}`,
+    `border:${borderWidth}px solid ${pinBorderColor}`,
+    `color:${pinTextColor}`,
+    `font-size:${scaledFontSize}px`,
+    `font-weight:${fontWeight}`,
+  ].join(';');
+  const markerCaptionHtml = `<div class="map-hovered-listing-caption animate-fadeIn">
+    <p class="map-hovered-listing-caption__title">${captionTitle || 'Listing'}</p>
+    <p class="map-hovered-listing-caption__meta">${captionMeta || escapeHtml(priceText)}</p>
+  </div>`;
+  return L.divIcon({
+    className: 'fallback-price-pin',
+    html: `<div class="${markerRootClassName}"><span class="radar-pulse-ring"></span><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}</span>${markerCaptionHtml}</div>`,
+    iconSize: [scaledPinWidth, totalHeight],
+    iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
   });
 };
@@ -209,9 +228,9 @@ const createFallbackHouseIcon = (preset) => {
 const getFallbackMarkerStylePreset = (presetKey) =>
   FALLBACK_MARKER_STYLE_PRESETS[presetKey] || FALLBACK_MARKER_STYLE_PRESETS[DEFAULT_FALLBACK_MARKER_PRESET_KEY];
 
-const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}) => (preset.markerMode === 'house'
+const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}, options = {}) => (preset.markerMode === 'house'
   ? createFallbackHouseIcon(preset)
-  : createFallbackPriceIcon(priceText, preset, styleOverrides));
+  : createFallbackPriceIcon(priceText, preset, styleOverrides, options));
 
 const isCoarsePointerDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -234,6 +253,7 @@ const ConnectedListingsMapFallback = ({
   drawModeToggleSignal = 0,
   onDrawModeChange,
   isVisible = true,
+  hoveredListingId = null,
 }) => {
   const { t, locale, language } = useLanguage();
   const mapContainerRef = useRef(null);
@@ -291,6 +311,18 @@ const ConnectedListingsMapFallback = ({
       return;
     }
     if (map.hasLayer(marker)) map.removeLayer(marker);
+  };
+  const syncHoveredMarkerClass = (marker, isHovered) => {
+    if (!marker || typeof marker.getElement !== 'function') return;
+    const markerElement = marker.getElement();
+    if (!markerElement) return;
+    markerElement.classList.toggle('is-hovered', isHovered);
+    const markerRoot = markerElement.querySelector('.map-listing-marker');
+    if (!markerRoot) return;
+    markerRoot.classList.toggle('is-hovered', isHovered);
+    if (typeof marker.setZIndexOffset === 'function') {
+      marker.setZIndexOffset(isHovered ? 800 : 0);
+    }
   };
 
   const removeActiveCircle = () => {
@@ -456,17 +488,48 @@ const ConnectedListingsMapFallback = ({
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
       const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
       const priceText = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
+      const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
+      const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
+      const markerCaptionOptions = {
+        captionTitle: markerListingTitle,
+        captionMeta: markerDetailLine || priceText,
+      };
+      const fallbackMarkerIcon = createFallbackMarkerIcon(
+        priceText,
+        markerPreset,
+        markerStyleOverrides,
+        markerCaptionOptions
+      );
+      const fallbackMarkerHoverIcon = createFallbackMarkerIcon(
+        priceText,
+        markerPreset,
+        {
+          ...markerStyleOverrides,
+          borderWidth: Math.max(
+            Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
+            1
+          ) + 0.8,
+          pinBackground: '#0f3c6d',
+          pinBorderColor: '#0f3c6d',
+          fontWeight: 800,
+        },
+        { ...markerCaptionOptions, hovered: true, scale: 1.15 }
+      );
+      const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
-        icon: createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides),
+        icon: shouldHighlightMarker ? fallbackMarkerHoverIcon : fallbackMarkerIcon,
       });
       marker.bindPopup(
         `<strong>${safeText(item.property.title) || t('map.propertyListing')}</strong><br/>${priceText}<br/>${item.addressQuery}`
       );
       marker.addTo(map);
+      syncHoveredMarkerClass(marker, shouldHighlightMarker);
       markersRef.current.push({
         marker,
         propertyId,
+        fallbackMarkerIcon,
+        fallbackMarkerHoverIcon,
       });
       bounds.push([coords.lat, coords.lng]);
     });
@@ -488,6 +551,17 @@ const ConnectedListingsMapFallback = ({
       applyCircleFilter();
     }, 0);
   }, [markerPreset, propertiesWithAddress, favoritePropertyIdSet, locale, t]);
+
+  useEffect(() => {
+    const activeHoveredListingId = hoveredListingId == null ? '' : String(hoveredListingId);
+    markersRef.current.forEach((entry) => {
+      const isHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
+      if (typeof entry.marker?.setIcon === 'function' && entry.fallbackMarkerIcon && entry.fallbackMarkerHoverIcon) {
+        entry.marker.setIcon(isHovered ? entry.fallbackMarkerHoverIcon : entry.fallbackMarkerIcon);
+      }
+      syncHoveredMarkerClass(entry.marker, isHovered);
+    });
+  }, [hoveredListingId]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
