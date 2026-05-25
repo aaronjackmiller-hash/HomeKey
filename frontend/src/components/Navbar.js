@@ -69,6 +69,7 @@ const includesAnyKeyword = (searchText = '', keywords = []) =>
   keywords.some((keyword) => searchText.includes(keyword));
 
 const normalizeRoomCount = (value) => {
+  if (value == null || String(value).trim() === '') return '';
   const parsed = Number(value);
   if (Number.isNaN(parsed) || parsed < 0) return '';
   if (parsed >= 4) return '4+';
@@ -76,6 +77,7 @@ const normalizeRoomCount = (value) => {
 };
 
 const normalizeBathCount = (value) => {
+  if (value == null || String(value).trim() === '') return '';
   const parsed = Number(value);
   if (Number.isNaN(parsed) || parsed < 0) return '';
   if (parsed >= 3) return '3+';
@@ -140,7 +142,7 @@ const parseAiPriceRange = (rawInput = '') => {
 const extractAiCityCandidate = (rawInput = '') => {
   const strippedText = String(rawInput || '')
     .replace(/[$₪]/g, ' ')
-    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with)\b/gi, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
     .replace(/[^a-zA-Z\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
