@@ -38,6 +38,11 @@ const AI_FEATURE_KEYWORDS = {
   furnished: ['furnished'],
   mamad: ['mamad', 'safe room', 'security room'],
 };
+const getSpeechRecognitionConstructor = () => {
+  if (typeof window === 'undefined') return null;
+  const recognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  return typeof recognitionConstructor === 'function' ? recognitionConstructor : null;
+};
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
@@ -336,6 +341,8 @@ const Navbar = () => {
   const [interestVersion, setInterestVersion] = useState(0);
   const [isSavingSearch, setIsSavingSearch] = useState(false);
   const [saveSearchStatus, setSaveSearchStatus] = useState('');
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [voiceSearchStatus, setVoiceSearchStatus] = useState('');
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
@@ -344,6 +351,8 @@ const Navbar = () => {
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
   const deferredAutoSaveTimerRef = useRef(null);
+  const voiceStatusTimerRef = useRef(null);
+  const voiceRecognitionRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -377,6 +386,18 @@ const Navbar = () => {
     if (deferredAutoSaveTimerRef.current) {
       window.clearTimeout(deferredAutoSaveTimerRef.current);
       deferredAutoSaveTimerRef.current = null;
+    }
+    if (voiceStatusTimerRef.current) {
+      window.clearTimeout(voiceStatusTimerRef.current);
+      voiceStatusTimerRef.current = null;
+    }
+    if (voiceRecognitionRef.current) {
+      try {
+        voiceRecognitionRef.current.stop();
+      } catch (_err) {
+        // Ignore failures while unmounting; recognition session may already be closed.
+      }
+      voiceRecognitionRef.current = null;
     }
   }, []);
 
@@ -569,8 +590,21 @@ const Navbar = () => {
     setRoomsBathsExpanded(false);
   };
 
-  const handleMobileAiSearch = () => {
-    const prompt = city.trim();
+  const setTransientVoiceStatus = (message, timeoutMs = 2600) => {
+    setVoiceSearchStatus(message);
+    if (voiceStatusTimerRef.current && typeof window !== 'undefined') {
+      window.clearTimeout(voiceStatusTimerRef.current);
+      voiceStatusTimerRef.current = null;
+    }
+    if (!message || timeoutMs <= 0 || typeof window === 'undefined') return;
+    voiceStatusTimerRef.current = window.setTimeout(() => {
+      setVoiceSearchStatus('');
+      voiceStatusTimerRef.current = null;
+    }, timeoutMs);
+  };
+
+  const applyAiPrompt = (rawPrompt = '') => {
+    const prompt = String(rawPrompt || '').trim();
     if (!prompt) return;
     const aiSearch = parseAiSearchInput(prompt);
     setCity(aiSearch.city);
@@ -598,6 +632,85 @@ const Navbar = () => {
     setPriceExpanded(false);
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
+    return true;
+  };
+
+  const handleMobileAiSearch = () => {
+    applyAiPrompt(city);
+  };
+
+  const handleMobileVoiceSearch = () => {
+    if (isVoiceListening && voiceRecognitionRef.current) {
+      try {
+        voiceRecognitionRef.current.stop();
+      } catch (_err) {
+        // Ignore stop errors; this is best-effort.
+      }
+      setIsVoiceListening(false);
+      setTransientVoiceStatus(t('navbar.voiceSearchStoppedStatus'));
+      return;
+    }
+
+    const SpeechRecognition = getSpeechRecognitionConstructor();
+    if (!SpeechRecognition) {
+      setTransientVoiceStatus(t('navbar.voiceSearchUnsupported'));
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.lang = language === 'he' ? 'he-IL' : 'en-US';
+
+      recognition.onstart = () => {
+        setIsVoiceListening(true);
+        setTransientVoiceStatus(t('navbar.voiceSearchListeningStatus'), 0);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results || [])
+          .map((result) => (result && result[0] ? String(result[0].transcript || '') : ''))
+          .join(' ')
+          .trim();
+        if (!transcript) {
+          setTransientVoiceStatus(t('navbar.voiceSearchNoSpeech'));
+          return;
+        }
+        setCity(transcript);
+        const applied = applyAiPrompt(transcript);
+        if (applied) setTransientVoiceStatus(t('navbar.voiceSearchAppliedStatus'));
+      };
+
+      recognition.onerror = (event) => {
+        const errorCode = String(event?.error || '').toLowerCase();
+        if (errorCode === 'no-speech') {
+          setTransientVoiceStatus(t('navbar.voiceSearchNoSpeech'));
+          return;
+        }
+        if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(errorCode)) {
+          setTransientVoiceStatus(t('navbar.voiceSearchPermissionDenied'));
+          return;
+        }
+        setTransientVoiceStatus(t('navbar.voiceSearchGenericError'));
+      };
+
+      recognition.onend = () => {
+        setIsVoiceListening(false);
+        voiceRecognitionRef.current = null;
+        setVoiceSearchStatus((currentStatus) => (
+          currentStatus === t('navbar.voiceSearchListeningStatus') ? '' : currentStatus
+        ));
+      };
+
+      voiceRecognitionRef.current = recognition;
+      recognition.start();
+    } catch (_err) {
+      setIsVoiceListening(false);
+      voiceRecognitionRef.current = null;
+      setTransientVoiceStatus(t('navbar.voiceSearchUnsupported'));
+    }
   };
 
   const handleFilterMenuMinPriceChange = (rawValue) => {
@@ -775,6 +888,16 @@ const Navbar = () => {
                   onBlur={(event) => applySearch({ nextCity: event.target.value })}
                   autoComplete="off"
                 />
+              </div>
+              <div className="premium-header__search-segment premium-header__search-segment--voice">
+                <button
+                  type="button"
+                  className={`premium-header__voice-toggle ${isVoiceListening ? 'is-listening' : ''}`}
+                  aria-label={isVoiceListening ? t('navbar.voiceSearchStopAriaLabel') : t('navbar.voiceSearchAriaLabel')}
+                  onClick={handleMobileVoiceSearch}
+                >
+                  <span>{t('navbar.voiceSearch')}</span>
+                </button>
               </div>
               <div className="premium-header__search-segment premium-header__search-segment--ai">
                 <button
@@ -999,6 +1122,11 @@ const Navbar = () => {
                 )}
               </div>
             </div>
+            {voiceSearchStatus && (
+              <p className="premium-header__voice-status" aria-live="polite">
+                {voiceSearchStatus}
+              </p>
+            )}
             <button type="submit" className="premium-header__search-submit" aria-label={t('navbar.applySearchAriaLabel')}>
               {t('navbar.search')}
             </button>
