@@ -470,8 +470,8 @@ const ConnectedListingsMapFallback = ({
             Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
             1
           ) + 0.8,
-          pinBackground: '#111827',
-          pinBorderColor: '#0f172a',
+          pinBackground: '#2f5d8a',
+          pinBorderColor: '#2f5d8a',
           fontWeight: 800,
         },
         { hovered: true, scale: 1.32 }
