@@ -29,6 +29,9 @@ export const getLocalizedAddress = (address = {}, language = 'en') => {
     streetNumber: safeText(requestedLocalization.streetNumber)
       || safeText(sourceAddress.streetNumber)
       || safeText(fallbackLocalization.streetNumber),
+    neighborhood: safeText(requestedLocalization.neighborhood)
+      || safeText(sourceAddress.neighborhood)
+      || safeText(fallbackLocalization.neighborhood),
     city: safeText(requestedLocalization.city) || safeText(sourceAddress.city) || safeText(fallbackLocalization.city),
     state: safeText(requestedLocalization.state) || safeText(sourceAddress.state) || safeText(fallbackLocalization.state),
     zip: safeText(sourceAddress.zip),
@@ -55,5 +58,7 @@ export const buildAddressQuery = (address = {}, language = 'en') => {
     ? [localizedAddress.streetNumber, localizedAddress.street].filter(Boolean).join(' ')
     : [localizedAddress.street, localizedAddress.streetNumber].filter(Boolean).join(' ');
   const country = localizedAddress.country || 'Israel';
-  return [streetLine, localizedAddress.city, localizedAddress.state, country].filter(Boolean).join(', ');
+  return [streetLine, localizedAddress.neighborhood, localizedAddress.city, localizedAddress.state, country]
+    .filter(Boolean)
+    .join(', ');
 };

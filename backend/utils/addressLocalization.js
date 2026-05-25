@@ -477,10 +477,16 @@ const buildLocalizedAddress = (address = {}) => {
     const splitStreet = splitStreetAndNumber(sourceAddress.street, sourceAddress.streetNumber);
     const sourceStreet = splitStreet.street;
     const sourceStreetNumber = splitStreet.streetNumber;
+    const sourceNeighborhood = normalizeText(sourceAddress.neighborhood);
     const sourceCity = normalizeText(sourceAddress.city);
     const sourceState = normalizeText(sourceAddress.state);
     const sourceZip = normalizeText(sourceAddress.zip);
-    const shouldDefaultToHebrewCountry = containsHebrew(sourceStreet) || containsHebrew(sourceCity) || containsHebrew(sourceState);
+    const shouldDefaultToHebrewCountry = (
+        containsHebrew(sourceStreet)
+        || containsHebrew(sourceNeighborhood)
+        || containsHebrew(sourceCity)
+        || containsHebrew(sourceState)
+    );
     const sourceCountry = normalizeText(sourceAddress.country) || (shouldDefaultToHebrewCountry ? 'ישראל' : 'Israel');
 
     const englishStreet = toEnglishStreet(sourceStreet, sourceStreetNumber, sourceCity);
@@ -488,6 +494,7 @@ const buildLocalizedAddress = (address = {}) => {
         street: englishStreet.street,
         streetNumber: englishStreet.streetNumber || sourceStreetNumber,
         // Keep non-street fields in the original source language.
+        neighborhood: sourceNeighborhood,
         city: sourceCity,
         state: sourceState,
         country: sourceCountry,
@@ -496,6 +503,7 @@ const buildLocalizedAddress = (address = {}) => {
     const localizedHe = {
         street: sourceStreet,
         streetNumber: sourceStreetNumber,
+        neighborhood: sourceNeighborhood,
         city: sourceCity,
         state: sourceState,
         country: sourceCountry,
@@ -504,6 +512,7 @@ const buildLocalizedAddress = (address = {}) => {
     return {
         street: sourceStreet,
         ...(sourceStreetNumber ? { streetNumber: sourceStreetNumber } : {}),
+        ...(sourceNeighborhood ? { neighborhood: sourceNeighborhood } : {}),
         ...(sourceCity ? { city: sourceCity } : {}),
         ...(sourceState ? { state: sourceState } : {}),
         ...(sourceZip ? { zip: sourceZip } : {}),

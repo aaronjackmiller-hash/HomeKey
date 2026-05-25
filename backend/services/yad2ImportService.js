@@ -430,6 +430,44 @@ const mapYad2RowToPropertyDoc = (row) => {
         row.locality,
         row.location && row.location.city
     );
+    const neighborhood = pickPreferredAddressText(
+        row.neighborhoodHe,
+        row.neighborhoodHE,
+        row.neighborhood_he,
+        row.neighborhoodHebrew,
+        row.neighbourhoodHe,
+        row.neighbourhoodHE,
+        row.neighbourhood_he,
+        row.neighbourhoodHebrew,
+        row.areaNameHe,
+        row.areaNameHE,
+        row.area_name_he,
+        row.areaNameHebrew,
+        row.quarterHe,
+        row.quarterHE,
+        row.quarter_he,
+        row.quarterHebrew,
+        row.address && row.address.neighborhoodHe,
+        row.address && row.address.neighborhoodHE,
+        row.address && row.address.neighborhood_he,
+        row.address && row.address.neighborhoodHebrew,
+        row.address && row.address.neighborhood,
+        row.address && row.address.neighbourhood,
+        row.address && row.address.areaName,
+        row.address && row.address.quarter,
+        row.location && row.location.neighborhoodHe,
+        row.location && row.location.neighborhoodHE,
+        row.location && row.location.neighborhood_he,
+        row.location && row.location.neighborhoodHebrew,
+        row.location && row.location.neighborhood,
+        row.location && row.location.neighbourhood,
+        row.location && row.location.areaName,
+        row.location && row.location.quarter,
+        row.neighborhood,
+        row.neighbourhood,
+        row.areaName,
+        row.quarter
+    );
 
     const title = normalizeHumanText(
         pickFirst(row.title, row.headline, row.propertyTitle, row.listingTitle, row.subject)
@@ -444,6 +482,7 @@ const mapYad2RowToPropertyDoc = (row) => {
     const contentLanguage = detectContentLanguage(
         title,
         description,
+        neighborhood,
         city,
         pickPreferredAddressText(
             row.streetHe,
@@ -704,6 +743,7 @@ const mapYad2RowToPropertyDoc = (row) => {
         address: {
             street: finalStreet,
             ...(finalStreetNumber ? { streetNumber: finalStreetNumber } : {}),
+            ...(neighborhood ? { neighborhood } : {}),
             city,
             state: addressState,
             zip: addressZip,

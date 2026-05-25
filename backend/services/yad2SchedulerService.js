@@ -888,6 +888,49 @@ const normalizeRow = (row) => {
         cityHe: row.cityHe ?? row.cityHE ?? row.city_he ?? row.cityHebrew
             ?? (address && (address.cityHe ?? address.cityHE ?? address.city_he ?? address.cityHebrew))
             ?? (location && (location.cityHe ?? location.cityHE ?? location.city_he ?? location.cityHebrew)),
+        neighborhood: row.neighborhood ?? row.neighbourhood ?? row.areaName ?? row.quarter
+            ?? (address && (address.neighborhood ?? address.neighbourhood ?? address.areaName ?? address.quarter))
+            ?? (location && (location.neighborhood ?? location.neighbourhood ?? location.areaName ?? location.quarter)),
+        neighborhoodHe: row.neighborhoodHe ?? row.neighborhoodHE ?? row.neighborhood_he ?? row.neighborhoodHebrew
+            ?? row.neighbourhoodHe ?? row.neighbourhoodHE ?? row.neighbourhood_he ?? row.neighbourhoodHebrew
+            ?? row.areaNameHe ?? row.areaNameHE ?? row.area_name_he ?? row.areaNameHebrew
+            ?? row.quarterHe ?? row.quarterHE ?? row.quarter_he ?? row.quarterHebrew
+            ?? (address && (
+                address.neighborhoodHe
+                ?? address.neighborhoodHE
+                ?? address.neighborhood_he
+                ?? address.neighborhoodHebrew
+                ?? address.neighbourhoodHe
+                ?? address.neighbourhoodHE
+                ?? address.neighbourhood_he
+                ?? address.neighbourhoodHebrew
+                ?? address.areaNameHe
+                ?? address.areaNameHE
+                ?? address.area_name_he
+                ?? address.areaNameHebrew
+                ?? address.quarterHe
+                ?? address.quarterHE
+                ?? address.quarter_he
+                ?? address.quarterHebrew
+            ))
+            ?? (location && (
+                location.neighborhoodHe
+                ?? location.neighborhoodHE
+                ?? location.neighborhood_he
+                ?? location.neighborhoodHebrew
+                ?? location.neighbourhoodHe
+                ?? location.neighbourhoodHE
+                ?? location.neighbourhood_he
+                ?? location.neighbourhoodHebrew
+                ?? location.areaNameHe
+                ?? location.areaNameHE
+                ?? location.area_name_he
+                ?? location.areaNameHebrew
+                ?? location.quarterHe
+                ?? location.quarterHE
+                ?? location.quarter_he
+                ?? location.quarterHebrew
+            )),
         street: row.street ?? row.streetName ?? (address && (address.street ?? address.streetName)) ?? (location && location.street),
         streetHe: row.streetHe ?? row.streetHE ?? row.street_he ?? row.streetHebrew
             ?? row.streetNameHe ?? row.streetNameHE ?? row.street_name_he ?? row.streetNameHebrew
