@@ -1,26 +1,28 @@
 /* Custom Pulse Animation for HomeKey Luxury Pins */
 .radar-pulse-ring {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  border-radius: 9999px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
   z-index: 1;
-  box-shadow: 0 0 0 40px rgba(15, 60, 109, 0.15),
-              0 0 0 80px rgba(15, 60, 109, 0.1),
-              0 0 0 120px rgba(15, 60, 109, 0.05);
-  animation: luxuryPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  box-shadow: 0 0 0 30px rgba(15, 60, 109, 0.14),
+              0 0 0 60px rgba(15, 60, 109, 0.08),
+              0 0 0 90px rgba(15, 60, 109, 0.04);
+  animation: luxuryPulse 4.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   pointer-events: none;
 }
 
 @keyframes luxuryPulse {
   0% {
-    transform: scale(0.95);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.72;
   }
   100% {
-    transform: scale(1.6);
+    transform: translate(-50%, -50%) scale(1.55);
     opacity: 0;
   }
 }
