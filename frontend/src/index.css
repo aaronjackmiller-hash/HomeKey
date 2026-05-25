@@ -4688,7 +4688,7 @@ legend {
 }
 
 .map-listing-marker.is-hovered .map-hovered-listing-caption {
-  display: block;
+  display: inline-flex;
 }
 
 .fallback-price-pin .map-listing-marker-pin {
