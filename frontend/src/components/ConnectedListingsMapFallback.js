@@ -116,6 +116,19 @@ const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') =>
   if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
   return `₪${parsedPrice.toLocaleString(locale)}`;
 };
+const getFallbackMarkerImageUrl = (property, propertyId) => {
+  const propertyImages = property && Array.isArray(property.images) ? property.images : [];
+  const imageCandidates = [
+    ...propertyImages,
+    property?.mainImage,
+    property?.image,
+    property?.imageUrl,
+    property?.thumbnail,
+  ];
+  const firstImage = imageCandidates.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
+  if (firstImage) return firstImage.trim();
+  return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/240/180`;
+};
 
 const hashString = (value) => {
   let hash = 0;
@@ -173,7 +186,10 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   const totalHeight = scaledHeight + scaledPointerHeight;
   const markerRootClassName = `map-listing-marker${isHovered ? ' is-hovered' : ''}`;
   const captionTitle = escapeHtml(resolvedOptions.captionTitle || '');
+  const captionPrice = escapeHtml(resolvedOptions.captionPrice || priceText);
   const captionMeta = escapeHtml(resolvedOptions.captionMeta || '');
+  const captionImageUrl = escapeHtml(resolvedOptions.captionImageUrl || '');
+  const captionImageAlt = escapeHtml(resolvedOptions.captionImageAlt || resolvedOptions.captionTitle || 'Listing');
   const markerPinInlineStyle = [
     `--map-marker-pin-bg:${pinBackground}`,
     `min-width:${scaledPinWidth}px`,
@@ -185,8 +201,14 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
     `font-weight:${fontWeight}`,
   ].join(';');
   const markerCaptionHtml = `<div class="map-hovered-listing-caption animate-fadeIn">
-    <p class="map-hovered-listing-caption__title">${captionTitle || 'Listing'}</p>
-    <p class="map-hovered-listing-caption__meta">${captionMeta || escapeHtml(priceText)}</p>
+    <div class="map-hovered-listing-caption__text-card">
+      <p class="map-hovered-listing-caption__title">${captionTitle || 'Listing'}</p>
+      <p class="map-hovered-listing-caption__price">${captionPrice}</p>
+      <p class="map-hovered-listing-caption__meta">${captionMeta || escapeHtml(priceText)}</p>
+    </div>
+    <div class="map-hovered-listing-caption__image-card">
+      <img class="map-hovered-listing-caption__image" src="${captionImageUrl}" alt="${captionImageAlt}" loading="lazy" decoding="async" />
+    </div>
   </div>`;
   return L.divIcon({
     className: 'fallback-price-pin',
@@ -490,9 +512,13 @@ const ConnectedListingsMapFallback = ({
       const priceText = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
       const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
       const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
+      const markerImageUrl = getFallbackMarkerImageUrl(item.property, item.propertyId);
       const markerCaptionOptions = {
         captionTitle: markerListingTitle,
+        captionPrice: priceText,
         captionMeta: markerDetailLine || priceText,
+        captionImageUrl: markerImageUrl,
+        captionImageAlt: markerListingTitle,
       };
       const fallbackMarkerIcon = createFallbackMarkerIcon(
         priceText,
