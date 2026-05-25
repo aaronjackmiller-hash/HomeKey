@@ -19,6 +19,7 @@ const {
     applyPropertyLocalization,
     getRequestedContentLanguage,
 } = require('../services/propertyLocalizationService');
+const { enrichAddressLocalization } = require('../services/addressLocalizationService');
 const { getRequestUserRole } = require('../utils/authorization');
 const { buildLocalizedAddress } = require('../utils/addressLocalization');
 
@@ -415,6 +416,9 @@ const createProperty = async (req, res) => {
             ],
             ...sourceMetadata,
         };
+        if (payload.address && typeof payload.address === 'object') {
+            payload.address = await enrichAddressLocalization(payload.address);
+        }
 
         const duplicate = await findDuplicateCandidate(payload);
         if (duplicate) {
@@ -495,6 +499,9 @@ const updateProperty = async (req, res) => {
         });
         if (Object.prototype.hasOwnProperty.call(updateData, 'virtualTourUrl')) {
             updateData.virtualTourUrl = normalizeVirtualTourUrl(updateData.virtualTourUrl);
+        }
+        if (Object.prototype.hasOwnProperty.call(updateData, 'address') && updateData.address && typeof updateData.address === 'object') {
+            updateData.address = await enrichAddressLocalization(updateData.address);
         }
 
         const property = await Property.findById(req.params.id);

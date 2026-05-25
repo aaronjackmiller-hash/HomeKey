@@ -157,6 +157,19 @@ const normalizeText = (value) =>
 
 const containsHebrew = (value) => HEBREW_CHAR_RE.test(String(value || ''));
 
+const sanitizeLocalizedAddress = (value) => (value && typeof value === 'object' ? value : {});
+
+const getLocalizedAddressByLanguage = (localizedAddress, language) => {
+    const source = localizedAddress && typeof localizedAddress === 'object' ? localizedAddress[language] : null;
+    return source && typeof source === 'object' ? source : {};
+};
+
+const preferExistingEnglishValue = (existingValue, fallbackValue) => {
+    const normalizedExisting = normalizeText(existingValue);
+    if (normalizedExisting && !containsHebrew(normalizedExisting)) return normalizedExisting;
+    return normalizeText(fallbackValue);
+};
+
 const uniqueNonEmpty = (values = []) => {
     const seen = new Set();
     return values.filter((value) => {
@@ -520,12 +533,27 @@ const toEnglishStreet = (streetName, streetNumber, cityName) => {
 
 const buildLocalizedAddress = (address = {}) => {
     const sourceAddress = address && typeof address === 'object' ? address : {};
-    const splitStreet = splitStreetAndNumber(sourceAddress.street, sourceAddress.streetNumber);
+    const sourceLocalizedAddress = sanitizeLocalizedAddress(sourceAddress.localized);
+    const sourceLocalizedHe = getLocalizedAddressByLanguage(sourceLocalizedAddress, 'he');
+    const sourceLocalizedEn = getLocalizedAddressByLanguage(sourceLocalizedAddress, 'en');
+    const sourceStreetRaw = normalizeText(sourceAddress.street)
+        || normalizeText(sourceLocalizedHe.street)
+        || normalizeText(sourceLocalizedEn.street);
+    const sourceStreetNumberRaw = normalizeText(sourceAddress.streetNumber)
+        || normalizeText(sourceLocalizedHe.streetNumber)
+        || normalizeText(sourceLocalizedEn.streetNumber);
+    const splitStreet = splitStreetAndNumber(sourceStreetRaw, sourceStreetNumberRaw);
     const sourceStreet = splitStreet.street;
     const sourceStreetNumber = splitStreet.streetNumber;
-    const sourceNeighborhood = normalizeText(sourceAddress.neighborhood);
-    const sourceCity = normalizeText(sourceAddress.city);
-    const sourceState = normalizeText(sourceAddress.state);
+    const sourceNeighborhood = normalizeText(sourceAddress.neighborhood)
+        || normalizeText(sourceLocalizedHe.neighborhood)
+        || normalizeText(sourceLocalizedEn.neighborhood);
+    const sourceCity = normalizeText(sourceAddress.city)
+        || normalizeText(sourceLocalizedHe.city)
+        || normalizeText(sourceLocalizedEn.city);
+    const sourceState = normalizeText(sourceAddress.state)
+        || normalizeText(sourceLocalizedHe.state)
+        || normalizeText(sourceLocalizedEn.state);
     const sourceZip = normalizeText(sourceAddress.zip);
     const shouldDefaultToHebrewCountry = (
         containsHebrew(sourceStreet)
@@ -533,25 +561,31 @@ const buildLocalizedAddress = (address = {}) => {
         || containsHebrew(sourceCity)
         || containsHebrew(sourceState)
     );
-    const sourceCountry = normalizeText(sourceAddress.country) || (shouldDefaultToHebrewCountry ? 'ישראל' : 'Israel');
+    const sourceCountry = normalizeText(sourceAddress.country)
+        || normalizeText(sourceLocalizedHe.country)
+        || normalizeText(sourceLocalizedEn.country)
+        || (shouldDefaultToHebrewCountry ? 'ישראל' : 'Israel');
 
     const englishStreet = toEnglishStreet(sourceStreet, sourceStreetNumber, sourceCity);
     const localizedEn = {
-        street: englishStreet.street,
-        streetNumber: englishStreet.streetNumber || sourceStreetNumber,
-        neighborhood: toEnglishAddressField(sourceNeighborhood, 'neighborhood'),
-        city: toEnglishAddressField(sourceCity, 'city'),
-        state: toEnglishAddressField(sourceState, 'state'),
-        country: toEnglishAddressField(sourceCountry, 'country'),
+        street: preferExistingEnglishValue(sourceLocalizedEn.street, englishStreet.street),
+        streetNumber: normalizeText(sourceLocalizedEn.streetNumber) || englishStreet.streetNumber || sourceStreetNumber,
+        neighborhood: preferExistingEnglishValue(
+            sourceLocalizedEn.neighborhood,
+            toEnglishAddressField(sourceNeighborhood, 'neighborhood')
+        ),
+        city: preferExistingEnglishValue(sourceLocalizedEn.city, toEnglishAddressField(sourceCity, 'city')),
+        state: preferExistingEnglishValue(sourceLocalizedEn.state, toEnglishAddressField(sourceState, 'state')),
+        country: preferExistingEnglishValue(sourceLocalizedEn.country, toEnglishAddressField(sourceCountry, 'country')),
     };
 
     const localizedHe = {
-        street: sourceStreet,
-        streetNumber: sourceStreetNumber,
-        neighborhood: sourceNeighborhood,
-        city: sourceCity,
-        state: sourceState,
-        country: sourceCountry,
+        street: normalizeText(sourceLocalizedHe.street) || sourceStreet,
+        streetNumber: normalizeText(sourceLocalizedHe.streetNumber) || sourceStreetNumber,
+        neighborhood: normalizeText(sourceLocalizedHe.neighborhood) || sourceNeighborhood,
+        city: normalizeText(sourceLocalizedHe.city) || sourceCity,
+        state: normalizeText(sourceLocalizedHe.state) || sourceState,
+        country: normalizeText(sourceLocalizedHe.country) || sourceCountry,
     };
 
     return {
