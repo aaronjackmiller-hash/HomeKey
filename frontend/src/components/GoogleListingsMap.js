@@ -313,7 +313,7 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const radarMarkup = showRadarPulse
     ? radarRadii.map((radius, index) => {
       const opacity = [0.36, 0.24, 0.14][index] || 0.12;
-      return `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgba(15, 60, 109, ${opacity})" stroke-width="2" />`;
+      return `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(15, 60, 109)" stroke-opacity="${opacity}" stroke-width="2.4" />`;
     }).join('')
     : '';
   const pinPath = [
