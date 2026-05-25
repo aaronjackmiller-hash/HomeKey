@@ -213,7 +213,14 @@ const getDistanceMeters = (startPoint, endPoint) => {
 
 const getMarkerImageUrl = (property, propertyId) => {
   const propertyImages = property && Array.isArray(property.images) ? property.images : [];
-  const firstImage = propertyImages.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
+  const imageCandidates = [
+    ...propertyImages,
+    property?.mainImage,
+    property?.image,
+    property?.imageUrl,
+    property?.thumbnail,
+  ];
+  const firstImage = imageCandidates.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
   if (firstImage) return firstImage.trim();
   return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/120/120`;
 };
@@ -259,14 +266,31 @@ const createListingMarkerElement = (priceText, details = {}, isFavorite = false)
   markerElement.appendChild(markerPin);
   const markerCaption = document.createElement('div');
   markerCaption.className = 'map-hovered-listing-caption animate-fadeIn';
+  const markerCaptionTextCard = document.createElement('div');
+  markerCaptionTextCard.className = 'map-hovered-listing-caption__text-card';
   const markerCaptionTitle = document.createElement('p');
   markerCaptionTitle.className = 'map-hovered-listing-caption__title';
   markerCaptionTitle.textContent = safeText(markerDetails.title) || 'Listing';
+  const markerCaptionPrice = document.createElement('p');
+  markerCaptionPrice.className = 'map-hovered-listing-caption__price';
+  markerCaptionPrice.textContent = safeText(markerDetails.priceLine) || priceText;
   const markerCaptionMeta = document.createElement('p');
   markerCaptionMeta.className = 'map-hovered-listing-caption__meta';
   markerCaptionMeta.textContent = safeText(markerDetails.detailLine) || priceText;
-  markerCaption.appendChild(markerCaptionTitle);
-  markerCaption.appendChild(markerCaptionMeta);
+  markerCaptionTextCard.appendChild(markerCaptionTitle);
+  markerCaptionTextCard.appendChild(markerCaptionPrice);
+  markerCaptionTextCard.appendChild(markerCaptionMeta);
+  const markerCaptionImageCard = document.createElement('div');
+  markerCaptionImageCard.className = 'map-hovered-listing-caption__image-card';
+  const markerCaptionImage = document.createElement('img');
+  markerCaptionImage.className = 'map-hovered-listing-caption__image';
+  markerCaptionImage.src = safeText(markerDetails.imageUrl) || getMarkerImageUrl({}, markerDetails.title || 'listing');
+  markerCaptionImage.alt = safeText(markerDetails.imageAlt || markerDetails.title) || 'Listing';
+  markerCaptionImage.decoding = 'async';
+  markerCaptionImage.loading = 'lazy';
+  markerCaptionImageCard.appendChild(markerCaptionImage);
+  markerCaption.appendChild(markerCaptionTextCard);
+  markerCaption.appendChild(markerCaptionImageCard);
   markerElement.appendChild(markerCaption);
   return markerElement;
 };
@@ -717,6 +741,7 @@ const GoogleListingsMap = ({
         const markerPrice = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
         const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
         const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
+        const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const isHoveredFromList = hoveredListingIdRef.current === propertyId;
         const canUseAdvancedMarker = Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
@@ -753,7 +778,13 @@ const GoogleListingsMap = ({
         const markerElement = canUseAdvancedMarker
           ? createListingMarkerElement(
             markerPrice,
-            { title: markerListingTitle, detailLine: markerDetailLine },
+            {
+              title: markerListingTitle,
+              priceLine: markerPrice,
+              detailLine: markerDetailLine,
+              imageUrl: markerImageUrl,
+              imageAlt: markerListingTitle,
+            },
             isFavoriteProperty
           )
           : null;
@@ -782,7 +813,6 @@ const GoogleListingsMap = ({
           const price = item.property.price != null
             ? `₪${Number(item.property.price).toLocaleString(locale)}`
             : t('map.priceUnavailable');
-          const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
           const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
           const safeTitle = escapeHtml(title);
           const safeAddress = escapeHtml(item.addressQuery);

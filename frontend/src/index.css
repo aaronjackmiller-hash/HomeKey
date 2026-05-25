@@ -4609,44 +4609,79 @@ legend {
   top: 50%;
   left: calc(100% + 14px);
   transform: translateY(-50%);
-  min-width: 168px;
-  max-width: 240px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 10px 12px;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
-  color: #0f172a;
+  display: none;
+  align-items: stretch;
+  gap: 8px;
   z-index: 70;
   pointer-events: none;
-  display: none;
+  color: #0f172a;
 }
 
 .map-hovered-listing-caption::before {
   content: "";
   position: absolute;
-  left: -6px;
+  left: -8px;
   top: 50%;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-left: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   background: #ffffff;
   transform: translateY(-50%) rotate(45deg);
 }
 
+.map-hovered-listing-caption__text-card {
+  width: 220px;
+  min-height: 88px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.map-hovered-listing-caption__image-card {
+  width: 116px;
+  min-height: 88px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+}
+
+.map-hovered-listing-caption__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 88px;
+  object-fit: cover;
+}
+
 .map-hovered-listing-caption__title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #0f172a;
-  white-space: nowrap;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.map-hovered-listing-caption__price {
+  margin: 6px 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
 }
 
 .map-hovered-listing-caption__meta {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   font-size: 0.68rem;
   color: #475569;
   letter-spacing: 0.02em;
