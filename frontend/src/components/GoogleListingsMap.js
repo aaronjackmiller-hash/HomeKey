@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { buildAddressQuery } from '../utils/addressLocalization';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
+const MAP_AUTH_FAILURE_EVENT = 'homekey-google-maps-auth-failure';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
@@ -78,6 +79,7 @@ const MAP_LANGUAGE_SET = new Set(['en', 'he']);
 let googleMapsLoadPromise;
 let googleMapsLoadedLanguage = null;
 let googleMapsRequestedLanguage = null;
+let googleMapsAuthFailureHookInstalled = false;
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 const escapeHtml = (value) => String(value || '')
@@ -110,9 +112,31 @@ const writeGeocodeCache = (cacheObj) => {
 
 const resolveMapLanguage = (language) => (MAP_LANGUAGE_SET.has(language) ? language : DEFAULT_MAP_LANGUAGE);
 
+const dispatchMapAuthFailureEvent = () => {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+  window.dispatchEvent(new Event(MAP_AUTH_FAILURE_EVENT));
+};
+
+const ensureGoogleMapsAuthFailureHook = () => {
+  if (typeof window === 'undefined' || googleMapsAuthFailureHookInstalled) return;
+  const priorAuthFailureHandler = typeof window.gm_authFailure === 'function' ? window.gm_authFailure : null;
+  window.gm_authFailure = (...args) => {
+    if (typeof priorAuthFailureHandler === 'function') {
+      try {
+        priorAuthFailureHandler(...args);
+      } catch (_err) {
+        // Ignore chained auth failure callback errors.
+      }
+    }
+    dispatchMapAuthFailureEvent();
+  };
+  googleMapsAuthFailureHookInstalled = true;
+};
+
 const loadGoogleMaps = (apiKey, requestedLanguage = DEFAULT_MAP_LANGUAGE) => {
   if (!apiKey) return Promise.reject(new Error('Missing Google Maps API key.'));
   if (typeof window === 'undefined') return Promise.reject(new Error('Google Maps can only load in the browser.'));
+  ensureGoogleMapsAuthFailureHook();
   const mapLanguage = resolveMapLanguage(requestedLanguage);
   if (window.google && window.google.maps && googleMapsLoadedLanguage === mapLanguage) {
     return Promise.resolve(window.google.maps);
@@ -644,6 +668,18 @@ const GoogleListingsMap = ({
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleMapAuthFailure = () => {
+      setMapReady(false);
+      setMapError(t('map.unableToLoadMap'));
+    };
+    window.addEventListener(MAP_AUTH_FAILURE_EVENT, handleMapAuthFailure);
+    return () => {
+      window.removeEventListener(MAP_AUTH_FAILURE_EVENT, handleMapAuthFailure);
+    };
+  }, [t]);
+
+  useEffect(() => {
     if (!apiKey) return;
     let cancelled = false;
 
@@ -664,10 +700,12 @@ const GoogleListingsMap = ({
           geocoderRef.current = new mapsApi.Geocoder();
           infoWindowRef.current = new mapsApi.InfoWindow();
         }
+        setMapError('');
         setMapReady(true);
       })
       .catch((err) => {
         if (cancelled) return;
+        setMapReady(false);
         setMapError(err.message || t('map.unableToLoadMap'));
       });
 
