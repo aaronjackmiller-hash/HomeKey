@@ -246,11 +246,12 @@ const getAddressDisplay = (address = {}, language = 'en') => {
   const street = language === 'en'
     ? [safeText(localizedAddress.streetNumber), safeText(localizedAddress.street)].filter(Boolean).join(' ')
     : normalizedStreet;
+  const neighborhood = safeText(localizedAddress.neighborhood);
   const city = safeText(localizedAddress.city);
   const state = safeText(localizedAddress.state);
   const zip = safeText(localizedAddress.zip);
   const nonIsraelCountry = safeText(localizedAddress.country).toLowerCase() === 'israel' ? '' : safeText(localizedAddress.country);
-  const locationParts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
+  const locationParts = dedupeCaseInsensitive([neighborhood, city, state, zip, nonIsraelCountry]);
   const fullAddress = [street, ...locationParts].filter(Boolean).join(', ');
   return { street, fullAddress, locationLine: locationParts.join(', ') };
 };

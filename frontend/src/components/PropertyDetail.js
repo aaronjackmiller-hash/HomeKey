@@ -138,11 +138,12 @@ const getPrimaryStreetParts = (property = {}) => {
 };
 
 const getLocationLine = (address = {}) => {
+    const neighborhood = safeText(address.neighborhood);
     const city = safeText(address.city);
     const state = safeText(address.state);
     const zip = safeText(address.zip);
     const nonIsraelCountry = safeText(address.country).toLowerCase() === 'israel' ? '' : safeText(address.country);
-    const parts = dedupeCaseInsensitive([city, state, zip, nonIsraelCountry]);
+    const parts = dedupeCaseInsensitive([neighborhood, city, state, zip, nonIsraelCountry]);
     return parts.join(', ');
 };
 
