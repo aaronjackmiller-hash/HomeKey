@@ -64,6 +64,21 @@ const dedupeCaseInsensitive = (values = []) => {
     });
 };
 
+const normalizeRegionToken = (value) => safeText(value)
+    .toLowerCase()
+    .replace(/[-־/]/g, ' ')
+    .replace(/\b(district|region)\b/g, ' ')
+    .replace(/מחוז/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const isRedundantStateForCity = (cityValue = '', stateValue = '') => {
+    const city = normalizeRegionToken(cityValue);
+    const state = normalizeRegionToken(stateValue);
+    if (!city || !state) return false;
+    return city === state || city.includes(state) || state.includes(city);
+};
+
 const dedupeRepeatingPhrase = (value) => {
     const text = safeText(value);
     if (!text) return '';
@@ -140,7 +155,8 @@ const getPrimaryStreetParts = (property = {}) => {
 const getLocationLine = (address = {}) => {
     const neighborhood = safeText(address.neighborhood);
     const city = safeText(address.city);
-    const state = safeText(address.state);
+    const rawState = safeText(address.state);
+    const state = isRedundantStateForCity(city, rawState) ? '' : rawState;
     const zip = safeText(address.zip);
     const nonIsraelCountry = safeText(address.country).toLowerCase() === 'israel' ? '' : safeText(address.country);
     const parts = dedupeCaseInsensitive([neighborhood, city, state, zip, nonIsraelCountry]);
