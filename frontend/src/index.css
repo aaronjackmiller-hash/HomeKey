@@ -5370,6 +5370,11 @@ legend {
     font-size: 0.82rem;
     padding: 5px 8px;
   }
+
+  .premium-header__search-segment .premium-header__price-toggle,
+  .premium-header__search-segment .premium-header__rooms-toggle {
+    display: inline-flex;
+  }
 }
 
 @media (max-width: 540px) {
