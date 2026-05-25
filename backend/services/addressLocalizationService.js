@@ -5,6 +5,13 @@ const { buildLocalizedAddress } = require('../utils/addressLocalization');
 
 const HEBREW_CHAR_RE = /[א-ת]/;
 const MIN_TRANSLATABLE_LENGTH = 2;
+const STREET_TYPE_RULES = [
+    { patterns: ['רחוב', 'רח׳', "רח'", 'רח'], suffix: 'St' },
+    { patterns: ['שדרות', 'שד׳', "שד'", 'שד'], suffix: 'Blvd' },
+    { patterns: ['דרך'], suffix: 'Rd' },
+    { patterns: ['סמטה', 'סמטת'], suffix: 'Alley' },
+    { patterns: ['כיכר'], suffix: 'Sq' },
+];
 
 const normalizeText = (value) =>
     String(value || '')
@@ -14,6 +21,52 @@ const normalizeText = (value) =>
 const containsHebrew = (value) => HEBREW_CHAR_RE.test(String(value || ''));
 
 const sanitizeObject = (value) => (value && typeof value === 'object' ? value : {});
+
+const extractStreetTypeRule = (hebrewStreet = '') => {
+    const sourceStreet = normalizeText(hebrewStreet);
+    if (!sourceStreet || !containsHebrew(sourceStreet)) return null;
+    for (const rule of STREET_TYPE_RULES) {
+        for (const pattern of rule.patterns) {
+            const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`^${escaped}\\s+`, 'i');
+            if (regex.test(sourceStreet)) {
+                return rule;
+            }
+        }
+    }
+    return null;
+};
+
+const normalizeTranslatedStreet = ({ sourceStreet, translatedStreet, fallbackStreet }) => {
+    const translated = normalizeText(translatedStreet);
+    const fallback = normalizeText(fallbackStreet);
+    if (!translated) return fallback;
+
+    const streetTypeRule = extractStreetTypeRule(sourceStreet);
+    if (!streetTypeRule || !streetTypeRule.suffix) return translated;
+
+    const suffixAliases = {
+        St: ['street', 'st', 'st.'],
+        Blvd: ['boulevard', 'blvd', 'blvd.'],
+        Rd: ['road', 'rd', 'rd.', 'way', 'through'],
+        Alley: ['alley'],
+        Sq: ['square', 'sq', 'sq.'],
+    };
+    const aliases = suffixAliases[streetTypeRule.suffix] || [];
+    const leadingTypePattern = /^(street|st\.?|boulevard|blvd\.?|road|rd\.?|way|through|alley|square|sq\.?)\s+/i;
+    let normalized = translated.replace(leadingTypePattern, '').replace(/\s+/g, ' ').trim();
+    if (!normalized) return fallback || translated;
+
+    const lowerNormalized = normalized.toLowerCase();
+    const matchedSuffix = aliases.find((alias) => lowerNormalized.endsWith(` ${alias}`) || lowerNormalized === alias);
+    if (matchedSuffix) {
+        const suffixPattern = new RegExp(`(?:\\s+|^)${matchedSuffix.replace('.', '\\.')}$`, 'i');
+        normalized = normalized.replace(suffixPattern, '').trim();
+    }
+
+    if (!normalized) return fallback || translated;
+    return `${normalized} ${streetTypeRule.suffix}`.trim();
+};
 
 const shouldTranslateHebrewField = ({
     sourceValue,
@@ -32,6 +85,7 @@ const toEnglishFieldValue = async ({
     sourceValue,
     fallbackValue,
     explicitEnglishValue,
+    fieldName,
 }) => {
     const fallback = normalizeText(fallbackValue);
     const explicitEnglish = normalizeText(explicitEnglishValue);
@@ -43,6 +97,13 @@ const toEnglishFieldValue = async ({
 
     const translated = normalizeText(await translateText(source, 'en'));
     if (translated && !containsHebrew(translated)) {
+        if (fieldName === 'street') {
+            return normalizeTranslatedStreet({
+                sourceStreet: source,
+                translatedStreet: translated,
+                fallbackStreet: fallback,
+            });
+        }
         return translated;
     }
 
@@ -64,6 +125,7 @@ const enrichAddressLocalization = async (address = {}) => {
             sourceValue: localizedHe.street || baseAddress.street,
             fallbackValue: localizedEn.street,
             explicitEnglishValue: incomingLocalizedEn.street,
+            fieldName: 'street',
         }),
         toEnglishFieldValue({
             sourceValue: localizedHe.neighborhood || baseAddress.neighborhood,
