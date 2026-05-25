@@ -13,6 +13,7 @@ const STREET_TYPE_PREFIXES = [
 
 const STREET_TRANSLITERATION_DICTIONARY_GLOBAL = {
     'נסים אלוני': 'Nissim Aloni',
+    'טשרניחובסקי': 'Tchernikhovsky',
     'ארלוזורוב': 'Arlozorov',
     'אבן גבירול': 'Ibn Gabirol',
     'בוגרשוב': 'Bograshov',
@@ -34,6 +35,7 @@ const STREET_TRANSLITERATION_DICTIONARY_GLOBAL = {
 const STREET_TRANSLITERATION_DICTIONARY_BY_CITY = {
     'תל אביב יפו': {
         'נסים אלוני': 'Nissim Aloni',
+        'טשרניחובסקי': 'Tchernikhovsky',
         'יגאל אלון': 'Yigal Alon',
         'נחלת בנימין': 'Nahalat Binyamin',
         'יהודה הלוי': 'Yehuda Halevi',
@@ -47,6 +49,7 @@ const STREET_TRANSLITERATION_LATIN_ALIASES_GLOBAL = {
     'nysym alvny': 'Nissim Aloni',
     'nysim alvny': 'Nissim Aloni',
     'nisym alvny': 'Nissim Aloni',
+    'tshrnykhvbsky': 'Tchernikhovsky',
 };
 
 const STREET_TRANSLITERATION_LATIN_ALIASES_BY_CITY = {
@@ -59,6 +62,8 @@ const STREET_TRANSLITERATION_LATIN_ALIASES_BY_CITY = {
 const NEIGHBORHOOD_TRANSLITERATION_OVERRIDES = {
     'נוה צדק': 'Neve Tzedek',
     'פלורנטין': 'Florentin',
+    'הצפון הישן - דרום': 'Old North - South',
+    'הצפון הישן-דרום': 'Old North - South',
     'הצפון הישן - החלק הצפוני': 'Old North - North Section',
     'הצפון הישן-החלק הדרומי': 'Old North - South Section',
     'הצפון הישן': 'Old North',
