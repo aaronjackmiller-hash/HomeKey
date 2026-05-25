@@ -21,6 +21,28 @@ const FEATURE_FILTER_OPTIONS = [
   'furnished',
   'mamad',
 ];
+const AI_LISTING_TYPE_KEYWORDS = {
+  rental: ['rent', 'rental', 'lease'],
+  sale: ['buy', 'sale', 'purchase'],
+};
+const AI_PROPERTY_CATEGORY_KEYWORDS = {
+  apartments: ['apartment', 'studio', 'condo', 'flat', 'penthouse'],
+  houses: ['house', 'home', 'villa', 'duplex', 'townhouse'],
+};
+const AI_FEATURE_KEYWORDS = {
+  elevator: ['elevator', 'lift'],
+  parking: ['parking', 'garage', 'carport'],
+  pets: ['pet', 'pets', 'dog', 'cat'],
+  'disabled-access': ['accessible', 'wheelchair', 'disabled'],
+  renovated: ['renovated', 'refurbished'],
+  furnished: ['furnished'],
+  mamad: ['mamad', 'safe room', 'security room'],
+};
+const getSpeechRecognitionConstructor = () => {
+  if (typeof window === 'undefined') return null;
+  const recognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  return typeof recognitionConstructor === 'function' ? recognitionConstructor : null;
+};
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
@@ -46,6 +68,145 @@ const sanitizeListingType = (rawValue) => {
   const normalized = String(rawValue || '').toLowerCase();
   if (normalized === 'sale' || normalized === 'rental') return normalized;
   return 'all';
+};
+
+const includesAnyKeyword = (searchText = '', keywords = []) =>
+  keywords.some((keyword) => searchText.includes(keyword));
+
+const normalizeRoomCount = (value) => {
+  if (value == null || String(value).trim() === '') return '';
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0) return '';
+  if (parsed >= 4) return '4+';
+  return String(parsed);
+};
+
+const normalizeBathCount = (value) => {
+  if (value == null || String(value).trim() === '') return '';
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0) return '';
+  if (parsed >= 3) return '3+';
+  return String(parsed);
+};
+
+const parseAiBudgetToken = (rawToken = '') => {
+  const normalized = String(rawToken || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[$₪,\s]/g, '');
+  if (!normalized) return null;
+  const isKAmount = normalized.endsWith('k');
+  const numericPart = isKAmount ? normalized.slice(0, -1) : normalized;
+  const parsed = Number(numericPart);
+  if (Number.isNaN(parsed)) return null;
+  return Math.round(parsed * (isKAmount ? 1000 : 1));
+};
+
+const parseAiPriceRange = (rawInput = '') => {
+  const normalized = String(rawInput || '').toLowerCase();
+  let minPriceInput = PRICE_SLIDER_MIN;
+  let maxPriceInput = PRICE_SLIDER_MAX;
+
+  const betweenMatch = normalized.match(
+    /(?:between|from)\s*[$₪]?\s*([\d.,k]+)\s*(?:and|to|-)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (betweenMatch) {
+    const firstValue = parseAiBudgetToken(betweenMatch[1]);
+    const secondValue = parseAiBudgetToken(betweenMatch[2]);
+    if (firstValue != null && secondValue != null) {
+      minPriceInput = clampPriceValue(Math.min(firstValue, secondValue));
+      maxPriceInput = clampPriceValue(Math.max(firstValue, secondValue));
+      return { minPriceInput, maxPriceInput };
+    }
+  }
+
+  const maxMatch = normalized.match(
+    /(?:under|below|max(?:imum)?|up to|less than)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (maxMatch) {
+    const parsedMax = parseAiBudgetToken(maxMatch[1]);
+    if (parsedMax != null) maxPriceInput = clampPriceValue(parsedMax);
+  }
+
+  const minMatch = normalized.match(
+    /(?:over|above|min(?:imum)?|starting at|at least)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (minMatch) {
+    const parsedMin = parseAiBudgetToken(minMatch[1]);
+    if (parsedMin != null) minPriceInput = clampPriceValue(parsedMin);
+  }
+
+  if (minPriceInput > maxPriceInput) {
+    const midpoint = Math.round((minPriceInput + maxPriceInput) / 2 / PRICE_SLIDER_STEP) * PRICE_SLIDER_STEP;
+    return { minPriceInput: midpoint, maxPriceInput: midpoint };
+  }
+
+  return { minPriceInput, maxPriceInput };
+};
+
+const extractAiCityCandidate = (rawInput = '') => {
+  const strippedText = String(rawInput || '')
+    .replace(/[$₪]/g, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
+    .replace(/[^a-zA-Z\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!strippedText) return '';
+  return strippedText
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(' ')
+    .trim();
+};
+
+const parseAiSearchInput = (rawInput = '') => {
+  const trimmedInput = String(rawInput || '').trim();
+  const normalized = trimmedInput.toLowerCase();
+
+  let listingType = 'all';
+  if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.rental)) {
+    listingType = 'rental';
+  } else if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.sale)) {
+    listingType = 'sale';
+  }
+
+  let propertyCategory = '';
+  if (includesAnyKeyword(normalized, AI_PROPERTY_CATEGORY_KEYWORDS.apartments)) {
+    propertyCategory = 'apartments';
+  } else if (includesAnyKeyword(normalized, AI_PROPERTY_CATEGORY_KEYWORDS.houses)) {
+    propertyCategory = 'houses';
+  }
+
+  const featureFilters = FEATURE_FILTER_OPTIONS.filter((featureId) =>
+    includesAnyKeyword(normalized, AI_FEATURE_KEYWORDS[featureId] || [])
+  );
+
+  let rooms = '';
+  if (/\bstudio\b/i.test(normalized)) {
+    rooms = 'studio';
+  } else {
+    const roomPlusMatch = normalized.match(/(\d+)\s*\+\s*(?:bed|br|bedroom)/i);
+    const roomMatch = normalized.match(/(\d+)\s*(?:bed|br|bedroom)s?\b/i);
+    rooms = normalizeRoomCount((roomPlusMatch && roomPlusMatch[1]) || (roomMatch && roomMatch[1]) || '');
+  }
+
+  const bathPlusMatch = normalized.match(/(\d+)\s*\+\s*(?:bath|ba|bathroom)/i);
+  const bathMatch = normalized.match(/(\d+)\s*(?:bath|ba|bathroom)s?\b/i);
+  const baths = normalizeBathCount((bathPlusMatch && bathPlusMatch[1]) || (bathMatch && bathMatch[1]) || '');
+  const { minPriceInput, maxPriceInput } = parseAiPriceRange(normalized);
+  const extractedCity = extractAiCityCandidate(trimmedInput);
+  const city = extractedCity || trimmedInput;
+
+  return {
+    city,
+    rooms,
+    baths,
+    listingType,
+    propertyCategory,
+    featureFilters,
+    minPriceInput,
+    maxPriceInput,
+  };
 };
 
 const getRoomsBathsSummaryLabel = ({
@@ -180,6 +341,8 @@ const Navbar = () => {
   const [interestVersion, setInterestVersion] = useState(0);
   const [isSavingSearch, setIsSavingSearch] = useState(false);
   const [saveSearchStatus, setSaveSearchStatus] = useState('');
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [voiceSearchStatus, setVoiceSearchStatus] = useState('');
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
@@ -188,6 +351,8 @@ const Navbar = () => {
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
   const deferredAutoSaveTimerRef = useRef(null);
+  const voiceStatusTimerRef = useRef(null);
+  const voiceRecognitionRef = useRef(null);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -221,6 +386,18 @@ const Navbar = () => {
     if (deferredAutoSaveTimerRef.current) {
       window.clearTimeout(deferredAutoSaveTimerRef.current);
       deferredAutoSaveTimerRef.current = null;
+    }
+    if (voiceStatusTimerRef.current) {
+      window.clearTimeout(voiceStatusTimerRef.current);
+      voiceStatusTimerRef.current = null;
+    }
+    if (voiceRecognitionRef.current) {
+      try {
+        voiceRecognitionRef.current.stop();
+      } catch (_err) {
+        // Ignore failures while unmounting; recognition session may already be closed.
+      }
+      voiceRecognitionRef.current = null;
     }
   }, []);
 
@@ -413,6 +590,129 @@ const Navbar = () => {
     setRoomsBathsExpanded(false);
   };
 
+  const setTransientVoiceStatus = (message, timeoutMs = 2600) => {
+    setVoiceSearchStatus(message);
+    if (voiceStatusTimerRef.current && typeof window !== 'undefined') {
+      window.clearTimeout(voiceStatusTimerRef.current);
+      voiceStatusTimerRef.current = null;
+    }
+    if (!message || timeoutMs <= 0 || typeof window === 'undefined') return;
+    voiceStatusTimerRef.current = window.setTimeout(() => {
+      setVoiceSearchStatus('');
+      voiceStatusTimerRef.current = null;
+    }, timeoutMs);
+  };
+
+  const applyAiPrompt = (rawPrompt = '') => {
+    const prompt = String(rawPrompt || '').trim();
+    if (!prompt) return;
+    const aiSearch = parseAiSearchInput(prompt);
+    setCity(aiSearch.city);
+    setRooms(aiSearch.rooms);
+    setBaths(aiSearch.baths);
+    setRoomsDraft(aiSearch.rooms);
+    setBathsDraft(aiSearch.baths);
+    setListingType(aiSearch.listingType);
+    setPropertyCategory(aiSearch.propertyCategory);
+    setFeatureFilters(aiSearch.featureFilters);
+    setMinPriceInput(aiSearch.minPriceInput);
+    setMaxPriceInput(aiSearch.maxPriceInput);
+    minPriceDraftRef.current = aiSearch.minPriceInput;
+    maxPriceDraftRef.current = aiSearch.maxPriceInput;
+    applySearch({
+      nextCity: aiSearch.city,
+      nextRooms: aiSearch.rooms,
+      nextBaths: aiSearch.baths,
+      nextListingType: aiSearch.listingType,
+      nextPropertyCategory: aiSearch.propertyCategory,
+      nextFeatureFilters: aiSearch.featureFilters,
+      nextMinPriceInput: aiSearch.minPriceInput,
+      nextMaxPriceInput: aiSearch.maxPriceInput,
+    });
+    setPriceExpanded(false);
+    setFiltersExpanded(false);
+    setRoomsBathsExpanded(false);
+    return true;
+  };
+
+  const handleMobileAiSearch = () => {
+    applyAiPrompt(city);
+  };
+
+  const handleMobileVoiceSearch = () => {
+    if (isVoiceListening && voiceRecognitionRef.current) {
+      try {
+        voiceRecognitionRef.current.stop();
+      } catch (_err) {
+        // Ignore stop errors; this is best-effort.
+      }
+      setIsVoiceListening(false);
+      setTransientVoiceStatus(t('navbar.voiceSearchStoppedStatus'));
+      return;
+    }
+
+    const SpeechRecognition = getSpeechRecognitionConstructor();
+    if (!SpeechRecognition) {
+      setTransientVoiceStatus(t('navbar.voiceSearchUnsupported'));
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.lang = language === 'he' ? 'he-IL' : 'en-US';
+
+      recognition.onstart = () => {
+        setIsVoiceListening(true);
+        setTransientVoiceStatus(t('navbar.voiceSearchListeningStatus'), 0);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results || [])
+          .map((result) => (result && result[0] ? String(result[0].transcript || '') : ''))
+          .join(' ')
+          .trim();
+        if (!transcript) {
+          setTransientVoiceStatus(t('navbar.voiceSearchNoSpeech'));
+          return;
+        }
+        setCity(transcript);
+        const applied = applyAiPrompt(transcript);
+        if (applied) setTransientVoiceStatus(t('navbar.voiceSearchAppliedStatus'));
+      };
+
+      recognition.onerror = (event) => {
+        const errorCode = String(event?.error || '').toLowerCase();
+        if (errorCode === 'no-speech') {
+          setTransientVoiceStatus(t('navbar.voiceSearchNoSpeech'));
+          return;
+        }
+        if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(errorCode)) {
+          setTransientVoiceStatus(t('navbar.voiceSearchPermissionDenied'));
+          return;
+        }
+        setTransientVoiceStatus(t('navbar.voiceSearchGenericError'));
+      };
+
+      recognition.onend = () => {
+        setIsVoiceListening(false);
+        voiceRecognitionRef.current = null;
+        setVoiceSearchStatus((currentStatus) => (
+          currentStatus === t('navbar.voiceSearchListeningStatus') ? '' : currentStatus
+        ));
+      };
+
+      voiceRecognitionRef.current = recognition;
+      recognition.start();
+    } catch (_err) {
+      setIsVoiceListening(false);
+      voiceRecognitionRef.current = null;
+      setTransientVoiceStatus(t('navbar.voiceSearchUnsupported'));
+    }
+  };
+
   const handleFilterMenuMinPriceChange = (rawValue) => {
     const normalizedRaw = String(rawValue || '').trim();
     const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(normalizedRaw);
@@ -588,6 +888,27 @@ const Navbar = () => {
                   onBlur={(event) => applySearch({ nextCity: event.target.value })}
                   autoComplete="off"
                 />
+              </div>
+              <div className="premium-header__search-segment premium-header__search-segment--voice">
+                <button
+                  type="button"
+                  className={`premium-header__voice-toggle ${isVoiceListening ? 'is-listening' : ''}`}
+                  aria-label={isVoiceListening ? t('navbar.voiceSearchStopAriaLabel') : t('navbar.voiceSearchAriaLabel')}
+                  onClick={handleMobileVoiceSearch}
+                >
+                  <span>{t('navbar.voiceSearch')}</span>
+                </button>
+              </div>
+              <div className="premium-header__search-segment premium-header__search-segment--ai">
+                <button
+                  type="button"
+                  className={`premium-header__ai-toggle ${city.trim() ? 'is-active' : ''}`}
+                  aria-label={t('navbar.aiSearchAriaLabel')}
+                  onClick={handleMobileAiSearch}
+                  disabled={!city.trim()}
+                >
+                  <span>{t('navbar.aiSearch')}</span>
+                </button>
               </div>
               <div className="premium-header__search-segment premium-header__search-segment--price" ref={priceRef}>
                 <button
@@ -801,6 +1122,11 @@ const Navbar = () => {
                 )}
               </div>
             </div>
+            {voiceSearchStatus && (
+              <p className="premium-header__voice-status" aria-live="polite">
+                {voiceSearchStatus}
+              </p>
+            )}
             <button type="submit" className="premium-header__search-submit" aria-label={t('navbar.applySearchAriaLabel')}>
               {t('navbar.search')}
             </button>

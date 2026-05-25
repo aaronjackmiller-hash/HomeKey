@@ -227,7 +227,9 @@ a {
 .premium-header__search-segment input,
 .premium-header__search-segment .premium-header__price-toggle,
 .premium-header__search-segment .premium-header__rooms-toggle,
-.premium-header__search-segment .premium-header__filters-toggle {
+.premium-header__search-segment .premium-header__filters-toggle,
+.premium-header__search-segment .premium-header__ai-toggle,
+.premium-header__search-segment .premium-header__voice-toggle {
   width: 100%;
   height: 24px;
   border: 0;
@@ -246,7 +248,9 @@ a {
 .premium-header__search-segment input:focus,
 .premium-header__search-segment .premium-header__price-toggle:focus,
 .premium-header__search-segment .premium-header__rooms-toggle:focus,
-.premium-header__search-segment .premium-header__filters-toggle:focus {
+.premium-header__search-segment .premium-header__filters-toggle:focus,
+.premium-header__search-segment .premium-header__ai-toggle:focus,
+.premium-header__search-segment .premium-header__voice-toggle:focus {
   outline: none;
   box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.2);
 }
@@ -254,7 +258,9 @@ a {
 .premium-header__search-segment input.is-active,
 .premium-header__price-toggle.is-active,
 .premium-header__rooms-toggle.is-active,
-.premium-header__filters-toggle.is-active {
+.premium-header__filters-toggle.is-active,
+.premium-header__ai-toggle.is-active,
+.premium-header__voice-toggle.is-active {
   background: #f1ede3;
   color: var(--hk-brand-charcoal);
   font-weight: 600;
@@ -295,6 +301,44 @@ a {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+}
+
+.premium-header__ai-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.premium-header__voice-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.premium-header__ai-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.premium-header__voice-toggle.is-listening {
+  background: #7f1d1d;
+  color: #ffffff;
+}
+
+.premium-header__voice-status {
+  margin: 8px 6px 0;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+  display: none;
 }
 
 .premium-header__price-caret {
@@ -4810,7 +4854,7 @@ legend {
   }
 
   .premium-header__search-pill {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     border-radius: 14px;
     min-height: 48px;
     box-shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
@@ -4826,19 +4870,57 @@ legend {
   }
 
   .premium-header__search-segment--all-filters {
-    padding-right: 6px;
+    padding-right: 4px;
+  }
+
+  .premium-header__search-segment--voice {
+    padding-right: 2px;
+  }
+
+  .premium-header__search-segment--ai {
+    padding-right: 2px;
   }
 
   .premium-header__search-segment input,
-  .premium-header__search-segment .premium-header__filters-toggle {
+  .premium-header__search-segment .premium-header__filters-toggle,
+  .premium-header__search-segment .premium-header__ai-toggle,
+  .premium-header__search-segment .premium-header__voice-toggle {
     height: 34px;
     border-radius: 10px;
     font-size: 0.9rem;
     padding: 6px 10px;
   }
 
+  .premium-header__search-segment .premium-header__voice-toggle {
+    min-width: 64px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #0f172a;
+    display: inline-flex;
+  }
+
+  .premium-header__search-segment .premium-header__voice-toggle.is-listening {
+    border-color: #7f1d1d;
+    background: #7f1d1d;
+    color: #ffffff;
+  }
+
+  .premium-header__search-segment .premium-header__ai-toggle {
+    min-width: 60px;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #ffffff;
+    display: inline-flex;
+  }
+
+  .premium-header__search-segment .premium-header__ai-toggle.is-active {
+    border-color: #0f172a;
+    background: #0f172a;
+    color: #ffffff;
+  }
+
   .premium-header__search-segment .premium-header__filters-toggle {
-    min-width: 104px;
+    min-width: 94px;
     justify-content: center;
     background: #f8fafc;
     border: 1px solid #d1d5db;
@@ -4848,6 +4930,10 @@ legend {
   .premium-header__search-segment .premium-header__filters-toggle.is-active {
     border-color: #1a1a1a;
     background: #f1ede3;
+  }
+
+  .premium-header__voice-status {
+    display: block;
   }
 
   .premium-header__search-segment + .premium-header__search-segment::before {
