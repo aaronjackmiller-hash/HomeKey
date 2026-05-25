@@ -1253,7 +1253,8 @@ const PropertyList = () => {
           const { street, locationLine } = getAddressDisplay(property.address, language);
           const titleFromData = sanitizeReadableText(property, property.title);
           const fallbackStreetFromTitle = (() => {
-            const titleParts = splitStreetAndNumber(titleFromData, '');
+            const rawTitle = safeText(property?.title);
+            const titleParts = splitStreetAndNumber(rawTitle, '');
             if (!titleParts.street && !titleParts.streetNumber) return '';
             if (language === 'en') {
               return [safeText(titleParts.streetNumber), safeText(titleParts.street)].filter(Boolean).join(' ');
