@@ -4543,6 +4543,7 @@ legend {
 .map-listing-marker-pin {
   --map-marker-pin-bg: #1a1a1a;
   position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4581,6 +4582,7 @@ legend {
   display: block;
   inset: 0;
   opacity: 0;
+  z-index: 1;
   transition: opacity 200ms ease-out;
 }
 

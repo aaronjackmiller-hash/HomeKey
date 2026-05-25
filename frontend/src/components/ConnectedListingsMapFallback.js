@@ -190,7 +190,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   </div>`;
   return L.divIcon({
     className: 'fallback-price-pin',
-    html: `<div class="${markerRootClassName}"><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}<span class="radar-pulse-ring"></span></span>${markerCaptionHtml}</div>`,
+    html: `<div class="${markerRootClassName}"><span class="radar-pulse-ring"></span><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}</span>${markerCaptionHtml}</div>`,
     iconSize: [scaledPinWidth, totalHeight],
     iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],

@@ -249,13 +249,13 @@ const createListingMarkerElement = (priceText, details = {}, isFavorite = false)
   const markerDetails = details && typeof details === 'object' ? details : {};
   const markerElement = document.createElement('div');
   markerElement.className = 'map-listing-marker';
+  const markerPulseRing = document.createElement('span');
+  markerPulseRing.className = 'radar-pulse-ring';
+  markerElement.appendChild(markerPulseRing);
   if (isFavorite) markerElement.classList.add('is-favorite');
   const markerPin = document.createElement('span');
   markerPin.className = 'map-listing-marker-pin';
   markerPin.textContent = priceText;
-  const markerPulseRing = document.createElement('span');
-  markerPulseRing.className = 'radar-pulse-ring';
-  markerPin.appendChild(markerPulseRing);
   markerElement.appendChild(markerPin);
   const markerCaption = document.createElement('div');
   markerCaption.className = 'map-hovered-listing-caption animate-fadeIn';
