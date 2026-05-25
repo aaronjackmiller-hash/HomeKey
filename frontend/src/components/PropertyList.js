@@ -21,7 +21,7 @@ import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLo
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
-const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
+const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v2';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';

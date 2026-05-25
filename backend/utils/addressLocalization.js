@@ -56,6 +56,17 @@ const STREET_TRANSLITERATION_LATIN_ALIASES_BY_CITY = {
     },
 };
 
+const NEIGHBORHOOD_TRANSLITERATION_OVERRIDES = {
+    'נוה צדק': 'Neve Tzedek',
+    'פלורנטין': 'Florentin',
+    'הצפון הישן - החלק הצפוני': 'Old North - North Section',
+    'הצפון הישן-החלק הדרומי': 'Old North - South Section',
+    'הצפון הישן': 'Old North',
+    'פארק צמרת': 'Park Tzameret',
+    'לב תל אביב': 'Lev Tel Aviv',
+    'לב תל-אביב': 'Lev Tel Aviv',
+};
+
 const PHRASE_TRANSLITERATION_OVERRIDES = {
     'תל אביב': 'Tel Aviv',
     'תל אביב יפו': 'Tel Aviv-Yafo',
@@ -241,6 +252,16 @@ const NORMALIZED_STREET_TRANSLITERATION_LATIN_BY_CITY = Object.entries(
     return acc;
 }, {});
 
+const NORMALIZED_NEIGHBORHOOD_TRANSLITERATION_OVERRIDES = Object.entries(
+    NEIGHBORHOOD_TRANSLITERATION_OVERRIDES
+).reduce((acc, [rawName, transliterated]) => {
+    const key = normalizeHebrewDictionaryKey(rawName);
+    const value = normalizeText(transliterated);
+    if (!key || !value) return acc;
+    acc[key] = value;
+    return acc;
+}, {});
+
 const generateLatinLookupVariants = (value) => {
     const base = normalizeLatinDictionaryKey(value);
     if (!base) return [];
@@ -341,6 +362,26 @@ const lookupStreetDictionaryTransliterationFromLatin = (streetName, cityName) =>
     if (cityMatch) return cityMatch;
 
     return resolveLatinStreetDictionaryMatch(NORMALIZED_STREET_TRANSLITERATION_LATIN_GLOBAL, variants);
+};
+
+const lookupNeighborhoodTransliteration = (neighborhoodName) => {
+    const key = normalizeHebrewDictionaryKey(neighborhoodName);
+    if (!key) return '';
+    return NORMALIZED_NEIGHBORHOOD_TRANSLITERATION_OVERRIDES[key] || '';
+};
+
+const toEnglishAddressField = (value, fieldName = '') => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    if (!containsHebrew(normalized)) return normalized;
+
+    if (fieldName === 'country' && normalizeHebrewForLookup(normalized) === 'ישראל') {
+        return 'Israel';
+    }
+    if (fieldName === 'neighborhood') {
+        return lookupNeighborhoodTransliteration(normalized) || transliterateHebrewText(normalized);
+    }
+    return transliterateHebrewText(normalized);
 };
 
 const transliterateHebrewToken = (token) => {
@@ -493,11 +534,10 @@ const buildLocalizedAddress = (address = {}) => {
     const localizedEn = {
         street: englishStreet.street,
         streetNumber: englishStreet.streetNumber || sourceStreetNumber,
-        // Keep non-street fields in the original source language.
-        neighborhood: sourceNeighborhood,
-        city: sourceCity,
-        state: sourceState,
-        country: sourceCountry,
+        neighborhood: toEnglishAddressField(sourceNeighborhood, 'neighborhood'),
+        city: toEnglishAddressField(sourceCity, 'city'),
+        state: toEnglishAddressField(sourceState, 'state'),
+        country: toEnglishAddressField(sourceCountry, 'country'),
     };
 
     const localizedHe = {
