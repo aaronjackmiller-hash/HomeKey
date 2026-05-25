@@ -4535,28 +4535,12 @@ legend {
   display: inline-flex;
   align-items: flex-end;
   justify-content: center;
-  transform: translateZ(0) scale(1);
   transform-origin: center bottom;
   transition: all 300ms ease-out;
-  will-change: transform;
+  will-change: transform, filter;
 }
 
-.map-listing-marker::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 48%;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: 1.4px solid rgba(15, 23, 42, 0.3);
-  background: rgba(255, 255, 255, 0.08);
-  transform: translate(-50%, -50%) scale(0.86);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.map-listing-marker__pin {
+.map-listing-marker-pin {
   --map-marker-pin-bg: #1a1a1a;
   position: relative;
   display: inline-flex;
@@ -4574,9 +4558,11 @@ legend {
   padding: 0 8px;
   border: 1px solid rgba(26, 26, 26, 0.9);
   box-shadow: 0 4px 11px rgba(15, 23, 42, 0.27);
+  cursor: pointer;
+  transition: all 300ms ease-out;
 }
 
-.map-listing-marker__pin::before {
+.map-listing-marker-pin::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -4589,43 +4575,37 @@ legend {
   border-top: 8px solid var(--map-marker-pin-bg);
 }
 
-.map-listing-marker.is-favorite .map-listing-marker__pin {
+.map-listing-marker .radar-pulse-ring {
+  display: none;
+  inset: 0;
+}
+
+.map-listing-marker.is-favorite .map-listing-marker-pin {
   --map-marker-pin-bg: #ff0000;
 }
 
 .map-listing-marker.is-hovered {
-  transform: translateZ(0) scale(1.28);
+  z-index: 50;
 }
 
-.map-listing-marker.is-hovered .map-listing-marker__pin {
-  --map-marker-pin-bg: #2f5d8a;
-  border-color: #2f5d8a;
+.map-listing-marker.is-hovered .map-listing-marker-pin {
+  --map-marker-pin-bg: #0f3c6d;
+  border-color: #0f3c6d;
+  transform: scale(1.15);
   box-shadow: 0 12px 20px rgba(15, 23, 42, 0.26);
 }
 
-.map-listing-marker.is-hovered::after {
-  animation: map-marker-radar-pulse 1.7s ease-out infinite;
+.map-listing-marker.is-hovered .radar-pulse-ring {
+  display: block;
 }
 
-@keyframes map-marker-radar-pulse {
-  0% {
-    transform: translate(-50%, -50%) scale(0.86);
-    opacity: 0.45;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(3.8);
-    opacity: 0;
-  }
-}
-
-.fallback-price-pin .map-listing-marker__pin {
+.fallback-price-pin .map-listing-marker-pin {
   padding: 0 8px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .map-listing-marker:hover {
-    transform: translateZ(0) scale(1.28);
+  .map-listing-marker:hover .map-listing-marker-pin {
+    transform: scale(1.08);
   }
 }
 

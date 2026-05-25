@@ -162,7 +162,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   ].join(';');
   return L.divIcon({
     className: 'fallback-price-pin',
-    html: `<div class="${markerRootClassName}"><span class="map-listing-marker__pin" style="${markerPinInlineStyle}">${safePriceText}</span></div>`,
+    html: `<div class="${markerRootClassName}"><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}<span class="radar-pulse-ring"></span></span></div>`,
     iconSize: [scaledPinWidth, totalHeight],
     iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
@@ -470,11 +470,11 @@ const ConnectedListingsMapFallback = ({
             Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
             1
           ) + 0.8,
-          pinBackground: '#2f5d8a',
-          pinBorderColor: '#2f5d8a',
+          pinBackground: '#0f3c6d',
+          pinBorderColor: '#0f3c6d',
           fontWeight: 800,
         },
-        { hovered: true, scale: 1.32 }
+        { hovered: true, scale: 1.15 }
       );
       const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       const marker = L.marker([coords.lat, coords.lng], {

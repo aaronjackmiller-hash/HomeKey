@@ -233,8 +233,11 @@ const createListingMarkerElement = (priceText, isFavorite = false) => {
   markerElement.className = 'map-listing-marker';
   if (isFavorite) markerElement.classList.add('is-favorite');
   const markerPin = document.createElement('span');
-  markerPin.className = 'map-listing-marker__pin';
+  markerPin.className = 'map-listing-marker-pin';
   markerPin.textContent = priceText;
+  const markerPulseRing = document.createElement('span');
+  markerPulseRing.className = 'radar-pulse-ring';
+  markerPin.appendChild(markerPulseRing);
   markerElement.appendChild(markerPin);
   return markerElement;
 };

@@ -23,6 +23,7 @@ import ResetPassword from './components/ResetPassword';
 import PropertyInquiryCard from './components/PropertyInquiryCard';
 import InstantAlerts from './components/InstantAlerts';
 import './index.css';
+import './styles/radar.css';
 
 const PrivateRoute = ({ children, ...rest }) => {
   const { isAuthenticated } = useAuth();
