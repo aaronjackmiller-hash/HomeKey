@@ -271,13 +271,16 @@ const createListingMarkerElement = (priceText, details = {}, isFavorite = false)
   return markerElement;
 };
 
-const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}) => {
+const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}, options = {}) => {
   const pinHeight = Number(preset.pinHeight) || 26;
   const pointerHeight = Number(preset.pointerHeight) || 10;
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
   const minWidth = Number(preset.minWidth) || 56;
   const fontSize = Number(preset.fontSize) || 12;
   const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const resolvedOptions = options && typeof options === 'object' ? options : {};
+  const showRadarPulse = Boolean(resolvedOptions.showRadarPulse);
+  const pulsePhase = Number(resolvedOptions.pulsePhase) || 0;
   const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
   const pinColor = resolvedStyleOverrides.pinColor || preset.pinColor || '#2563eb';
   const pinStrokeColor = resolvedStyleOverrides.pinStrokeColor || preset.pinStrokeColor || '#1d4ed8';
@@ -301,6 +304,18 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const safeRadius = Math.max(1, radius - halfStroke);
   const pointerLeftX = centerX - pointerHalfWidth;
   const pointerRightX = centerX + pointerHalfWidth;
+  const radarPadding = showRadarPulse ? 66 : 0;
+  const iconWidth = bubbleWidth + (radarPadding * 2);
+  const iconHeight = totalHeight + (radarPadding * 2);
+  const radarCenterX = centerX + radarPadding;
+  const radarCenterY = Math.round((pinHeight / 2) + radarPadding);
+  const radarRadii = pulsePhase % 2 === 0 ? [22, 38, 54] : [26, 44, 62];
+  const radarMarkup = showRadarPulse
+    ? radarRadii.map((radius, index) => {
+      const opacity = [0.36, 0.24, 0.14][index] || 0.12;
+      return `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgba(15, 60, 109, ${opacity})" stroke-width="2" />`;
+    }).join('')
+    : '';
   const pinPath = [
     `M${leftX + safeRadius} ${topY}`,
     `H${rightX - safeRadius}`,
@@ -315,19 +330,22 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
     'Z',
   ].join(' ');
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${bubbleWidth}" height="${totalHeight}" viewBox="0 0 ${bubbleWidth} ${totalHeight}" overflow="visible">
-    <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
-    <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
+    ${radarMarkup}
+    <g transform="translate(${radarPadding}, ${radarPadding})">
+      <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
+      <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
+    </g>
   </svg>`;
 
   const safeScale = Number(scale) > 0 ? Number(scale) : 1;
-  const scaledWidth = bubbleWidth * safeScale;
-  const scaledHeight = totalHeight * safeScale;
+  const scaledWidth = iconWidth * safeScale;
+  const scaledHeight = iconHeight * safeScale;
 
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new mapsApi.Size(scaledWidth, scaledHeight),
-    anchor: new mapsApi.Point(centerX * safeScale, totalHeight * safeScale),
+    anchor: new mapsApi.Point((centerX + radarPadding) * safeScale, (totalHeight + radarPadding) * safeScale),
   };
 };
 
@@ -408,6 +426,7 @@ const GoogleListingsMap = ({
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
   const [drawMode, setDrawMode] = useState(false);
   const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [hoverPulsePhase, setHoverPulsePhase] = useState(0);
   const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
   const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
@@ -436,6 +455,18 @@ const GoogleListingsMap = ({
   );
   useEffect(() => {
     hoveredListingIdRef.current = hoveredListingId == null ? null : String(hoveredListingId);
+  }, [hoveredListingId]);
+  useEffect(() => {
+    if (hoveredListingId == null || typeof window === 'undefined') {
+      setHoverPulsePhase(0);
+      return undefined;
+    }
+    const intervalId = window.setInterval(() => {
+      setHoverPulsePhase((phase) => (phase + 1) % 2);
+    }, 2200);
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, [hoveredListingId]);
 
   const emitCircleSelection = (nextSelection) => {
@@ -700,16 +731,28 @@ const GoogleListingsMap = ({
             1,
             markerStyleOverrides
           );
-        const markerHoverIcon = supportsDesktopHover
+        const markerHoverIcons = supportsDesktopHover
           && !isHousePinPreset
-          ? createPricePinIcon(
-            mapsApi,
-            markerPreset,
-            markerPrice,
-            DESKTOP_MARKER_HOVER_SCALE,
-            markerStyleOverrides
-          )
-          : null;
+          ? [
+            createPricePinIcon(
+              mapsApi,
+              markerPreset,
+              markerPrice,
+              DESKTOP_MARKER_HOVER_SCALE,
+              markerStyleOverrides,
+              { showRadarPulse: true, pulsePhase: 0 }
+            ),
+            createPricePinIcon(
+              mapsApi,
+              markerPreset,
+              markerPrice,
+              DESKTOP_MARKER_HOVER_SCALE,
+              markerStyleOverrides,
+              { showRadarPulse: true, pulsePhase: 1 }
+            ),
+          ]
+          : [];
+        const markerHoverIcon = markerHoverIcons[0] || null;
         const markerElement = canUseAdvancedMarker
           ? createListingMarkerElement(
             markerPrice,
@@ -770,8 +813,8 @@ const GoogleListingsMap = ({
           });
           marker.addListener('mouseout', () => {
             marker.setIcon(
-              hoveredListingIdRef.current === propertyId
-                ? markerHoverIcon
+              hoveredListingIdRef.current === propertyId && markerHoverIcons.length > 0
+                ? markerHoverIcons[hoverPulsePhase % markerHoverIcons.length]
                 : markerIcon
             );
           });
@@ -786,6 +829,7 @@ const GoogleListingsMap = ({
           isAdvancedMarker: canUseAdvancedMarker,
           markerIcon,
           markerHoverIcon,
+          markerHoverIcons,
         });
         if (activeCircleRef.current) applyCircleFilter();
         bounds.extend(coords);
@@ -843,11 +887,18 @@ const GoogleListingsMap = ({
       if (typeof entry.marker.setZIndex === 'function') {
         entry.marker.setZIndex(isHovered ? 100 : 2);
       }
-      if (entry.markerHoverIcon && entry.markerIcon && typeof entry.marker.setIcon === 'function') {
-        entry.marker.setIcon(isHovered ? entry.markerHoverIcon : entry.markerIcon);
+      if (entry.markerIcon && typeof entry.marker.setIcon === 'function') {
+        if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+          const nextHoverIcon = entry.markerHoverIcons[hoverPulsePhase % entry.markerHoverIcons.length];
+          entry.marker.setIcon(nextHoverIcon || entry.markerHoverIcon || entry.markerIcon);
+        } else if (isHovered && entry.markerHoverIcon) {
+          entry.marker.setIcon(entry.markerHoverIcon);
+        } else {
+          entry.marker.setIcon(entry.markerIcon);
+        }
       }
     });
-  }, [hoveredListingId]);
+  }, [hoveredListingId, hoverPulsePhase]);
 
   useEffect(() => {
     if (!isVisible || !mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
