@@ -13,6 +13,7 @@ const {
     mergeLocalizedContent,
     sanitizeLocalizedContent,
 } = require('./propertyLocalizationService');
+const { enrichAddressLocalization } = require('./addressLocalizationService');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 const HEBREW_CHAR_RE = /[א-ת]/;
@@ -839,6 +840,7 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                 contentLanguage: payload.contentLanguage,
                 localizedContent: payload.localizedContent,
             });
+            payload.address = await enrichAddressLocalization(payload.address);
 
             if (!payload.title || payload.price <= 0 || payload.size <= 0) {
                 summary.skipped += 1;
