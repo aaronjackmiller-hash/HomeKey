@@ -21,6 +21,23 @@ const FEATURE_FILTER_OPTIONS = [
   'furnished',
   'mamad',
 ];
+const AI_LISTING_TYPE_KEYWORDS = {
+  rental: ['rent', 'rental', 'lease'],
+  sale: ['buy', 'sale', 'purchase'],
+};
+const AI_PROPERTY_CATEGORY_KEYWORDS = {
+  apartments: ['apartment', 'studio', 'condo', 'flat', 'penthouse'],
+  houses: ['house', 'home', 'villa', 'duplex', 'townhouse'],
+};
+const AI_FEATURE_KEYWORDS = {
+  elevator: ['elevator', 'lift'],
+  parking: ['parking', 'garage', 'carport'],
+  pets: ['pet', 'pets', 'dog', 'cat'],
+  'disabled-access': ['accessible', 'wheelchair', 'disabled'],
+  renovated: ['renovated', 'refurbished'],
+  furnished: ['furnished'],
+  mamad: ['mamad', 'safe room', 'security room'],
+};
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
@@ -46,6 +63,143 @@ const sanitizeListingType = (rawValue) => {
   const normalized = String(rawValue || '').toLowerCase();
   if (normalized === 'sale' || normalized === 'rental') return normalized;
   return 'all';
+};
+
+const includesAnyKeyword = (searchText = '', keywords = []) =>
+  keywords.some((keyword) => searchText.includes(keyword));
+
+const normalizeRoomCount = (value) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0) return '';
+  if (parsed >= 4) return '4+';
+  return String(parsed);
+};
+
+const normalizeBathCount = (value) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0) return '';
+  if (parsed >= 3) return '3+';
+  return String(parsed);
+};
+
+const parseAiBudgetToken = (rawToken = '') => {
+  const normalized = String(rawToken || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[$₪,\s]/g, '');
+  if (!normalized) return null;
+  const isKAmount = normalized.endsWith('k');
+  const numericPart = isKAmount ? normalized.slice(0, -1) : normalized;
+  const parsed = Number(numericPart);
+  if (Number.isNaN(parsed)) return null;
+  return Math.round(parsed * (isKAmount ? 1000 : 1));
+};
+
+const parseAiPriceRange = (rawInput = '') => {
+  const normalized = String(rawInput || '').toLowerCase();
+  let minPriceInput = PRICE_SLIDER_MIN;
+  let maxPriceInput = PRICE_SLIDER_MAX;
+
+  const betweenMatch = normalized.match(
+    /(?:between|from)\s*[$₪]?\s*([\d.,k]+)\s*(?:and|to|-)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (betweenMatch) {
+    const firstValue = parseAiBudgetToken(betweenMatch[1]);
+    const secondValue = parseAiBudgetToken(betweenMatch[2]);
+    if (firstValue != null && secondValue != null) {
+      minPriceInput = clampPriceValue(Math.min(firstValue, secondValue));
+      maxPriceInput = clampPriceValue(Math.max(firstValue, secondValue));
+      return { minPriceInput, maxPriceInput };
+    }
+  }
+
+  const maxMatch = normalized.match(
+    /(?:under|below|max(?:imum)?|up to|less than)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (maxMatch) {
+    const parsedMax = parseAiBudgetToken(maxMatch[1]);
+    if (parsedMax != null) maxPriceInput = clampPriceValue(parsedMax);
+  }
+
+  const minMatch = normalized.match(
+    /(?:over|above|min(?:imum)?|starting at|at least)\s*[$₪]?\s*([\d.,k]+)/
+  );
+  if (minMatch) {
+    const parsedMin = parseAiBudgetToken(minMatch[1]);
+    if (parsedMin != null) minPriceInput = clampPriceValue(parsedMin);
+  }
+
+  if (minPriceInput > maxPriceInput) {
+    const midpoint = Math.round((minPriceInput + maxPriceInput) / 2 / PRICE_SLIDER_STEP) * PRICE_SLIDER_STEP;
+    return { minPriceInput: midpoint, maxPriceInput: midpoint };
+  }
+
+  return { minPriceInput, maxPriceInput };
+};
+
+const extractAiCityCandidate = (rawInput = '') => {
+  const strippedText = String(rawInput || '')
+    .replace(/[$₪]/g, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with)\b/gi, ' ')
+    .replace(/[^a-zA-Z\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!strippedText) return '';
+  return strippedText
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(' ')
+    .trim();
+};
+
+const parseAiSearchInput = (rawInput = '') => {
+  const trimmedInput = String(rawInput || '').trim();
+  const normalized = trimmedInput.toLowerCase();
+
+  let listingType = 'all';
+  if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.rental)) {
+    listingType = 'rental';
+  } else if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.sale)) {
+    listingType = 'sale';
+  }
+
+  let propertyCategory = '';
+  if (includesAnyKeyword(normalized, AI_PROPERTY_CATEGORY_KEYWORDS.apartments)) {
+    propertyCategory = 'apartments';
+  } else if (includesAnyKeyword(normalized, AI_PROPERTY_CATEGORY_KEYWORDS.houses)) {
+    propertyCategory = 'houses';
+  }
+
+  const featureFilters = FEATURE_FILTER_OPTIONS.filter((featureId) =>
+    includesAnyKeyword(normalized, AI_FEATURE_KEYWORDS[featureId] || [])
+  );
+
+  let rooms = '';
+  if (/\bstudio\b/i.test(normalized)) {
+    rooms = 'studio';
+  } else {
+    const roomPlusMatch = normalized.match(/(\d+)\s*\+\s*(?:bed|br|bedroom)/i);
+    const roomMatch = normalized.match(/(\d+)\s*(?:bed|br|bedroom)s?\b/i);
+    rooms = normalizeRoomCount((roomPlusMatch && roomPlusMatch[1]) || (roomMatch && roomMatch[1]) || '');
+  }
+
+  const bathPlusMatch = normalized.match(/(\d+)\s*\+\s*(?:bath|ba|bathroom)/i);
+  const bathMatch = normalized.match(/(\d+)\s*(?:bath|ba|bathroom)s?\b/i);
+  const baths = normalizeBathCount((bathPlusMatch && bathPlusMatch[1]) || (bathMatch && bathMatch[1]) || '');
+  const { minPriceInput, maxPriceInput } = parseAiPriceRange(normalized);
+  const extractedCity = extractAiCityCandidate(trimmedInput);
+  const city = extractedCity || trimmedInput;
+
+  return {
+    city,
+    rooms,
+    baths,
+    listingType,
+    propertyCategory,
+    featureFilters,
+    minPriceInput,
+    maxPriceInput,
+  };
 };
 
 const getRoomsBathsSummaryLabel = ({
@@ -413,6 +567,37 @@ const Navbar = () => {
     setRoomsBathsExpanded(false);
   };
 
+  const handleMobileAiSearch = () => {
+    const prompt = city.trim();
+    if (!prompt) return;
+    const aiSearch = parseAiSearchInput(prompt);
+    setCity(aiSearch.city);
+    setRooms(aiSearch.rooms);
+    setBaths(aiSearch.baths);
+    setRoomsDraft(aiSearch.rooms);
+    setBathsDraft(aiSearch.baths);
+    setListingType(aiSearch.listingType);
+    setPropertyCategory(aiSearch.propertyCategory);
+    setFeatureFilters(aiSearch.featureFilters);
+    setMinPriceInput(aiSearch.minPriceInput);
+    setMaxPriceInput(aiSearch.maxPriceInput);
+    minPriceDraftRef.current = aiSearch.minPriceInput;
+    maxPriceDraftRef.current = aiSearch.maxPriceInput;
+    applySearch({
+      nextCity: aiSearch.city,
+      nextRooms: aiSearch.rooms,
+      nextBaths: aiSearch.baths,
+      nextListingType: aiSearch.listingType,
+      nextPropertyCategory: aiSearch.propertyCategory,
+      nextFeatureFilters: aiSearch.featureFilters,
+      nextMinPriceInput: aiSearch.minPriceInput,
+      nextMaxPriceInput: aiSearch.maxPriceInput,
+    });
+    setPriceExpanded(false);
+    setFiltersExpanded(false);
+    setRoomsBathsExpanded(false);
+  };
+
   const handleFilterMenuMinPriceChange = (rawValue) => {
     const normalizedRaw = String(rawValue || '').trim();
     const parsedValue = normalizedRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(normalizedRaw);
@@ -588,6 +773,17 @@ const Navbar = () => {
                   onBlur={(event) => applySearch({ nextCity: event.target.value })}
                   autoComplete="off"
                 />
+              </div>
+              <div className="premium-header__search-segment premium-header__search-segment--ai">
+                <button
+                  type="button"
+                  className={`premium-header__ai-toggle ${city.trim() ? 'is-active' : ''}`}
+                  aria-label={t('navbar.aiSearchAriaLabel')}
+                  onClick={handleMobileAiSearch}
+                  disabled={!city.trim()}
+                >
+                  <span>{t('navbar.aiSearch')}</span>
+                </button>
               </div>
               <div className="premium-header__search-segment premium-header__search-segment--price" ref={priceRef}>
                 <button

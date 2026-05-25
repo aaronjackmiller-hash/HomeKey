@@ -65,6 +65,8 @@ export const translations = {
       login: 'Login',
       logoutAriaLabel: 'Log out {{name}}',
       studio: 'Studio',
+      aiSearch: 'AI',
+      aiSearchAriaLabel: 'Use AI to interpret this search',
     },
     filterMenu: {
       title: 'Filters',
@@ -217,6 +219,8 @@ export const translations = {
       login: 'התחברות',
       logoutAriaLabel: 'התנתק {{name}}',
       studio: 'סטודיו',
+      aiSearch: 'AI',
+      aiSearchAriaLabel: 'הפעל חיפוש AI על הטקסט',
     },
     filterMenu: {
       title: 'מסננים',
