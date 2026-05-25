@@ -21,7 +21,7 @@ import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLo
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
-const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v2';
+const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
 const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
@@ -1251,11 +1251,19 @@ const PropertyList = () => {
             removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address, language);
-          const displayStreet = dedupeRepeatingPhrase(safeText(street));
+          const titleFromData = sanitizeReadableText(property, property.title);
+          const fallbackStreetFromTitle = (() => {
+            const titleParts = splitStreetAndNumber(titleFromData, '');
+            if (!titleParts.street && !titleParts.streetNumber) return '';
+            if (language === 'en') {
+              return [safeText(titleParts.streetNumber), safeText(titleParts.street)].filter(Boolean).join(' ');
+            }
+            return [safeText(titleParts.street), safeText(titleParts.streetNumber)].filter(Boolean).join(' ');
+          })();
+          const displayStreet = dedupeRepeatingPhrase(safeText(street || fallbackStreetFromTitle));
           const bedroomCount = getBedroomCount(property);
           const bathroomCount = getBathroomCount(property);
-          const titleFromData = sanitizeReadableText(property, property.title);
-          const displayLocation = sanitizeReadableText(property, locationLine);
+          const displayLocation = safeText(locationLine);
           const displayTitle = displayStreet || titleFromData || displayLocation || t('propertyList.propertyListingFallback');
           const shouldShowLocation = Boolean(
             displayLocation

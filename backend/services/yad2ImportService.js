@@ -377,6 +377,7 @@ const extractStreetNumberFromText = (value) => {
     if (!text) return { street: '', number: '' };
 
     const patterns = [
+        /^(\d+[a-zA-Zא-ת0-9\-\/]*)\s+([a-zA-Zא-ת][a-zA-Zא-ת0-9'\-.\s]{1,60})$/i,
         /(?:street|st\.?)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
         /(?:at|in)\s+([a-zA-Z][a-zA-Z0-9'\-.\s]{1,60})\s+(\d+[a-zA-Z0-9\-\/]*)/i,
         /(?:רחוב|רח׳|רח)\s*([א-תa-zA-Z0-9'\-.\s]{1,60})\s+(\d+[א-תa-zA-Z0-9\-\/]*)/i,
@@ -385,6 +386,12 @@ const extractStreetNumberFromText = (value) => {
     for (const pattern of patterns) {
         const match = text.match(pattern);
         if (!match || !match[1] || !match[2]) continue;
+        if (pattern === patterns[0]) {
+            return {
+                street: normalizeHumanText(match[2]),
+                number: normalizeHumanText(match[1]),
+            };
+        }
         return {
             street: normalizeHumanText(match[1]),
             number: normalizeHumanText(match[2]),
