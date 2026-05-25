@@ -125,8 +125,13 @@ const buildFallbackCoords = (addressQuery, markerIndex = 0) => {
   };
 };
 
-const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
+const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options = {}) => {
   const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const resolvedOptions = options && typeof options === 'object' ? options : {};
+  const scale = Number.isFinite(Number(resolvedOptions.scale)) && Number(resolvedOptions.scale) > 0
+    ? Number(resolvedOptions.scale)
+    : 1;
+  const isHovered = Boolean(resolvedOptions.hovered);
   const minWidth = Number(preset.minWidth) || 60;
   const height = Number(preset.height) || 24;
   const pointerHeight = Number(preset.pointerHeight) || 8;
@@ -139,22 +144,27 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}) => {
   const safePriceText = escapeSvgText(priceText);
   const estimatedTextWidth = Math.ceil(String(priceText || '').length * fontSize * 0.62);
   const pinWidth = Math.max(minWidth, estimatedTextWidth + 16);
-  const totalHeight = height + pointerHeight;
+  const scaledPinWidth = Math.round(pinWidth * scale);
+  const scaledHeight = Math.round(height * scale);
+  const scaledPointerHeight = Math.round(pointerHeight * scale);
+  const scaledFontSize = Math.max(10, Math.round(fontSize * scale));
+  const totalHeight = scaledHeight + scaledPointerHeight;
+  const markerRootClassName = `map-listing-marker${isHovered ? ' is-hovered' : ''}`;
   const markerPinInlineStyle = [
     `--map-marker-pin-bg:${pinBackground}`,
-    `min-width:${pinWidth}px`,
-    `height:${height}px`,
+    `min-width:${scaledPinWidth}px`,
+    `height:${scaledHeight}px`,
     `background:${pinBackground}`,
     `border:${borderWidth}px solid ${pinBorderColor}`,
     `color:${pinTextColor}`,
-    `font-size:${fontSize}px`,
+    `font-size:${scaledFontSize}px`,
     `font-weight:${fontWeight}`,
   ].join(';');
   return L.divIcon({
     className: 'fallback-price-pin',
-    html: `<div class="map-listing-marker"><span class="map-listing-marker__pin" style="${markerPinInlineStyle}">${safePriceText}</span></div>`,
-    iconSize: [pinWidth, totalHeight],
-    iconAnchor: [pinWidth / 2, totalHeight],
+    html: `<div class="${markerRootClassName}"><span class="map-listing-marker__pin" style="${markerPinInlineStyle}">${safePriceText}</span></div>`,
+    iconSize: [scaledPinWidth, totalHeight],
+    iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
   });
 };
@@ -190,9 +200,9 @@ const createFallbackHouseIcon = (preset) => {
 const getFallbackMarkerStylePreset = (presetKey) =>
   FALLBACK_MARKER_STYLE_PRESETS[presetKey] || FALLBACK_MARKER_STYLE_PRESETS[DEFAULT_FALLBACK_MARKER_PRESET_KEY];
 
-const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}) => (preset.markerMode === 'house'
+const createFallbackMarkerIcon = (priceText, preset, styleOverrides = {}, options = {}) => (preset.markerMode === 'house'
   ? createFallbackHouseIcon(preset)
-  : createFallbackPriceIcon(priceText, preset, styleOverrides));
+  : createFallbackPriceIcon(priceText, preset, styleOverrides, options));
 
 const isCoarsePointerDevice = () => {
   if (typeof window === 'undefined') return false;
@@ -278,6 +288,7 @@ const ConnectedListingsMapFallback = ({
     if (!marker || typeof marker.getElement !== 'function') return;
     const markerElement = marker.getElement();
     if (!markerElement) return;
+    markerElement.classList.toggle('is-hovered', isHovered);
     const markerRoot = markerElement.querySelector('.map-listing-marker');
     if (!markerRoot) return;
     markerRoot.classList.toggle('is-hovered', isHovered);
@@ -449,19 +460,37 @@ const ConnectedListingsMapFallback = ({
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
       const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
       const priceText = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
+      const fallbackMarkerIcon = createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides);
+      const fallbackMarkerHoverIcon = createFallbackMarkerIcon(
+        priceText,
+        markerPreset,
+        {
+          ...markerStyleOverrides,
+          borderWidth: Math.max(
+            Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
+            1
+          ) + 0.8,
+          pinBackground: '#111827',
+          pinBorderColor: '#0f172a',
+          fontWeight: 800,
+        },
+        { hovered: true, scale: 1.32 }
+      );
+      const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
-        icon: createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides),
+        icon: shouldHighlightMarker ? fallbackMarkerHoverIcon : fallbackMarkerIcon,
       });
       marker.bindPopup(
         `<strong>${safeText(item.property.title) || t('map.propertyListing')}</strong><br/>${priceText}<br/>${item.addressQuery}`
       );
       marker.addTo(map);
-      const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       syncHoveredMarkerClass(marker, shouldHighlightMarker);
       markersRef.current.push({
         marker,
         propertyId,
+        fallbackMarkerIcon,
+        fallbackMarkerHoverIcon,
       });
       bounds.push([coords.lat, coords.lng]);
     });
@@ -488,6 +517,9 @@ const ConnectedListingsMapFallback = ({
     const activeHoveredListingId = hoveredListingId == null ? '' : String(hoveredListingId);
     markersRef.current.forEach((entry) => {
       const isHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
+      if (typeof entry.marker?.setIcon === 'function' && entry.fallbackMarkerIcon && entry.fallbackMarkerHoverIcon) {
+        entry.marker.setIcon(isHovered ? entry.fallbackMarkerHoverIcon : entry.fallbackMarkerIcon);
+      }
       syncHoveredMarkerClass(entry.marker, isHovered);
     });
   }, [hoveredListingId]);

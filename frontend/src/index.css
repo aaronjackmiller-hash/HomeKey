@@ -4523,9 +4523,14 @@ legend {
 .fallback-price-pin {
   background: transparent;
   border: none;
+  overflow: visible !important;
 }
 
-.property-list-page .map-listing-marker {
+.fallback-price-pin .map-listing-marker {
+  overflow: visible;
+}
+
+.map-listing-marker {
   position: relative;
   display: inline-flex;
   align-items: flex-end;
@@ -4536,22 +4541,22 @@ legend {
   will-change: transform;
 }
 
-.property-list-page .map-listing-marker::after {
+.map-listing-marker::after {
   content: "";
   position: absolute;
   left: 50%;
   top: 48%;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.22);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1.4px solid rgba(15, 23, 42, 0.3);
+  background: rgba(255, 255, 255, 0.08);
   transform: translate(-50%, -50%) scale(0.86);
   opacity: 0;
   pointer-events: none;
 }
 
-.property-list-page .map-listing-marker__pin {
+.map-listing-marker__pin {
   --map-marker-pin-bg: #1a1a1a;
   position: relative;
   display: inline-flex;
@@ -4571,7 +4576,7 @@ legend {
   box-shadow: 0 4px 11px rgba(15, 23, 42, 0.27);
 }
 
-.property-list-page .map-listing-marker__pin::before {
+.map-listing-marker__pin::before {
   content: "";
   position: absolute;
   left: 50%;
@@ -4584,26 +4589,32 @@ legend {
   border-top: 8px solid var(--map-marker-pin-bg);
 }
 
-.property-list-page .map-listing-marker.is-favorite .map-listing-marker__pin {
+.map-listing-marker.is-favorite .map-listing-marker__pin {
   --map-marker-pin-bg: #ff0000;
 }
 
-.property-list-page .map-listing-marker.is-hovered {
-  transform: translateZ(0) scale(1.12);
+.map-listing-marker.is-hovered {
+  transform: translateZ(0) scale(1.28);
 }
 
-.property-list-page .map-listing-marker.is-hovered::after {
+.map-listing-marker.is-hovered .map-listing-marker__pin {
+  --map-marker-pin-bg: #334155;
+  border-color: #334155;
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.26);
+}
+
+.map-listing-marker.is-hovered::after {
   animation: map-marker-radar-pulse 1.7s ease-out infinite;
 }
 
 @keyframes map-marker-radar-pulse {
   0% {
     transform: translate(-50%, -50%) scale(0.86);
-    opacity: 0.38;
+    opacity: 0.45;
   }
 
   100% {
-    transform: translate(-50%, -50%) scale(2.7);
+    transform: translate(-50%, -50%) scale(3.8);
     opacity: 0;
   }
 }
@@ -4613,8 +4624,8 @@ legend {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .property-list-page .map-listing-marker:hover {
-    transform: translateZ(0) scale(1.12);
+  .map-listing-marker:hover {
+    transform: translateZ(0) scale(1.28);
   }
 }
 
