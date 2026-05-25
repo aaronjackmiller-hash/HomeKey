@@ -172,9 +172,17 @@ const withLocalizedAddress = (property) => {
     if (!normalized || typeof normalized !== 'object' || !normalized.address || typeof normalized.address !== 'object') {
         return normalized;
     }
+    const normalizedStreet = pickFirstNonEmpty(normalized.address.street);
+    const titleFallbackStreet = pickFirstNonEmpty(normalized.title);
+    const addressForLocalization = normalizedStreet
+        ? normalized.address
+        : {
+            ...normalized.address,
+            ...(titleFallbackStreet ? { street: titleFallbackStreet } : {}),
+        };
     return {
         ...normalized,
-        address: buildLocalizedAddress(normalized.address),
+        address: buildLocalizedAddress(addressForLocalization),
     };
 };
 
