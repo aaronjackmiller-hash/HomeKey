@@ -4592,6 +4592,8 @@ legend {
 
 .map-listing-marker.is-hovered {
   z-index: 50;
+  border-radius: 9999px;
+  animation: map-listing-marker-radar-ring 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
 .map-listing-marker.is-hovered .map-listing-marker-pin {
@@ -4603,6 +4605,16 @@ legend {
 
 .map-listing-marker.is-hovered .radar-pulse-ring {
   opacity: 1;
+}
+
+@keyframes map-listing-marker-radar-ring {
+  0% {
+    box-shadow: 0 0 0 14px rgba(15, 60, 109, 0.24), 0 0 0 28px rgba(15, 60, 109, 0.14);
+  }
+
+  100% {
+    box-shadow: 0 0 0 44px rgba(15, 60, 109, 0), 0 0 0 88px rgba(15, 60, 109, 0);
+  }
 }
 
 .map-hovered-listing-caption {
