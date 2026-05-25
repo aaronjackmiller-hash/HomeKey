@@ -83,12 +83,34 @@ const CITY_CENTER_HINTS = [
 ];
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const escapeHtml = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 const escapeSvgText = (value) => String(value || '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
+const toMarkerRoomCount = (property = {}) => {
+  const candidates = [property.rooms, property.bedrooms, property.roomCount];
+  for (const candidate of candidates) {
+    const asNumber = Number(candidate);
+    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  }
+  return null;
+};
+
+const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
+  const roomCount = toMarkerRoomCount(property);
+  const roomLabel = roomCount ? `${roomCount} Rooms` : '';
+  const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
+  const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
+  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' • ');
+};
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
   if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
@@ -150,6 +172,8 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   const scaledFontSize = Math.max(10, Math.round(fontSize * scale));
   const totalHeight = scaledHeight + scaledPointerHeight;
   const markerRootClassName = `map-listing-marker${isHovered ? ' is-hovered' : ''}`;
+  const captionTitle = escapeHtml(resolvedOptions.captionTitle || '');
+  const captionMeta = escapeHtml(resolvedOptions.captionMeta || '');
   const markerPinInlineStyle = [
     `--map-marker-pin-bg:${pinBackground}`,
     `min-width:${scaledPinWidth}px`,
@@ -160,9 +184,13 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
     `font-size:${scaledFontSize}px`,
     `font-weight:${fontWeight}`,
   ].join(';');
+  const markerCaptionHtml = `<div class="map-hovered-listing-caption animate-fadeIn">
+    <p class="map-hovered-listing-caption__title">${captionTitle || 'Listing'}</p>
+    <p class="map-hovered-listing-caption__meta">${captionMeta || escapeHtml(priceText)}</p>
+  </div>`;
   return L.divIcon({
     className: 'fallback-price-pin',
-    html: `<div class="${markerRootClassName}"><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}<span class="radar-pulse-ring"></span></span></div>`,
+    html: `<div class="${markerRootClassName}"><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}<span class="radar-pulse-ring"></span></span>${markerCaptionHtml}</div>`,
     iconSize: [scaledPinWidth, totalHeight],
     iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
@@ -460,7 +488,18 @@ const ConnectedListingsMapFallback = ({
       const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
       const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
       const priceText = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
-      const fallbackMarkerIcon = createFallbackMarkerIcon(priceText, markerPreset, markerStyleOverrides);
+      const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
+      const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
+      const markerCaptionOptions = {
+        captionTitle: markerListingTitle,
+        captionMeta: markerDetailLine || priceText,
+      };
+      const fallbackMarkerIcon = createFallbackMarkerIcon(
+        priceText,
+        markerPreset,
+        markerStyleOverrides,
+        markerCaptionOptions
+      );
       const fallbackMarkerHoverIcon = createFallbackMarkerIcon(
         priceText,
         markerPreset,
@@ -474,7 +513,7 @@ const ConnectedListingsMapFallback = ({
           pinBorderColor: '#0f3c6d',
           fontWeight: 800,
         },
-        { hovered: true, scale: 1.15 }
+        { ...markerCaptionOptions, hovered: true, scale: 1.15 }
       );
       const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       const marker = L.marker([coords.lat, coords.lng], {

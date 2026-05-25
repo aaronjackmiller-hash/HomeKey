@@ -227,8 +227,26 @@ const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') =>
   return `₪${parsedPrice.toLocaleString(locale)}`;
 };
 
-const createListingMarkerElement = (priceText, isFavorite = false) => {
+const toMarkerRoomCount = (property = {}) => {
+  const candidates = [property.rooms, property.bedrooms, property.roomCount];
+  for (const candidate of candidates) {
+    const asNumber = Number(candidate);
+    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  }
+  return null;
+};
+
+const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
+  const roomCount = toMarkerRoomCount(property);
+  const roomLabel = roomCount ? `${roomCount} Rooms` : '';
+  const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
+  const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
+  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' • ');
+};
+
+const createListingMarkerElement = (priceText, details = {}, isFavorite = false) => {
   if (typeof document === 'undefined') return null;
+  const markerDetails = details && typeof details === 'object' ? details : {};
   const markerElement = document.createElement('div');
   markerElement.className = 'map-listing-marker';
   if (isFavorite) markerElement.classList.add('is-favorite');
@@ -239,6 +257,17 @@ const createListingMarkerElement = (priceText, isFavorite = false) => {
   markerPulseRing.className = 'radar-pulse-ring';
   markerPin.appendChild(markerPulseRing);
   markerElement.appendChild(markerPin);
+  const markerCaption = document.createElement('div');
+  markerCaption.className = 'map-hovered-listing-caption animate-fadeIn';
+  const markerCaptionTitle = document.createElement('p');
+  markerCaptionTitle.className = 'map-hovered-listing-caption__title';
+  markerCaptionTitle.textContent = safeText(markerDetails.title) || 'Listing';
+  const markerCaptionMeta = document.createElement('p');
+  markerCaptionMeta.className = 'map-hovered-listing-caption__meta';
+  markerCaptionMeta.textContent = safeText(markerDetails.detailLine) || priceText;
+  markerCaption.appendChild(markerCaptionTitle);
+  markerCaption.appendChild(markerCaptionMeta);
+  markerElement.appendChild(markerCaption);
   return markerElement;
 };
 
@@ -657,6 +686,8 @@ const GoogleListingsMap = ({
         const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
         const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
         const markerPrice = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
+        const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
+        const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const isHoveredFromList = hoveredListingIdRef.current === propertyId;
         const canUseAdvancedMarker = Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
@@ -680,7 +711,11 @@ const GoogleListingsMap = ({
           )
           : null;
         const markerElement = canUseAdvancedMarker
-          ? createListingMarkerElement(markerPrice, isFavoriteProperty)
+          ? createListingMarkerElement(
+            markerPrice,
+            { title: markerListingTitle, detailLine: markerDetailLine },
+            isFavoriteProperty
+          )
           : null;
         if (markerElement) {
           markerElement.classList.toggle('is-hovered', isHoveredFromList);
