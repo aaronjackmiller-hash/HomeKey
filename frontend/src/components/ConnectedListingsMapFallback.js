@@ -393,13 +393,15 @@ const ConnectedListingsMapFallback = ({
     const activeHoveredListingId = hoveredListingIdRef.current;
     const isListHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
     const isMapHovered = Boolean(entry.isMapHovered);
+    const nextIconVariant = isMapHovered ? 'map' : (isListHovered ? 'list' : 'default');
     const nextIcon = isMapHovered
       ? (entry.fallbackMarkerMapHoverIcon || entry.fallbackMarkerListHoverIcon || entry.fallbackMarkerIcon)
       : isListHovered
         ? (entry.fallbackMarkerListHoverIcon || entry.fallbackMarkerIcon)
         : entry.fallbackMarkerIcon;
-    if (typeof entry.marker?.setIcon === 'function' && nextIcon) {
+    if (typeof entry.marker?.setIcon === 'function' && nextIcon && entry.activeIconVariant !== nextIconVariant) {
       entry.marker.setIcon(nextIcon);
+      entry.activeIconVariant = nextIconVariant;
     }
     syncHoveredMarkerClass(entry.marker, { isListHovered, isMapHovered });
   };
@@ -636,6 +638,7 @@ const ConnectedListingsMapFallback = ({
         fallbackMarkerListHoverIcon,
         fallbackMarkerMapHoverIcon,
         isMapHovered: false,
+        activeIconVariant: shouldHighlightMarker ? 'list' : 'default',
         cleanupHoverListeners: null,
       };
       const handleMarkerMouseOver = () => {
