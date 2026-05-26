@@ -1348,36 +1348,6 @@ const PropertyList = () => {
               onClick={openPropertyDetail}
               style={{ cursor: canOpenDetail ? 'pointer' : 'default' }}
             >
-              <div className="property-card-image-wrap">
-                <img
-                  className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
-                  src={imageSrc}
-                  alt={displayTitle || t('propertyList.propertyListingFallback')}
-                />
-                <button
-                  type="button"
-                  className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
-                  aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
-                  aria-pressed={isFavorite}
-                  disabled={!interestPropertyId}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (!interestPropertyId) return;
-                    toggleFavoriteProperty(interestPropertyId);
-                    incrementHeartClickCount();
-                    setInterestVersion((value) => value + 1);
-                  }}
-                >
-                  <span className="property-heart-icon-wrap" aria-hidden="true">
-                    <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
-                      <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
-                    </svg>
-                  </span>
-                </button>
-                {isYad2Media && (
-                  <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
-                )}
-              </div>
               <div className="property-card-body">
                 <div className="property-card-text-stack">
                   <p className="property-card-price" dir="ltr">
@@ -1390,6 +1360,36 @@ const PropertyList = () => {
                       {t('propertyList.previouslyAvailable')}
                       {historicalMatchDate ? ` • ${t('propertyList.matched')} ${historicalMatchDate}` : ''}
                     </p>
+                  )}
+                </div>
+                <div className="property-card-image-wrap property-card-image-wrap--framed">
+                  <img
+                    className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
+                    src={imageSrc}
+                    alt={displayTitle || t('propertyList.propertyListingFallback')}
+                  />
+                  <button
+                    type="button"
+                    className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
+                    aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
+                    aria-pressed={isFavorite}
+                    disabled={!interestPropertyId}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (!interestPropertyId) return;
+                      toggleFavoriteProperty(interestPropertyId);
+                      incrementHeartClickCount();
+                      setInterestVersion((value) => value + 1);
+                    }}
+                  >
+                    <span className="property-heart-icon-wrap" aria-hidden="true">
+                      <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
+                        <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+                      </svg>
+                    </span>
+                  </button>
+                  {isYad2Media && (
+                    <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />
                   )}
                 </div>
                 <div className="property-card-stats" aria-label={t('propertyList.propertyHighlights')}>
