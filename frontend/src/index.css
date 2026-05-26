@@ -214,6 +214,11 @@ a {
   padding: 4px 8px;
 }
 
+.premium-header__search-segment--voice,
+.premium-header__search-segment--ai {
+  display: none;
+}
+
 .premium-header__search-segment + .premium-header__search-segment::before {
   content: "";
   position: absolute;
