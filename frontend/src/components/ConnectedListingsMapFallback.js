@@ -111,6 +111,33 @@ const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
   return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
 };
+
+const buildMarkerPopupCardHtml = ({
+  href = '',
+  title = '',
+  price = '',
+  detailLine = '',
+  imageUrl = '',
+  ctaLabel = '',
+}) => {
+  const safeHref = escapeHtml(href || '#');
+  const safeTitle = escapeHtml(title || 'Listing');
+  const safePrice = escapeHtml(price || '');
+  const safeDetailLine = escapeHtml(detailLine || '');
+  const safeImageUrl = escapeHtml(imageUrl || '');
+  const safeCtaLabel = escapeHtml(ctaLabel || 'View full listing');
+  return `<a href="${safeHref}" style="display:block;width:252px;padding:12px;border:1px solid #dde3ea;border-radius:14px;background:#ffffff;color:#0f172a;text-decoration:none;font-family:Inter,Roboto,'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;box-shadow:0 12px 26px rgba(15,23,42,0.14);">
+    <div style="display:flex;flex-direction:column;gap:4px;margin:0 0 10px;">
+      <p style="margin:0;font-size:15px;font-weight:800;line-height:1.2;color:#0f172a;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${safeTitle}</p>
+      <p style="margin:0;font-size:31px;font-weight:700;line-height:1;color:#111827;" dir="ltr">${safePrice}</p>
+      <p style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.01em;color:#334155;">${safeDetailLine}</p>
+    </div>
+    <div style="border:1px solid #111111;border-radius:12px;padding:2px;box-shadow:inset 0 0 0 1px rgba(15,23,42,0.2);background:#ffffff;overflow:hidden;">
+      <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:128px;object-fit:cover;border-radius:9px;" />
+    </div>
+    <div style="margin-top:10px;font-size:15px;font-weight:700;color:#0e8a88;">${safeCtaLabel} &#8250;</div>
+  </a>`;
+};
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
   if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
@@ -586,9 +613,21 @@ const ConnectedListingsMapFallback = ({
         title: safeText(item.property.title) || item.addressQuery,
         icon: shouldHighlightMarker ? fallbackMarkerListHoverIcon : fallbackMarkerIcon,
       });
-      marker.bindPopup(
-        `<strong>${safeText(item.property.title) || t('map.propertyListing')}</strong><br/>${priceText}<br/>${item.addressQuery}`
-      );
+      const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
+      marker.bindPopup(buildMarkerPopupCardHtml({
+        href: listingHref,
+        title: markerListingTitle,
+        price: priceText,
+        detailLine: markerDetailLine || item.addressQuery,
+        imageUrl: markerImageUrl,
+        ctaLabel: t('map.infoWindowCta'),
+      }), {
+        minWidth: 270,
+        maxWidth: 286,
+      });
+      marker.on('click', () => {
+        marker.openPopup();
+      });
       marker.addTo(map);
       const markerEntry = {
         marker,
