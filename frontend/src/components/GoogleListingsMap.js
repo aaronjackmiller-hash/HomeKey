@@ -450,6 +450,10 @@ const GoogleListingsMap = ({
   const { t, locale, language } = useLanguage();
   const mapLanguage = language === 'he' ? 'he' : 'en';
   const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+  const configuredMapId = typeof process.env.REACT_APP_GOOGLE_MAPS_MAP_ID === 'string'
+    ? process.env.REACT_APP_GOOGLE_MAPS_MAP_ID.trim()
+    : '';
+  const canUseAdvancedMarkers = Boolean(configuredMapId);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
@@ -696,6 +700,7 @@ const GoogleListingsMap = ({
             keyboardShortcuts: true,
             gestureHandling: 'greedy',
             cameraControl: false,
+            ...(canUseAdvancedMarkers ? { mapId: configuredMapId } : {}),
           });
           geocoderRef.current = new mapsApi.Geocoder();
           infoWindowRef.current = new mapsApi.InfoWindow();
@@ -745,7 +750,7 @@ const GoogleListingsMap = ({
       let placed = 0;
       let cacheChanged = false;
       let AdvancedMarkerElementCtor = null;
-      if (typeof mapsApi.importLibrary === 'function') {
+      if (canUseAdvancedMarkers && typeof mapsApi.importLibrary === 'function') {
         try {
           const markerLibrary = await mapsApi.importLibrary('marker');
           if (markerLibrary && markerLibrary.AdvancedMarkerElement) {
@@ -782,7 +787,7 @@ const GoogleListingsMap = ({
         const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const isHoveredFromList = hoveredListingIdRef.current === propertyId;
-        const canUseAdvancedMarker = Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
+        const canUseAdvancedMarker = canUseAdvancedMarkers && Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
         const markerIcon = isHousePinPreset
           ? createHousePinIcon(mapsApi, markerPreset)
           : createPricePinIcon(
