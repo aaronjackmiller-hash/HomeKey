@@ -4382,6 +4382,32 @@ legend {
   background: #dbe4f1;
 }
 
+.property-list-page .google-listings-map-shell .gm-style .gm-style-iw-c {
+  padding: 0 !important;
+  border-radius: 16px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.property-list-page .google-listings-map-shell .gm-style .gm-style-iw-d {
+  overflow: visible !important;
+}
+
+.property-list-page .google-listings-map-shell .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.property-list-page .google-listings-map-shell .leaflet-popup-content {
+  margin: 0;
+}
+
+.property-list-page .google-listings-map-shell .leaflet-popup-tip {
+  background: #ffffff;
+}
+
 /* The Map Container */
 .map-viewport {
   cursor: crosshair;
