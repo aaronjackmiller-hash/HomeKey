@@ -279,9 +279,9 @@ const createListingMarkerElement = (priceText, details = {}, isFavorite = false)
   if (typeof document === 'undefined') return null;
   const markerDetails = details && typeof details === 'object' ? details : {};
   const markerElement = document.createElement('div');
-  markerElement.className = 'map-listing-marker';
+  markerElement.className = 'map-listing-marker radar-container';
   const markerPulseRing = document.createElement('span');
-  markerPulseRing.className = 'radar-pulse-ring';
+  markerPulseRing.className = 'radar-pulse-ring faint-radar-rings';
   markerElement.appendChild(markerPulseRing);
   if (isFavorite) markerElement.classList.add('is-favorite');
   const markerPin = document.createElement('span');
@@ -289,7 +289,7 @@ const createListingMarkerElement = (priceText, details = {}, isFavorite = false)
   markerPin.textContent = priceText;
   markerElement.appendChild(markerPin);
   const markerCaption = document.createElement('div');
-  markerCaption.className = 'map-hovered-listing-caption animate-fadeIn';
+  markerCaption.className = 'map-hovered-listing-caption animate-fadeIn animate-luxury-card';
   const markerCaptionTextCard = document.createElement('div');
   markerCaptionTextCard.className = 'map-hovered-listing-caption__text-card';
   const markerCaptionTitle = document.createElement('p');
