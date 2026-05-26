@@ -109,7 +109,7 @@ const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   const roomLabel = roomCount ? `${roomCount} Rooms` : '';
   const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
   const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
-  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' • ');
+  return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
 };
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);

@@ -4672,8 +4672,14 @@ legend {
   left: calc(100% + 14px);
   transform: translateY(-50%);
   display: none;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
+  width: 236px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
   z-index: 70;
   pointer-events: none;
   color: #0f172a;
@@ -4686,40 +4692,42 @@ legend {
   top: 50%;
   width: 14px;
   height: 14px;
-  border-left: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border-left: 1px solid #d8dde6;
+  border-bottom: 1px solid #d8dde6;
   background: #ffffff;
   transform: translateY(-50%) rotate(45deg);
 }
 
 .map-hovered-listing-caption__text-card {
-  width: 220px;
-  min-height: 88px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+  width: 100%;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .map-hovered-listing-caption__image-card {
-  width: 116px;
-  height: 88px;
-  flex: 0 0 116px;
+  width: 100%;
+  height: 126px;
+  flex: 0 0 auto;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid #111111;
+  border-radius: 12px;
+  padding: 2px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2);
   overflow: hidden;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
 }
 
 .map-hovered-listing-caption__image {
   display: block;
   width: 100%;
-  height: 88px;
+  height: 100%;
+  border-radius: 9px;
   object-fit: cover;
 }
 
@@ -4744,13 +4752,14 @@ legend {
 
 .map-hovered-listing-caption__meta {
   margin: 4px 0 0;
-  font-size: 0.68rem;
-  color: #475569;
-  letter-spacing: 0.02em;
+  font-size: 0.7rem;
+  color: #334155;
+  letter-spacing: 0.01em;
+  font-weight: 600;
 }
 
 .map-listing-marker.is-hovered .map-hovered-listing-caption {
-  display: inline-flex;
+  display: flex;
 }
 
 .fallback-price-pin .map-listing-marker-pin {
