@@ -4633,18 +4633,21 @@ legend {
   --map-marker-pin-bg: #ff0000;
 }
 
-.map-listing-marker.is-hovered {
+.map-listing-marker.is-list-hovered,
+.map-listing-marker.is-map-hovered {
   z-index: 50;
 }
 
-.map-listing-marker.is-hovered .map-listing-marker-pin {
+.map-listing-marker.is-list-hovered .map-listing-marker-pin,
+.map-listing-marker.is-map-hovered .map-listing-marker-pin {
   --map-marker-pin-bg: #0f3c6d;
   border-color: #0f3c6d;
   transform: scale(1.15);
   box-shadow: 0 12px 20px rgba(15, 23, 42, 0.26);
 }
 
-.map-listing-marker.is-hovered .radar-pulse-ring {
+.map-listing-marker.is-list-hovered .radar-pulse-ring,
+.map-listing-marker.is-map-hovered .radar-pulse-ring {
   opacity: 1;
 }
 
@@ -4731,7 +4734,7 @@ legend {
   letter-spacing: 0.02em;
 }
 
-.map-listing-marker.is-hovered .map-hovered-listing-caption {
+.map-listing-marker.is-map-hovered .map-hovered-listing-caption {
   display: inline-flex;
 }
 

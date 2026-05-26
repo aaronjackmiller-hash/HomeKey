@@ -166,7 +166,11 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   const scale = Number.isFinite(Number(resolvedOptions.scale)) && Number(resolvedOptions.scale) > 0
     ? Number(resolvedOptions.scale)
     : 1;
-  const isHovered = Boolean(resolvedOptions.hovered);
+  const hoverMode = resolvedOptions.hoverMode === 'map'
+    ? 'map'
+    : resolvedOptions.hoverMode === 'list'
+      ? 'list'
+      : '';
   const minWidth = Number(preset.minWidth) || 60;
   const height = Number(preset.height) || 24;
   const pointerHeight = Number(preset.pointerHeight) || 8;
@@ -184,7 +188,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   const scaledPointerHeight = Math.round(pointerHeight * scale);
   const scaledFontSize = Math.max(10, Math.round(fontSize * scale));
   const totalHeight = scaledHeight + scaledPointerHeight;
-  const markerRootClassName = `map-listing-marker${isHovered ? ' is-hovered' : ''}`;
+  const markerRootClassName = `map-listing-marker${hoverMode ? ` is-${hoverMode}-hovered` : ''}`;
   const captionTitle = escapeHtml(resolvedOptions.captionTitle || '');
   const captionPrice = escapeHtml(resolvedOptions.captionPrice || priceText);
   const captionMeta = escapeHtml(resolvedOptions.captionMeta || '');
@@ -288,6 +292,7 @@ const ConnectedListingsMapFallback = ({
   const lastCompletionTimestampRef = useRef(0);
   const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
+  const hoveredListingIdRef = useRef(hoveredListingId);
   const [drawMode, setDrawMode] = useState(false);
   const [markerCount, setMarkerCount] = useState(0);
   const [totalMarkerCount, setTotalMarkerCount] = useState(0);
@@ -319,6 +324,9 @@ const ConnectedListingsMapFallback = ({
     () => new Set(favoritePropertyIds.map((id) => String(id))),
     [favoritePropertyIds]
   );
+  useEffect(() => {
+    hoveredListingIdRef.current = hoveredListingId == null ? '' : String(hoveredListingId);
+  }, [hoveredListingId]);
 
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
@@ -334,17 +342,39 @@ const ConnectedListingsMapFallback = ({
     }
     if (map.hasLayer(marker)) map.removeLayer(marker);
   };
-  const syncHoveredMarkerClass = (marker, isHovered) => {
+  const syncHoveredMarkerClass = (marker, hoverState = {}) => {
+    const isListHovered = Boolean(hoverState.isListHovered);
+    const isMapHovered = Boolean(hoverState.isMapHovered);
+    const isHovered = isListHovered || isMapHovered;
     if (!marker || typeof marker.getElement !== 'function') return;
     const markerElement = marker.getElement();
     if (!markerElement) return;
+    markerElement.classList.toggle('is-list-hovered', isListHovered);
+    markerElement.classList.toggle('is-map-hovered', isMapHovered);
     markerElement.classList.toggle('is-hovered', isHovered);
     const markerRoot = markerElement.querySelector('.map-listing-marker');
     if (!markerRoot) return;
+    markerRoot.classList.toggle('is-list-hovered', isListHovered);
+    markerRoot.classList.toggle('is-map-hovered', isMapHovered);
     markerRoot.classList.toggle('is-hovered', isHovered);
     if (typeof marker.setZIndexOffset === 'function') {
-      marker.setZIndexOffset(isHovered ? 800 : 0);
+      marker.setZIndexOffset(isMapHovered ? 900 : (isHovered ? 800 : 0));
     }
+  };
+  const applyFallbackMarkerHoverVisualState = (entry) => {
+    if (!entry || !entry.propertyId) return;
+    const activeHoveredListingId = hoveredListingIdRef.current;
+    const isListHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
+    const isMapHovered = Boolean(entry.isMapHovered);
+    const nextIcon = isMapHovered
+      ? (entry.fallbackMarkerMapHoverIcon || entry.fallbackMarkerListHoverIcon || entry.fallbackMarkerIcon)
+      : isListHovered
+        ? (entry.fallbackMarkerListHoverIcon || entry.fallbackMarkerIcon)
+        : entry.fallbackMarkerIcon;
+    if (typeof entry.marker?.setIcon === 'function' && nextIcon) {
+      entry.marker.setIcon(nextIcon);
+    }
+    syncHoveredMarkerClass(entry.marker, { isListHovered, isMapHovered });
   };
 
   const removeActiveCircle = () => {
@@ -498,6 +528,9 @@ const ConnectedListingsMapFallback = ({
     if (!map) return;
 
     markersRef.current.forEach((entry) => {
+      if (typeof entry.cleanupHoverListeners === 'function') {
+        entry.cleanupHoverListeners();
+      }
       if (entry.marker && map.hasLayer(entry.marker)) map.removeLayer(entry.marker);
     });
     markersRef.current = [];
@@ -526,37 +559,62 @@ const ConnectedListingsMapFallback = ({
         markerStyleOverrides,
         markerCaptionOptions
       );
-      const fallbackMarkerHoverIcon = createFallbackMarkerIcon(
+      const hoverStyleOverrides = {
+        ...markerStyleOverrides,
+        borderWidth: Math.max(
+          Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
+          1
+        ) + 0.8,
+        pinBackground: '#0f3c6d',
+        pinBorderColor: '#0f3c6d',
+        fontWeight: 800,
+      };
+      const fallbackMarkerListHoverIcon = createFallbackMarkerIcon(
         priceText,
         markerPreset,
-        {
-          ...markerStyleOverrides,
-          borderWidth: Math.max(
-            Number(markerStyleOverrides.borderWidth) || Number(markerPreset.borderWidth) || 1,
-            1
-          ) + 0.8,
-          pinBackground: '#0f3c6d',
-          pinBorderColor: '#0f3c6d',
-          fontWeight: 800,
-        },
-        { ...markerCaptionOptions, hovered: true, scale: 1.15 }
+        hoverStyleOverrides,
+        { ...markerCaptionOptions, hoverMode: 'list', scale: 1.15 }
+      );
+      const fallbackMarkerMapHoverIcon = createFallbackMarkerIcon(
+        priceText,
+        markerPreset,
+        hoverStyleOverrides,
+        { ...markerCaptionOptions, hoverMode: 'map', scale: 1.15 }
       );
       const shouldHighlightMarker = hoveredListingId != null && String(hoveredListingId) === propertyId;
       const marker = L.marker([coords.lat, coords.lng], {
         title: safeText(item.property.title) || item.addressQuery,
-        icon: shouldHighlightMarker ? fallbackMarkerHoverIcon : fallbackMarkerIcon,
+        icon: shouldHighlightMarker ? fallbackMarkerListHoverIcon : fallbackMarkerIcon,
       });
       marker.bindPopup(
         `<strong>${safeText(item.property.title) || t('map.propertyListing')}</strong><br/>${priceText}<br/>${item.addressQuery}`
       );
       marker.addTo(map);
-      syncHoveredMarkerClass(marker, shouldHighlightMarker);
-      markersRef.current.push({
+      const markerEntry = {
         marker,
         propertyId,
         fallbackMarkerIcon,
-        fallbackMarkerHoverIcon,
-      });
+        fallbackMarkerListHoverIcon,
+        fallbackMarkerMapHoverIcon,
+        isMapHovered: false,
+        cleanupHoverListeners: null,
+      };
+      const handleMarkerMouseOver = () => {
+        markerEntry.isMapHovered = true;
+        applyFallbackMarkerHoverVisualState(markerEntry);
+      };
+      const handleMarkerMouseOut = () => {
+        markerEntry.isMapHovered = false;
+        applyFallbackMarkerHoverVisualState(markerEntry);
+      };
+      marker.on('mouseover', handleMarkerMouseOver);
+      marker.on('mouseout', handleMarkerMouseOut);
+      markerEntry.cleanupHoverListeners = () => {
+        marker.off('mouseover', handleMarkerMouseOver);
+        marker.off('mouseout', handleMarkerMouseOut);
+      };
+      markersRef.current.push(markerEntry);
+      applyFallbackMarkerHoverVisualState(markerEntry);
       bounds.push([coords.lat, coords.lng]);
     });
 
@@ -579,13 +637,8 @@ const ConnectedListingsMapFallback = ({
   }, [markerPreset, propertiesWithAddress, favoritePropertyIdSet, locale, t]);
 
   useEffect(() => {
-    const activeHoveredListingId = hoveredListingId == null ? '' : String(hoveredListingId);
     markersRef.current.forEach((entry) => {
-      const isHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
-      if (typeof entry.marker?.setIcon === 'function' && entry.fallbackMarkerIcon && entry.fallbackMarkerHoverIcon) {
-        entry.marker.setIcon(isHovered ? entry.fallbackMarkerHoverIcon : entry.fallbackMarkerIcon);
-      }
-      syncHoveredMarkerClass(entry.marker, isHovered);
+      applyFallbackMarkerHoverVisualState(entry);
     });
   }, [hoveredListingId]);
 

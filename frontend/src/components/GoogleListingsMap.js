@@ -521,6 +521,47 @@ const GoogleListingsMap = ({
     };
   }, [hoveredListingId]);
 
+  const applyMarkerHoverVisualState = (entry, pulsePhase = hoverPulsePhase) => {
+    if (!entry || !entry.propertyId) return;
+    const isHoveredFromList = hoveredListingIdRef.current === entry.propertyId;
+    const isHoveredFromMap = Boolean(entry.isMapHovered);
+    const isHovered = isHoveredFromList || isHoveredFromMap;
+    const elevatedZIndex = isHoveredFromMap ? 120 : 100;
+
+    if (entry.markerElement) {
+      entry.markerElement.classList.toggle('is-list-hovered', isHoveredFromList);
+      entry.markerElement.classList.toggle('is-map-hovered', isHoveredFromMap);
+      entry.markerElement.classList.toggle('is-hovered', isHovered);
+    }
+
+    if (entry.isAdvancedMarker) {
+      entry.marker.zIndex = isHovered ? elevatedZIndex : 2;
+      return;
+    }
+
+    if (typeof entry.marker.setZIndex === 'function') {
+      entry.marker.setZIndex(isHovered ? elevatedZIndex : 2);
+    }
+
+    if (!entry.markerIcon || typeof entry.marker.setIcon !== 'function') return;
+
+    if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+      const iconIndex = isHoveredFromList && !isHoveredFromMap
+        ? pulsePhase % entry.markerHoverIcons.length
+        : 0;
+      const hoverIcon = entry.markerHoverIcons[iconIndex];
+      entry.marker.setIcon(hoverIcon || entry.markerHoverIcon || entry.markerIcon);
+      return;
+    }
+
+    if (isHovered && entry.markerHoverIcon) {
+      entry.marker.setIcon(entry.markerHoverIcon);
+      return;
+    }
+
+    entry.marker.setIcon(entry.markerIcon);
+  };
+
   const emitCircleSelection = (nextSelection) => {
     if (typeof onCircleSelectionChange === 'function') {
       onCircleSelectionChange(nextSelection);
@@ -725,6 +766,9 @@ const GoogleListingsMap = ({
     let cancelled = false;
 
     markerEntriesRef.current.forEach((entry) => {
+      if (typeof entry.cleanupHoverListeners === 'function') {
+        entry.cleanupHoverListeners();
+      }
       if (entry.isAdvancedMarker) {
         entry.marker.map = null;
       } else if (typeof entry.marker.setMap === 'function') {
@@ -831,9 +875,6 @@ const GoogleListingsMap = ({
             isFavoriteProperty
           )
           : null;
-        if (markerElement) {
-          markerElement.classList.toggle('is-hovered', isHoveredFromList);
-        }
         const marker = canUseAdvancedMarker
           ? new AdvancedMarkerElementCtor({
             map,
@@ -877,20 +918,7 @@ const GoogleListingsMap = ({
             infoWindow.open(map, marker);
           }
         });
-        if (markerHoverIcon && !canUseAdvancedMarker) {
-          marker.addListener('mouseover', () => {
-            marker.setIcon(markerHoverIcon);
-          });
-          marker.addListener('mouseout', () => {
-            marker.setIcon(
-              hoveredListingIdRef.current === propertyId && markerHoverIcons.length > 0
-                ? markerHoverIcons[hoverPulsePhase % markerHoverIcons.length]
-                : markerIcon
-            );
-          });
-        }
-
-        markerEntriesRef.current.push({
+        const markerEntry = {
           marker,
           frameMarker: null,
           propertyId,
@@ -900,7 +928,49 @@ const GoogleListingsMap = ({
           markerIcon,
           markerHoverIcon,
           markerHoverIcons,
-        });
+          isMapHovered: false,
+          cleanupHoverListeners: null,
+        };
+        if (markerElement) {
+          const handleMarkerMouseEnter = () => {
+            markerEntry.isMapHovered = true;
+            applyMarkerHoverVisualState(markerEntry);
+          };
+          const handleMarkerMouseLeave = () => {
+            markerEntry.isMapHovered = false;
+            applyMarkerHoverVisualState(markerEntry);
+          };
+          markerElement.addEventListener('mouseenter', handleMarkerMouseEnter);
+          markerElement.addEventListener('mouseleave', handleMarkerMouseLeave);
+          markerElement.addEventListener('focusin', handleMarkerMouseEnter);
+          markerElement.addEventListener('focusout', handleMarkerMouseLeave);
+          markerEntry.cleanupHoverListeners = () => {
+            markerElement.removeEventListener('mouseenter', handleMarkerMouseEnter);
+            markerElement.removeEventListener('mouseleave', handleMarkerMouseLeave);
+            markerElement.removeEventListener('focusin', handleMarkerMouseEnter);
+            markerElement.removeEventListener('focusout', handleMarkerMouseLeave);
+          };
+        } else if (markerHoverIcon && !canUseAdvancedMarker) {
+          const mouseOverListener = marker.addListener('mouseover', () => {
+            markerEntry.isMapHovered = true;
+            applyMarkerHoverVisualState(markerEntry);
+          });
+          const mouseOutListener = marker.addListener('mouseout', () => {
+            markerEntry.isMapHovered = false;
+            applyMarkerHoverVisualState(markerEntry);
+          });
+          markerEntry.cleanupHoverListeners = () => {
+            if (mouseOverListener && typeof mouseOverListener.remove === 'function') {
+              mouseOverListener.remove();
+            }
+            if (mouseOutListener && typeof mouseOutListener.remove === 'function') {
+              mouseOutListener.remove();
+            }
+          };
+        }
+
+        markerEntriesRef.current.push(markerEntry);
+        applyMarkerHoverVisualState(markerEntry, hoverPulsePhase);
         if (activeCircleRef.current) applyCircleFilter();
         bounds.extend(coords);
         placed += 1;
@@ -930,6 +1000,9 @@ const GoogleListingsMap = ({
     return () => {
       cancelled = true;
       markerEntriesRef.current.forEach((entry) => {
+        if (typeof entry.cleanupHoverListeners === 'function') {
+          entry.cleanupHoverListeners();
+        }
         if (entry.isAdvancedMarker) {
           entry.marker.map = null;
         } else if (typeof entry.marker.setMap === 'function') {
@@ -944,29 +1017,8 @@ const GoogleListingsMap = ({
   }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t]);
 
   useEffect(() => {
-    const activeHoveredListingId = hoveredListingId == null ? '' : String(hoveredListingId);
     markerEntriesRef.current.forEach((entry) => {
-      const isHovered = Boolean(activeHoveredListingId) && entry.propertyId === activeHoveredListingId;
-      if (entry.markerElement) {
-        entry.markerElement.classList.toggle('is-hovered', isHovered);
-      }
-      if (entry.isAdvancedMarker) {
-        entry.marker.zIndex = isHovered ? 100 : 2;
-        return;
-      }
-      if (typeof entry.marker.setZIndex === 'function') {
-        entry.marker.setZIndex(isHovered ? 100 : 2);
-      }
-      if (entry.markerIcon && typeof entry.marker.setIcon === 'function') {
-        if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
-          const nextHoverIcon = entry.markerHoverIcons[hoverPulsePhase % entry.markerHoverIcons.length];
-          entry.marker.setIcon(nextHoverIcon || entry.markerHoverIcon || entry.markerIcon);
-        } else if (isHovered && entry.markerHoverIcon) {
-          entry.marker.setIcon(entry.markerHoverIcon);
-        } else {
-          entry.marker.setIcon(entry.markerIcon);
-        }
-      }
+      applyMarkerHoverVisualState(entry, hoverPulsePhase);
     });
   }, [hoveredListingId, hoverPulsePhase]);
 
