@@ -1,51 +1,77 @@
-/* Custom Pulse Animation for HomeKey Luxury Pins */
+/* Container that holds the pin/card and centers the radar rings */
+.radar-container {
+  position: relative;
+  display: inline-block;
+  alignment-baseline: middle;
+}
+
+.map-listing-marker.radar-container {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* The core animating multi-ring asset */
+.faint-radar-rings,
 .radar-pulse-ring {
   position: absolute;
-  left: 50%;
   top: 50%;
-  box-sizing: border-box;
-  width: 136px;
-  height: 136px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0.78);
-  z-index: 1;
-  border: 3px solid rgba(15, 60, 109, 0.82);
-  background:
-    radial-gradient(circle, rgba(15, 60, 109, 0.48) 0%, rgba(15, 60, 109, 0.24) 30%, rgba(15, 60, 109, 0) 62%),
-    repeating-radial-gradient(circle, rgba(15, 60, 109, 0.5) 0 2.5px, rgba(15, 60, 109, 0) 2.5px 22px);
-  box-shadow: 0 0 0 22px rgba(15, 60, 109, 0.32),
-              0 0 0 44px rgba(15, 60, 109, 0.24),
-              0 0 0 66px rgba(15, 60, 109, 0.16);
-  animation: luxuryPulse 6.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 40px;
+  border-radius: 9999px;
   pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  box-shadow:
+    0 0 0 30px rgba(0, 0, 0, 0.03),
+    0 0 0 70px rgba(0, 0, 0, 0.02),
+    0 0 0 110px rgba(0, 0, 0, 0.01);
 }
 
-@keyframes luxuryPulse {
+.map-listing-marker.is-hovered .faint-radar-rings,
+.map-listing-marker.is-hovered .radar-pulse-ring,
+.map-listing-marker:hover .faint-radar-rings,
+.map-listing-marker:hover .radar-pulse-ring {
+  opacity: 1;
+  animation: gentleLuxuryPulse 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+/* Smooth keyframe logic that gently scales and waves the rings */
+@keyframes gentleLuxuryPulse {
   0% {
-    transform: translate(-50%, -50%) scale(0.78);
-    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.4;
   }
-  70% {
-    opacity: 0.55;
+  50% {
+    opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.18);
-    opacity: 0.18;
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 0;
   }
 }
 
-/* Elegant Fade In for Caption box */
-@keyframes fadeIn {
+/* Simple entry fade for the preview card asset itself */
+.animate-luxury-card {
+  position: relative;
+  z-index: 10;
+  animation: cardFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardFadeUp {
   from {
     opacity: 0;
-    transform: translate(-10px, -50%);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translate(0, -50%);
+    transform: translateY(0);
   }
 }
 
+/* Backwards-compatible alias used by existing marker markup. */
 .animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cardFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

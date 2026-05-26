@@ -188,7 +188,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   const scaledPointerHeight = Math.round(pointerHeight * scale);
   const scaledFontSize = Math.max(10, Math.round(fontSize * scale));
   const totalHeight = scaledHeight + scaledPointerHeight;
-  const markerRootClassName = `map-listing-marker${hoverMode ? ` is-${hoverMode}-hovered` : ''}`;
+  const markerRootClassName = `map-listing-marker radar-container${hoverMode ? ` is-${hoverMode}-hovered` : ''}`;
   const captionTitle = escapeHtml(resolvedOptions.captionTitle || '');
   const captionPrice = escapeHtml(resolvedOptions.captionPrice || priceText);
   const captionMeta = escapeHtml(resolvedOptions.captionMeta || '');
@@ -204,7 +204,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
     `font-size:${scaledFontSize}px`,
     `font-weight:${fontWeight}`,
   ].join(';');
-  const markerCaptionHtml = `<div class="map-hovered-listing-caption animate-fadeIn">
+  const markerCaptionHtml = `<div class="map-hovered-listing-caption animate-fadeIn animate-luxury-card">
     <div class="map-hovered-listing-caption__text-card">
       <p class="map-hovered-listing-caption__title">${captionTitle || 'Listing'}</p>
       <p class="map-hovered-listing-caption__price">${captionPrice}</p>
@@ -216,7 +216,7 @@ const createFallbackPriceIcon = (priceText, preset, styleOverrides = {}, options
   </div>`;
   return L.divIcon({
     className: 'fallback-price-pin',
-    html: `<div class="${markerRootClassName}"><span class="radar-pulse-ring"></span><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}</span>${markerCaptionHtml}</div>`,
+    html: `<div class="${markerRootClassName}"><span class="radar-pulse-ring faint-radar-rings"></span><span class="map-listing-marker-pin" style="${markerPinInlineStyle}">${safePriceText}</span>${markerCaptionHtml}</div>`,
     iconSize: [scaledPinWidth, totalHeight],
     iconAnchor: [scaledPinWidth / 2, totalHeight],
     popupAnchor: [0, -24],
