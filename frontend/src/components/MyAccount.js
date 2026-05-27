@@ -10,16 +10,21 @@ const toDateInputValue = (rawValue) => {
   return parsed.toISOString().slice(0, 10);
 };
 
-const toFormState = (account = {}) => ({
-  name: String(account.name || ''),
-  email: String(account.email || ''),
-  phone: String(account.phone || ''),
-  whatsapp: String(account.whatsapp || ''),
-  moveInDate: toDateInputValue(account.moveInDate),
-  preferredContactMethod: ['email', 'whatsapp', 'phone'].includes(String(account.preferredContactMethod || '').toLowerCase())
-    ? String(account.preferredContactMethod).toLowerCase()
-    : 'email',
-});
+const normalizeContactNumber = (rawValue) => String(rawValue || '').trim().replace(/[^\d+]/g, '');
+
+const toFormState = (account) => {
+  const normalizedAccount = account && typeof account === 'object' ? account : {};
+  return {
+    name: String(normalizedAccount.name || ''),
+    email: String(normalizedAccount.email || ''),
+    phone: String(normalizedAccount.phone || ''),
+    whatsapp: String(normalizedAccount.whatsapp || ''),
+    moveInDate: toDateInputValue(normalizedAccount.moveInDate),
+    preferredContactMethod: ['email', 'whatsapp', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
+      ? String(normalizedAccount.preferredContactMethod).toLowerCase()
+      : 'email',
+  };
+};
 
 const MyAccount = () => {
   const { user, updateUserProfile } = useAuth();
@@ -35,7 +40,7 @@ const MyAccount = () => {
       try {
         const response = await getMyAccount();
         if (cancelled) return;
-        const accountData = response?.data || {};
+        const accountData = response?.data && typeof response.data === 'object' ? response.data : {};
         setForm(toFormState(accountData));
         updateUserProfile(accountData);
       } catch (err) {
@@ -64,13 +69,13 @@ const MyAccount = () => {
     try {
       const payload = {
         name: form.name.trim(),
-        phone: form.phone.trim(),
-        whatsapp: form.whatsapp.trim(),
+        phone: normalizeContactNumber(form.phone),
+        whatsapp: normalizeContactNumber(form.whatsapp),
         moveInDate: form.moveInDate || '',
         preferredContactMethod: form.preferredContactMethod,
       };
       const response = await updateMyAccount(payload);
-      const updatedAccount = response?.data || {};
+      const updatedAccount = response?.data && typeof response.data === 'object' ? response.data : {};
       setForm(toFormState(updatedAccount));
       updateUserProfile(updatedAccount);
       setStatus('Your account details were saved.');
