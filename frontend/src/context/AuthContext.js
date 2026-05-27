@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-const AuthContext = createContext({ user: null, token: null, login: () => {}, logout: () => {}, isAuthenticated: false });
+const AuthContext = createContext({
+  user: null,
+  token: null,
+  login: () => {},
+  logout: () => {},
+  updateUserProfile: () => {},
+  isAuthenticated: false,
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -35,6 +42,12 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   };
 
+  const updateUserProfile = (nextUserData) => {
+    if (!nextUserData || typeof nextUserData !== 'object') return;
+    localStorage.setItem('user', JSON.stringify(nextUserData));
+    setUser(nextUserData);
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handleSessionExpired = () => {
@@ -47,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   }, [clearSession]);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUserProfile, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

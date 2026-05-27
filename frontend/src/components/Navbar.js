@@ -1186,6 +1186,11 @@ const Navbar = () => {
                 <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
                   {t('navbar.savedSearch')}
                 </Link>
+                {isAuthenticated && (
+                  <Link to="/account" className="premium-header__alerts-link">
+                    {t('navbar.myAccount')}
+                  </Link>
+                )}
                 {shouldShowGreeting ? (
                   <button
                     type="button"
@@ -1227,6 +1232,11 @@ const Navbar = () => {
               <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
                 {t('navbar.savedSearch')}
               </Link>
+              {isAuthenticated && (
+                <Link to="/account" className="premium-header__alerts-link">
+                  {t('navbar.myAccount')}
+                </Link>
+              )}
               {shouldShowGreeting ? (
                 <button
                   type="button"
