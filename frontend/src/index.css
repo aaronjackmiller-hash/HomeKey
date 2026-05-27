@@ -1878,7 +1878,8 @@ a {
   appearance: none;
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
+  right: auto;
   z-index: 7;
   width: 44px;
   height: 32px;
