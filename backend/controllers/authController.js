@@ -252,6 +252,59 @@ const login = async (req, res) => {
     }
 };
 
+// GET /api/auth/me
+const getCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        return res.json({ success: true, data: toSafeAuthData(user) });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+};
+
+// PUT /api/auth/me
+const updateCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, 'name')) {
+            user.name = String(req.body.name || '').trim();
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) {
+            user.phone = String(req.body.phone || '').trim();
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'whatsapp')) {
+            user.whatsapp = String(req.body.whatsapp || '').trim();
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'preferredContactMethod')) {
+            user.preferredContactMethod = parsePreferredContactMethod(req.body.preferredContactMethod);
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'moveInDate')) {
+            const rawMoveInDate = req.body.moveInDate;
+            if (rawMoveInDate == null || String(rawMoveInDate).trim() === '') {
+                user.moveInDate = null;
+            } else {
+                user.moveInDate = parseOptionalMoveInDate(rawMoveInDate);
+            }
+        }
+
+        await user.save();
+        return res.json({ success: true, data: toSafeAuthData(user) });
+    } catch (err) {
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map((e) => e.message);
+            return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
+        return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    }
+};
+
 // POST /api/auth/oauth/google
 const loginWithGoogle = async (req, res) => {
     const idToken = String(req.body.idToken || req.body.credential || '').trim();
@@ -625,6 +678,8 @@ const resetPassword = async (req, res) => {
 module.exports = {
     register,
     login,
+    getCurrentUser,
+    updateCurrentUser,
     getOAuthConfig,
     loginWithGoogle,
     loginWithApple,

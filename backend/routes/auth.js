@@ -7,6 +7,8 @@ const { protect } = require('../middleware/auth');
 const {
     register,
     login,
+    getCurrentUser,
+    updateCurrentUser,
     getOAuthConfig,
     loginWithGoogle,
     loginWithApple,
@@ -96,6 +98,29 @@ const validatePasskeyRegisterVerify = [
         .withMessage('Credential payload is required'),
 ];
 
+const validateUpdateCurrentUser = [
+    body('name')
+        .optional()
+        .isLength({ min: 2 })
+        .withMessage('Name must be at least 2 characters long'),
+    body('phone')
+        .optional({ checkFalsy: true })
+        .isMobilePhone('any')
+        .withMessage('Phone must be a valid mobile number'),
+    body('whatsapp')
+        .optional({ checkFalsy: true })
+        .isMobilePhone('any')
+        .withMessage('WhatsApp must be a valid mobile number'),
+    body('moveInDate')
+        .optional({ checkFalsy: true })
+        .isISO8601()
+        .withMessage('Move-in date must be a valid date'),
+    body('preferredContactMethod')
+        .optional()
+        .isIn(['email', 'whatsapp', 'phone'])
+        .withMessage('Invalid preferred contact method'),
+];
+
 const validateInput = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -109,6 +134,12 @@ router.post('/register', validateRegister, validateInput, register);
 
 // POST /api/auth/login
 router.post('/login', validateLogin, validateInput, login);
+
+// GET /api/auth/me
+router.get('/me', protect, getCurrentUser);
+
+// PUT /api/auth/me
+router.put('/me', protect, validateUpdateCurrentUser, validateInput, updateCurrentUser);
 
 // POST /api/auth/oauth/google
 router.post('/oauth/google', validateOAuthGoogle, validateInput, loginWithGoogle);

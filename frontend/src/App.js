@@ -18,6 +18,7 @@ import PropertyEngagement from './components/PropertyEngagement';
 import AdminYad2Import from './components/AdminYad2Import';
 import Login from './components/Login';
 import Register from './components/Register';
+import MyAccount from './components/MyAccount';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import PropertyInquiryCard from './components/PropertyInquiryCard';
@@ -86,6 +87,9 @@ const AppRoutes = () => {
           <Route path="/properties/:id" component={PropertyDetail} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
+          <PrivateRoute path="/account">
+            <MyAccount />
+          </PrivateRoute>
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/blueprint-inquiry" component={PropertyInquiryCard} />

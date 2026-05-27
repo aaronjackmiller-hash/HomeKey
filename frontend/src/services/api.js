@@ -29,6 +29,7 @@ const isProtectedRequestPath = (method = 'GET', requestPath = '') => {
   if (path.startsWith('/users')) return !isReadOnlyMethod;
   if (path.startsWith('/admin')) return true;
   if (path.startsWith('/auth/passkeys/register')) return true;
+  if (path.startsWith('/auth/me')) return true;
   if (/^\/properties\/[^/]+\/engagement$/.test(path)) return true;
   if (path === '/properties' && normalizedMethod !== 'GET') return true;
   if (/^\/properties\/[^/]+$/.test(path) && (normalizedMethod === 'PUT' || normalizedMethod === 'DELETE')) return true;
@@ -84,6 +85,16 @@ export const registerUser = async (data) => {
 
 export const loginUser = async (data) => {
   const response = await api.post('/auth/login', data);
+  return response.data;
+};
+
+export const getMyAccount = async () => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};
+
+export const updateMyAccount = async (data) => {
+  const response = await api.put('/auth/me', data);
   return response.data;
 };
 
