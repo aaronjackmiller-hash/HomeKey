@@ -7,6 +7,7 @@ import {
     registerShowingAttendee,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 import PropertyInquiryCard from './PropertyInquiryCard';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
@@ -16,6 +17,7 @@ import {
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { pickBestContactName } from '../utils/contactMessaging';
+import { getLocalizedAddress } from '../utils/addressLocalization';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -135,17 +137,23 @@ const normalizeStreetDisplay = (streetValue = '', explicitStreetNumber = '') => 
     return [street, streetNumber].filter(Boolean).join(' ').trim();
 };
 
-const getPrimaryAddressTitle = (property = {}) => {
-    const street = normalizeStreetDisplay(property.address?.street, property.address?.streetNumber);
+const getPrimaryAddressTitle = (property = {}, localizedAddress = {}) => {
+    const street = normalizeStreetDisplay(
+        localizedAddress.street || property.address?.street,
+        localizedAddress.streetNumber || property.address?.streetNumber
+    );
     if (street) return street;
     const title = String(property.title || '').trim();
     if (isReadableImportedText(property, title)) return title;
-    const city = safeText(property.address?.city);
+    const city = safeText(localizedAddress.city || property.address?.city);
     return city ? `Property in ${city}` : 'Property listing';
 };
 
-const getPrimaryStreetParts = (property = {}) => {
-    const fromAddress = splitStreetAndNumber(property.address?.street, property.address?.streetNumber);
+const getPrimaryStreetParts = (property = {}, localizedAddress = {}) => {
+    const fromAddress = splitStreetAndNumber(
+        localizedAddress.street || property.address?.street,
+        localizedAddress.streetNumber || property.address?.streetNumber
+    );
     if (fromAddress.street || fromAddress.streetNumber) return fromAddress;
     const title = safeText(property.title);
     if (!title) return { street: '', streetNumber: '' };
@@ -327,6 +335,7 @@ const PropertyDetail = () => {
     const history = useHistory();
     const location = useLocation();
     const { isAuthenticated, user } = useAuth();
+    const { language } = useLanguage();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -476,7 +485,8 @@ const PropertyDetail = () => {
     if (error) return <p className="status-message status-message-error">{error}</p>;
     if (!property) return null;
 
-    const locationLine = getLocationLine(property.address);
+    const localizedAddress = getLocalizedAddress(property.address, language);
+    const locationLine = getLocationLine(localizedAddress);
     const allImages = (Array.isArray(property.images) ? property.images : [])
         .map((image) => sanitizeImageSource(image))
         .filter(Boolean);
@@ -484,8 +494,8 @@ const PropertyDetail = () => {
         allImages[0] ||
         'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
     const additionalImages = allImages.slice(1);
-    const detailTitle = getPrimaryAddressTitle(property);
-    const coverStreetParts = getPrimaryStreetParts(property);
+    const detailTitle = getPrimaryAddressTitle(property, localizedAddress);
+    const coverStreetParts = getPrimaryStreetParts(property, localizedAddress);
     const coverTitleStreet = coverStreetParts.street || detailTitle;
     const coverTitleNumber = coverStreetParts.streetNumber;
     const isRental = property.type === 'rental';
@@ -535,7 +545,7 @@ const PropertyDetail = () => {
     const templateTypeLabel = property.type === 'rental' ? 'Rent' : 'Sale';
     const templateTitle = [coverTitleStreet, coverTitleNumber].filter(Boolean).join(' ').trim() || detailTitle;
     const templateLocation = (
-        safeText(property.address?.city)
+        safeText(localizedAddress.city)
         || safeText(locationLine.split(',')[0])
         || 'Israel'
     ).toUpperCase();
