@@ -1738,6 +1738,7 @@ a {
   position: relative;
   grid-area: media;
   min-width: 0;
+  overflow: hidden;
 }
 
 .yad2-logo-mask {
@@ -2006,42 +2007,38 @@ a {
 
 .detail-h-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 10px;
+  right: 10px;
   z-index: 10;
-  width: 64px;
-  height: 42px;
-  border-radius: 5px;
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.16);
-  box-shadow: 0 2px 9px rgba(15, 23, 42, 0.32);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  opacity: 0.6;
+  filter: drop-shadow(0 1px 4px rgba(2, 6, 23, 0.28));
 }
 
 .detail-h-badge--hero {
-  width: 96px;
-  height: 62px;
+  width: clamp(48px, 7vw, 68px);
+  height: clamp(34px, 4.8vw, 48px);
 }
 
 .detail-h-badge--gallery {
-  width: 74px;
-  height: 48px;
+  width: clamp(42px, 5.8vw, 58px);
+  height: clamp(30px, 4vw, 42px);
 }
 
 .detail-h-badge--lightbox {
-  width: 112px;
-  height: 72px;
+  width: clamp(56px, 7.6vw, 84px);
+  height: clamp(40px, 5.2vw, 60px);
 }
 
 .detail-h-badge-icon {
-  width: 96%;
-  height: 96%;
+  width: 100%;
+  height: 100%;
   background-image: url("./assets/h-letter-logo-transparent-fixed.png");
   background-repeat: no-repeat;
-  background-size: auto 96%;
+  background-size: contain;
   background-position: center;
 }
 
@@ -2266,6 +2263,8 @@ a {
 .detail-gallery-image-media {
   position: relative;
   display: block;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .image-lightbox-backdrop {
@@ -2361,7 +2360,7 @@ a {
   justify-content: center;
   max-width: 100%;
   max-height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .image-lightbox-image-media img {
@@ -5217,10 +5216,10 @@ legend {
   }
 
   .image-lightbox-image-media .detail-h-badge--lightbox {
-    top: 64px;
-    right: 4px;
-    width: 128px;
-    height: 84px;
+    top: 12px;
+    right: 12px;
+    width: clamp(62px, 20vw, 90px);
+    height: clamp(44px, 14vw, 64px);
   }
 
   .mobile-listing-header {
