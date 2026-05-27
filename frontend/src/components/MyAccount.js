@@ -12,6 +12,20 @@ const toDateInputValue = (rawValue) => {
 
 const normalizeContactNumber = (rawValue) => String(rawValue || '').trim().replace(/[^\d+]/g, '');
 
+const normalizeDateInputValue = (inputElement, rawValue) => {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const candidateDate = inputElement?.valueAsDate instanceof Date
+    ? inputElement.valueAsDate
+    : new Date(value);
+  if (Number.isNaN(candidateDate.getTime())) return '';
+  const year = candidateDate.getFullYear();
+  const month = String(candidateDate.getMonth() + 1).padStart(2, '0');
+  const day = String(candidateDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const toFormState = (account) => {
   const normalizedAccount = account && typeof account === 'object' ? account : {};
   return {
@@ -59,6 +73,11 @@ const MyAccount = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleMoveInDateChange = (event) => {
+    const normalizedDate = normalizeDateInputValue(event.target, event.target.value);
+    setForm((prev) => ({ ...prev, moveInDate: normalizedDate }));
   };
 
   const handleSubmit = async (event) => {
@@ -129,7 +148,8 @@ const MyAccount = () => {
             type="date"
             name="moveInDate"
             value={form.moveInDate}
-            onChange={handleChange}
+            onChange={handleMoveInDateChange}
+            onInput={handleMoveInDateChange}
             max="2100-12-31"
             disabled={saving}
           />

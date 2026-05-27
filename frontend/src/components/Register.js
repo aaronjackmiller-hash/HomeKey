@@ -16,6 +16,20 @@ const resolveSafeRedirectPath = (rawValue) => {
   return candidate;
 };
 
+const normalizeDateInputValue = (inputElement, rawValue) => {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const candidateDate = inputElement?.valueAsDate instanceof Date
+    ? inputElement.valueAsDate
+    : new Date(value);
+  if (Number.isNaN(candidateDate.getTime())) return '';
+  const year = candidateDate.getFullYear();
+  const month = String(candidateDate.getMonth() + 1).padStart(2, '0');
+  const day = String(candidateDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const Register = () => {
   const { login } = useAuth();
   const history = useHistory();
@@ -49,7 +63,16 @@ const Register = () => {
     };
   }, [location.search]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (!name) return;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleMoveInDateChange = (e) => {
+    const normalizedDate = normalizeDateInputValue(e.target, e.target.value);
+    setForm((prev) => ({ ...prev, moveInDate: normalizedDate }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,7 +141,8 @@ const Register = () => {
             type="date"
             name="moveInDate"
             value={form.moveInDate}
-            onChange={handleChange}
+            onChange={handleMoveInDateChange}
+            onInput={handleMoveInDateChange}
             max="2100-12-31"
           />
         </div>
