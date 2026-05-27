@@ -564,7 +564,7 @@ const PropertyDetail = () => {
         || safeText(locationLine.split(',')[0])
         || 'Israel'
     ).toUpperCase();
-    const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
+    const templatePriceSuffix = '';
     const templatePriceValue = formatTemplatePrice(property.price);
     const inquirySubtitleRaw = safeText(localizedDescription)
         || t('propertyDetail.submitDetailsFallback', { title: detailTitle });

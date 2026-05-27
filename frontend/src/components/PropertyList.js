@@ -80,8 +80,7 @@ const formatCurrency = (value, locale = 'en-US') => {
 const formatCardPrice = (property = {}, locale = 'en-US', unavailableLabel = 'Price unavailable') => {
   const asNumber = Number(property.price);
   if (Number.isNaN(asNumber)) return unavailableLabel;
-  const base = `₪${asNumber.toLocaleString(locale)}`;
-  return String(property.type || '').toLowerCase() === 'rental' ? `${base}/mo` : base;
+  return `₪${asNumber.toLocaleString(locale)}`;
 };
 
 const normalizePhoneForLinks = (value) => {
@@ -1345,7 +1344,7 @@ const PropertyList = () => {
             >
               <div className="property-card-body">
                 <div className="property-card-text-stack">
-                  <p className="property-card-price" dir="ltr">
+                  <p className={`property-card-price ${language === 'he' ? 'property-card-price--hebrew' : ''}`} dir="ltr">
                     {formatCardPrice(property, locale, t('propertyList.priceUnavailable'))}
                   </p>
                   <h3 className={`property-card-title ${displayStreet ? 'property-card-title--street' : ''}`}>{displayTitle}</h3>

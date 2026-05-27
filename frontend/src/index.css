@@ -4232,6 +4232,10 @@ legend {
   line-height: 1.1;
 }
 
+.property-list-page .property-card-price.property-card-price--hebrew {
+  text-align: right;
+}
+
 .property-list-page .property-card-stats {
   margin: 0 0 8px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
