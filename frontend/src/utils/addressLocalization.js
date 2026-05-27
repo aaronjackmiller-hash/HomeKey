@@ -1,11 +1,92 @@
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 const containsHebrew = (value) => /[א-ת]/.test(String(value || ''));
+const HEBREW_DIACRITICS_RE = /[\u0591-\u05C7]/g;
+const HEBREW_TO_LATIN_CHAR_MAP = {
+  א: 'a',
+  ב: 'b',
+  ג: 'g',
+  ד: 'd',
+  ה: 'h',
+  ו: 'v',
+  ז: 'z',
+  ח: 'kh',
+  ט: 't',
+  י: 'y',
+  כ: 'k',
+  ך: 'k',
+  ל: 'l',
+  מ: 'm',
+  ם: 'm',
+  נ: 'n',
+  ן: 'n',
+  ס: 's',
+  ע: 'a',
+  פ: 'p',
+  ף: 'p',
+  צ: 'ts',
+  ץ: 'ts',
+  ק: 'k',
+  ר: 'r',
+  ש: 'sh',
+  ת: 't',
+};
+const PHRASE_TRANSLITERATION_OVERRIDES = {
+  ישראל: 'Israel',
+  'תל אביב': 'Tel Aviv',
+  'תל אביב יפו': 'Tel Aviv-Yafo',
+  ירושלים: 'Jerusalem',
+  חיפה: 'Haifa',
+  נתניה: 'Netanya',
+};
 
 const normalizeLanguageCode = (value) => {
   const normalized = safeText(value).toLowerCase();
   if (normalized.startsWith('he') || normalized.startsWith('iw')) return 'he';
   if (normalized.startsWith('en')) return 'en';
   return 'en';
+};
+
+const normalizeHebrewForLookup = (value) => safeText(value)
+  .replace(HEBREW_DIACRITICS_RE, '')
+  .replace(/[״"]/g, '')
+  .replace(/[׳']/g, '');
+
+const toTitleCaseToken = (token) => {
+  const normalized = safeText(token);
+  if (!normalized) return '';
+  if (/^\d/.test(normalized)) return normalized;
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1).toLowerCase()}`;
+};
+
+const transliterateHebrewText = (value) => {
+  const normalized = safeText(value);
+  if (!normalized || !containsHebrew(normalized)) return normalized;
+  const normalizedForLookup = normalizeHebrewForLookup(normalized);
+  if (PHRASE_TRANSLITERATION_OVERRIDES[normalizedForLookup]) {
+    return PHRASE_TRANSLITERATION_OVERRIDES[normalizedForLookup];
+  }
+  return normalizedForLookup
+    .split(/\s+/)
+    .map((token) => {
+      const tokenForLookup = normalizeHebrewForLookup(token);
+      if (!tokenForLookup) return '';
+      let output = '';
+      for (const char of tokenForLookup) {
+        if (HEBREW_TO_LATIN_CHAR_MAP[char]) {
+          output += HEBREW_TO_LATIN_CHAR_MAP[char];
+        } else if (/[a-z0-9-]/i.test(char)) {
+          output += char;
+        }
+      }
+      const compact = output
+        .replace(/aa+/g, 'a')
+        .replace(/vv+/g, 'v')
+        .trim();
+      return compact ? toTitleCaseToken(compact) : '';
+    })
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 };
 
 const pickBestLocalizedValue = ({
@@ -25,7 +106,9 @@ const pickBestLocalizedValue = ({
 
   const englishCandidates = [requested, englishFallback, source].filter(Boolean);
   const nonHebrewCandidate = englishCandidates.find((candidate) => !containsHebrew(candidate));
-  return nonHebrewCandidate || englishCandidates[0] || '';
+  if (nonHebrewCandidate) return nonHebrewCandidate;
+  const transliteratedCandidate = transliterateHebrewText(englishCandidates[0]);
+  return transliteratedCandidate || englishCandidates[0] || '';
 };
 
 const uniqueNonEmpty = (values = []) => {
