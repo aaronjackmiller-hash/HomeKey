@@ -16,6 +16,8 @@ import {
 } from '../utils/propertyInterest';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { pickBestContactName } from '../utils/contactMessaging';
+import { useLanguage } from '../context/LanguageContext';
+import { getLocalizedAddress } from '../utils/addressLocalization';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -144,14 +146,6 @@ const getPrimaryAddressTitle = (property = {}) => {
     return city ? `Property in ${city}` : 'Property listing';
 };
 
-const getPrimaryStreetParts = (property = {}) => {
-    const fromAddress = splitStreetAndNumber(property.address?.street, property.address?.streetNumber);
-    if (fromAddress.street || fromAddress.streetNumber) return fromAddress;
-    const title = safeText(property.title);
-    if (!title) return { street: '', streetNumber: '' };
-    return splitStreetAndNumber(title, '');
-};
-
 const getLocationLine = (address = {}) => {
     const neighborhood = safeText(address.neighborhood);
     const city = safeText(address.city);
@@ -239,30 +233,55 @@ const getListingContact = (property = {}) => {
 const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
 
 const buildAmenities = (property = {}) => {
-    const haystack = String(property.description || '').toLowerCase();
+    const localizedContent = property.localizedContent && typeof property.localizedContent === 'object'
+        ? property.localizedContent
+        : {};
+    const textCandidates = [
+        property.description,
+        localizedContent.en && localizedContent.en.description,
+        localizedContent.he && localizedContent.he.description,
+    ]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean);
+    const haystack = textCandidates.join(' ').toLowerCase();
     const amenities = [];
     const addAmenity = (label, condition) => {
         if (!condition || amenities.includes(label)) return;
         amenities.push(label);
     };
 
-    addAmenity('Modern kitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
-    addAmenity('Air conditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
-    addAmenity('Balcony', hasAnyPattern(haystack, [/balcony/i, /מרפסת/]));
-    addAmenity('Secure parking', hasAnyPattern(haystack, [/parking/i, /חניה/]));
-    addAmenity('Safe room', hasAnyPattern(haystack, [/safe\s*room/i, /\bmamad\b/i, /ממד/]));
-    addAmenity('Elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
-    addAmenity('Renovated', hasAnyPattern(haystack, [/renovat/i, /משופצ/]));
-    addAmenity('Secure building', Boolean(property.buildingDetails?.name));
+    addAmenity('modernKitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
+    addAmenity('airConditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
+    addAmenity('balcony', hasAnyPattern(haystack, [/balcony/i, /מרפסת/]));
+    addAmenity('secureParking', hasAnyPattern(haystack, [/parking/i, /חניה/]));
+    addAmenity('safeRoom', hasAnyPattern(haystack, [/safe\s*room/i, /\bmamad\b/i, /ממד/]));
+    addAmenity('elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
+    addAmenity('renovated', hasAnyPattern(haystack, [/renovat/i, /משופצ/]));
+    addAmenity('secureBuilding', Boolean(property.buildingDetails?.name));
 
     if (amenities.length === 0) {
         if (property.type === 'rental') {
-            amenities.push('Modern kitchen', 'Air conditioning', 'Balcony');
+            amenities.push('modernKitchen', 'airConditioning', 'balcony');
         } else {
-            amenities.push('Secure building', 'Modern kitchen', 'Balcony');
+            amenities.push('secureBuilding', 'modernKitchen', 'balcony');
         }
     }
     return amenities.slice(0, 4);
+};
+
+const getLocalizedContentValue = (property = {}, fieldName = 'description', language = 'en') => {
+    const localizedContent = property.localizedContent && typeof property.localizedContent === 'object'
+        ? property.localizedContent
+        : {};
+    const direct = safeText(property[fieldName]);
+    const requested = safeText(localizedContent[language] && localizedContent[language][fieldName]);
+    const english = safeText(localizedContent.en && localizedContent.en[fieldName]);
+    const hebrew = safeText(localizedContent.he && localizedContent.he[fieldName]);
+
+    if (language === 'he') {
+        return requested || hebrew || direct || english;
+    }
+    return requested || english || direct || hebrew;
 };
 
 const sanitizeImageSource = (url) => {
@@ -327,6 +346,7 @@ const PropertyDetail = () => {
     const history = useHistory();
     const location = useLocation();
     const { isAuthenticated, user } = useAuth();
+    const { t, language } = useLanguage();
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -476,7 +496,10 @@ const PropertyDetail = () => {
     if (error) return <p className="status-message status-message-error">{error}</p>;
     if (!property) return null;
 
-    const locationLine = getLocationLine(property.address);
+    const localizedAddress = getLocalizedAddress(property.address, language);
+    const localizedTitle = getLocalizedContentValue(property, 'title', language);
+    const localizedDescription = getLocalizedContentValue(property, 'description', language);
+    const locationLine = getLocationLine(localizedAddress);
     const allImages = (Array.isArray(property.images) ? property.images : [])
         .map((image) => sanitizeImageSource(image))
         .filter(Boolean);
@@ -484,8 +507,10 @@ const PropertyDetail = () => {
         allImages[0] ||
         'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
     const additionalImages = allImages.slice(1);
-    const detailTitle = getPrimaryAddressTitle(property);
-    const coverStreetParts = getPrimaryStreetParts(property);
+    const fallbackTitle = getPrimaryAddressTitle(property);
+    const localizedStreet = normalizeStreetDisplay(localizedAddress.street, localizedAddress.streetNumber);
+    const detailTitle = localizedStreet || localizedTitle || fallbackTitle;
+    const coverStreetParts = splitStreetAndNumber(localizedAddress.street || localizedTitle || fallbackTitle, localizedAddress.streetNumber);
     const coverTitleStreet = coverStreetParts.street || detailTitle;
     const coverTitleNumber = coverStreetParts.streetNumber;
     const isRental = property.type === 'rental';
@@ -535,19 +560,19 @@ const PropertyDetail = () => {
     const templateTypeLabel = property.type === 'rental' ? 'Rent' : 'Sale';
     const templateTitle = [coverTitleStreet, coverTitleNumber].filter(Boolean).join(' ').trim() || detailTitle;
     const templateLocation = (
-        safeText(property.address?.city)
+        safeText(localizedAddress.city)
         || safeText(locationLine.split(',')[0])
         || 'Israel'
     ).toUpperCase();
     const templatePriceSuffix = property.type === 'rental' ? '/mo' : '';
     const templatePriceValue = formatTemplatePrice(property.price);
-    const inquirySubtitleRaw = safeText(property.description)
-        || `Submit your details and get more information about ${detailTitle}.`;
+    const inquirySubtitleRaw = safeText(localizedDescription)
+        || t('propertyDetail.submitDetailsFallback', { title: detailTitle });
     const inquirySubtitle = inquirySubtitleRaw.length > 130
         ? `${inquirySubtitleRaw.slice(0, 127)}...`
         : inquirySubtitleRaw;
     const inquiryWhatsAppNumber = String(listingContact.whatsapp || '').replace(/[^\d]/g, '');
-    const inquiryFrozenMessage = `Hi, I am interested in ${detailTitle}. Please share more details.`;
+    const inquiryFrozenMessage = t('propertyDetail.inquiryDefaultMessage', { title: detailTitle });
     const inquiryAgent = {
         agency: listingContact.agency || 'Real Deal',
         name: listingContact.name || '',
@@ -638,11 +663,11 @@ const PropertyDetail = () => {
                                 <span>{property.size ? `${property.size} SQM` : '— SQM'}</span>
                             </div>
                         </div>
-                        <section className="detail-template-amenities" aria-label="Amenities">
-                            <h3>AMENITIES</h3>
+                        <section className="detail-template-amenities" aria-label={t('propertyDetail.amenitiesHeading')}>
+                            <h3>{t('propertyDetail.amenitiesHeading')}</h3>
                             <ul>
                                 {amenities.map((amenity) => (
-                                    <li key={amenity}>{amenity}</li>
+                                    <li key={amenity}>{t(`propertyDetail.amenityLabels.${amenity}`)}</li>
                                 ))}
                             </ul>
                         </section>
@@ -696,10 +721,10 @@ const PropertyDetail = () => {
                     </section>
                 )}
 
-                {isReadableImportedText(property, property.description) && (
+                {isReadableImportedText(property, localizedDescription) && (
                     <section className="detail-section-card">
-                        <h2>About this property</h2>
-                        <p className="detail-description">{property.description}</p>
+                        <h2>{t('propertyDetail.aboutHeading')}</h2>
+                        <p className="detail-description">{localizedDescription}</p>
                     </section>
                 )}
 

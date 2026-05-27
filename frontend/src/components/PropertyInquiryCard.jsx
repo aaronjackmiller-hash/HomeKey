@@ -1,5 +1,6 @@
 import React from 'react';
 import './PropertyInquiryCard.css';
+import { useLanguage } from '../context/LanguageContext';
 
 const agentConfig = {
   agency: 'Real Deal',
@@ -27,6 +28,7 @@ const PropertyInquiryCard = ({
   statusMessage = '',
   statusIsError = false,
 }) => {
+  const { t } = useLanguage();
   const hasControlledForm = Boolean(formValues && typeof onFormChange === 'function');
   const safeValues = hasControlledForm
     ? {
@@ -38,7 +40,7 @@ const PropertyInquiryCard = ({
     }
     : null;
 
-  const managerLine = [agent?.agency, agent?.name].filter(Boolean).join(' ').trim() || 'Property manager';
+  const managerLine = [agent?.agency, agent?.name].filter(Boolean).join(' ').trim() || t('propertyInquiry.propertyManagerFallback');
   const whatsappNumber = sanitizeWhatsAppNumber(agent?.whatsappNumber);
   const hasWhatsApp = Boolean(agent?.hasWhatsApp && whatsappNumber);
   const whatsappTemplateMessage = agent?.inquiryMessageTemplate || agent?.inquiryMessage || agentConfig.inquiryMessage;
@@ -50,7 +52,7 @@ const PropertyInquiryCard = ({
   return (
     <section className={rootClassName}>
       {shouldShowDescription && (
-        <div className="property-inquiry-description" dir="rtl">
+        <div className="property-inquiry-description" dir="auto">
           <h1>{title}</h1>
           <p>{subtitle}</p>
         </div>
@@ -58,13 +60,13 @@ const PropertyInquiryCard = ({
 
       <div className="property-inquiry-card">
         <div className="property-inquiry-card-header">
-          <h2>Interested? Get Details!</h2>
+          <h2>{t('propertyInquiry.heading')}</h2>
           <p>
-            <span>Manager: {managerLine}</span>
+            <span>{t('propertyInquiry.managerLabel', { manager: managerLine })}</span>
             {!hasWhatsApp && (
               <>
                 {' '}
-                <strong>Preferred method: Email</strong>
+                <strong>{t('propertyInquiry.preferredMethodEmail')}</strong>
               </>
             )}
           </p>
@@ -73,7 +75,7 @@ const PropertyInquiryCard = ({
         <form className="property-inquiry-form" onSubmit={handleSubmit}>
           <div className="property-inquiry-name-grid">
             <label className="property-inquiry-field" htmlFor="inquiry-first-name">
-              <span>First Name</span>
+              <span>{t('propertyInquiry.firstName')}</span>
               <input
                 id="inquiry-first-name"
                 type="text"
@@ -87,7 +89,7 @@ const PropertyInquiryCard = ({
             </label>
 
             <label className="property-inquiry-field" htmlFor="inquiry-last-name">
-              <span>Last Name</span>
+              <span>{t('propertyInquiry.lastName')}</span>
               <input
                 id="inquiry-last-name"
                 type="text"
@@ -102,7 +104,7 @@ const PropertyInquiryCard = ({
           </div>
 
           <label className="property-inquiry-field" htmlFor="inquiry-email">
-            <span>Email</span>
+            <span>{t('propertyInquiry.email')}</span>
             <input
               id="inquiry-email"
               type="email"
@@ -115,7 +117,7 @@ const PropertyInquiryCard = ({
           </label>
 
           <label className="property-inquiry-field" htmlFor="inquiry-phone">
-            <span>Phone</span>
+            <span>{t('propertyInquiry.phone')}</span>
             <input
               id="inquiry-phone"
               type="tel"
@@ -128,7 +130,7 @@ const PropertyInquiryCard = ({
           </label>
 
           <label className="property-inquiry-field" htmlFor="inquiry-message-note">
-            <span>Add a note (optional)</span>
+            <span>{t('propertyInquiry.addNoteOptional')}</span>
             <div className="property-inquiry-message-stack">
               <textarea
                 id="inquiry-message-template"
@@ -141,7 +143,7 @@ const PropertyInquiryCard = ({
                 id="inquiry-message-note"
                 className="property-inquiry-message-note"
                 rows="3"
-                placeholder="Add any questions you have .."
+                placeholder={t('propertyInquiry.notePlaceholder')}
                 {...(hasControlledForm ? {
                   value: safeValues.messageNote,
                   onChange: (event) => onFormChange('messageNote', event.target.value),
@@ -152,7 +154,7 @@ const PropertyInquiryCard = ({
 
           <div className="property-inquiry-actions">
             <button type="submit" className="property-inquiry-primary-btn">
-              Get Details!
+              {t('propertyInquiry.getDetailsButton')}
             </button>
 
             {hasWhatsApp && (
@@ -162,7 +164,7 @@ const PropertyInquiryCard = ({
                 target="_blank"
                 rel="noreferrer"
               >
-                Chat on WhatsApp with {agent?.name || 'Agent'}
+                {t('propertyInquiry.chatOnWhatsAppWith', { agent: agent?.name || t('propertyInquiry.agentFallback') })}
               </a>
             )}
           </div>
