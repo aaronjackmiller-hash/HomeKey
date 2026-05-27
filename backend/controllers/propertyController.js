@@ -17,6 +17,7 @@ const {
 const { queueInstantAlertsForProperties } = require('../services/instantAlertService');
 const {
     applyPropertyLocalization,
+    applyPropertyLocalizationWithAutoTranslate,
     getRequestedContentLanguage,
 } = require('../services/propertyLocalizationService');
 const { enrichAddressLocalization } = require('../services/addressLocalizationService');
@@ -375,7 +376,11 @@ const getPropertyById = async (req, res) => {
         if (!property) {
             return res.status(404).json({ success: false, message: 'Property not found' });
         }
-        res.json({ success: true, data: applyPropertyLocalization(withLocalizedAddress(property), requestedLanguage) });
+        const localizedProperty = await applyPropertyLocalizationWithAutoTranslate(
+            withLocalizedAddress(property),
+            requestedLanguage
+        );
+        res.json({ success: true, data: localizedProperty });
     } catch (err) {
         if (err.name === 'CastError') {
             return res.status(400).json({ success: false, message: 'Invalid property ID' });

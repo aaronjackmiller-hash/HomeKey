@@ -180,6 +180,76 @@ const applyPropertyLocalization = (propertyDoc, requestedLanguage) => {
     return asObject;
 };
 
+const shouldAutoTranslateForTarget = (value, targetLanguage) => {
+    const normalizedValue = normalizeString(value);
+    if (!normalizedValue) return true;
+    const detectedLanguage = normalizeLanguageCode(detectContentLanguage(normalizedValue));
+    if (!detectedLanguage) return false;
+    return detectedLanguage !== targetLanguage;
+};
+
+const translateFieldToTargetLanguage = async ({
+    currentTargetValue,
+    sourceValue,
+    targetLanguage,
+}) => {
+    const normalizedCurrentValue = normalizeString(currentTargetValue);
+    if (!shouldAutoTranslateForTarget(normalizedCurrentValue, targetLanguage)) {
+        return normalizedCurrentValue;
+    }
+
+    const normalizedSourceValue = normalizeString(sourceValue);
+    if (!normalizedSourceValue) return normalizedCurrentValue;
+
+    const sourceLanguage = normalizeLanguageCode(detectContentLanguage(normalizedSourceValue));
+    if (!sourceLanguage || sourceLanguage === targetLanguage) {
+        return normalizedCurrentValue || normalizedSourceValue;
+    }
+
+    const translated = normalizeString(await translateText(normalizedSourceValue, targetLanguage));
+    return translated || normalizedCurrentValue || normalizedSourceValue;
+};
+
+const applyPropertyLocalizationWithAutoTranslate = async (propertyDoc, requestedLanguage) => {
+    if (!propertyDoc) return propertyDoc;
+    const targetLanguage = normalizeLanguageCode(requestedLanguage);
+    if (!targetLanguage) {
+        return propertyDoc.toObject ? propertyDoc.toObject() : propertyDoc;
+    }
+
+    const asObject = propertyDoc.toObject ? propertyDoc.toObject() : { ...propertyDoc };
+    const localizedContent = sanitizeLocalizedContent(asObject.localizedContent);
+    const localizedTarget = localizedContent[targetLanguage] || {};
+    const oppositeLanguage = getOppositeLanguage(targetLanguage);
+    const localizedOpposite = (oppositeLanguage && localizedContent[oppositeLanguage]) || {};
+
+    const sourceTitle = normalizeString(localizedOpposite.title) || normalizeString(asObject.title);
+    const sourceDescription = normalizeString(localizedOpposite.description) || normalizeString(asObject.description);
+
+    const translatedTitle = await translateFieldToTargetLanguage({
+        currentTargetValue: localizedTarget.title,
+        sourceValue: sourceTitle,
+        targetLanguage,
+    });
+    const translatedDescription = await translateFieldToTargetLanguage({
+        currentTargetValue: localizedTarget.description,
+        sourceValue: sourceDescription,
+        targetLanguage,
+    });
+
+    const mergedLocalizedContent = mergeLocalizedContent(localizedContent, {
+        [targetLanguage]: {
+            ...(translatedTitle ? { title: translatedTitle } : {}),
+            ...(translatedDescription ? { description: translatedDescription } : {}),
+        },
+    });
+
+    if (translatedTitle) asObject.title = translatedTitle;
+    if (translatedDescription) asObject.description = translatedDescription;
+    asObject.localizedContent = mergedLocalizedContent;
+    return asObject;
+};
+
 module.exports = {
     SUPPORTED_LANGUAGES,
     normalizeLanguageCode,
@@ -190,4 +260,5 @@ module.exports = {
     enrichLocalizedContentForImport,
     getRequestedContentLanguage,
     applyPropertyLocalization,
+    applyPropertyLocalizationWithAutoTranslate,
 };
