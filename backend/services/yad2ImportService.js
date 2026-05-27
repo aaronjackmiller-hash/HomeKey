@@ -14,6 +14,7 @@ const {
     sanitizeLocalizedContent,
 } = require('./propertyLocalizationService');
 const { enrichAddressLocalization } = require('./addressLocalizationService');
+const { extractAmenitiesFromRow } = require('../utils/amenityExtraction');
 
 const normalizeString = (value) => (typeof value === 'string' ? value.trim() : '');
 const HEBREW_CHAR_RE = /[א-ת]/;
@@ -582,9 +583,22 @@ const mapYad2RowToPropertyDoc = (row) => {
     const addressZip = normalizeString(pickFirst(row.zip, row.postalCode));
     const addressCountry = normalizeHumanText(pickFirst(row.country, 'Israel')) || 'Israel';
 
-    const buildingName = normalizeHumanText(pickFirst(row.buildingName, row.building && row.building.name));
-    const floorCount = parseNumber(pickFirst(row.floorCount, row.building && row.building.floorCount), undefined);
-    const apartmentCount = parseNumber(pickFirst(row.apartmentCount, row.building && row.building.apartmentCount), undefined);
+    const buildingName = normalizeHumanText(pickFirst(
+        row.buildingName,
+        row.buildingDetails && row.buildingDetails.name,
+        row.building && row.building.name
+    ));
+    const floorCount = parseNumber(pickFirst(
+        row.floorCount,
+        row.buildingDetails && row.buildingDetails.floorCount,
+        row.building && row.building.floorCount
+    ), undefined);
+    const apartmentCount = parseNumber(pickFirst(
+        row.apartmentCount,
+        row.buildingDetails && row.buildingDetails.apartmentCount,
+        row.building && row.building.apartmentCount
+    ), undefined);
+    const extractedAmenities = extractAmenitiesFromRow(row, { buildingName, max: 8 });
 
     const availableFrom = parseDate(pickFirst(row.availableFrom, row.dates && row.dates.availableFrom));
     const listingDate = parseDate(pickFirst(row.listingDate, row.publishedAt, row.createdAt));
@@ -762,6 +776,7 @@ const mapYad2RowToPropertyDoc = (row) => {
             ...(floorCount != null ? { floorCount } : {}),
             ...(apartmentCount != null ? { apartmentCount } : {}),
         },
+        ...(extractedAmenities.length > 0 ? { amenities: extractedAmenities } : {}),
         financialDetails: {
             ...(parseNumber(pickFirst(row.totalMonthlyPayment, row.financialDetails && row.financialDetails.totalMonthlyPayment)) != null
                 ? { totalMonthlyPayment: parseNumber(pickFirst(row.totalMonthlyPayment, row.financialDetails && row.financialDetails.totalMonthlyPayment)) }
@@ -915,6 +930,9 @@ const importYad2Listings = async ({ rows, upsert = true, sourceTag = 'yad2' }) =
                         duplicate.dates = payload.dates;
                         duplicate.contact = mergeContactDetails(duplicate.contact, payload.contact);
                         duplicate.images = Array.isArray(payload.images) && payload.images.length > 0 ? payload.images : duplicate.images;
+                        if (Array.isArray(payload.amenities) && payload.amenities.length > 0) {
+                            duplicate.amenities = payload.amenities;
+                        }
                         duplicate.status = payload.status || duplicate.status;
                         duplicate.externalSource = normalizedSourceTag;
                         duplicate.externalId = externalId;

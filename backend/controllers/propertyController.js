@@ -27,7 +27,7 @@ const { buildLocalizedAddress } = require('../utils/addressLocalization');
 // Allowed fields for property updates
 const PROPERTY_UPDATE_FIELDS = [
     'title', 'description', 'type', 'price', 'address', 'bedrooms', 'bathrooms',
-    'size', 'floorNumber', 'buildingDetails', 'financialDetails', 'dates',
+    'size', 'floorNumber', 'buildingDetails', 'amenities', 'financialDetails', 'dates',
     'images', 'virtualTourUrl', 'agent', 'status', 'contact', 'lifecycle', 'showings',
 ];
 

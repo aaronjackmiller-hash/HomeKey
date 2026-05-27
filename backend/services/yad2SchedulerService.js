@@ -1033,6 +1033,29 @@ const normalizeRow = (row) => {
         url: row.url ?? row.listingUrl ?? row.externalUrl,
         availableFrom: row.availableFrom ?? (row.dates && row.dates.availableFrom),
         listingDate: row.listingDate ?? row.publishedAt ?? row.createdAt,
+        amenities: row.amenities
+            ?? (row.details && row.details.amenities)
+            ?? (row.specs && row.specs.amenities)
+            ?? (row.buildingDetails && row.buildingDetails.amenities),
+        features: row.features
+            ?? row.featureList
+            ?? row.featureTags
+            ?? (row.details && row.details.features)
+            ?? (row.specs && row.specs.features)
+            ?? (row.buildingDetails && row.buildingDetails.features),
+        featuresText: row.featuresText
+            ?? row.featureText
+            ?? row.attributesText
+            ?? (row.details && row.details.featuresText)
+            ?? (row.specs && row.specs.featuresText),
+        attributes: row.attributes ?? row.flags ?? row.meta,
+        attributesText: row.attributesText ?? row.featuresText ?? row.featureText,
+        tags: row.tags ?? row.keywords ?? row.labels,
+        details: row.details && typeof row.details === 'object' ? row.details : undefined,
+        specs: row.specs && typeof row.specs === 'object' ? row.specs : undefined,
+        buildingDetails: row.buildingDetails && typeof row.buildingDetails === 'object'
+            ? row.buildingDetails
+            : undefined,
         contactName: row.contactName ?? row.managerName ?? row.agentName ?? row.ownerName ?? row.advertiserName
             ?? row.contactPerson ?? row.contactFullName
             ?? (contact && (contact.name ?? contact.fullName))
