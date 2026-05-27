@@ -18,6 +18,7 @@ import { getContactFirstName } from '../utils/contactMessaging';
 import { writeSavedSearchContext } from '../utils/savedSearchContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLocalization';
+import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 
 const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
 const RETRY_INTERVAL_MS = 5000;
@@ -305,15 +306,6 @@ const getPropertyAgentDisplayName = (property = {}) => {
       || directContact.name
       || externalContact.name
   );
-};
-
-const removeYad2ImageLogo = (url, sourceType = '') => {
-  const source = String(url || '').trim();
-  if (!source) return source;
-  const fromYad2 = /yad2/i.test(source) || /yad2/i.test(String(sourceType || ''));
-  if (!fromYad2) return source;
-  const separator = source.includes('?') ? '&' : '?';
-  return `${source}${separator}fit=crop&crop=top&h=780`;
 };
 
 const dedupeRepeatingPhrase = (value) => {
@@ -1295,7 +1287,10 @@ const PropertyList = () => {
           const isFavorite = interestPropertyId ? favoriteIdSet.has(interestPropertyId) : false;
           const key = propertyId || `property-${index}`;
           const imageSrc =
-            removeYad2ImageLogo(Array.isArray(property.images) ? property.images[0] : '', property.externalSource) ||
+            buildYad2TopCroppedImageUrl(
+              Array.isArray(property.images) ? property.images[0] : '',
+              property.externalSource || property.sourceType
+            ) ||
             `https://picsum.photos/seed/homekey-card-${key}/800/600`;
           const { street, locationLine } = getAddressDisplay(property.address, language);
           const titleFromData = sanitizeReadableText(property, property.title);
