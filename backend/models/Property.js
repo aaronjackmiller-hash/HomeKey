@@ -90,6 +90,7 @@ const PropertySchema = new mongoose.Schema(
             floorCount: { type: Number },
             apartmentCount: { type: Number },
         },
+        amenities: [{ type: String, trim: true }],
         financialDetails: {
             /**
              * totalMonthlyPayment - This field calculates the total monthly payment for a property.

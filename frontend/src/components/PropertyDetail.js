@@ -233,12 +233,64 @@ const getListingContact = (property = {}) => {
 
 const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
 
+const KNOWN_AMENITY_KEYS = new Set([
+    'modernKitchen',
+    'airConditioning',
+    'balcony',
+    'secureParking',
+    'safeRoom',
+    'elevator',
+    'renovated',
+    'secureBuilding',
+]);
+
+const normalizeAmenityLabel = (value = '') => {
+    const text = safeText(value);
+    if (!text) return '';
+    if (KNOWN_AMENITY_KEYS.has(text)) return text;
+    const lower = text.toLowerCase();
+    if (/kitchen|מטבח/.test(lower)) return 'modernKitchen';
+    if (/air[\s-]*condition|a\/?c|מזגן|מיזוג/.test(lower)) return 'airConditioning';
+    if (/balcony|terrace|מרפסת/.test(lower)) return 'balcony';
+    if (/parking|garage|carport|חניה|חניון/.test(lower)) return 'secureParking';
+    if (/safe[\s-]*room|security[\s-]*room|mamad|ממ["״']?ד|ממד/.test(lower)) return 'safeRoom';
+    if (/elevator|lift|מעלית/.test(lower)) return 'elevator';
+    if (/renovat|refurbish|משופצ/.test(lower)) return 'renovated';
+    if (/secure|doorman|guard|intercom|מאובטח|שומר|אינטרקום/.test(lower)) return 'secureBuilding';
+    return '';
+};
+
+const getPersistedAmenities = (property = {}) => {
+    const details = property.details && typeof property.details === 'object' ? property.details : {};
+    const buildingDetails = property.buildingDetails && typeof property.buildingDetails === 'object'
+        ? property.buildingDetails
+        : {};
+    const amenityCandidates = [
+        property.amenities,
+        property.features,
+        details.amenities,
+        details.features,
+        buildingDetails.amenities,
+        buildingDetails.features,
+    ]
+        .flatMap((value) => (Array.isArray(value) ? value : [value]))
+        .map((value) => normalizeAmenityLabel(String(value || '')))
+        .filter(Boolean);
+    return amenityCandidates.filter((label, index) => amenityCandidates.indexOf(label) === index);
+};
+
 const buildAmenities = (property = {}) => {
+    const persistedAmenities = getPersistedAmenities(property);
+    if (persistedAmenities.length > 0) {
+        return persistedAmenities.slice(0, 8);
+    }
     const localizedContent = property.localizedContent && typeof property.localizedContent === 'object'
         ? property.localizedContent
         : {};
     const textCandidates = [
         property.description,
+        property.featuresText,
+        property.bathroomText,
         localizedContent.en && localizedContent.en.description,
         localizedContent.he && localizedContent.he.description,
     ]
@@ -253,12 +305,15 @@ const buildAmenities = (property = {}) => {
 
     addAmenity('modernKitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
     addAmenity('airConditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
-    addAmenity('balcony', hasAnyPattern(haystack, [/balcony/i, /מרפסת/]));
-    addAmenity('secureParking', hasAnyPattern(haystack, [/parking/i, /חניה/]));
-    addAmenity('safeRoom', hasAnyPattern(haystack, [/safe\s*room/i, /\bmamad\b/i, /ממד/]));
+    addAmenity('balcony', hasAnyPattern(haystack, [/balcony/i, /terrace/i, /מרפסת/]));
+    addAmenity('secureParking', hasAnyPattern(haystack, [/parking/i, /garage/i, /חניה/, /חניון/]));
+    addAmenity('safeRoom', hasAnyPattern(haystack, [/safe\s*room/i, /security\s*room/i, /\bmamad\b/i, /ממ["״']?ד/, /ממד/]));
     addAmenity('elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
-    addAmenity('renovated', hasAnyPattern(haystack, [/renovat/i, /משופצ/]));
-    addAmenity('secureBuilding', Boolean(property.buildingDetails?.name));
+    addAmenity('renovated', hasAnyPattern(haystack, [/renovat/i, /refurbish/i, /משופצ/]));
+    addAmenity(
+        'secureBuilding',
+        Boolean(property.buildingDetails?.name) || hasAnyPattern(haystack, [/doorman/i, /guard/i, /intercom/i, /שומר/, /אינטרקום/, /מאובטח/])
+    );
 
     if (amenities.length === 0) {
         if (property.type === 'rental') {
@@ -267,7 +322,7 @@ const buildAmenities = (property = {}) => {
             amenities.push('secureBuilding', 'modernKitchen', 'balcony');
         }
     }
-    return amenities.slice(0, 4);
+    return amenities.slice(0, 8);
 };
 
 const getLocalizedContentValue = (property = {}, fieldName = 'description', language = 'en') => {

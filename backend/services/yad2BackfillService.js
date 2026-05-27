@@ -76,6 +76,7 @@ const buildBackfillRow = (property) => {
         buildingName: building.name,
         floorCount: building.floorCount,
         apartmentCount: building.apartmentCount,
+        amenities: Array.isArray(property.amenities) ? property.amenities : [],
         totalMonthlyPayment: financial.totalMonthlyPayment,
         vaadAmount: financial.vaadAmount,
         cityTaxes: financial.cityTaxes,
