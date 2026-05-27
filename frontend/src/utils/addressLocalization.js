@@ -1,4 +1,32 @@
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
+const containsHebrew = (value) => /[א-ת]/.test(String(value || ''));
+
+const normalizeLanguageCode = (value) => {
+  const normalized = safeText(value).toLowerCase();
+  if (normalized.startsWith('he') || normalized.startsWith('iw')) return 'he';
+  if (normalized.startsWith('en')) return 'en';
+  return 'en';
+};
+
+const pickBestLocalizedValue = ({
+  requestedValue = '',
+  sourceValue = '',
+  englishFallbackValue = '',
+  language = 'en',
+}) => {
+  const requested = safeText(requestedValue);
+  const source = safeText(sourceValue);
+  const englishFallback = safeText(englishFallbackValue);
+  const normalizedLanguage = normalizeLanguageCode(language);
+
+  if (normalizedLanguage === 'he') {
+    return requested || source || englishFallback;
+  }
+
+  const englishCandidates = [requested, englishFallback, source].filter(Boolean);
+  const nonHebrewCandidate = englishCandidates.find((candidate) => !containsHebrew(candidate));
+  return nonHebrewCandidate || englishCandidates[0] || '';
+};
 
 const uniqueNonEmpty = (values = []) => {
   const seen = new Set();
@@ -14,28 +42,55 @@ const uniqueNonEmpty = (values = []) => {
 
 export const getLocalizedAddress = (address = {}, language = 'en') => {
   const sourceAddress = address && typeof address === 'object' ? address : {};
+  const normalizedLanguage = normalizeLanguageCode(language);
   const sourceLocalized = sourceAddress.localized && typeof sourceAddress.localized === 'object'
     ? sourceAddress.localized
     : {};
-  const requestedLocalization = sourceLocalized[language] && typeof sourceLocalized[language] === 'object'
-    ? sourceLocalized[language]
+  const requestedLocalization = sourceLocalized[normalizedLanguage] && typeof sourceLocalized[normalizedLanguage] === 'object'
+    ? sourceLocalized[normalizedLanguage]
     : {};
   const fallbackLocalization = sourceLocalized.en && typeof sourceLocalized.en === 'object'
     ? sourceLocalized.en
     : {};
 
   return {
-    street: safeText(requestedLocalization.street) || safeText(sourceAddress.street) || safeText(fallbackLocalization.street),
-    streetNumber: safeText(requestedLocalization.streetNumber)
-      || safeText(sourceAddress.streetNumber)
-      || safeText(fallbackLocalization.streetNumber),
-    neighborhood: safeText(requestedLocalization.neighborhood)
-      || safeText(sourceAddress.neighborhood)
-      || safeText(fallbackLocalization.neighborhood),
-    city: safeText(requestedLocalization.city) || safeText(sourceAddress.city) || safeText(fallbackLocalization.city),
-    state: safeText(requestedLocalization.state) || safeText(sourceAddress.state) || safeText(fallbackLocalization.state),
+    street: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.street,
+      sourceValue: sourceAddress.street,
+      englishFallbackValue: fallbackLocalization.street,
+      language: normalizedLanguage,
+    }),
+    streetNumber: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.streetNumber,
+      sourceValue: sourceAddress.streetNumber,
+      englishFallbackValue: fallbackLocalization.streetNumber,
+      language: normalizedLanguage,
+    }),
+    neighborhood: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.neighborhood,
+      sourceValue: sourceAddress.neighborhood,
+      englishFallbackValue: fallbackLocalization.neighborhood,
+      language: normalizedLanguage,
+    }),
+    city: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.city,
+      sourceValue: sourceAddress.city,
+      englishFallbackValue: fallbackLocalization.city,
+      language: normalizedLanguage,
+    }),
+    state: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.state,
+      sourceValue: sourceAddress.state,
+      englishFallbackValue: fallbackLocalization.state,
+      language: normalizedLanguage,
+    }),
     zip: safeText(sourceAddress.zip),
-    country: safeText(requestedLocalization.country) || safeText(sourceAddress.country) || safeText(fallbackLocalization.country),
+    country: pickBestLocalizedValue({
+      requestedValue: requestedLocalization.country,
+      sourceValue: sourceAddress.country,
+      englishFallbackValue: fallbackLocalization.country,
+      language: normalizedLanguage,
+    }),
   };
 };
 
@@ -53,8 +108,9 @@ export const getAddressFieldVariants = (address = {}, fieldName = 'city') => {
 };
 
 export const buildAddressQuery = (address = {}, language = 'en') => {
-  const localizedAddress = getLocalizedAddress(address, language);
-  const streetLine = language === 'en'
+  const normalizedLanguage = normalizeLanguageCode(language);
+  const localizedAddress = getLocalizedAddress(address, normalizedLanguage);
+  const streetLine = normalizedLanguage === 'en'
     ? [localizedAddress.streetNumber, localizedAddress.street].filter(Boolean).join(' ')
     : [localizedAddress.street, localizedAddress.streetNumber].filter(Boolean).join(' ');
   const country = localizedAddress.country || 'Israel';
