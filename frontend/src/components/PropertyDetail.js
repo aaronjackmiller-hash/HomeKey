@@ -18,6 +18,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { pickBestContactName } from '../utils/contactMessaging';
 import { useLanguage } from '../context/LanguageContext';
 import { getLocalizedAddress } from '../utils/addressLocalization';
+import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
 
@@ -284,11 +285,10 @@ const getLocalizedContentValue = (property = {}, fieldName = 'description', lang
     return requested || english || direct || hebrew;
 };
 
-const sanitizeImageSource = (url) => {
+const sanitizeImageSource = (url, sourceType = '') => {
     const source = String(url || '').trim();
     if (!source) return '';
-    // Keep the original image dimensions so photos are not side-truncated.
-    return source;
+    return buildYad2TopCroppedImageUrl(source, sourceType);
 };
 
 const getCachedLiveListingById = (id) => {
@@ -501,7 +501,7 @@ const PropertyDetail = () => {
     const localizedDescription = getLocalizedContentValue(property, 'description', language);
     const locationLine = getLocationLine(localizedAddress);
     const allImages = (Array.isArray(property.images) ? property.images : [])
-        .map((image) => sanitizeImageSource(image))
+        .map((image) => sanitizeImageSource(image, property.externalSource || property.sourceType))
         .filter(Boolean);
     const heroImage =
         allImages[0] ||
