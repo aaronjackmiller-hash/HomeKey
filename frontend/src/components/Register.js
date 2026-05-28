@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useHistory, Link, useLocation } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import PasswordField from './PasswordField';
 
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
@@ -30,21 +31,30 @@ const normalizeDateInputValue = (inputElement, rawValue) => {
   return `${year}-${month}-${day}`;
 };
 
+const getRegistrationRoleValue = (roleSelection) => {
+  const normalized = String(roleSelection || '').trim().toLowerCase();
+  if (normalized === 'rental-manager') return 'agent';
+  return 'buyer';
+};
+
 const Register = () => {
   const { login } = useAuth();
+  const { t, language } = useLanguage();
   const history = useHistory();
   const location = useLocation();
   const [form, setForm] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     phone: '',
     moveInDate: '',
     preferredContactMethod: 'phone',
-    role: 'buyer',
+    role: 'renter',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasSelectedMobilePhoneOption, setHasSelectedMobilePhoneOption] = useState(false);
   const authDestination = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const intent = String(params.get('intent') || '').trim().toLowerCase();
@@ -65,6 +75,9 @@ const Register = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (!name) return;
+    if (name === 'preferredContactMethod' && value === 'phone') {
+      setHasSelectedMobilePhoneOption(true);
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -78,9 +91,19 @@ const Register = () => {
     setError('');
     setLoading(true);
     try {
+      const fullName = [form.firstName, form.lastName]
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+        .join(' ')
+        .trim();
       const payload = {
-        ...form,
+        name: fullName,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
         moveInDate: form.moveInDate || undefined,
+        preferredContactMethod: form.preferredContactMethod,
+        role: getRegistrationRoleValue(form.role),
       };
       const data = await registerUser(payload);
       login(data);
@@ -100,24 +123,35 @@ const Register = () => {
     }
   };
 
+  const showMissingPhoneNotice = hasSelectedMobilePhoneOption
+    && form.preferredContactMethod === 'phone'
+    && !String(form.phone || '').trim();
+  const isHebrew = language === 'he';
+
   return (
     <div className="form-container">
-      <h2>Create Account</h2>
+      <h2>{t('register.title')}</h2>
       {authDestination.isSaveSearchIntent && (
-        <p className="auth-help-text">Create your account to save this search. We&apos;ll save it right after signup.</p>
+        <p className="auth-help-text">{t('register.saveSearchHint')}</p>
       )}
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
-        <div className="input-field">
-          <label>Full Name</label>
-          <input type="text" name="name" value={form.name} onChange={handleChange} required />
+        <div className="register-name-grid">
+          <div className="input-field">
+            <label>{t('register.firstName')}</label>
+            <input type="text" name="firstName" value={form.firstName} onChange={handleChange} required />
+          </div>
+          <div className="input-field">
+            <label>{t('register.lastName')}</label>
+            <input type="text" name="lastName" value={form.lastName} onChange={handleChange} required />
+          </div>
         </div>
         <div className="input-field">
-          <label>Email</label>
+          <label>{t('register.email')}</label>
           <input type="email" name="email" value={form.email} onChange={handleChange} required />
         </div>
         <PasswordField
-          label="Password"
+          label={t('register.password')}
           name="password"
           value={form.password}
           onChange={handleChange}
@@ -127,11 +161,11 @@ const Register = () => {
           autoComplete="new-password"
         />
         <div className="input-field">
-          <label>Phone (optional)</label>
+          <label>{t('register.mobilePhoneOptional')}</label>
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} />
         </div>
         <div className="input-field">
-          <label>Move-in Date (optional)</label>
+          <label>{t('register.moveInDateOptional')}</label>
           <input
             type="date"
             name="moveInDate"
@@ -142,23 +176,31 @@ const Register = () => {
           />
         </div>
         <div className="input-field">
-          <label>Preferred Contact Method</label>
+          <label>{t('register.preferredContactMethod')}</label>
           <select name="preferredContactMethod" value={form.preferredContactMethod} onChange={handleChange}>
-            <option value="phone">Phone</option>
-            <option value="email">Email</option>
+            <option value="phone">{t('register.mobilePhoneOption')}</option>
+            <option value="email">{t('register.emailOption')}</option>
           </select>
         </div>
+        {showMissingPhoneNotice && (
+          <p className={`form-helper-text ${isHebrew ? 'form-helper-text--rtl' : ''}`}>
+            {t('register.missingMobilePhoneNotice')}
+          </p>
+        )}
         <div className="input-field">
-          <label>Role</label>
+          <label>{t('register.role')}</label>
           <select name="role" value={form.role} onChange={handleChange}>
-            <option value="buyer">Buyer</option>
-            <option value="seller">Seller</option>
-            <option value="agent">Agent</option>
+            <option value="renter">{t('register.renterRoleOption')}</option>
+            <option value="rental-manager">{t('register.rentalManagerRoleOption')}</option>
           </select>
         </div>
-        <button type="submit" disabled={loading}>{loading ? 'Creating account…' : 'Register'}</button>
+        <button type="submit" disabled={loading}>
+          {loading ? t('register.creatingAccount') : t('register.registerButton')}
+        </button>
       </form>
-      <p>Already have an account? <Link to={loginRoute}>Sign In</Link></p>
+      <p>
+        {t('register.alreadyHaveAccount')} <Link to={loginRoute}>{t('register.signIn')}</Link>
+      </p>
     </div>
   );
 };

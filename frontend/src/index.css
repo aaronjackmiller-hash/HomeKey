@@ -2990,6 +2990,24 @@ a {
   margin-top: 0;
 }
 
+.register-name-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form-helper-text--rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .register-name-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
 .alerts-page {
   max-width: 980px;
   margin: 12px auto 28px;
