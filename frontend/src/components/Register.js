@@ -39,7 +39,6 @@ const Register = () => {
     email: '',
     password: '',
     phone: '',
-    whatsapp: '',
     moveInDate: '',
     preferredContactMethod: 'email',
     role: 'buyer',
@@ -130,10 +129,6 @@ const Register = () => {
         <div className="input-field">
           <label>Phone (optional)</label>
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} />
-        </div>
-        <div className="input-field">
-          <label>WhatsApp (optional)</label>
-          <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange} />
         </div>
         <div className="input-field">
           <label>Move-in Date (optional)</label>
