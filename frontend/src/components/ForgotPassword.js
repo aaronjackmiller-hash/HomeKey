@@ -10,6 +10,9 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [requestSubmitted, setRequestSubmitted] = useState(false);
   const [requestedEmail, setRequestedEmail] = useState('');
+  const [resetDestination, setResetDestination] = useState('/reset-password');
+
+  const isAbsoluteUrl = (value = '') => /^https?:\/\//i.test(String(value || '').trim());
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -21,8 +24,10 @@ const ForgotPassword = () => {
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
     try {
-      await requestPasswordReset({ email: normalizedEmail });
+      const response = await requestPasswordReset({ email: normalizedEmail });
+      const previewResetUrl = String(response?.previewResetUrl || '').trim();
       setRequestedEmail(normalizedEmail);
+      setResetDestination(previewResetUrl || '/reset-password');
       setRequestSubmitted(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to request password reset.');
@@ -80,6 +85,15 @@ const ForgotPassword = () => {
           <p className="forgot-password-footer-link">
             Know your password? <Link to="/login">Sign in now.</Link>
           </p>
+          {isAbsoluteUrl(resetDestination) ? (
+            <a className="secondary-button" href={resetDestination}>
+              Continue to reset password
+            </a>
+          ) : (
+            <Link className="secondary-button" to={resetDestination}>
+              Continue to reset password
+            </Link>
+          )}
           <button
             className="secondary-button"
             type="button"
@@ -87,6 +101,7 @@ const ForgotPassword = () => {
               setRequestSubmitted(false);
               setHumanVerified(false);
               setError('');
+              setResetDestination('/reset-password');
             }}
           >
             Send again

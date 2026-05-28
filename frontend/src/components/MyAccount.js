@@ -12,17 +12,30 @@ const toDateInputValue = (rawValue) => {
 
 const normalizeContactNumber = (rawValue) => String(rawValue || '').trim().replace(/[^\d+]/g, '');
 
+const normalizeDateInputValue = (inputElement, rawValue) => {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const candidateDate = inputElement?.valueAsDate instanceof Date
+    ? inputElement.valueAsDate
+    : new Date(value);
+  if (Number.isNaN(candidateDate.getTime())) return '';
+  const year = candidateDate.getFullYear();
+  const month = String(candidateDate.getMonth() + 1).padStart(2, '0');
+  const day = String(candidateDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const toFormState = (account) => {
   const normalizedAccount = account && typeof account === 'object' ? account : {};
   return {
     name: String(normalizedAccount.name || ''),
     email: String(normalizedAccount.email || ''),
     phone: String(normalizedAccount.phone || ''),
-    whatsapp: String(normalizedAccount.whatsapp || ''),
     moveInDate: toDateInputValue(normalizedAccount.moveInDate),
-    preferredContactMethod: ['email', 'whatsapp', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
+    preferredContactMethod: ['email', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
       ? String(normalizedAccount.preferredContactMethod).toLowerCase()
-      : 'email',
+      : 'phone',
   };
 };
 
@@ -61,6 +74,11 @@ const MyAccount = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleMoveInDateChange = (event) => {
+    const normalizedDate = normalizeDateInputValue(event.target, event.target.value);
+    setForm((prev) => ({ ...prev, moveInDate: normalizedDate }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -70,7 +88,6 @@ const MyAccount = () => {
       const payload = {
         name: form.name.trim(),
         phone: normalizeContactNumber(form.phone),
-        whatsapp: normalizeContactNumber(form.whatsapp),
         moveInDate: form.moveInDate || '',
         preferredContactMethod: form.preferredContactMethod,
       };
@@ -120,16 +137,13 @@ const MyAccount = () => {
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} disabled={saving} />
         </div>
         <div className="input-field">
-          <label>WhatsApp (optional)</label>
-          <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange} disabled={saving} />
-        </div>
-        <div className="input-field">
           <label>Move-in Date (optional)</label>
           <input
             type="date"
             name="moveInDate"
             value={form.moveInDate}
-            onChange={handleChange}
+            onChange={handleMoveInDateChange}
+            onInput={handleMoveInDateChange}
             max="2100-12-31"
             disabled={saving}
           />
@@ -142,9 +156,8 @@ const MyAccount = () => {
             onChange={handleChange}
             disabled={saving}
           >
-            <option value="email">Email</option>
-            <option value="whatsapp">WhatsApp</option>
             <option value="phone">Phone</option>
+            <option value="email">Email</option>
           </select>
         </div>
         <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
