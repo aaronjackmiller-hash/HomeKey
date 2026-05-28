@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory, Link, useLocation } from 'react-router-dom';
 import {
   getPasskeyAuthenticationOptions,
@@ -18,6 +18,7 @@ const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
+const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
 let oauthConfigPromise;
 
 const resolveSafeRedirectPath = (rawValue) => {
@@ -79,6 +80,7 @@ const Login = () => {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [enablePasskey, setEnablePasskey] = useState(false);
+  const [rememberUsername, setRememberUsername] = useState(false);
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
   const passkeySetupOpen = passkeySetupStep.length > 0;
   const authDestination = useMemo(() => {
@@ -99,6 +101,17 @@ const Login = () => {
       search: serialized ? `?${serialized}` : '',
     };
   }, [location.search]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+    if (!rememberedEmail) return;
+    setForm((prev) => ({
+      ...prev,
+      email: rememberedEmail,
+    }));
+    setRememberUsername(true);
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -178,6 +191,14 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setNotice('');
+    if (typeof window !== 'undefined') {
+      const normalizedEmail = String(form.email || '').trim();
+      if (rememberUsername && normalizedEmail) {
+        window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
+      } else {
+        window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+      }
+    }
     setLoading(true);
     try {
       await loginWithPassword();
@@ -372,6 +393,22 @@ const Login = () => {
           disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
           autoComplete="current-password"
         />
+        <label className="auth-remember-row" htmlFor="remember-username">
+          <input
+            id="remember-username"
+            type="checkbox"
+            checked={rememberUsername}
+            onChange={(event) => {
+              const nextChecked = event.target.checked;
+              setRememberUsername(nextChecked);
+              if (!nextChecked && typeof window !== 'undefined') {
+                window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+              }
+            }}
+            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
+          />
+          <span>Remember my password</span>
+        </label>
         <button type="submit" disabled={loading || socialLoading.length > 0 || passkeySetupOpen}>{loading ? 'Signing in…' : 'Sign In'}</button>
         <label className="auth-passkey-row" htmlFor="enable-passkey-login">
           <input
