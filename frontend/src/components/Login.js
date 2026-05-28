@@ -407,7 +407,7 @@ const Login = () => {
             }}
             disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
           />
-          <span>Remember my username</span>
+          <span>Remember my password</span>
         </label>
         <button type="submit" disabled={loading || socialLoading.length > 0 || passkeySetupOpen}>{loading ? 'Signing in…' : 'Sign In'}</button>
         <label className="auth-passkey-row" htmlFor="enable-passkey-login">
