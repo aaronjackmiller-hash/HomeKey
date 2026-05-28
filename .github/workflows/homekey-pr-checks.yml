@@ -98,3 +98,54 @@ jobs:
           if [ -f /tmp/homekey-backend.pid ]; then
             kill "$(cat /tmp/homekey-backend.pid)" || true
           fi
+
+  backend-production-api-only-startup:
+    name: Backend production API-only startup smoke
+    runs-on: ubuntu-latest
+    env:
+      PORT: "5000"
+      NODE_ENV: production
+      MONGODB_URI: mongodb://127.0.0.1:27017/homekey
+      JWT_SECRET: ci_jwt_secret
+      JWT_EXPIRES_IN: 7d
+      ADMIN_SECRET: ci_admin_secret
+      YAD2_SYNC_ENABLED: "false"
+      LISTING_LIFECYCLE_ENABLED: "false"
+      LOG_FILE: /tmp/homekey-backend-api-only.log
+      PID_FILE: /tmp/homekey-backend-api-only.pid
+      MAX_ATTEMPTS: "30"
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Ensure frontend build artifacts are absent
+        run: |
+          rm -rf frontend/build
+          if [ -f frontend/build/index.html ]; then
+            echo "frontend/build/index.html should be absent for API-only startup smoke."
+            exit 1
+          fi
+
+      - name: Verify production API-only startup smoke
+        run: bash backend/scripts/smokeApiOnlyProductionStartup.sh
