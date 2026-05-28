@@ -7,6 +7,7 @@ HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT}/api/health}"
 LOG_FILE="${LOG_FILE:-/tmp/homekey-backend-api-only.log}"
 PID_FILE="${PID_FILE:-/tmp/homekey-backend-api-only.pid}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-30}"
+API_ONLY_WARNING="Skipping static frontend serving and running in API-only mode."
 
 if [ "${NODE_ENV:-}" != "production" ]; then
     echo "NODE_ENV must be set to production for this smoke test."
@@ -41,7 +42,7 @@ for _attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
     response="$(curl -sS "${HEALTH_URL}" || true)"
     if [ -n "${response}" ]; then
         if node -e "const payload = JSON.parse(process.argv[1]); process.exit(payload.status === 'ok' && payload.db === 'connected' ? 0 : 1);" "${response}"; then
-            if rg -q "Skipping static frontend serving and running in API-only mode\\." "${LOG_FILE}"; then
+            if node -e "const fs = require('fs'); const content = fs.readFileSync(process.argv[1], 'utf8'); process.exit(content.includes(process.argv[2]) ? 0 : 1);" "${LOG_FILE}" "${API_ONLY_WARNING}"; then
                 echo "API-only production startup smoke test passed."
                 exit 0
             fi
