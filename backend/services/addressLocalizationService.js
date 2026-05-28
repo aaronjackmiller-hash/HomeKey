@@ -136,6 +136,7 @@ const enrichAddressLocalization = async (address = {}) => {
             sourceValue: localizedHe.neighborhood || baseAddress.neighborhood,
             fallbackValue: localizedEn.neighborhood,
             explicitEnglishValue: incomingLocalizedEn.neighborhood,
+            fieldName: 'neighborhood',
         }),
         toEnglishFieldValue({
             sourceValue: localizedHe.city || baseAddress.city,
