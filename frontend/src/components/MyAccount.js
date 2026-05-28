@@ -32,11 +32,10 @@ const toFormState = (account) => {
     name: String(normalizedAccount.name || ''),
     email: String(normalizedAccount.email || ''),
     phone: String(normalizedAccount.phone || ''),
-    whatsapp: String(normalizedAccount.whatsapp || ''),
     moveInDate: toDateInputValue(normalizedAccount.moveInDate),
-    preferredContactMethod: ['email', 'whatsapp', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
+    preferredContactMethod: ['email', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
       ? String(normalizedAccount.preferredContactMethod).toLowerCase()
-      : 'email',
+      : 'phone',
   };
 };
 
@@ -89,7 +88,6 @@ const MyAccount = () => {
       const payload = {
         name: form.name.trim(),
         phone: normalizeContactNumber(form.phone),
-        whatsapp: normalizeContactNumber(form.whatsapp),
         moveInDate: form.moveInDate || '',
         preferredContactMethod: form.preferredContactMethod,
       };
@@ -139,10 +137,6 @@ const MyAccount = () => {
           <input type="tel" name="phone" value={form.phone} onChange={handleChange} disabled={saving} />
         </div>
         <div className="input-field">
-          <label>WhatsApp (optional)</label>
-          <input type="tel" name="whatsapp" value={form.whatsapp} onChange={handleChange} disabled={saving} />
-        </div>
-        <div className="input-field">
           <label>Move-in Date (optional)</label>
           <input
             type="date"
@@ -162,9 +156,8 @@ const MyAccount = () => {
             onChange={handleChange}
             disabled={saving}
           >
-            <option value="email">Email</option>
-            <option value="whatsapp">WhatsApp</option>
             <option value="phone">Phone</option>
+            <option value="email">Email</option>
           </select>
         </div>
         <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>

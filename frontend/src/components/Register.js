@@ -40,7 +40,7 @@ const Register = () => {
     password: '',
     phone: '',
     moveInDate: '',
-    preferredContactMethod: 'email',
+    preferredContactMethod: 'phone',
     role: 'buyer',
   });
   const [error, setError] = useState('');
@@ -144,9 +144,8 @@ const Register = () => {
         <div className="input-field">
           <label>Preferred Contact Method</label>
           <select name="preferredContactMethod" value={form.preferredContactMethod} onChange={handleChange}>
-            <option value="email">Email</option>
-            <option value="whatsapp">WhatsApp</option>
             <option value="phone">Phone</option>
+            <option value="email">Email</option>
           </select>
         </div>
         <div className="input-field">
