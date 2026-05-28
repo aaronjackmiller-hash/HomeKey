@@ -727,19 +727,21 @@ app.use('/api', (req, res) => {
 // Serve React frontend in production
 if (process.env.NODE_ENV === 'production') {
     const frontendBuild = path.join(__dirname, '..', 'frontend', 'build');
-    if (!fs.existsSync(path.join(frontendBuild, 'index.html'))) {
-        console.error(
-            'ERROR: frontend/build/index.html not found. ' +
-            'The React app was not built before starting the server. ' +
-            'Ensure the build command ran successfully during deployment.'
+    const frontendIndexPath = path.join(frontendBuild, 'index.html');
+    if (fs.existsSync(frontendIndexPath)) {
+        app.use(generalLimiter);
+        app.use(express.static(frontendBuild));
+        app.get('*', (req, res) => {
+            res.sendFile(frontendIndexPath);
+        });
+    } else {
+        // Keep API-only production deployments alive even when frontend assets
+        // are hosted separately (or intentionally omitted).
+        console.warn(
+            '[startup] frontend/build/index.html not found. ' +
+            'Skipping static frontend serving and running in API-only mode.'
         );
-        process.exit(1);
     }
-    app.use(generalLimiter);
-    app.use(express.static(frontendBuild));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(frontendBuild, 'index.html'));
-    });
 } else {
     app.use((req, res) => {
         res.status(404).json({ success: false, message: 'Route not found' });
