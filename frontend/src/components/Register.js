@@ -54,6 +54,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasSelectedMobilePhoneOption, setHasSelectedMobilePhoneOption] = useState(false);
   const authDestination = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const intent = String(params.get('intent') || '').trim().toLowerCase();
@@ -74,6 +75,9 @@ const Register = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (!name) return;
+    if (name === 'preferredContactMethod' && value === 'phone') {
+      setHasSelectedMobilePhoneOption(true);
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -119,7 +123,9 @@ const Register = () => {
     }
   };
 
-  const showMissingPhoneNotice = form.preferredContactMethod === 'phone' && !String(form.phone || '').trim();
+  const showMissingPhoneNotice = hasSelectedMobilePhoneOption
+    && form.preferredContactMethod === 'phone'
+    && !String(form.phone || '').trim();
   const isHebrew = language === 'he';
 
   return (
