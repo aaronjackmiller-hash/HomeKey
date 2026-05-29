@@ -521,6 +521,34 @@ const buildPropertySearchText = (property = {}) => {
     .join(' ');
 };
 
+const buildKeywordSearchHaystack = (property = {}) => {
+  const address = property?.address && typeof property.address === 'object' ? property.address : {};
+  const values = [
+    buildPropertySearchText(property),
+    ...getAddressFieldVariants(address, 'street'),
+    ...getAddressFieldVariants(address, 'streetNumber'),
+    ...getAddressFieldVariants(address, 'neighborhood'),
+    ...getAddressFieldVariants(address, 'city'),
+    ...getAddressFieldVariants(address, 'state'),
+    address.country,
+  ];
+  return values
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean)
+    .join(' ');
+};
+
+const matchesKeywordSearch = (property = {}, rawQuery = '') => {
+  const normalizedQuery = String(rawQuery || '').trim().toLowerCase();
+  if (!normalizedQuery) return true;
+  const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+  const haystack = buildKeywordSearchHaystack(property);
+  if (!haystack) return false;
+  return terms.every((term) => haystack.includes(term));
+};
+
 const includesAnyKeyword = (searchText = '', keywords = []) => keywords.some((keyword) => searchText.includes(keyword));
 
 const matchesPropertyCategory = (property = {}, selectedCategory = '') => {
@@ -786,7 +814,7 @@ const PropertyList = () => {
           params.source = sourceSearch;
         }
         if (filter !== 'all') params.type = filter;
-        if (citySearch.trim()) params.city = citySearch.trim();
+        if (citySearch.trim()) params.q = citySearch.trim();
         if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
         if (bathsSearch.trim()) params.baths = bathsSearch.trim();
         if (minPrice !== '') params.minPrice = minPrice;
@@ -913,10 +941,7 @@ const PropertyList = () => {
       let samples = [...SAMPLE_PROPERTIES];
       if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
       if (citySearch.trim()) {
-        const q = citySearch.trim().toLowerCase();
-        samples = samples.filter((p) =>
-          getAddressFieldVariants(p.address, 'city').some((cityValue) => cityValue.toLowerCase().includes(q))
-        );
+        samples = samples.filter((p) => matchesKeywordSearch(p, citySearch));
       }
       if (roomsSearch.trim()) {
         samples = samples.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
@@ -938,10 +963,7 @@ const PropertyList = () => {
       displayProperties = [...properties];
       if (filter !== 'all') displayProperties = displayProperties.filter((p) => p?.type === filter);
       if (citySearch.trim()) {
-        const q = citySearch.trim().toLowerCase();
-        displayProperties = displayProperties.filter((p) =>
-          getAddressFieldVariants(p?.address, 'city').some((cityValue) => cityValue.toLowerCase().includes(q))
-        );
+        displayProperties = displayProperties.filter((p) => matchesKeywordSearch(p, citySearch));
       }
       if (roomsSearch.trim()) {
         displayProperties = displayProperties.filter((p) => matchesRoomsSelection(getBedroomCount(p), roomsSearch));
