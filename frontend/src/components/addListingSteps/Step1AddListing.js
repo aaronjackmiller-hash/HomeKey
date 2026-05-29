@@ -31,16 +31,32 @@ const ApartmentIcon = () => (
 );
 
 const HouseIcon = () => (
-    <svg viewBox="0 0 120 86" className="wizard-property-illustration" aria-hidden="true">
-        <ellipse cx="61" cy="74" rx="47" ry="6" fill="#d7e3d0" />
-        <path d="M20 42 59 17 99 42v31H20z" fill="#f5f2ea" stroke="#9ba29a" strokeWidth="2" />
-        <path d="M16 44 59 11l44 33" fill="none" stroke="#7e8b93" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="50" y="50" width="16" height="23" rx="2" fill="#9cb0c1" />
-        <rect x="30" y="50" width="12" height="10" rx="1.4" fill="#ffffff" stroke="#94a3b8" />
-        <rect x="76" y="50" width="12" height="10" rx="1.4" fill="#ffffff" stroke="#94a3b8" />
-        <path d="M99 58c0-7 5-11 10-11s10 4 10 11-5 14-10 14-10-7-10-14z" transform="translate(-5 0)" fill="#8dc18e" stroke="#679c6a" strokeWidth="2" />
-        <rect x="103" y="58" width="3" height="15" rx="1" fill="#6a8b67" />
-    </svg>
+    <div className="wizard-property-illustration wizard-property-illustration--house" aria-hidden="true">
+        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+            <g fill="none" stroke="#2C3E50" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 22 45 C 15 30, 45 20, 65 25 C 80 30, 85 45, 75 55 C 65 65, 30 60, 22 45 Z" fill="#EBF5FB" stroke="none" opacity="0.6" />
+                <path d="M 75 42 C 70 30, 84 30, 84 42 C 84 52, 70 52, 75 42 Z" fill="#ABEBC6" />
+                <line x1="77" y1="50" x2="77" y2="68" strokeWidth="1.2" />
+                <path d="M 28 48 L 28 72 L 72 72 L 72 48" fill="#FDFEFE" />
+                <polygon points="24,48 44,28 58,48" fill="#FDFEFE" />
+                <path d="M 22 48 L 44 26 L 70 26 L 76 48 Z" fill="#34495E" />
+                <rect x="62" y="20" width="5" height="10" fill="#34495E" />
+                <line x1="61" y1="20" x2="68" y2="20" />
+                <circle cx="41" cy="39" r="3.5" fill="#AED6F1" strokeWidth="1" />
+                <line x1="41" y1="35.5" x2="41" y2="42.5" strokeWidth="0.7" />
+                <line x1="37.5" y1="39" x2="44.5" y2="39" strokeWidth="0.7" />
+                <rect x="34" y="54" width="14" height="10" fill="#AED6F1" strokeWidth="1.2" />
+                <line x1="41" y1="54" x2="41" y2="64" strokeWidth="1" />
+                <line x1="34" y1="59" x2="48" y2="59" strokeWidth="1" />
+                <rect x="52" y="54" width="8" height="18" fill="#5D6D7E" />
+                <rect x="64" y="54" width="10" height="10" fill="#AED6F1" strokeWidth="1.2" />
+                <line x1="69" y1="54" x2="69" y2="64" strokeWidth="1" />
+                <line x1="64" y1="59" x2="74" y2="59" strokeWidth="1" />
+                <path d="M 20 72 C 20 64, 32 64, 32 72 Z" fill="#58D68D" />
+                <line x1="15" y1="72" x2="85" y2="72" strokeWidth="2" />
+            </g>
+        </svg>
+    </div>
 );
 
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
