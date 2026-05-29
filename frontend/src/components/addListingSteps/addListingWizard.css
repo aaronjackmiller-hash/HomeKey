@@ -99,6 +99,13 @@
   gap: 8px;
 }
 
+.wizard-card-grid--required {
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid #e2842f;
+  background: #fff8f1;
+}
+
 .wizard-property-card {
   border: 1px solid #b9c4d2;
   border-radius: 12px;
@@ -150,6 +157,11 @@
   outline: none;
   border-color: #1d4f75;
   box-shadow: 0 0 0 2px rgba(29, 79, 117, 0.15);
+}
+
+.wizard-field-required {
+  border-color: #e2842f !important;
+  background: #fff8f1 !important;
 }
 
 .wizard-textarea {
@@ -233,6 +245,13 @@
   margin: 0 0 8px;
   font-size: 0.72rem;
   color: #4b5563;
+}
+
+.wizard-required-copy {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #b45309;
 }
 
 .wizard-relation-panel {

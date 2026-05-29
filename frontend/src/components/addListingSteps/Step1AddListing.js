@@ -33,27 +33,38 @@ const HouseIcon = () => (
 );
 
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
+    const [showRequiredHints, setShowRequiredHints] = React.useState(false);
     const relationSelected = String(data.relation || '').trim().length > 0;
-    const requiresBrokerDetails = data.relation === 'agent/broker';
-    const isBrokerDetailsReady = Boolean(
-        String(data.licenseNumber || '').trim()
-        && String(data.agencyName || '').trim()
-        && String(data.brokerFee || '').trim()
-    );
+    const trimmedStreet = String(data.address.street || '').trim();
+    const trimmedNumber = String(data.address.number || '').trim();
+    const trimmedCity = String(data.address.city || '').trim();
+    const trimmedLicense = String(data.licenseNumber || '').trim();
+    const trimmedAgency = String(data.agencyName || '').trim();
+    const trimmedBrokerFee = String(data.brokerFee || '').trim();
+    const trimmedManagementCompany = String(data.managementCompanyName || '').trim();
+    const trimmedEmergencyPhone = String(data.emergencyMaintenancePhone || '').trim();
 
-    const isReadyToContinue = Boolean(
-        data.propertyType
-        && data.listingType
-        && data.lookingForRoommates !== null
-        && String(data.address.street || '').trim()
-        && String(data.address.number || '').trim()
-        && String(data.address.city || '').trim()
-        && relationSelected
-        && (!requiresBrokerDetails || isBrokerDetailsReady)
-    );
+    const missingFields = {
+        propertyType: !data.propertyType,
+        listingType: !data.listingType,
+        lookingForRoommates: data.lookingForRoommates === null,
+        street: !trimmedStreet,
+        number: !trimmedNumber,
+        city: !trimmedCity,
+        relation: !relationSelected,
+        verificationDocument: data.relation === 'property owner' && !data.verificationDocument,
+        licenseNumber: data.relation === 'agent/broker' && !trimmedLicense,
+        agencyName: data.relation === 'agent/broker' && !trimmedAgency,
+        brokerFee: data.relation === 'agent/broker' && !trimmedBrokerFee,
+        managementCompanyName: data.relation === 'property manager' && !trimmedManagementCompany,
+        emergencyMaintenancePhone: data.relation === 'property manager' && !trimmedEmergencyPhone,
+    };
+
+    const hasMissingFields = Object.values(missingFields).some(Boolean);
 
     const handleContinue = () => {
-        if (!isReadyToContinue) {
+        setShowRequiredHints(true);
+        if (hasMissingFields) {
             return;
         }
         nextStep();
@@ -71,7 +82,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
 
             <div className="wizard-row">
                 <label className="wizard-label">Property Type</label>
-                <div className="wizard-card-grid">
+                <div className={`wizard-card-grid ${showRequiredHints && missingFields.propertyType ? 'wizard-card-grid--required' : ''}`}>
                     {['Apartment', 'House'].map((type) => (
                         <button
                             type="button"
@@ -84,6 +95,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                         </button>
                     ))}
                 </div>
+                {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
             <div className="wizard-step1-grid-two">
@@ -91,17 +103,19 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                     <label className="wizard-label">Rental/Sale</label>
                     <select
                         value={data.listingType}
-                        onChange={(e) => updateData({ listingType: e.target.value })}
-                        className="wizard-select"
+                        onChange={(e) => {
+                            updateData({ listingType: e.target.value });
+                        }}
+                        className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}
                     >
-                        <option value="">Select...</option>
+                        <option value="">{showRequiredHints && missingFields.listingType ? 'Required' : 'Select...'}</option>
                         <option value="Rental">Rental</option>
                         <option value="For Sale">For Sale</option>
                     </select>
                 </div>
 
                 <div className="wizard-row wizard-roommate-box">
-                    <label className="wizard-sub-label">Are you looking for roommates? (Required)</label>
+                    <label className="wizard-sub-label">Are you looking for roommates?</label>
                     <select
                         value={data.lookingForRoommates === null ? '' : (data.lookingForRoommates ? 'Yes' : 'No')}
                         onChange={(e) => updateData({
@@ -109,9 +123,9 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                                 ? null
                                 : e.target.value === 'Yes',
                         })}
-                        className="wizard-select"
+                        className={`wizard-select ${showRequiredHints && missingFields.lookingForRoommates ? 'wizard-field-required' : ''}`}
                     >
-                        <option value="">Select...</option>
+                        <option value="">{showRequiredHints && missingFields.lookingForRoommates ? 'Required' : 'Select...'}</option>
                         <option value="Yes">Yes, searching</option>
                         <option value="No">No, not searching</option>
                     </select>
@@ -123,24 +137,24 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 <div className="wizard-address-grid wizard-address-grid--step1">
                     <input
                         type="text"
-                        placeholder="Street"
+                        placeholder={showRequiredHints && missingFields.street ? 'Required' : 'Street'}
                         value={data.address.street}
                         onChange={(e) => updateData({ address: { ...data.address, street: e.target.value } })}
-                        className="wizard-input"
+                        className={`wizard-input ${showRequiredHints && missingFields.street ? 'wizard-field-required' : ''}`}
                     />
                     <input
                         type="text"
-                        placeholder="No."
+                        placeholder={showRequiredHints && missingFields.number ? 'Required' : 'No.'}
                         value={data.address.number}
                         onChange={(e) => updateData({ address: { ...data.address, number: e.target.value } })}
-                        className="wizard-input"
+                        className={`wizard-input ${showRequiredHints && missingFields.number ? 'wizard-field-required' : ''}`}
                     />
                     <input
                         type="text"
-                        placeholder="City"
+                        placeholder={showRequiredHints && missingFields.city ? 'Required' : 'City'}
                         value={data.address.city}
                         onChange={(e) => updateData({ address: { ...data.address, city: e.target.value } })}
-                        className="wizard-input"
+                        className={`wizard-input ${showRequiredHints && missingFields.city ? 'wizard-field-required' : ''}`}
                     />
                 </div>
             </div>
@@ -150,9 +164,9 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 <select
                     value={data.relation}
                     onChange={(e) => updateData({ relation: e.target.value })}
-                    className="wizard-select"
+                    className={`wizard-select ${showRequiredHints && missingFields.relation ? 'wizard-field-required' : ''}`}
                 >
-                    <option value="">Select option...</option>
+                    <option value="">{showRequiredHints && missingFields.relation ? 'Required' : 'Select option...'}</option>
                     <option value="renter">Renter</option>
                     <option value="property owner">Property Owner</option>
                     <option value="agent/broker">Agent/Broker listing on someone&apos;s behalf</option>
@@ -166,14 +180,18 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
 
                     {data.relation === 'property owner' ? (
                         <div className="wizard-row">
-                            <label className="wizard-field-label">Property Verification Document (Tabu/ID) — optional</label>
-                            <label className="wizard-file-upload">
+                            <label className="wizard-field-label">Property Verification Document (Tabu/ID)</label>
+                            <label className={`wizard-file-upload ${showRequiredHints && missingFields.verificationDocument ? 'wizard-field-required' : ''}`}>
                                 <input
                                     type="file"
                                     accept=".pdf,image/*"
                                     onChange={(e) => updateData({ verificationDocument: e.target.files?.[0] || null })}
                                 />
-                                <span>Upload verification file</span>
+                                <span>
+                                    {showRequiredHints && missingFields.verificationDocument
+                                        ? 'Required'
+                                        : 'Upload verification file'}
+                                </span>
                             </label>
                             {data.verificationDocument ? (
                                 <p className="wizard-file-name">{data.verificationDocument.name}</p>
@@ -184,33 +202,33 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                     {data.relation === 'agent/broker' ? (
                         <div className="wizard-relation-grid">
                             <div className="wizard-field">
-                                <label className="wizard-field-label">License Number *</label>
+                                <label className="wizard-field-label">License Number</label>
                                 <input
                                     type="text"
-                                    className="wizard-input"
+                                    className={`wizard-input ${showRequiredHints && missingFields.licenseNumber ? 'wizard-field-required' : ''}`}
                                     value={data.licenseNumber}
                                     onChange={(e) => updateData({ licenseNumber: e.target.value })}
-                                    placeholder="e.g. BR-12345"
+                                    placeholder={showRequiredHints && missingFields.licenseNumber ? 'Required' : 'e.g. BR-12345'}
                                 />
                             </div>
                             <div className="wizard-field">
-                                <label className="wizard-field-label">Agency Name *</label>
+                                <label className="wizard-field-label">Agency Name</label>
                                 <input
                                     type="text"
-                                    className="wizard-input"
+                                    className={`wizard-input ${showRequiredHints && missingFields.agencyName ? 'wizard-field-required' : ''}`}
                                     value={data.agencyName}
                                     onChange={(e) => updateData({ agencyName: e.target.value })}
-                                    placeholder="Agency or brokerage"
+                                    placeholder={showRequiredHints && missingFields.agencyName ? 'Required' : 'Agency or brokerage'}
                                 />
                             </div>
                             <div className="wizard-field wizard-relation-grid-full">
-                                <label className="wizard-field-label">Broker Fee (₪ or %) *</label>
+                                <label className="wizard-field-label">Broker Fee (₪ or %)</label>
                                 <input
                                     type="text"
-                                    className="wizard-input"
+                                    className={`wizard-input ${showRequiredHints && missingFields.brokerFee ? 'wizard-field-required' : ''}`}
                                     value={data.brokerFee}
                                     onChange={(e) => updateData({ brokerFee: e.target.value })}
-                                    placeholder="e.g. ₪4,000 or 2%"
+                                    placeholder={showRequiredHints && missingFields.brokerFee ? 'Required' : 'e.g. ₪4,000 or 2%'}
                                 />
                             </div>
                         </div>
@@ -222,20 +240,20 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                                 <label className="wizard-field-label">Management Company Name</label>
                                 <input
                                     type="text"
-                                    className="wizard-input"
+                                    className={`wizard-input ${showRequiredHints && missingFields.managementCompanyName ? 'wizard-field-required' : ''}`}
                                     value={data.managementCompanyName}
                                     onChange={(e) => updateData({ managementCompanyName: e.target.value })}
-                                    placeholder="Company name"
+                                    placeholder={showRequiredHints && missingFields.managementCompanyName ? 'Required' : 'Company name'}
                                 />
                             </div>
                             <div className="wizard-field">
                                 <label className="wizard-field-label">Emergency Maintenance Phone</label>
                                 <input
                                     type="tel"
-                                    className="wizard-input"
+                                    className={`wizard-input ${showRequiredHints && missingFields.emergencyMaintenancePhone ? 'wizard-field-required' : ''}`}
                                     value={data.emergencyMaintenancePhone}
                                     onChange={(e) => updateData({ emergencyMaintenancePhone: e.target.value })}
-                                    placeholder="Phone number"
+                                    placeholder={showRequiredHints && missingFields.emergencyMaintenancePhone ? 'Required' : 'Phone number'}
                                 />
                             </div>
                         </div>
@@ -247,15 +265,9 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 type="button"
                 onClick={handleContinue}
                 className="wizard-btn wizard-btn--full"
-                disabled={!isReadyToContinue}
             >
                 Continue to Step 2
             </button>
-            {!isReadyToContinue ? (
-                <p className="wizard-step-note">
-                    Please complete all required Step 1 fields before continuing.
-                </p>
-            ) : null}
         </div>
     );
 };
