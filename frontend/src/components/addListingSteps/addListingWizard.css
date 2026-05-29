@@ -110,7 +110,7 @@
   border: 1px solid #b9c4d2;
   border-radius: 12px;
   background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
-  min-height: 116px;
+  min-height: 142px;
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
@@ -127,8 +127,8 @@
 }
 
 .wizard-property-illustration {
-  width: 98px;
-  height: 66px;
+  width: 126px;
+  height: 90px;
   display: block;
 }
 
