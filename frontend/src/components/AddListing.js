@@ -11,8 +11,8 @@ import './addListingSteps/addListingWizard.css';
 /**
  * @typedef {Object} ListingData
  * @property {'Apartment'|'House'} propertyType
- * @property {'Rental'|'For Sale'} listingType
- * @property {boolean} lookingForRoommates
+ * @property {'Rental'|'For Sale'|''} listingType
+ * @property {boolean|null} lookingForRoommates
  * @property {{street: string, number: string, city: string}} address
  * @property {string} relation
  * @property {string} bedrooms
@@ -31,9 +31,9 @@ import './addListingSteps/addListingWizard.css';
 
 /** @returns {ListingData} */
 const createInitialListingData = () => ({
-    propertyType: 'Apartment',
-    listingType: 'Rental',
-    lookingForRoommates: false,
+    propertyType: '',
+    listingType: '',
+    lookingForRoommates: null,
     address: { street: '', number: '', city: '' },
     relation: '',
     bedrooms: '1',
