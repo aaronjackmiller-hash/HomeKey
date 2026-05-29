@@ -132,6 +132,11 @@
   display: block;
 }
 
+.wizard-property-illustration--apartment {
+  width: 100px;
+  height: 100px;
+}
+
 .wizard-property-card.is-selected {
   border-color: #114a78;
   box-shadow: inset 0 0 0 1px #114a78;

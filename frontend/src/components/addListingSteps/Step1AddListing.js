@@ -1,22 +1,33 @@
 import React from 'react';
 
 const ApartmentIcon = () => (
-    <svg viewBox="0 0 120 86" className="wizard-property-illustration" aria-hidden="true">
-        <rect x="20" y="16" width="60" height="54" rx="4" fill="#ced9e3" stroke="#7d92a4" strokeWidth="2" />
-        <rect x="80" y="28" width="20" height="42" rx="3" fill="#dce6ef" stroke="#8ca0b2" strokeWidth="2" />
-        <rect x="42" y="52" width="16" height="18" rx="2" fill="#8fa4b7" />
-        {[28, 40, 52].map((y) => (
-            <g key={y}>
-                <rect x="28" y={y} width="10" height="8" rx="1.5" fill="#ffffff" stroke="#8ca0b2" />
-                <rect x="44" y={y} width="10" height="8" rx="1.5" fill="#ffffff" stroke="#8ca0b2" />
-                <rect x="60" y={y} width="10" height="8" rx="1.5" fill="#ffffff" stroke="#8ca0b2" />
+    <div className="wizard-property-illustration wizard-property-illustration--apartment" aria-hidden="true">
+        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+            <g fill="none" stroke="#2C3E50" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M 20 85 L 20 42 L 40 42 L 40 85" fill="#EAECEE" />
+                <rect x="25" y="50" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
+                <rect x="25" y="64" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
+                <rect x="25" y="75" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
+
+                <path d="M 60 85 L 60 47 L 80 47 L 80 85" fill="#EAECEE" />
+                <rect x="65" y="55" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
+                <rect x="65" y="70" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
+
+                <path d="M 38 85 L 38 30 L 62 30 L 62 85" fill="#F4F6F7" />
+                <line x1="36" y1="30" x2="64" y2="30" />
+
+                <rect x="43" y="37" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+                <rect x="51" y="37" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+                <rect x="43" y="49" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+                <rect x="51" y="49" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+                <rect x="43" y="61" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+                <rect x="51" y="61" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
+
+                <rect x="47" y="73" width="6" height="12" fill="#34495E" />
+                <line x1="10" y1="85" x2="90" y2="85" strokeWidth="2" />
             </g>
-        ))}
-        <rect x="86" y="36" width="8" height="7" rx="1.2" fill="#ffffff" stroke="#8ca0b2" />
-        <rect x="86" y="48" width="8" height="7" rx="1.2" fill="#ffffff" stroke="#8ca0b2" />
-        <rect x="86" y="60" width="8" height="7" rx="1.2" fill="#ffffff" stroke="#8ca0b2" />
-        <path d="M14 73h95" stroke="#8ca0b2" strokeWidth="2" strokeLinecap="round" />
-    </svg>
+        </svg>
+    </div>
 );
 
 const HouseIcon = () => (
