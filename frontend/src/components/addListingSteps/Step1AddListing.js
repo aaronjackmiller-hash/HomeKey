@@ -61,6 +61,8 @@ const HouseIcon = () => (
 
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
     const [showRequiredHints, setShowRequiredHints] = React.useState(false);
+    const usesEnterpriseModel = data.relation === 'property manager';
+    const totalSteps = usesEnterpriseModel ? 6 : 5;
     const relationSelected = String(data.relation || '').trim().length > 0;
     const trimmedStreet = String(data.address.street || '').trim();
     const trimmedNumber = String(data.address.number || '').trim();
@@ -104,7 +106,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
             </div>
             <div className="wizard-step-header">
                 <h2>Step 1: Add your listing</h2>
-                <span className="wizard-step-counter">Step 1 of 5</span>
+                <span className="wizard-step-counter">{`Step 1 of ${totalSteps}`}</span>
             </div>
 
             <div className="wizard-row">
@@ -293,7 +295,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 onClick={handleContinue}
                 className="wizard-btn wizard-btn--full"
             >
-                Continue to Step 2
+                {usesEnterpriseModel ? 'Continue to Enterprise model' : 'Continue to Step 2'}
             </button>
         </div>
     );
