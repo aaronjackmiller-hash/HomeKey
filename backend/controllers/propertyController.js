@@ -163,10 +163,65 @@ const isRealScrapeOnlyMode = () =>
 const isRealScrapedExternalId = (value) =>
     typeof value === 'string' && /^[a-z0-9]{6,}$/i.test(value);
 
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const applyAndFilter = (filter, condition) => {
     if (!condition || typeof condition !== 'object') return;
     if (!Array.isArray(filter.$and)) filter.$and = [];
     filter.$and.push(condition);
+};
+
+const buildKeywordSearchCondition = (rawQuery) => {
+    const normalizedQuery = String(rawQuery || '').trim();
+    if (!normalizedQuery) return null;
+
+    const queryTokens = normalizedQuery
+        .split(/\s+/)
+        .map((token) => escapeRegex(token))
+        .filter(Boolean);
+    if (queryTokens.length === 0) return null;
+
+    const searchablePaths = [
+        'title',
+        'description',
+        'type',
+        'externalSource',
+        'externalId',
+        'address.street',
+        'address.streetNumber',
+        'address.neighborhood',
+        'address.city',
+        'address.state',
+        'address.country',
+        'address.localized.he.street',
+        'address.localized.he.streetNumber',
+        'address.localized.he.neighborhood',
+        'address.localized.he.city',
+        'address.localized.he.state',
+        'address.localized.en.street',
+        'address.localized.en.streetNumber',
+        'address.localized.en.neighborhood',
+        'address.localized.en.city',
+        'address.localized.en.state',
+        'buildingDetails.name',
+        'buildingDetails.amenities',
+        'featuresText',
+        'amenities',
+        'features',
+        'details.amenities',
+        'details.features',
+        'contact.name',
+        'contact.agency',
+    ];
+
+    return {
+        $and: queryTokens.map((token) => {
+            const tokenPattern = new RegExp(token, 'i');
+            return {
+                $or: searchablePaths.map((path) => ({ [path]: tokenPattern })),
+            };
+        }),
+    };
 };
 
 const withLocalizedAddress = (property) => {
@@ -316,9 +371,13 @@ const getAllProperties = async (req, res) => {
         if (req.query.status) {
             filter.status = req.query.status;
         }
+        if (req.query.q) {
+            const keywordCondition = buildKeywordSearchCondition(req.query.q);
+            applyAndFilter(filter, keywordCondition);
+        }
         if (req.query.city) {
             // Escape special regex characters to prevent regex injection
-            const escapedCity = req.query.city.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const escapedCity = escapeRegex(req.query.city.trim());
             const cityPattern = new RegExp(escapedCity, 'i');
             applyAndFilter(filter, {
                 $or: [
