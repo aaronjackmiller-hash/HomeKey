@@ -166,10 +166,16 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
 
   const handleAlertApiError = useCallback((err, fallbackMessage) => {
     const statusCode = Number(err?.response?.status || 0);
+    const apiMessage = String(err?.response?.data?.message || '').trim();
+    const isInvalidSession = statusCode === 401 && /token (invalid|expired)/i.test(apiMessage);
     if (statusCode === 401) {
-      setError('Your session has expired. Please sign in again.');
-      logout();
-      if (isOverlay) handleClose();
+      if (isInvalidSession) {
+        setError('Your session has expired. Please sign in again.');
+        logout();
+        if (isOverlay) handleClose();
+      } else {
+        setError(apiMessage || fallbackMessage);
+      }
       return;
     }
     setError(err.response?.data?.message || fallbackMessage);
