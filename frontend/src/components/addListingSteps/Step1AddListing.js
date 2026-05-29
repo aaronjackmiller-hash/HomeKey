@@ -2,91 +2,89 @@ import React from 'react';
 
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
     return (
-        <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold tracking-tight text-gray-900">Step 1: Add your listing</h2>
-                <span className="text-xs font-medium text-gray-400">Step 1 of 5</span>
+        <div className="wizard-step-card">
+            <div className="wizard-progress-rail">
+                <div className="wizard-progress-fill" style={{ width: '20%' }} />
+            </div>
+            <div className="wizard-step-header">
+                <h2>Step 1: Add your listing</h2>
+                <span className="wizard-step-counter">Step 1 of 5</span>
             </div>
 
-            <div className="mb-6">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Property Type</label>
-                <div className="grid grid-cols-2 gap-4">
+            <div className="wizard-row">
+                <label className="wizard-label">Property Type</label>
+                <div className="wizard-card-grid">
                     {['Apartment', 'House'].map((type) => (
                         <button
                             type="button"
                             key={type}
                             onClick={() => updateData({ propertyType: type })}
-                            className={`p-4 rounded-xl border text-center transition-all ${
-                                data.propertyType === type
-                                    ? 'border-slate-900 bg-slate-50/50 font-medium text-slate-900'
-                                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                            }`}
+                            className={`wizard-property-card ${data.propertyType === type ? 'is-selected' : ''}`}
                         >
-                            {type}
+                            <span aria-hidden="true">{type === 'Apartment' ? '🏢' : '🏠'}</span>
+                            <span>{type}</span>
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="mb-6">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Listing Purpose</label>
+            <div className="wizard-row">
+                <label className="wizard-label">Rental/Sale</label>
                 <select
                     value={data.listingType}
                     onChange={(e) => updateData({ listingType: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:border-slate-900"
+                    className="wizard-select"
                 >
                     <option value="Rental">Rental</option>
                     <option value="For Sale">For Sale</option>
                 </select>
             </div>
 
-            <div className="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <label className="block text-sm font-medium text-gray-800 mb-2">Are you looking for roommates?</label>
+            <div className="wizard-row wizard-roommate-box">
+                <label className="wizard-sub-label">Are you looking for roommates?</label>
                 <select
                     value={data.lookingForRoommates ? 'Yes' : 'No'}
                     onChange={(e) => updateData({ lookingForRoommates: e.target.value === 'Yes' })}
-                    className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none"
+                    className="wizard-select"
                 >
-                    <option value="No">No, not searching (Entire property)</option>
-                    <option value="Yes">Yes, searching (Shared living space)</option>
+                    <option value="Yes">Yes, searching</option>
+                    <option value="No">No, not searching</option>
                 </select>
             </div>
 
-            <div className="mb-6">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Address</label>
-                <div className="grid grid-cols-3 gap-3">
+            <div className="wizard-row">
+                <label className="wizard-label">Address</label>
+                <div className="wizard-address-grid">
                     <input
                         type="text"
                         placeholder="Street"
                         value={data.address.street}
                         onChange={(e) => updateData({ address: { ...data.address, street: e.target.value } })}
-                        className="col-span-1 p-3 rounded-lg border border-gray-200 text-sm"
+                        className="wizard-input"
                     />
                     <input
                         type="text"
                         placeholder="No."
                         value={data.address.number}
                         onChange={(e) => updateData({ address: { ...data.address, number: e.target.value } })}
-                        className="col-span-1 p-3 rounded-lg border border-gray-200 text-sm"
+                        className="wizard-input"
                     />
                     <input
                         type="text"
                         placeholder="City"
                         value={data.address.city}
                         onChange={(e) => updateData({ address: { ...data.address, city: e.target.value } })}
-                        className="col-span-1 p-3 rounded-lg border border-gray-200 text-sm"
+                        className="wizard-input"
                     />
                 </div>
             </div>
 
-            <div className="mb-8">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                    Which best describes your relation to this listing?
-                </label>
+            <div className="wizard-row">
+                <label className="wizard-label">Listing Relation</label>
                 <select
                     value={data.relation}
                     onChange={(e) => updateData({ relation: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-gray-200 text-sm"
+                    className="wizard-select"
                 >
                     <option value="">Select option...</option>
                     <option value="renter">Renter</option>
@@ -99,7 +97,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
             <button
                 type="button"
                 onClick={nextStep}
-                className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-medium tracking-wide hover:bg-slate-800 transition-colors"
+                className="wizard-btn wizard-btn--full"
             >
                 Continue to Step 2
             </button>

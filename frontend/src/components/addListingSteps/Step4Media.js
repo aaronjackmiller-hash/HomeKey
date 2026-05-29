@@ -22,39 +22,40 @@ export const Step4Media = ({ data, updateData, nextStep, prevStep }) => {
     };
 
     return (
-        <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold tracking-tight text-gray-900">Step 4: Add your media</h2>
-                <span className="text-xs font-medium text-gray-400">Step 4 of 5</span>
+        <div className="wizard-step-card">
+            <div className="wizard-progress-rail">
+                <div className="wizard-progress-fill" style={{ width: '80%' }} />
+            </div>
+            <div className="wizard-step-header">
+                <h2>Step 4: Add your media</h2>
+                <span className="wizard-step-counter">Step 4 of 5</span>
             </div>
 
-            <div className="mb-4 p-3 bg-amber-50 text-amber-800 border border-amber-100 text-xs rounded-lg font-medium">
-                <strong>Note:</strong> The first picture uploaded will automatically serve as the primary banner image for the live listing display.
-            </div>
+            <p className="wizard-step-note">
+                Add photos or videos. The first file becomes the primary image.
+            </p>
 
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-slate-400 transition-colors mb-6 relative">
+            <div className="wizard-upload-box">
                 <input
                     type="file"
                     multiple
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    className="wizard-upload-input"
                 />
-                <div className="text-gray-500 text-sm">
-                    <p className="font-medium text-slate-900 mb-1">Click to upload, or drag files here...</p>
-                    <p className="text-xs text-gray-400">(Supported formats: GIF, PNG, JPEG | Max 75MB total)</p>
-                </div>
+                <p className="wizard-upload-title">Add Photos and Videos</p>
+                <p className="wizard-upload-copy">Click to upload, or drag files here... (GIF, PNG, JPEG)</p>
             </div>
 
             {previews.length > 0 && (
-                <div className="mb-6">
-                    <p className="text-xs font-semibold uppercase text-gray-400 mb-2">Uploaded Images Gallery</p>
-                    <div className="grid grid-cols-4 gap-2">
+                <div className="wizard-row">
+                    <label className="wizard-label">Uploaded Images Gallery</label>
+                    <div className="wizard-preview-grid">
                         {previews.map((src, idx) => (
-                            <div key={src} className="relative aspect-square rounded-lg overflow-hidden border border-gray-100">
-                                <img src={src} alt="Preview" className="object-cover w-full h-full" />
+                            <div key={src} className="wizard-preview-cell">
+                                <img src={src} alt="Preview" />
                                 {idx === 0 && (
-                                    <span className="absolute bottom-1 left-1 bg-slate-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                                    <span className="wizard-primary-badge">
                                         Primary
                                     </span>
                                 )}
@@ -64,29 +65,29 @@ export const Step4Media = ({ data, updateData, nextStep, prevStep }) => {
                 </div>
             )}
 
-            <div className="mb-8">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">3D Virtual Tour URL</label>
+            <div className="wizard-row">
+                <label className="wizard-label">3D Virtual Tour URL</label>
                 <input
                     type="text"
                     placeholder="https://my.matterport.com/show/?m=..."
                     value={data.virtualTourUrl}
                     onChange={(e) => updateData({ virtualTourUrl: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:outline-none"
+                    className="wizard-input"
                 />
             </div>
 
-            <div className="flex gap-3">
+            <div className="wizard-actions">
                 <button
                     type="button"
                     onClick={prevStep}
-                    className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-200"
+                    className="wizard-btn wizard-btn--ghost"
                 >
                     Back
                 </button>
                 <button
                     type="button"
                     onClick={nextStep}
-                    className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-medium tracking-wide text-sm hover:bg-slate-800"
+                    className="wizard-btn wizard-btn--full"
                 >
                     Continue to Step 5
                 </button>

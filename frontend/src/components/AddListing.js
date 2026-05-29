@@ -6,6 +6,7 @@ import { Step2CreateListing } from './addListingSteps/Step2CreateListing';
 import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
 import { Step5PublishListing } from './addListingSteps/Step5PublishListing';
+import './addListingSteps/addListingWizard.css';
 
 /**
  * @typedef {Object} ListingData
@@ -159,9 +160,9 @@ const AddListing = () => {
     };
 
     return (
-        <div style={{ maxWidth: '900px', margin: '20px auto', padding: '0 20px' }}>
-            {error ? <p style={{ color: '#b91c1c', marginBottom: '12px' }}>{error}</p> : null}
-            {loading ? <p style={{ color: '#374151', marginBottom: '12px' }}>Publishing listing...</p> : null}
+        <div className="listing-wizard-shell">
+            {error ? <p className="listing-wizard-status listing-wizard-status--error">{error}</p> : null}
+            {loading ? <p className="listing-wizard-status listing-wizard-status--loading">Publishing listing...</p> : null}
 
             {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} /> : null}
             {step === 2 ? <Step2CreateListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} /> : null}

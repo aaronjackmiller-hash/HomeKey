@@ -15,61 +15,60 @@ export const Step5PublishListing = ({ data, prevStep, onPublishFinished }) => {
     }, [data.mediaFiles]);
 
     return (
-        <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold tracking-tight text-gray-900">Step 5: Publish listing!</h2>
-                <span className="text-xs font-medium text-gray-400">Step 5 of 5</span>
+        <div className="wizard-step-card">
+            <div className="wizard-progress-rail">
+                <div className="wizard-progress-fill" style={{ width: '100%' }} />
             </div>
-            <p className="text-sm text-gray-500 mb-6">Your listing is almost ready!</p>
+            <div className="wizard-step-header">
+                <h2>Step 5: Publish listing!</h2>
+                <span className="wizard-step-counter">Step 5 of 5</span>
+            </div>
 
-            <div className="mb-6 border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                <div className="relative aspect-video bg-gray-100 border-b border-gray-100">
+            <div className="wizard-publish-card">
+                <div className="wizard-publish-image">
                     {primaryImageSrc ? (
-                        <img src={primaryImageSrc} alt="Primary Listing Banner Preview" className="w-full h-full object-cover" />
+                        <img src={primaryImageSrc} alt="Primary Listing Banner Preview" />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4">
-                            <span className="text-xs font-medium">No photos uploaded yet</span>
-                        </div>
+                        <span>No photos uploaded yet</span>
                     )}
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-slate-900 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm">
-                        {data.listingType || 'Rental'}
-                    </span>
                 </div>
 
-                <div className="p-5">
-                    <div className="text-xs font-semibold text-gray-400 tracking-wide uppercase mb-1">
+                <div className="wizard-publish-body">
+                    <p className="wizard-kicker">
+                        {data.listingType || 'Rental'} Listing in {data.address.city || 'Tel Aviv-Yafo'}
+                    </p>
+                    <div className="wizard-kicker">
                         {data.propertyType || 'Apartment'} in {data.address.city || 'Tel Aviv-Yafo'}
                     </div>
 
-                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight mb-2">
-                        ₪{data.price ? Number(String(data.price).replace(/,/g, '')).toLocaleString() : '0'}{' '}
-                        <span className="text-xs font-normal text-gray-500">/ month</span>
+                    <h3 className="wizard-price">
+                        ₪{data.price ? Number(String(data.price).replace(/,/g, '') || 0).toLocaleString() : '0'} <span>/ month</span>
                     </h3>
 
-                    <div className="text-sm font-medium text-gray-800 mb-3">
+                    <p className="wizard-address-line">
                         📍 {data.address.street || 'Street'} {data.address.number || ''}, {data.address.city || 'City'}
-                    </div>
+                    </p>
 
-                    <div className="flex items-center gap-4 text-xs font-medium text-gray-500 border-t border-b border-gray-100 py-2.5 mb-4">
-                        <div>🛏️ <span className="text-slate-900 font-bold">{data.bedrooms || '0'}</span> Rooms</div>
-                        <div>🚿 <span className="text-slate-900 font-bold">{data.bathrooms || '0'}</span> Baths</div>
-                        <div>📐 <span className="text-slate-900 font-bold">{data.sizeSqm || '0'}</span> SQM</div>
-                        <div>⏳ <span className="text-slate-900 font-bold">{data.leaseLength || '0'}</span> Mos</div>
+                    <div className="wizard-spec-row">
+                        <span>🛏️ {data.bedrooms || '0'} Rooms</span>
+                        <span>🚿 {data.bathrooms || '0'} Baths</span>
+                        <span>📐 {data.sizeSqm || '0'} SQM</span>
+                        <span>⏳ {data.leaseLength || '0'} Mos</span>
                     </div>
 
                     {data.description && (
-                        <div className="mb-4">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Description Extract</p>
-                            <p className="text-xs text-gray-600 line-clamp-2 italic">&quot;{data.description}&quot;</p>
+                        <div className="wizard-row">
+                            <p className="wizard-kicker">Description</p>
+                            <p className="wizard-step-note">{data.description}</p>
                         </div>
                     )}
 
                     {data.amenities && data.amenities.length > 0 && (
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Amenities Added</p>
-                            <div className="flex flex-wrap gap-1">
+                        <div className="wizard-row">
+                            <p className="wizard-kicker">Amenities Added</p>
+                            <div className="wizard-amenity-chips">
                                 {data.amenities.map((amenity) => (
-                                    <span key={amenity} className="text-[10px] font-medium bg-slate-50 text-slate-700 border border-slate-200 px-2 py-0.5 rounded">
+                                    <span key={amenity} className="wizard-chip">
                                         {amenity}
                                     </span>
                                 ))}
@@ -79,36 +78,35 @@ export const Step5PublishListing = ({ data, prevStep, onPublishFinished }) => {
                 </div>
             </div>
 
-            <div className="space-y-3 mb-6 border-t border-gray-100 pt-4">
-                <label className="flex items-center gap-3 cursor-pointer">
+            <div className="wizard-row">
+                <label className="wizard-toggle-row">
                     <input
                         type="checkbox"
                         checked={displayPhone}
                         onChange={(e) => setDisplayPhone(e.target.checked)}
-                        className="rounded border-gray-300 text-slate-900 focus:ring-slate-900 h-4 w-4"
                     />
-                    <span className="text-xs font-medium text-gray-700">Display my phone number on the listing</span>
+                    <span>Display Phone Number</span>
                 </label>
             </div>
 
-            <div className="flex gap-3">
+            <div className="wizard-actions">
                 <button
                     type="button"
                     onClick={prevStep}
-                    className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-200"
+                    className="wizard-btn wizard-btn--ghost"
                 >
                     Back
                 </button>
                 <button
                     type="button"
                     onClick={onPublishFinished}
-                    className="flex-1 py-3.5 bg-slate-900 text-white rounded-xl font-semibold tracking-wide text-sm hover:bg-slate-800 transition-colors text-center"
+                    className="wizard-btn wizard-btn--full"
                 >
                     Go Live! Publish Listing
                 </button>
             </div>
-            <p className="text-center text-[11px] text-gray-400 mt-3">
-                Your listing will process and launch live across platform filters inside 15 minutes.
+            <p className="wizard-footer-note">
+                Your listing will be live in 15 minutes.
             </p>
         </div>
     );
