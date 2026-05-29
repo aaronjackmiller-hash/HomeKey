@@ -62,7 +62,7 @@ api.interceptors.response.use(
   (error) => {
     const status = Number(error?.response?.status || 0);
     const apiMessage = String(error?.response?.data?.message || '');
-    const isTokenAuthFailure = status === 401 && /token (invalid|missing)/i.test(apiMessage);
+    const isTokenAuthFailure = status === 401 && /token (invalid|expired)/i.test(apiMessage);
     const requestPath = normalizeRequestPath(error?.config?.url || '');
     const requestMethod = String(error?.config?.method || 'GET').toUpperCase();
     const authHeaderValue = getAuthorizationHeaderValue(error?.config?.headers);
