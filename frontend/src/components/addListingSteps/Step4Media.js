@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 
-export const Step4Media = ({ data, updateData, nextStep, prevStep }) => {
+export const Step4Media = ({
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    stepNumber = 4,
+    totalSteps = 5,
+    progressPercent = 80,
+}) => {
+    const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
     const [previews, setPreviews] = useState([]);
 
     useEffect(() => {
@@ -24,11 +33,11 @@ export const Step4Media = ({ data, updateData, nextStep, prevStep }) => {
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: '80%' }} />
+                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 4: Add your media</h2>
-                <span className="wizard-step-counter">Step 4 of 5</span>
+                <h2>{`Step ${stepNumber}: Add your media`}</h2>
+                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <p className="wizard-step-note">
@@ -89,7 +98,7 @@ export const Step4Media = ({ data, updateData, nextStep, prevStep }) => {
                     onClick={nextStep}
                     className="wizard-btn wizard-btn--full"
                 >
-                    Continue to Step 5
+                    {`Continue to Step ${nextStepLabel}`}
                 </button>
             </div>
         </div>

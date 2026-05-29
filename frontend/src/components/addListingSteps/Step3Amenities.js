@@ -1,6 +1,16 @@
 import React from 'react';
 
-export const Step3Amenities = ({ data, updateData, nextStep, prevStep }) => {
+export const Step3Amenities = ({
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    stepNumber = 3,
+    totalSteps = 5,
+    progressPercent = 60,
+}) => {
+    const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
+
     const allAmenities = [
         { id: 'EL', label: 'Elevator' },
         { id: 'PK', label: 'Parking' },
@@ -26,11 +36,11 @@ export const Step3Amenities = ({ data, updateData, nextStep, prevStep }) => {
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: '60%' }} />
+                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 3: Amenities</h2>
-                <span className="wizard-step-counter">Step 3 of 5</span>
+                <h2>{`Step ${stepNumber}: Amenities`}</h2>
+                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <div className="wizard-amenities-grid">
@@ -65,7 +75,7 @@ export const Step3Amenities = ({ data, updateData, nextStep, prevStep }) => {
                     onClick={nextStep}
                     className="wizard-btn wizard-btn--full"
                 >
-                    Continue to Step 4
+                    {`Continue to Step ${nextStepLabel}`}
                 </button>
             </div>
         </div>

@@ -1,0 +1,60 @@
+import React from 'react';
+
+export const Step2EnterpriseModel = ({ data, updateData, nextStep, prevStep }) => {
+    const [showRequiredHint, setShowRequiredHint] = React.useState(false);
+    const hasSelection = Boolean(data.onboardingMethod);
+
+    const handleContinue = () => {
+        setShowRequiredHint(true);
+        if (!hasSelection) {
+            return;
+        }
+        nextStep();
+    };
+
+    return (
+        <div className="wizard-step-card">
+            <div className="wizard-progress-rail">
+                <div className="wizard-progress-fill" style={{ width: '34%' }} />
+            </div>
+            <div className="wizard-step-header">
+                <h2>Step 2: Enterprise model</h2>
+                <span className="wizard-step-counter">Step 2 of 6</span>
+            </div>
+
+            <p className="wizard-step-note" style={{ marginTop: 0 }}>
+                Property Manager listings use enterprise onboarding. Choose how you want to start.
+            </p>
+
+            <div className="wizard-row">
+                <label className="wizard-field-label">Onboarding Method</label>
+                <select
+                    value={data.onboardingMethod || ''}
+                    onChange={(e) => updateData({ onboardingMethod: e.target.value })}
+                    className={`wizard-select ${showRequiredHint && !hasSelection ? 'wizard-field-required' : ''}`}
+                >
+                    <option value="">{showRequiredHint && !hasSelection ? 'Required' : 'Select onboarding method...'}</option>
+                    <option value="SyncPortfolio">Sync portfolio from external feed</option>
+                    <option value="AddManualSingle">Add one listing manually</option>
+                </select>
+            </div>
+
+            <div className="wizard-actions">
+                <button
+                    type="button"
+                    onClick={prevStep}
+                    className="wizard-btn wizard-btn--ghost"
+                >
+                    Back
+                </button>
+                <button
+                    type="button"
+                    onClick={handleContinue}
+                    className="wizard-btn wizard-btn--full"
+                >
+                    Continue to Step 3
+                </button>
+            </div>
+        </div>
+    );
+};

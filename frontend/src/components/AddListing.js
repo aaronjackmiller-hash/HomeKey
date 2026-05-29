@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createProperty } from '../services/api';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
+import { Step2EnterpriseModel } from './addListingSteps/Step2EnterpriseModel';
 import { Step2CreateListing } from './addListingSteps/Step2CreateListing';
 import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
@@ -21,6 +22,7 @@ import './addListingSteps/addListingWizard.css';
  * @property {string} brokerFee
  * @property {string} managementCompanyName
  * @property {string} emergencyMaintenancePhone
+ * @property {'SyncPortfolio'|'AddManualSingle'|''} onboardingMethod
  * @property {string} bedrooms
  * @property {string} bathrooms
  * @property {string} sizeSqm
@@ -48,6 +50,7 @@ const createInitialListingData = () => ({
     brokerFee: '',
     managementCompanyName: '',
     emergencyMaintenancePhone: '',
+    onboardingMethod: '',
     bedrooms: '1',
     bathrooms: '1',
     sizeSqm: '',
@@ -68,18 +71,35 @@ const AddListing = () => {
     const [data, setData] = useState(createInitialListingData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const usesEnterpriseModel = data.relation === 'property manager';
+    const totalSteps = usesEnterpriseModel ? 6 : 5;
+    const createListingStep = usesEnterpriseModel ? 3 : 2;
+    const amenitiesStep = createListingStep + 1;
+    const mediaStep = createListingStep + 2;
+    const publishStep = createListingStep + 3;
+    const progressForStep = (stepNumber) => Math.round((stepNumber / totalSteps) * 100);
 
     const updateData = (updates) => {
-        setData((prev) => ({ ...prev, ...updates }));
+        setData((prev) => {
+            const next = { ...prev, ...updates };
+            if (Object.prototype.hasOwnProperty.call(updates, 'relation') && updates.relation !== 'property manager') {
+                next.onboardingMethod = '';
+            }
+            return next;
+        });
     };
 
     const nextStep = () => {
-        setStep((prev) => Math.min(prev + 1, 5));
+        setStep((prev) => Math.min(prev + 1, usesEnterpriseModel ? 6 : 5));
     };
 
     const prevStep = () => {
         setStep((prev) => Math.max(prev - 1, 1));
     };
+
+    useEffect(() => {
+        setStep((prev) => Math.min(prev, totalSteps));
+    }, [totalSteps]);
 
     const parseNumber = (rawValue) => {
         if (rawValue === '' || rawValue == null) {
@@ -132,6 +152,7 @@ const AddListing = () => {
         if (data.relation === 'property manager') {
             summaryRows.push(`Management company: ${data.managementCompanyName || 'N/A'}`);
             summaryRows.push(`Emergency maintenance phone: ${data.emergencyMaintenancePhone || 'N/A'}`);
+            summaryRows.push(`Onboarding method: ${data.onboardingMethod || 'N/A'}`);
         }
 
         return {
@@ -166,7 +187,7 @@ const AddListing = () => {
         const payload = buildPayloadFromListingData();
         if (!payload) {
             setError('Please complete address, price, bedrooms, bathrooms, and size before publishing.');
-            setStep(2);
+            setStep(createListingStep);
             return;
         }
 
@@ -192,10 +213,56 @@ const AddListing = () => {
             {loading ? <p className="listing-wizard-status listing-wizard-status--loading">Publishing listing...</p> : null}
 
             {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} /> : null}
-            {step === 2 ? <Step2CreateListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} /> : null}
-            {step === 3 ? <Step3Amenities data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} /> : null}
-            {step === 4 ? <Step4Media data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} /> : null}
-            {step === 5 ? <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} /> : null}
+            {usesEnterpriseModel && step === 2 ? (
+                <Step2EnterpriseModel
+                    data={data}
+                    updateData={updateData}
+                    nextStep={nextStep}
+                    prevStep={prevStep}
+                />
+            ) : null}
+            {step === createListingStep ? (
+                <Step2CreateListing
+                    data={data}
+                    updateData={updateData}
+                    nextStep={nextStep}
+                    prevStep={prevStep}
+                    stepNumber={createListingStep}
+                    totalSteps={totalSteps}
+                    progressPercent={progressForStep(createListingStep)}
+                />
+            ) : null}
+            {step === amenitiesStep ? (
+                <Step3Amenities
+                    data={data}
+                    updateData={updateData}
+                    nextStep={nextStep}
+                    prevStep={prevStep}
+                    stepNumber={amenitiesStep}
+                    totalSteps={totalSteps}
+                    progressPercent={progressForStep(amenitiesStep)}
+                />
+            ) : null}
+            {step === mediaStep ? (
+                <Step4Media
+                    data={data}
+                    updateData={updateData}
+                    nextStep={nextStep}
+                    prevStep={prevStep}
+                    stepNumber={mediaStep}
+                    totalSteps={totalSteps}
+                    progressPercent={progressForStep(mediaStep)}
+                />
+            ) : null}
+            {step === publishStep ? (
+                <Step5PublishListing
+                    data={data}
+                    prevStep={prevStep}
+                    onPublishFinished={onPublishFinished}
+                    stepNumber={publishStep}
+                    totalSteps={totalSteps}
+                />
+            ) : null}
         </div>
     );
 };

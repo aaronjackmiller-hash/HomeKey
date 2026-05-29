@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
-export const Step5PublishListing = ({ data, prevStep, onPublishFinished }) => {
+export const Step5PublishListing = ({
+    data,
+    prevStep,
+    onPublishFinished,
+    stepNumber = 5,
+    totalSteps = 5,
+}) => {
     const [primaryImageSrc, setPrimaryImageSrc] = useState('');
     const [displayPhone, setDisplayPhone] = useState(true);
 
@@ -20,8 +26,8 @@ export const Step5PublishListing = ({ data, prevStep, onPublishFinished }) => {
                 <div className="wizard-progress-fill" style={{ width: '100%' }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 5: Publish listing!</h2>
-                <span className="wizard-step-counter">Step 5 of 5</span>
+                <h2>{`Step ${stepNumber}: Publish listing!`}</h2>
+                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <div className="wizard-publish-card">

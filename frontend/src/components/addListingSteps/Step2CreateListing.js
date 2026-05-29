@@ -1,14 +1,24 @@
 import React from 'react';
 
-export const Step2CreateListing = ({ data, updateData, nextStep, prevStep }) => {
+export const Step2CreateListing = ({
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    stepNumber = 2,
+    totalSteps = 5,
+    progressPercent = 40,
+}) => {
+    const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
+
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: '40%' }} />
+                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 2: Create a listing</h2>
-                <span className="wizard-step-counter">Step 2 of 5</span>
+                <h2>{`Step ${stepNumber}: Create a listing`}</h2>
+                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <div className="wizard-verified-pill">
@@ -143,7 +153,7 @@ export const Step2CreateListing = ({ data, updateData, nextStep, prevStep }) => 
                     onClick={nextStep}
                     className="wizard-btn wizard-btn--full"
                 >
-                    Continue to Step 3
+                    {`Continue to Step ${nextStepLabel}`}
                 </button>
             </div>
         </div>
