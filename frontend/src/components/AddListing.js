@@ -10,11 +10,17 @@ import './addListingSteps/addListingWizard.css';
 
 /**
  * @typedef {Object} ListingData
- * @property {'Apartment'|'House'} propertyType
+ * @property {'Apartment'|'House'|''} propertyType
  * @property {'Rental'|'For Sale'|''} listingType
  * @property {boolean|null} lookingForRoommates
  * @property {{street: string, number: string, city: string}} address
  * @property {string} relation
+ * @property {File|null} verificationDocument
+ * @property {string} licenseNumber
+ * @property {string} agencyName
+ * @property {string} brokerFee
+ * @property {string} managementCompanyName
+ * @property {string} emergencyMaintenancePhone
  * @property {string} bedrooms
  * @property {string} bathrooms
  * @property {string} sizeSqm
@@ -36,6 +42,12 @@ const createInitialListingData = () => ({
     lookingForRoommates: null,
     address: { street: '', number: '', city: '' },
     relation: '',
+    verificationDocument: null,
+    licenseNumber: '',
+    agencyName: '',
+    brokerFee: '',
+    managementCompanyName: '',
+    emergencyMaintenancePhone: '',
     bedrooms: '1',
     bathrooms: '1',
     sizeSqm: '',
@@ -102,10 +114,25 @@ const AddListing = () => {
 
         const summaryRows = [
             `Listing relation: ${data.relation || 'N/A'}`,
-            `Looking for roommates: ${data.lookingForRoommates ? 'Yes' : 'No'}`,
+            `Looking for roommates: ${data.lookingForRoommates === null ? 'N/A' : (data.lookingForRoommates ? 'Yes' : 'No')}`,
             `Lease length: ${data.leaseLength || 'N/A'}`,
             `Deposit: ${data.deposit || 'N/A'}`,
         ];
+
+        if (data.relation === 'property owner') {
+            summaryRows.push(`Property verification document: ${data.verificationDocument?.name || 'Not uploaded'}`);
+        }
+
+        if (data.relation === 'agent/broker') {
+            summaryRows.push(`License number: ${data.licenseNumber || 'N/A'}`);
+            summaryRows.push(`Agency name: ${data.agencyName || 'N/A'}`);
+            summaryRows.push(`Broker fee: ${data.brokerFee || 'N/A'}`);
+        }
+
+        if (data.relation === 'property manager') {
+            summaryRows.push(`Management company: ${data.managementCompanyName || 'N/A'}`);
+            summaryRows.push(`Emergency maintenance phone: ${data.emergencyMaintenancePhone || 'N/A'}`);
+        }
 
         return {
             title: `${data.propertyType} ${data.listingType} in ${data.address.city}`,

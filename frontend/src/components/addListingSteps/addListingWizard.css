@@ -235,6 +235,58 @@
   color: #4b5563;
 }
 
+.wizard-relation-panel {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #d2dae5;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.wizard-relation-title {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.wizard-relation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wizard-relation-grid-full {
+  grid-column: 1 / -1;
+}
+
+.wizard-file-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 40px;
+  border: 1px dashed #9fb0c2;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.79rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wizard-file-upload input {
+  display: none;
+}
+
+.wizard-file-name {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: #475569;
+  word-break: break-all;
+}
+
 .wizard-verified-pill {
   display: flex;
   align-items: center;
@@ -515,7 +567,8 @@
   .wizard-card-grid,
   .wizard-step1-grid-two,
   .wizard-address-grid,
-  .wizard-amenities-grid {
+  .wizard-amenities-grid,
+  .wizard-relation-grid {
     grid-template-columns: 1fr;
   }
 

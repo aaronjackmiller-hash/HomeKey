@@ -34,6 +34,13 @@ const HouseIcon = () => (
 
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
     const relationSelected = String(data.relation || '').trim().length > 0;
+    const requiresBrokerDetails = data.relation === 'agent/broker';
+    const isBrokerDetailsReady = Boolean(
+        String(data.licenseNumber || '').trim()
+        && String(data.agencyName || '').trim()
+        && String(data.brokerFee || '').trim()
+    );
+
     const isReadyToContinue = Boolean(
         data.propertyType
         && data.listingType
@@ -42,6 +49,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
         && String(data.address.number || '').trim()
         && String(data.address.city || '').trim()
         && relationSelected
+        && (!requiresBrokerDetails || isBrokerDetailsReady)
     );
 
     const handleContinue = () => {
@@ -152,6 +160,89 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 </select>
             </div>
 
+            {data.relation && data.relation !== 'renter' ? (
+                <div className="wizard-relation-panel">
+                    <p className="wizard-relation-title">Verification &amp; Professional Details</p>
+
+                    {data.relation === 'property owner' ? (
+                        <div className="wizard-row">
+                            <label className="wizard-field-label">Property Verification Document (Tabu/ID) — optional</label>
+                            <label className="wizard-file-upload">
+                                <input
+                                    type="file"
+                                    accept=".pdf,image/*"
+                                    onChange={(e) => updateData({ verificationDocument: e.target.files?.[0] || null })}
+                                />
+                                <span>Upload verification file</span>
+                            </label>
+                            {data.verificationDocument ? (
+                                <p className="wizard-file-name">{data.verificationDocument.name}</p>
+                            ) : null}
+                        </div>
+                    ) : null}
+
+                    {data.relation === 'agent/broker' ? (
+                        <div className="wizard-relation-grid">
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">License Number *</label>
+                                <input
+                                    type="text"
+                                    className="wizard-input"
+                                    value={data.licenseNumber}
+                                    onChange={(e) => updateData({ licenseNumber: e.target.value })}
+                                    placeholder="e.g. BR-12345"
+                                />
+                            </div>
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">Agency Name *</label>
+                                <input
+                                    type="text"
+                                    className="wizard-input"
+                                    value={data.agencyName}
+                                    onChange={(e) => updateData({ agencyName: e.target.value })}
+                                    placeholder="Agency or brokerage"
+                                />
+                            </div>
+                            <div className="wizard-field wizard-relation-grid-full">
+                                <label className="wizard-field-label">Broker Fee (₪ or %) *</label>
+                                <input
+                                    type="text"
+                                    className="wizard-input"
+                                    value={data.brokerFee}
+                                    onChange={(e) => updateData({ brokerFee: e.target.value })}
+                                    placeholder="e.g. ₪4,000 or 2%"
+                                />
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {data.relation === 'property manager' ? (
+                        <div className="wizard-relation-grid">
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">Management Company Name</label>
+                                <input
+                                    type="text"
+                                    className="wizard-input"
+                                    value={data.managementCompanyName}
+                                    onChange={(e) => updateData({ managementCompanyName: e.target.value })}
+                                    placeholder="Company name"
+                                />
+                            </div>
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">Emergency Maintenance Phone</label>
+                                <input
+                                    type="tel"
+                                    className="wizard-input"
+                                    value={data.emergencyMaintenancePhone}
+                                    onChange={(e) => updateData({ emergencyMaintenancePhone: e.target.value })}
+                                    placeholder="Phone number"
+                                />
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
+
             <button
                 type="button"
                 onClick={handleContinue}
@@ -162,7 +253,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
             </button>
             {!isReadyToContinue ? (
                 <p className="wizard-step-note">
-                    Please complete all Step 1 fields before continuing.
+                    Please complete all required Step 1 fields before continuing.
                 </p>
             ) : null}
         </div>
