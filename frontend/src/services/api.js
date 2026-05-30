@@ -277,6 +277,11 @@ export const runYad2SyncNow = async ({
   return response.data;
 };
 
+export const runYad2SyncNowForUser = async () => {
+  const response = await api.post('/sync/yad2/run', {});
+  return response.data;
+};
+
 export const getYad2SyncStatus = async () => {
   const response = await api.get('/admin/sync/yad2/status');
   return response.data;
