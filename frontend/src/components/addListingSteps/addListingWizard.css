@@ -24,6 +24,12 @@
   border-color: #bfdbfe;
 }
 
+.listing-wizard-status--info {
+  background: #f0f9ff;
+  color: #0f3f75;
+  border-color: #bae6fd;
+}
+
 .wizard-step-card {
   width: min(474px, 100%);
   margin: 0 auto;
