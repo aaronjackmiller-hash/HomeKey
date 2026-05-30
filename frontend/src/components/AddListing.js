@@ -66,6 +66,24 @@ const createInitialListingData = () => ({
     virtualTourUrl: '',
 });
 
+const formatPublishError = (err) => {
+    const responseData = err?.response?.data;
+    const apiErrors = responseData?.errors;
+
+    if (Array.isArray(apiErrors)) {
+        const message = apiErrors
+            .map((entry) => entry?.msg || entry?.message)
+            .filter(Boolean)
+            .join(', ');
+        if (message) return message;
+    }
+
+    return responseData?.message
+        || responseData?.error
+        || err?.message
+        || 'Failed to publish listing.';
+};
+
 const AddListing = () => {
     const history = useHistory();
     const [step, setStep] = useState(1);
@@ -217,12 +235,7 @@ const AddListing = () => {
             const result = await createProperty(payload);
             history.push(`/properties/${result.data._id}`);
         } catch (err) {
-            const apiErrors = err.response?.data?.errors;
-            if (apiErrors) {
-                setError(apiErrors.map((entry) => entry.msg).join(', '));
-            } else {
-                setError(err.response?.data?.message || 'Failed to publish listing.');
-            }
+            setError(formatPublishError(err));
         } finally {
             setLoading(false);
         }
