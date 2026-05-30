@@ -8,8 +8,12 @@ export const Step3Amenities = ({
     stepNumber = 3,
     totalSteps = 5,
     progressPercent = 60,
+    isEnterpriseTrack = false,
 }) => {
     const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
+    const headingText = isEnterpriseTrack
+        ? `Step ${stepNumber}: Global amenities baseline`
+        : `Step ${stepNumber}: Amenities`;
 
     const allAmenities = [
         { id: 'EL', label: 'Elevator' },
@@ -39,7 +43,7 @@ export const Step3Amenities = ({
                 <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>{`Step ${stepNumber}: Amenities`}</h2>
+                <h2>{headingText}</h2>
                 <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
