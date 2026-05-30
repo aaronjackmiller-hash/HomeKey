@@ -116,8 +116,8 @@
   border: 1px solid #b9c4d2;
   border-radius: 12px;
   background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
-  min-height: 164px;
-  padding: 10px 10px;
+  min-height: 184px;
+  padding: 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -139,13 +139,13 @@
 }
 
 .wizard-property-illustration--apartment {
-  width: 156px;
-  height: 112px;
+  width: 188px;
+  height: 130px;
 }
 
 .wizard-property-illustration--house {
-  width: 156px;
-  height: 112px;
+  width: 188px;
+  height: 130px;
 }
 
 .wizard-property-card.is-selected {
