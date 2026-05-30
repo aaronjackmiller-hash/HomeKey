@@ -5470,26 +5470,22 @@ legend {
     grid-row: 2;
     justify-self: stretch;
     min-width: 0;
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .premium-header__actions {
     width: 100%;
     min-width: 0;
     gap: 8px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
-    overflow-x: auto;
-    padding: 0 2px 2px;
-    scrollbar-width: none;
-  }
-
-  .premium-header__actions::-webkit-scrollbar {
-    display: none;
+    overflow: visible;
+    padding: 0 2px;
   }
 
   .premium-header__actions-utility {
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .premium-header__cta,
