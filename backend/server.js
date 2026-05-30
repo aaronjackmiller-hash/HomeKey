@@ -52,6 +52,7 @@ const {
 } = require('./services/yad2FallbackFeedService');
 const { createPropertyLifecycleRunner } = require('./services/propertyLifecycleRunner');
 const { featuredYad2ListingsIL } = require('./data/featuredYad2ListingsIL');
+const { protect } = require('./middleware/auth');
 const User = require('./models/User');
 
 const isRealScrapeOnlyMode = () => {
@@ -706,6 +707,30 @@ app.get('/api/sync/yad2/status', (req, res) => {
         success: true,
         status: getPublicYad2SyncStatus(),
     });
+});
+
+// Authenticated endpoint — trigger one immediate Yad2 sync run from the app.
+// Intended for in-product enterprise onboarding without requiring admin secrets.
+// Usage: POST /api/sync/yad2/run
+app.post('/api/sync/yad2/run', protect, async (req, res) => {
+    try {
+        const result = await yad2Scheduler.runSyncOnce('app-user-api');
+        if (result.skipped) {
+            return res.json({
+                success: true,
+                message: `Yad2 sync skipped: ${result.reason}.`,
+                ...result,
+            });
+        }
+        return res.json({
+            success: true,
+            message: 'Yad2 sync completed.',
+            ...result,
+        });
+    } catch (err) {
+        console.error('[sync/yad2/run] Sync failed:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 // Health check

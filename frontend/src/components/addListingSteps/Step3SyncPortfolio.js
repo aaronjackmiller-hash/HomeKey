@@ -1,5 +1,5 @@
 import React from 'react';
-import { getYad2SyncStatus, runYad2SyncNow } from '../../services/api';
+import { getPublicYad2SyncStatus, runYad2SyncNowForUser } from '../../services/api';
 
 export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
     const [statusLoading, setStatusLoading] = React.useState(false);
@@ -8,32 +8,46 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
     const [syncStatus, setSyncStatus] = React.useState(null);
     const [syncResult, setSyncResult] = React.useState(null);
 
-    const handleRefreshStatus = async () => {
+    const applyStatusResponse = React.useCallback((response) => {
+        if (response && typeof response === 'object' && response.status && typeof response.status === 'object') {
+            setSyncStatus(response.status);
+            return;
+        }
+        setSyncStatus(response || null);
+    }, []);
+
+    const handleRefreshStatus = React.useCallback(async () => {
         setError('');
         setStatusLoading(true);
         try {
-            const response = await getYad2SyncStatus();
-            setSyncStatus(response);
+            const response = await getPublicYad2SyncStatus();
+            applyStatusResponse(response);
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Failed to load sync status.');
         } finally {
             setStatusLoading(false);
         }
-    };
+    }, [applyStatusResponse]);
 
     const handleRunSyncNow = async () => {
         setError('');
         setSyncResult(null);
         setSyncLoading(true);
         try {
-            const response = await runYad2SyncNow();
+            const response = await runYad2SyncNowForUser();
             setSyncResult(response);
+            const latestStatus = await getPublicYad2SyncStatus();
+            applyStatusResponse(latestStatus);
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Portfolio sync failed.');
         } finally {
             setSyncLoading(false);
         }
     };
+
+    React.useEffect(() => {
+        handleRefreshStatus();
+    }, [handleRefreshStatus]);
 
     return (
         <div className="wizard-step-card">
