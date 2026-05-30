@@ -57,7 +57,6 @@ const MyAccount = () => {
   const [form, setForm] = useState(toFormState(user));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -95,7 +94,6 @@ const MyAccount = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
-    setStatus('');
     setError('');
     let shouldResetSaving = true;
     try {
@@ -146,14 +144,6 @@ const MyAccount = () => {
           <p>Update your profile and contact preferences.</p>
 
           <div className="account-alerts" aria-live="polite">
-            {status && (
-              <div className="account-alert account-alert--success">
-                <svg className="account-alert__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-                  <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm3.72-9.53a.75.75 0 0 0-1.06-1.06L9 11.07 7.34 9.41a.75.75 0 1 0-1.06 1.06l2.19 2.19c.29.29.77.29 1.06 0l4.19-4.19Z" />
-                </svg>
-                {status}
-              </div>
-            )}
             {error && (
               <div className="account-alert account-alert--error" role="alert">
                 {error}
