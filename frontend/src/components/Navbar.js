@@ -749,7 +749,32 @@ const Navbar = () => {
     applySearch({ nextFeatureFilters });
   };
 
+  const handleFilterMenuListingTypeChange = (nextListingType) => {
+    const normalizedListingType = sanitizeListingType(nextListingType);
+    setListingType(normalizedListingType);
+    applySearch({ nextListingType: normalizedListingType });
+  };
+
+  const handleFilterMenuRoomsChange = (nextRooms) => {
+    const normalizedRooms = String(nextRooms || '').trim();
+    setRooms(normalizedRooms);
+    setRoomsDraft(normalizedRooms);
+    applySearch({ nextRooms: normalizedRooms });
+  };
+
+  const handleFilterMenuBathsChange = (nextBaths) => {
+    const normalizedBaths = String(nextBaths || '').trim();
+    setBaths(normalizedBaths);
+    setBathsDraft(normalizedBaths);
+    applySearch({ nextBaths: normalizedBaths });
+  };
+
   const handleClearAllFilters = () => {
+    setRooms('');
+    setBaths('');
+    setRoomsDraft('');
+    setBathsDraft('');
+    setListingType('all');
     setPropertyCategory('');
     setFeatureFilters([]);
     setMinPriceInput(PRICE_SLIDER_MIN);
@@ -758,6 +783,9 @@ const Navbar = () => {
     maxPriceDraftRef.current = PRICE_SLIDER_MAX;
     setFiltersExpanded(false);
     applySearch({
+      nextRooms: '',
+      nextBaths: '',
+      nextListingType: 'all',
       nextPropertyCategory: '',
       nextFeatureFilters: [],
       nextMinPriceInput: PRICE_SLIDER_MIN,
@@ -860,6 +888,7 @@ const Navbar = () => {
   const languageTarget = language === 'he' ? 'English' : 'עברית';
   const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
+  const hasAdvancedFilters = listingType !== 'all' || Boolean(propertyCategory) || featureFilters.length > 0;
 
   return (
     <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
@@ -1068,7 +1097,7 @@ const Navbar = () => {
                 <button
                   id="header-search-filter-toggle"
                   type="button"
-                  className={`premium-header__filters-toggle ${propertyCategory || featureFilters.length > 0 ? 'is-active' : ''}`}
+                  className={`premium-header__filters-toggle ${hasAdvancedFilters ? 'is-active' : ''}`}
                   onClick={() => {
                     setPriceExpanded(false);
                     setRoomsBathsExpanded(false);
@@ -1086,10 +1115,18 @@ const Navbar = () => {
                 >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
+                    listingType={listingType}
+                    roomOptions={roomOptions}
+                    bathOptions={bathOptions}
+                    rooms={rooms}
+                    baths={baths}
                     minPrice={minPriceInput}
                     maxPrice={maxPriceInput}
                     propertyCategory={propertyCategory}
                     selectedFeatures={featureFilters}
+                    onListingTypeChange={handleFilterMenuListingTypeChange}
+                    onRoomsChange={handleFilterMenuRoomsChange}
+                    onBathsChange={handleFilterMenuBathsChange}
                     onMinPriceChange={handleFilterMenuMinPriceChange}
                     onMaxPriceChange={handleFilterMenuMaxPriceChange}
                     onTogglePropertyCategory={handleTogglePropertyCategory}
