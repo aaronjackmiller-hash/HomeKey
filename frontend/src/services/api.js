@@ -28,6 +28,7 @@ const isProtectedRequestPath = (method = 'GET', requestPath = '') => {
   if (path.startsWith('/alerts')) return !isReadOnlyMethod;
   if (path.startsWith('/users')) return !isReadOnlyMethod;
   if (path.startsWith('/admin')) return true;
+  if (path.startsWith('/sync')) return !isReadOnlyMethod;
   if (path.startsWith('/auth/passkeys/register')) return true;
   if (path.startsWith('/auth/me')) return true;
   if (/^\/properties\/[^/]+\/engagement$/.test(path)) return true;
