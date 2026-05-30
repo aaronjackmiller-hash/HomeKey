@@ -26,7 +26,7 @@ const validatePropertyInput = [
         .isInt({ min: 0 }).withMessage('Bedrooms must be greater than or equal to 0')
         .notEmpty().withMessage('Bedrooms are required'),
     body('bathrooms')
-        .isInt({ min: 0 }).withMessage('Bathrooms must be greater than or equal to 0')
+        .isFloat({ min: 0 }).withMessage('Bathrooms must be a number greater than or equal to 0')
         .notEmpty().withMessage('Bathrooms are required'),
     body('size')
         .isFloat({ gt: 0 }).withMessage('Size must be greater than 0')
