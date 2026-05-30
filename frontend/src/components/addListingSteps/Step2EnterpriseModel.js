@@ -3,23 +3,29 @@ import React from 'react';
 export const Step2EnterpriseModel = ({
     data,
     updateData,
-    nextStep,
+    onContinue,
     prevStep,
     totalSteps = 6,
 }) => {
+    const [selectedMethod, setSelectedMethod] = React.useState(data.onboardingMethod || '');
     const [showRequiredHint, setShowRequiredHint] = React.useState(false);
-    const hasSelection = Boolean(data.onboardingMethod);
-    const progressPercent = Math.round((2 / totalSteps) * 100);
-    const continueLabel = data.onboardingMethod === 'SyncPortfolio'
+    const hasSelection = Boolean(selectedMethod);
+    const effectiveTotalSteps = selectedMethod === 'SyncPortfolio' ? 3 : totalSteps;
+    const progressPercent = Math.round((2 / effectiveTotalSteps) * 100);
+    const continueLabel = selectedMethod === 'SyncPortfolio'
         ? 'Continue to Portfolio Sync'
         : 'Continue to Step 3';
+
+    React.useEffect(() => {
+        setSelectedMethod(data.onboardingMethod || '');
+    }, [data.onboardingMethod]);
 
     const handleContinue = () => {
         setShowRequiredHint(true);
         if (!hasSelection) {
             return;
         }
-        nextStep();
+        onContinue(selectedMethod);
     };
 
     return (
@@ -29,7 +35,7 @@ export const Step2EnterpriseModel = ({
             </div>
             <div className="wizard-step-header">
                 <h2>Step 2: Enterprise model</h2>
-                <span className="wizard-step-counter">{`Step 2 of ${totalSteps}`}</span>
+                <span className="wizard-step-counter">{`Step 2 of ${effectiveTotalSteps}`}</span>
             </div>
 
             <p className="wizard-step-note" style={{ marginTop: 0 }}>
@@ -39,8 +45,12 @@ export const Step2EnterpriseModel = ({
             <div className="wizard-row">
                 <label className="wizard-field-label">Onboarding Method</label>
                 <select
-                    value={data.onboardingMethod || ''}
-                    onChange={(e) => updateData({ onboardingMethod: e.target.value })}
+                    value={selectedMethod}
+                    onChange={(e) => {
+                        const nextValue = e.target.value;
+                        setSelectedMethod(nextValue);
+                        updateData({ onboardingMethod: nextValue });
+                    }}
                     className={`wizard-select ${showRequiredHint && !hasSelection ? 'wizard-field-required' : ''}`}
                 >
                     <option value="">{showRequiredHint && !hasSelection ? 'Required' : 'Select onboarding method...'}</option>
