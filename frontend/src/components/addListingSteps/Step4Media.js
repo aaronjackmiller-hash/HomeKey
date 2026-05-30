@@ -8,9 +8,20 @@ export const Step4Media = ({
     stepNumber = 4,
     totalSteps = 5,
     progressPercent = 80,
+    isEnterpriseTrack = false,
 }) => {
     const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
     const [previews, setPreviews] = useState([]);
+    const headingText = isEnterpriseTrack
+        ? `Step ${stepNumber}: Brand identity assets`
+        : `Step ${stepNumber}: Add your media`;
+    const noteText = isEnterpriseTrack
+        ? 'Upload corporate logo or brand assets to apply a verified identity layer to enterprise listings.'
+        : 'Add photos or videos. The first file becomes the primary image.';
+    const uploadTitle = isEnterpriseTrack ? 'Upload Corporate Branding Assets' : 'Add Photos and Videos';
+    const uploadCopy = isEnterpriseTrack
+        ? 'Click to upload logo files... (SVG, PNG, JPEG)'
+        : 'Click to upload, or drag files here... (GIF, PNG, JPEG)';
 
     useEffect(() => {
         const mediaPreviews = (data.mediaFiles || []).map((file) => URL.createObjectURL(file));
@@ -36,12 +47,12 @@ export const Step4Media = ({
                 <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>{`Step ${stepNumber}: Add your media`}</h2>
+                <h2>{headingText}</h2>
                 <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <p className="wizard-step-note">
-                Add photos or videos. The first file becomes the primary image.
+                {noteText}
             </p>
 
             <div className="wizard-upload-box">
@@ -52,8 +63,8 @@ export const Step4Media = ({
                     onChange={handleFileChange}
                     className="wizard-upload-input"
                 />
-                <p className="wizard-upload-title">Add Photos and Videos</p>
-                <p className="wizard-upload-copy">Click to upload, or drag files here... (GIF, PNG, JPEG)</p>
+                <p className="wizard-upload-title">{uploadTitle}</p>
+                <p className="wizard-upload-copy">{uploadCopy}</p>
             </div>
 
             {previews.length > 0 && (

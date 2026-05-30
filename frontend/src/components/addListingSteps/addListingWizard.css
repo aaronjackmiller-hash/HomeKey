@@ -337,6 +337,33 @@
   color: #6b7280;
 }
 
+.wizard-sync-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.wizard-sync-message {
+  margin: 0 0 10px;
+  border: 1px solid #d5dde8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.wizard-sync-message--loading {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.wizard-sync-message--success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #14532d;
+}
+
 .wizard-amenities-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -591,6 +618,100 @@
   cursor: not-allowed;
 }
 
+.wizard-step-card--enterprise-final {
+  width: min(860px, 100%);
+}
+
+.wizard-enterprise-section {
+  margin: 12px 0;
+}
+
+.wizard-enterprise-title {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+}
+
+.wizard-agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wizard-agent-card {
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 8px;
+}
+
+.wizard-agent-name {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.wizard-agent-stat {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #475569;
+}
+
+.wizard-routing-table {
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.wizard-routing-header,
+.wizard-routing-row {
+  display: grid;
+  grid-template-columns: 3fr 0.9fr 1.6fr 1.3fr;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+}
+
+.wizard-routing-header {
+  background: #f8fafc;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+}
+
+.wizard-routing-row {
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.74rem;
+  color: #1f2937;
+}
+
+.wizard-routing-leads {
+  font-weight: 800;
+  color: #0f3555;
+}
+
+.wizard-pill-toggle {
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.wizard-pill-toggle.is-active {
+  border-color: #0f3555;
+  background: #0f3555;
+  color: #ffffff;
+}
+
 @media (max-width: 540px) {
   .wizard-step2-grid,
   .wizard-card-grid,
@@ -603,5 +724,12 @@
 
   .wizard-step-header h2 {
     font-size: 1.28rem;
+  }
+
+  .wizard-sync-row,
+  .wizard-agent-grid,
+  .wizard-routing-header,
+  .wizard-routing-row {
+    grid-template-columns: 1fr;
   }
 }

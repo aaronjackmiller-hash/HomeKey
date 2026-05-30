@@ -4,10 +4,11 @@ import { createProperty } from '../services/api';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
 import { Step2EnterpriseModel } from './addListingSteps/Step2EnterpriseModel';
 import { Step2CreateListing } from './addListingSteps/Step2CreateListing';
-import { Step3SyncPortfolio } from './addListingSteps/Step3SyncPortfolio';
+import { Step3EnterpriseFeedConnect } from './addListingSteps/Step3EnterpriseFeedConnect';
 import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
 import { Step5PublishListing } from './addListingSteps/Step5PublishListing';
+import { Step6EnterpriseRouting } from './addListingSteps/Step6EnterpriseRouting';
 import './addListingSteps/addListingWizard.css';
 
 /**
@@ -66,6 +67,18 @@ const createInitialListingData = () => ({
     virtualTourUrl: '',
 });
 
+const initialEnterpriseAgents = [
+    { id: '1', name: 'Tomer S.', leadsPassed: 24, activeProperties: 8, conversionRate: '18%' },
+    { id: '2', name: 'Shira L.', leadsPassed: 42, activeProperties: 6, conversionRate: '26%' },
+    { id: '3', name: 'Maya R.', leadsPassed: 11, activeProperties: 4, conversionRate: '14%' },
+];
+
+const initialEnterpriseListings = [
+    { id: 'a', address: 'Jaffa German Colony 12, Tel Aviv', source: 'Website', price: 24000, assignedAgentId: '1', boosterActive: true, leadsCount: 4 },
+    { id: 'b', address: 'Florentin St. 4, Tel Aviv', source: 'Yad2', price: 7200, assignedAgentId: '2', boosterActive: false, leadsCount: 12 },
+    { id: 'c', address: 'Rothschild Blvd 46, Tel Aviv', source: 'Facebook', price: 19000, assignedAgentId: '3', boosterActive: true, leadsCount: 8 },
+];
+
 const AddListing = () => {
     const history = useHistory();
     const [step, setStep] = useState(1);
@@ -73,17 +86,21 @@ const AddListing = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [enterpriseOnboardingMethod, setEnterpriseOnboardingMethod] = useState('');
+    const [enterpriseFeedUrl, setEnterpriseFeedUrl] = useState('');
+    const [syncedPortfolioCount, setSyncedPortfolioCount] = useState(0);
+    const [enterpriseListings, setEnterpriseListings] = useState(initialEnterpriseListings);
     const usesEnterpriseModel = data.relation === 'property manager';
     const effectiveOnboardingMethod = usesEnterpriseModel
         ? (enterpriseOnboardingMethod || data.onboardingMethod)
         : '';
     const usesSyncPortfolioFlow = usesEnterpriseModel && effectiveOnboardingMethod === 'SyncPortfolio';
-    const totalSteps = usesSyncPortfolioFlow ? 3 : (usesEnterpriseModel ? 6 : 5);
+    const usesManualEnterpriseFlow = usesEnterpriseModel && effectiveOnboardingMethod === 'AddManualSingle';
+    const totalSteps = usesEnterpriseModel ? 6 : 5;
     const createListingStep = usesEnterpriseModel ? 3 : 2;
-    const syncPortfolioStep = 3;
-    const amenitiesStep = createListingStep + 1;
-    const mediaStep = createListingStep + 2;
-    const publishStep = createListingStep + 3;
+    const feedConnectStep = 3;
+    const amenitiesStep = usesEnterpriseModel ? 4 : 3;
+    const mediaStep = usesEnterpriseModel ? 5 : 4;
+    const publishStep = usesEnterpriseModel ? 6 : 5;
     const progressForStep = (stepNumber) => Math.round((stepNumber / totalSteps) * 100);
 
     const updateData = (updates) => {
@@ -92,6 +109,8 @@ const AddListing = () => {
         }
         if (Object.prototype.hasOwnProperty.call(updates, 'relation') && updates.relation !== 'property manager') {
             setEnterpriseOnboardingMethod('');
+            setEnterpriseFeedUrl('');
+            setSyncedPortfolioCount(0);
         }
 
         setData((prev) => {
@@ -109,6 +128,22 @@ const AddListing = () => {
 
     const prevStep = () => {
         setStep((prev) => Math.max(prev - 1, 1));
+    };
+
+    const handleEnterpriseAgentChange = (listingId, agentId) => {
+        setEnterpriseListings((prev) => prev.map((item) => (
+            item.id === listingId ? { ...item, assignedAgentId: agentId } : item
+        )));
+    };
+
+    const handleEnterpriseBoosterToggle = (listingId) => {
+        setEnterpriseListings((prev) => prev.map((item) => (
+            item.id === listingId ? { ...item, boosterActive: !item.boosterActive } : item
+        )));
+    };
+
+    const handleEnterpriseLaunch = () => {
+        window.alert(`Launching Enterprise Connect Suite across ${enterpriseListings.length} listings.`);
     };
 
     useEffect(() => {
@@ -243,14 +278,20 @@ const AddListing = () => {
                     totalSteps={totalSteps}
                 />
             ) : null}
-            {usesSyncPortfolioFlow && step === syncPortfolioStep ? (
-                <Step3SyncPortfolio
+            {usesSyncPortfolioFlow && step === feedConnectStep ? (
+                <Step3EnterpriseFeedConnect
+                    feedUrl={enterpriseFeedUrl}
+                    onFeedUrlChange={setEnterpriseFeedUrl}
+                    syncedCount={syncedPortfolioCount}
+                    onSyncComplete={setSyncedPortfolioCount}
                     prevStep={prevStep}
-                    onDone={() => history.push('/')}
+                    nextStep={nextStep}
+                    stepNumber={feedConnectStep}
                     totalSteps={totalSteps}
+                    progressPercent={progressForStep(feedConnectStep)}
                 />
             ) : null}
-            {!usesSyncPortfolioFlow && step === createListingStep ? (
+            {(!usesEnterpriseModel && step === createListingStep) || (usesManualEnterpriseFlow && step === createListingStep) ? (
                 <Step2CreateListing
                     data={data}
                     updateData={updateData}
@@ -261,7 +302,7 @@ const AddListing = () => {
                     progressPercent={progressForStep(createListingStep)}
                 />
             ) : null}
-            {!usesSyncPortfolioFlow && step === amenitiesStep ? (
+            {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === amenitiesStep ? (
                 <Step3Amenities
                     data={data}
                     updateData={updateData}
@@ -270,9 +311,10 @@ const AddListing = () => {
                     stepNumber={amenitiesStep}
                     totalSteps={totalSteps}
                     progressPercent={progressForStep(amenitiesStep)}
+                    isEnterpriseTrack={usesEnterpriseModel}
                 />
             ) : null}
-            {!usesSyncPortfolioFlow && step === mediaStep ? (
+            {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === mediaStep ? (
                 <Step4Media
                     data={data}
                     updateData={updateData}
@@ -281,13 +323,28 @@ const AddListing = () => {
                     stepNumber={mediaStep}
                     totalSteps={totalSteps}
                     progressPercent={progressForStep(mediaStep)}
+                    isEnterpriseTrack={usesEnterpriseModel}
                 />
             ) : null}
-            {!usesSyncPortfolioFlow && step === publishStep ? (
+            {!usesEnterpriseModel && step === publishStep ? (
                 <Step5PublishListing
                     data={data}
                     prevStep={prevStep}
                     onPublishFinished={onPublishFinished}
+                    stepNumber={publishStep}
+                    totalSteps={totalSteps}
+                />
+            ) : null}
+            {usesEnterpriseModel && step === publishStep ? (
+                <Step6EnterpriseRouting
+                    agents={initialEnterpriseAgents}
+                    listings={enterpriseListings}
+                    syncedPortfolioCount={syncedPortfolioCount}
+                    onboardingMethod={effectiveOnboardingMethod}
+                    onAgentChange={handleEnterpriseAgentChange}
+                    onToggleBooster={handleEnterpriseBoosterToggle}
+                    prevStep={prevStep}
+                    onLaunch={handleEnterpriseLaunch}
                     stepNumber={publishStep}
                     totalSteps={totalSteps}
                 />
