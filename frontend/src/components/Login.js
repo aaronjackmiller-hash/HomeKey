@@ -21,6 +21,11 @@ const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
 let oauthConfigPromise;
 
+const getRememberedLoginEmail = () => {
+  if (typeof window === 'undefined') return '';
+  return String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+};
+
 const resolveSafeRedirectPath = (rawValue) => {
   const fallback = '/';
   const candidate = String(rawValue || '').trim();
@@ -74,13 +79,14 @@ const Login = () => {
   const { login } = useAuth();
   const history = useHistory();
   const location = useLocation();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const rememberedEmailOnLoad = getRememberedLoginEmail();
+  const [form, setForm] = useState(() => ({ email: rememberedEmailOnLoad, password: '' }));
   const [socialLoading, setSocialLoading] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [enablePasskey, setEnablePasskey] = useState(false);
-  const [rememberUsername, setRememberUsername] = useState(false);
+  const [rememberUsername, setRememberUsername] = useState(() => rememberedEmailOnLoad.length > 0);
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
   const passkeySetupOpen = passkeySetupStep.length > 0;
   const authDestination = useMemo(() => {
@@ -102,18 +108,17 @@ const Login = () => {
     };
   }, [location.search]);
 
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
-    if (!rememberedEmail) return;
-    setForm((prev) => ({
-      ...prev,
-      email: rememberedEmail,
-    }));
-    setRememberUsername(true);
-  }, []);
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    const normalizedEmail = String(form.email || '').trim();
+    if (rememberUsername && normalizedEmail) {
+      window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
+      return;
+    }
+    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  }, [form.email, rememberUsername]);
 
   const finishAuthAndRedirect = () => {
     if (typeof window !== 'undefined' && authDestination.isSaveSearchIntent) {
@@ -191,14 +196,6 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setNotice('');
-    if (typeof window !== 'undefined') {
-      const normalizedEmail = String(form.email || '').trim();
-      if (rememberUsername && normalizedEmail) {
-        window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
-      } else {
-        window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-      }
-    }
     setLoading(true);
     try {
       await loginWithPassword();
@@ -410,13 +407,10 @@ const Login = () => {
                 onChange={(event) => {
                   const nextChecked = event.target.checked;
                   setRememberUsername(nextChecked);
-                  if (!nextChecked && typeof window !== 'undefined') {
-                    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-                  }
                 }}
                 disabled={formDisabled}
               />
-              <span>Remember my password</span>
+              <span>Remember my email</span>
             </label>
             <Link to="/forgot-password" className="auth-forgot-link">Forgot password?</Link>
           </div>
