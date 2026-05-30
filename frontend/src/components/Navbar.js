@@ -353,6 +353,7 @@ const Navbar = () => {
   const deferredAutoSaveTimerRef = useRef(null);
   const voiceStatusTimerRef = useRef(null);
   const voiceRecognitionRef = useRef(null);
+  const keepFilterSheetOpenRef = useRef(false);
   const priceSliderRange = PRICE_SLIDER_MAX - PRICE_SLIDER_MIN;
   const minSliderPercent = ((minPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
   const maxSliderPercent = ((maxPriceInput - PRICE_SLIDER_MIN) / priceSliderRange) * 100;
@@ -374,7 +375,9 @@ const Navbar = () => {
     setLikedOnly(parsedFromLocation.likedOnly);
     setRoomsDraft(parsedFromLocation.rooms);
     setBathsDraft(parsedFromLocation.baths);
-    setFiltersExpanded(false);
+    const keepFilterSheetOpen = keepFilterSheetOpenRef.current;
+    keepFilterSheetOpenRef.current = false;
+    setFiltersExpanded((currentValue) => (keepFilterSheetOpen ? currentValue : false));
     setRoomsBathsExpanded(false);
   }, [parsedFromLocation]);
 
@@ -548,6 +551,11 @@ const Navbar = () => {
     });
   };
 
+  const applyFilterMenuSearch = (nextSearchOptions) => {
+    keepFilterSheetOpenRef.current = true;
+    applySearch(nextSearchOptions);
+  };
+
   const handleMinPriceSliderChange = (event) => {
     const nextValue = clampPriceValue(event.target.value);
     const maxAllowedMin = Math.max(PRICE_SLIDER_MIN, maxPriceInput - PRICE_SLIDER_STEP);
@@ -719,7 +727,7 @@ const Navbar = () => {
     const nextMinPriceInput = Math.min(parsedValue, maxPriceInput);
     setMinPriceInput(nextMinPriceInput);
     minPriceDraftRef.current = nextMinPriceInput;
-    applySearch({ nextMinPriceInput });
+    applyFilterMenuSearch({ nextMinPriceInput });
   };
 
   const handleFilterMenuMaxPriceChange = (rawValue) => {
@@ -728,7 +736,7 @@ const Navbar = () => {
     const nextMaxPriceInput = Math.max(parsedValue, minPriceInput);
     setMaxPriceInput(nextMaxPriceInput);
     maxPriceDraftRef.current = nextMaxPriceInput;
-    applySearch({ nextMaxPriceInput });
+    applyFilterMenuSearch({ nextMaxPriceInput });
   };
 
   const handleTogglePropertyCategory = (nextCategory) => {
@@ -736,7 +744,7 @@ const Navbar = () => {
     if (!PROPERTY_CATEGORY_OPTIONS.includes(normalizedCategory)) return;
     const resolvedCategory = propertyCategory === normalizedCategory ? '' : normalizedCategory;
     setPropertyCategory(resolvedCategory);
-    applySearch({ nextPropertyCategory: resolvedCategory });
+    applyFilterMenuSearch({ nextPropertyCategory: resolvedCategory });
   };
 
   const handleToggleFeatureFilter = (featureId) => {
@@ -746,27 +754,27 @@ const Navbar = () => {
       ? featureFilters.filter((value) => value !== normalizedFeature)
       : [...featureFilters, normalizedFeature];
     setFeatureFilters(nextFeatureFilters);
-    applySearch({ nextFeatureFilters });
+    applyFilterMenuSearch({ nextFeatureFilters });
   };
 
   const handleFilterMenuListingTypeChange = (nextListingType) => {
     const normalizedListingType = sanitizeListingType(nextListingType);
     setListingType(normalizedListingType);
-    applySearch({ nextListingType: normalizedListingType });
+    applyFilterMenuSearch({ nextListingType: normalizedListingType });
   };
 
   const handleFilterMenuRoomsChange = (nextRooms) => {
     const normalizedRooms = String(nextRooms || '').trim();
     setRooms(normalizedRooms);
     setRoomsDraft(normalizedRooms);
-    applySearch({ nextRooms: normalizedRooms });
+    applyFilterMenuSearch({ nextRooms: normalizedRooms });
   };
 
   const handleFilterMenuBathsChange = (nextBaths) => {
     const normalizedBaths = String(nextBaths || '').trim();
     setBaths(normalizedBaths);
     setBathsDraft(normalizedBaths);
-    applySearch({ nextBaths: normalizedBaths });
+    applyFilterMenuSearch({ nextBaths: normalizedBaths });
   };
 
   const handleClearAllFilters = () => {
