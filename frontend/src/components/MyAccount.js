@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { getMyAccount, updateMyAccount } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,6 +52,7 @@ const toFormState = (account) => {
 };
 
 const MyAccount = () => {
+  const history = useHistory();
   const { user, updateUserProfile } = useAuth();
   const [form, setForm] = useState(toFormState(user));
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ const MyAccount = () => {
     setSaving(true);
     setStatus('');
     setError('');
+    let shouldResetSaving = true;
     try {
       const payload = {
         name: form.name.trim(),
@@ -107,7 +109,10 @@ const MyAccount = () => {
       const updatedAccount = response?.data && typeof response.data === 'object' ? response.data : {};
       setForm(toFormState(updatedAccount));
       updateUserProfile(updatedAccount);
-      setStatus('Your account details were successfully updated.');
+      shouldResetSaving = false;
+      setSaving(false);
+      history.push('/');
+      return;
     } catch (err) {
       const apiErrors = err.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length > 0) {
@@ -116,7 +121,7 @@ const MyAccount = () => {
         setError(err.response?.data?.message || 'Failed to save account details.');
       }
     } finally {
-      setSaving(false);
+      if (shouldResetSaving) setSaving(false);
     }
   };
 
