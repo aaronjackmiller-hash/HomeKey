@@ -72,8 +72,12 @@ const AddListing = () => {
     const [data, setData] = useState(createInitialListingData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [enterpriseOnboardingMethod, setEnterpriseOnboardingMethod] = useState('');
     const usesEnterpriseModel = data.relation === 'property manager';
-    const usesSyncPortfolioFlow = usesEnterpriseModel && data.onboardingMethod === 'SyncPortfolio';
+    const effectiveOnboardingMethod = usesEnterpriseModel
+        ? (enterpriseOnboardingMethod || data.onboardingMethod)
+        : '';
+    const usesSyncPortfolioFlow = usesEnterpriseModel && effectiveOnboardingMethod === 'SyncPortfolio';
     const totalSteps = usesSyncPortfolioFlow ? 3 : (usesEnterpriseModel ? 6 : 5);
     const createListingStep = usesEnterpriseModel ? 3 : 2;
     const syncPortfolioStep = 3;
@@ -83,6 +87,13 @@ const AddListing = () => {
     const progressForStep = (stepNumber) => Math.round((stepNumber / totalSteps) * 100);
 
     const updateData = (updates) => {
+        if (Object.prototype.hasOwnProperty.call(updates, 'onboardingMethod')) {
+            setEnterpriseOnboardingMethod(String(updates.onboardingMethod || ''));
+        }
+        if (Object.prototype.hasOwnProperty.call(updates, 'relation') && updates.relation !== 'property manager') {
+            setEnterpriseOnboardingMethod('');
+        }
+
         setData((prev) => {
             const next = { ...prev, ...updates };
             if (Object.prototype.hasOwnProperty.call(updates, 'relation') && updates.relation !== 'property manager') {
@@ -103,6 +114,13 @@ const AddListing = () => {
     useEffect(() => {
         setStep((prev) => Math.min(prev, totalSteps));
     }, [totalSteps]);
+
+    const handleEnterpriseContinue = (selectedMethod) => {
+        const normalizedMethod = selectedMethod === 'SyncPortfolio' ? 'SyncPortfolio' : 'AddManualSingle';
+        setEnterpriseOnboardingMethod(normalizedMethod);
+        setData((prev) => ({ ...prev, onboardingMethod: normalizedMethod }));
+        setStep(3);
+    };
 
     const parseNumber = (rawValue) => {
         if (rawValue === '' || rawValue == null) {
@@ -155,7 +173,7 @@ const AddListing = () => {
         if (data.relation === 'property manager') {
             summaryRows.push(`Management company: ${data.managementCompanyName || 'N/A'}`);
             summaryRows.push(`Emergency maintenance phone: ${data.emergencyMaintenancePhone || 'N/A'}`);
-            summaryRows.push(`Onboarding method: ${data.onboardingMethod || 'N/A'}`);
+            summaryRows.push(`Onboarding method: ${effectiveOnboardingMethod || 'N/A'}`);
         }
 
         return {
@@ -220,7 +238,7 @@ const AddListing = () => {
                 <Step2EnterpriseModel
                     data={data}
                     updateData={updateData}
-                    nextStep={nextStep}
+                    onContinue={handleEnterpriseContinue}
                     prevStep={prevStep}
                     totalSteps={totalSteps}
                 />
