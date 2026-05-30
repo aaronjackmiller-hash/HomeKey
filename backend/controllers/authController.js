@@ -47,7 +47,7 @@ const getResetCookieOptions = (minutes) => ({
 
 const parsePreferredContactMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
-    if (['email', 'whatsapp', 'phone'].includes(normalized)) return normalized;
+    if (['email', 'whatsapp', 'phone', 'sms'].includes(normalized)) return normalized;
     return 'email';
 };
 

@@ -146,7 +146,7 @@ const PropertySchema = new mongoose.Schema(
             whatsapp: { type: String, trim: true },
             preferredMethod: {
                 type: String,
-                enum: ['email', 'whatsapp', 'phone'],
+                enum: ['email', 'whatsapp', 'phone', 'sms'],
                 default: 'email',
             },
         },
@@ -181,7 +181,7 @@ const PropertySchema = new mongoose.Schema(
                 phone: { type: String, trim: true },
                 preferredMethod: {
                     type: String,
-                    enum: ['email', 'whatsapp', 'phone'],
+                    enum: ['email', 'whatsapp', 'phone', 'sms'],
                     default: 'email',
                 },
                 message: { type: String, trim: true, required: true },

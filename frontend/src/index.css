@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap");
+
 *,
 *::before,
 *::after {
@@ -2988,6 +2990,262 @@ a {
 
 .form-container h2 {
   margin-top: 0;
+}
+
+.account-page {
+  --account-bg-canvas: #f4f3ef;
+  --account-card-bg: #ffffff;
+  --account-text-title: #111e25;
+  --account-text-body: #2d3748;
+  --account-text-muted: #718096;
+  --account-success-color: #52796f;
+  --account-success-bg: #f0f5f3;
+  --account-error-color: #9f3a38;
+  --account-error-bg: #fff5f5;
+  --account-border-color: #e2e8f0;
+  --account-input-bg: #f8fafc;
+  --account-btn-primary: #1a3038;
+  --account-btn-hover: #0f1f25;
+  min-height: calc(100vh - 103px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem;
+  background: var(--account-bg-canvas);
+  color: var(--account-text-body);
+  font-family: "Plus Jakarta Sans", "Inter", "Roboto", sans-serif;
+}
+
+.account-container {
+  width: 100%;
+  max-width: 760px;
+  padding: 3rem;
+  border: 0;
+  border-radius: 20px;
+  background: var(--account-card-bg);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.02);
+  text-align: center;
+}
+
+.account-container--loading {
+  max-width: 520px;
+}
+
+.account-header {
+  margin-bottom: 2.5rem;
+}
+
+.account-header h1 {
+  margin: 0 0 0.5rem;
+  color: var(--account-text-title);
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.account-header p {
+  margin: 0;
+  color: var(--account-text-muted);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.account-alerts {
+  min-height: 0;
+}
+
+.account-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 30px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.account-alert--success {
+  background: var(--account-success-bg);
+  color: var(--account-success-color);
+}
+
+.account-alert--error {
+  background: var(--account-error-bg);
+  color: var(--account-error-color);
+}
+
+.account-alert__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
+
+.account-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 2rem;
+  row-gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+.account-form-group--full {
+  grid-column: span 2;
+}
+
+.account-form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--account-text-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.account-form-group label span {
+  color: var(--account-text-muted);
+  font-weight: 400;
+}
+
+.account-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.account-input-icon {
+  position: absolute;
+  left: 1rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--account-text-muted);
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.account-input-wrapper input,
+.account-input-wrapper select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--account-border-color);
+  border-radius: 10px;
+  outline: none;
+  background: var(--account-input-bg);
+  color: var(--account-text-title);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.account-input-wrapper--icon input {
+  padding-left: 2.5rem;
+}
+
+.account-input-wrapper input:focus,
+.account-input-wrapper select:focus {
+  border-color: var(--account-btn-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 48, 56, 0.05);
+}
+
+.account-input-wrapper input:disabled,
+.account-input-wrapper select:disabled {
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.account-input-wrapper select {
+  padding-right: 2.5rem;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.account-input-wrapper--select::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  width: 0.48rem;
+  height: 0.48rem;
+  border-right: 2px solid var(--account-text-muted);
+  border-bottom: 2px solid var(--account-text-muted);
+  transform: translateY(-25%) rotate(45deg);
+  pointer-events: none;
+}
+
+.account-form-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.account-save-button {
+  padding: 0.85rem 3rem;
+  border: 0;
+  border-radius: 30px;
+  background: var(--account-btn-primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.account-save-button:hover:not(:disabled) {
+  background: var(--account-btn-hover);
+}
+
+.account-save-button:focus-visible {
+  outline: 3px solid rgba(26, 48, 56, 0.18);
+  outline-offset: 3px;
+}
+
+.account-save-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.account-back-link {
+  border-bottom: 1px solid transparent;
+  color: var(--account-text-muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.account-back-link:hover {
+  border-bottom-color: var(--account-text-title);
+  color: var(--account-text-title);
+}
+
+.account-back-link:focus-visible {
+  outline: 3px solid rgba(26, 48, 56, 0.16);
+  outline-offset: 4px;
+}
+
+@media (max-width: 640px) {
+  .account-page {
+    align-items: flex-start;
+  }
+
+  .account-container {
+    padding: 2rem 1.5rem;
+  }
+
+  .account-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-form-group--full {
+    grid-column: span 1;
+  }
 }
 
 .auth-signin-page {

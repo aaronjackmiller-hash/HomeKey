@@ -173,7 +173,7 @@ const UserSchema = new mongoose.Schema(
         },
         preferredContactMethod: {
             type: String,
-            enum: ['email', 'whatsapp', 'phone'],
+            enum: ['email', 'whatsapp', 'phone', 'sms'],
             default: 'email',
         },
         notifications: {
