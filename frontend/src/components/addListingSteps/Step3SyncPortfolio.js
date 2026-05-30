@@ -8,15 +8,15 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
     const [syncStatus, setSyncStatus] = React.useState(null);
     const [syncResult, setSyncResult] = React.useState(null);
 
-    const applyStatusResponse = (response) => {
+    const applyStatusResponse = React.useCallback((response) => {
         if (response && typeof response === 'object' && response.status && typeof response.status === 'object') {
             setSyncStatus(response.status);
             return;
         }
         setSyncStatus(response || null);
-    };
+    }, []);
 
-    const handleRefreshStatus = async () => {
+    const handleRefreshStatus = React.useCallback(async () => {
         setError('');
         setStatusLoading(true);
         try {
@@ -27,7 +27,7 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
         } finally {
             setStatusLoading(false);
         }
-    };
+    }, [applyStatusResponse]);
 
     const handleRunSyncNow = async () => {
         setError('');
@@ -47,8 +47,7 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
 
     React.useEffect(() => {
         handleRefreshStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [handleRefreshStatus]);
 
     return (
         <div className="wizard-step-card">
