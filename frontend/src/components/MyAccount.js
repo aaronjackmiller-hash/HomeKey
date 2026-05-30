@@ -3,6 +3,20 @@ import { Link } from 'react-router-dom';
 import { getMyAccount, updateMyAccount } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const CONTACT_METHOD_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'sms', label: 'SMS' },
+];
+
+const normalizePreferredContactMethod = (rawValue) => {
+  const normalized = String(rawValue || '').trim().toLowerCase();
+  if (normalized === 'whatsapp') return 'sms';
+  return CONTACT_METHOD_OPTIONS.some((option) => option.value === normalized)
+    ? normalized
+    : 'email';
+};
+
 const toDateInputValue = (rawValue) => {
   if (!rawValue) return '';
   const parsed = new Date(rawValue);
@@ -33,9 +47,7 @@ const toFormState = (account) => {
     email: String(normalizedAccount.email || ''),
     phone: String(normalizedAccount.phone || ''),
     moveInDate: toDateInputValue(normalizedAccount.moveInDate),
-    preferredContactMethod: ['email', 'phone'].includes(String(normalizedAccount.preferredContactMethod || '').toLowerCase())
-      ? String(normalizedAccount.preferredContactMethod).toLowerCase()
-      : 'phone',
+    preferredContactMethod: normalizePreferredContactMethod(normalizedAccount.preferredContactMethod),
   };
 };
 
@@ -95,7 +107,7 @@ const MyAccount = () => {
       const updatedAccount = response?.data && typeof response.data === 'object' ? response.data : {};
       setForm(toFormState(updatedAccount));
       updateUserProfile(updatedAccount);
-      setStatus('Your account details were saved.');
+      setStatus('Your account details were successfully updated.');
     } catch (err) {
       const apiErrors = err.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length > 0) {
@@ -110,59 +122,124 @@ const MyAccount = () => {
 
   if (loading) {
     return (
-      <div className="form-container">
-        <h2>My Account</h2>
-        <p>Loading your account details...</p>
+      <div className="account-page">
+        <div className="account-container account-container--loading">
+          <div className="account-header">
+            <h1>My Account</h1>
+            <p>Loading your account details...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="form-container">
-      <h2>My Account</h2>
-      <p>Update your profile and contact preferences.</p>
-      {status && <p style={{ color: 'green' }}>{status}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="input-field">
-          <label>Full Name</label>
-          <input type="text" name="name" value={form.name} onChange={handleChange} required disabled={saving} />
+    <div className="account-page">
+      <div className="account-container">
+        <div className="account-header">
+          <h1>My Account</h1>
+          <p>Update your profile and contact preferences.</p>
+
+          <div className="account-alerts" aria-live="polite">
+            {status && (
+              <div className="account-alert account-alert--success">
+                <svg className="account-alert__icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                  <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm3.72-9.53a.75.75 0 0 0-1.06-1.06L9 11.07 7.34 9.41a.75.75 0 1 0-1.06 1.06l2.19 2.19c.29.29.77.29 1.06 0l4.19-4.19Z" />
+                </svg>
+                {status}
+              </div>
+            )}
+            {error && (
+              <div className="account-alert account-alert--error" role="alert">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="input-field">
-          <label>Email</label>
-          <input type="email" name="email" value={form.email} readOnly disabled />
-        </div>
-        <div className="input-field">
-          <label>Phone (optional)</label>
-          <input type="tel" name="phone" value={form.phone} onChange={handleChange} disabled={saving} />
-        </div>
-        <div className="input-field">
-          <label>Move-in Date (optional)</label>
-          <input
-            type="date"
-            name="moveInDate"
-            value={form.moveInDate}
-            onChange={handleMoveInDateChange}
-            onInput={handleMoveInDateChange}
-            max="2100-12-31"
-            disabled={saving}
-          />
-        </div>
-        <div className="input-field">
-          <label>Preferred Contact Method</label>
-          <select
-            name="preferredContactMethod"
-            value={form.preferredContactMethod}
-            onChange={handleChange}
-            disabled={saving}
-          >
-            <option value="phone">Phone</option>
-            <option value="email">Email</option>
-          </select>
-        </div>
-        <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</button>
-      </form>
-      <p><Link to="/">Back to homepage</Link></p>
+
+        <form className="account-form" onSubmit={handleSubmit}>
+          <div className="account-form-grid">
+            <div className="account-form-group">
+              <label htmlFor="account-name">1. Full Name</label>
+              <div className="account-input-wrapper">
+                <input
+                  id="account-name"
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                />
+              </div>
+            </div>
+
+            <div className="account-form-group">
+              <label htmlFor="account-email">2. Email</label>
+              <div className="account-input-wrapper">
+                <input id="account-email" type="email" name="email" value={form.email} readOnly disabled />
+              </div>
+            </div>
+
+            <div className="account-form-group">
+              <label htmlFor="account-phone">3. Phone <span>(optional)</span></label>
+              <div className="account-input-wrapper account-input-wrapper--icon">
+                <svg className="account-input-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                  <path d="M5.45 2.5c.34-.07.69.1.85.41l1.18 2.35c.13.26.1.57-.08.8l-.99 1.24a10.45 10.45 0 0 0 6.29 6.29l1.24-.99c.23-.18.54-.21.8-.08l2.35 1.18c.31.16.48.51.41.85l-.52 2.6c-.07.38-.41.65-.8.65C8.46 17.8 2.2 11.54 2.2 3.82c0-.39.27-.73.65-.8l2.6-.52Z" />
+                </svg>
+                <input
+                  id="account-phone"
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+              </div>
+            </div>
+
+            <div className="account-form-group">
+              <label htmlFor="account-move-in-date">4. Move-in Date <span>(optional)</span></label>
+              <div className="account-input-wrapper">
+                <input
+                  id="account-move-in-date"
+                  type="date"
+                  name="moveInDate"
+                  value={form.moveInDate}
+                  onChange={handleMoveInDateChange}
+                  onInput={handleMoveInDateChange}
+                  max="2100-12-31"
+                  disabled={saving}
+                />
+              </div>
+            </div>
+
+            <div className="account-form-group account-form-group--full">
+              <label htmlFor="account-contact-method">5. Preferred Contact Method</label>
+              <div className="account-input-wrapper account-input-wrapper--select">
+                <select
+                  id="account-contact-method"
+                  name="preferredContactMethod"
+                  value={form.preferredContactMethod}
+                  onChange={handleChange}
+                  disabled={saving}
+                >
+                  {CONTACT_METHOD_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="account-form-actions">
+            <button type="submit" className="account-save-button" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <Link to="/" className="account-back-link">Back to homepage</Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

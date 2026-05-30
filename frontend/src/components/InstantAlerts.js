@@ -48,6 +48,8 @@ const summarizeSearchCriteria = (search = {}) => {
 const formatDeliveryPreferenceLabel = (value) => {
   const normalized = String(value || '').toLowerCase();
   if (normalized === 'whatsapp') return 'WhatsApp';
+  if (normalized === 'sms') return 'SMS';
+  if (normalized === 'phone') return 'Phone';
   if (normalized === 'email') return 'Email';
   return 'Account preference';
 };

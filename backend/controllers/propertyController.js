@@ -33,7 +33,7 @@ const PROPERTY_UPDATE_FIELDS = [
 
 const parsePreferredMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
-    if (['email', 'whatsapp', 'phone'].includes(normalized)) return normalized;
+    if (['email', 'whatsapp', 'phone', 'sms'].includes(normalized)) return normalized;
     return 'email';
 };
 

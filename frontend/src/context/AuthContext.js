@@ -42,11 +42,11 @@ export const AuthProvider = ({ children }) => {
     clearSession();
   };
 
-  const updateUserProfile = (nextUserData) => {
+  const updateUserProfile = useCallback((nextUserData) => {
     if (!nextUserData || typeof nextUserData !== 'object') return;
     localStorage.setItem('user', JSON.stringify(nextUserData));
     setUser(nextUserData);
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
