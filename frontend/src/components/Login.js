@@ -363,152 +363,169 @@ const Login = () => {
     }
   };
 
+  const formDisabled = loading || socialLoading.length > 0 || passkeySetupOpen;
+  const canUsePasskeys = supportsWebAuthn();
+
   return (
-    <div className="form-container">
-      <h2>Sign In</h2>
-      {authDestination.isSaveSearchIntent && (
-        <p className="auth-help-text">Sign in to save this search. We&apos;ll save it right after you sign in.</p>
-      )}
-      <p className="auth-help-text">Or, create an account to save listings and contact preferences.</p>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {notice && <p style={{ color: '#166534' }}>{notice}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="input-field">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
+    <div className="auth-signin-page">
+      <div className="form-container auth-signin-card">
+        <div className="auth-signin-header">
+          <h2>Sign In</h2>
+          {authDestination.isSaveSearchIntent && (
+            <p className="auth-signin-intent">Sign in to save this search. We&apos;ll save it right after you sign in.</p>
+          )}
+          <p className="auth-signin-subtext">Or, create an account to save listings and contact preferences.</p>
+        </div>
+        {error && <p className="auth-feedback auth-feedback--error">{error}</p>}
+        {notice && <p className="auth-feedback auth-feedback--notice">{notice}</p>}
+        <form className="auth-signin-form" onSubmit={handleSubmit}>
+          <div className="input-field">
+            <label htmlFor="signin-email">Email</label>
+            <input
+              id="signin-email"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+              disabled={formDisabled}
+            />
+          </div>
+          <PasswordField
+            label="Password"
+            name="password"
+            value={form.password}
             onChange={handleChange}
             required
-            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
+            disabled={formDisabled}
+            autoComplete="current-password"
           />
-        </div>
-        <PasswordField
-          label="Password"
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
-          autoComplete="current-password"
-        />
-        <label className="auth-remember-row" htmlFor="remember-username">
-          <input
-            id="remember-username"
-            type="checkbox"
-            checked={rememberUsername}
-            onChange={(event) => {
-              const nextChecked = event.target.checked;
-              setRememberUsername(nextChecked);
-              if (!nextChecked && typeof window !== 'undefined') {
-                window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-              }
-            }}
-            disabled={loading || socialLoading.length > 0 || passkeySetupOpen}
-          />
-          <span>Remember my password</span>
-        </label>
-        <button type="submit" disabled={loading || socialLoading.length > 0 || passkeySetupOpen}>{loading ? 'Signing in…' : 'Sign In'}</button>
-        <label className="auth-passkey-row" htmlFor="enable-passkey-login">
-          <input
-            id="enable-passkey-login"
-            type="checkbox"
-            checked={enablePasskey}
-            onChange={(event) => setEnablePasskey(event.target.checked)}
-            disabled={!supportsWebAuthn() || loading || socialLoading.length > 0 || passkeySetupOpen}
-          />
-          <span>Sign in faster next time with a passkey</span>
-        </label>
-        <button
-          className="secondary-button auth-passkey-action"
-          type="button"
-          onClick={handlePasskeySignIn}
-          disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
-        >
-          {socialLoading === 'passkey' ? 'Checking passkey…' : 'Sign In with Passkey'}
-        </button>
-        {passkeySetupOpen && (
-          <div className="auth-passkey-template" role="dialog" aria-live="polite" aria-label="Passkey setup steps">
-            {passkeySetupStep === 'method' ? (
-              <>
-                <p className="auth-passkey-template__step">Step 1: Choose authentication method</p>
-                <h3>Secure your account</h3>
-                <button
-                  type="button"
-                  className="auth-passkey-template__option"
-                  onClick={() => setPasskeySetupStep('create')}
-                  disabled={socialLoading.length > 0}
-                >
-                  <strong>Passkey</strong>
-                  <span>Verify your identity the same way you unlock your device.</span>
-                </button>
-                <p className="auth-passkey-template__coming-soon">SMS and authenticator app options are coming soon.</p>
-                <button
-                  type="button"
-                  className="auth-passkey-template__skip"
-                  onClick={handleSkipPasskeySetup}
-                  disabled={socialLoading.length > 0}
-                >
-                  Skip for now
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="auth-passkey-template__step">Step 2: Create a passkey</p>
-                <h3>Create a passkey</h3>
-                <p className="auth-passkey-template__copy">
-                  Add a passkey for faster, password-free sign-in using your device&apos;s built-in security.
-                </p>
-                <ul className="auth-passkey-template__benefits">
-                  <li><strong>Seamless:</strong> Sign in with just a look or touch.</li>
-                  <li><strong>Phishing-resistant:</strong> Passkeys cannot be stolen or reused by attackers.</li>
-                  <li><strong>Private:</strong> Biometrics and PINs stay on your device.</li>
-                </ul>
-                <div className="auth-passkey-template__actions">
+          <div className="auth-form-options">
+            <label className="auth-remember-row" htmlFor="remember-username">
+              <input
+                id="remember-username"
+                type="checkbox"
+                checked={rememberUsername}
+                onChange={(event) => {
+                  const nextChecked = event.target.checked;
+                  setRememberUsername(nextChecked);
+                  if (!nextChecked && typeof window !== 'undefined') {
+                    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+                  }
+                }}
+                disabled={formDisabled}
+              />
+              <span>Remember my password</span>
+            </label>
+            <Link to="/forgot-password" className="auth-forgot-link">Forgot password?</Link>
+          </div>
+          <button type="submit" className="auth-submit-btn" disabled={formDisabled}>
+            {loading ? 'Signing in…' : 'Sign In'}
+          </button>
+          <label className="auth-passkey-row" htmlFor="enable-passkey-login">
+            <input
+              id="enable-passkey-login"
+              type="checkbox"
+              checked={enablePasskey}
+              onChange={(event) => setEnablePasskey(event.target.checked)}
+              disabled={!canUsePasskeys || formDisabled}
+            />
+            <span>Sign in faster next time with a passkey</span>
+          </label>
+          <button
+            className="secondary-button auth-passkey-action"
+            type="button"
+            onClick={handlePasskeySignIn}
+            disabled={formDisabled}
+          >
+            {socialLoading === 'passkey' ? 'Checking passkey…' : 'Sign In with Passkey'}
+          </button>
+          {passkeySetupOpen && (
+            <div className="auth-passkey-template" role="dialog" aria-live="polite" aria-label="Passkey setup steps">
+              {passkeySetupStep === 'method' ? (
+                <>
+                  <p className="auth-passkey-template__step">Step 1: Choose authentication method</p>
+                  <h3>Secure your account</h3>
                   <button
                     type="button"
-                    className="secondary-button"
-                    onClick={handleCreatePasskeyNow}
+                    className="auth-passkey-template__option"
+                    onClick={() => setPasskeySetupStep('create')}
                     disabled={socialLoading.length > 0}
                   >
-                    {socialLoading === 'passkey-setup' ? 'Opening prompt…' : 'Next'}
+                    <strong>Passkey</strong>
+                    <span>Verify your identity the same way you unlock your device.</span>
                   </button>
+                  <p className="auth-passkey-template__coming-soon">SMS and authenticator app options are coming soon.</p>
                   <button
                     type="button"
                     className="auth-passkey-template__skip"
                     onClick={handleSkipPasskeySetup}
                     disabled={socialLoading.length > 0}
                   >
-                    Skip
+                    Skip for now
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </form>
-      <p><Link to="/forgot-password">Forgot password?</Link></p>
-      <div className="auth-divider" aria-hidden="true"><span>or</span></div>
-      <button
-        type="button"
-        className="auth-oauth-btn"
-        onClick={handleGoogleSignIn}
-        disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
-      >
-        <span className="auth-oauth-icon" aria-hidden="true">G</span>
-        {socialLoading === 'google' ? 'Connecting Google…' : 'Continue with Google'}
-      </button>
-      <button
-        type="button"
-        className="auth-oauth-btn"
-        onClick={handleAppleSignIn}
-        disabled={socialLoading.length > 0 || loading || passkeySetupOpen}
-      >
-        <span className="auth-oauth-icon" aria-hidden="true"></span>
-        {socialLoading === 'apple' ? 'Connecting Apple…' : 'Continue with Apple'}
-      </button>
-      <p>Don't have an account? <Link to={registerRoute}>Register</Link></p>
+                </>
+              ) : (
+                <>
+                  <p className="auth-passkey-template__step">Step 2: Create a passkey</p>
+                  <h3>Create a passkey</h3>
+                  <p className="auth-passkey-template__copy">
+                    Add a passkey for faster, password-free sign-in using your device&apos;s built-in security.
+                  </p>
+                  <ul className="auth-passkey-template__benefits">
+                    <li><strong>Seamless:</strong> Sign in with just a look or touch.</li>
+                    <li><strong>Phishing-resistant:</strong> Passkeys cannot be stolen or reused by attackers.</li>
+                    <li><strong>Private:</strong> Biometrics and PINs stay on your device.</li>
+                  </ul>
+                  <div className="auth-passkey-template__actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={handleCreatePasskeyNow}
+                      disabled={socialLoading.length > 0}
+                    >
+                      {socialLoading === 'passkey-setup' ? 'Opening prompt…' : 'Next'}
+                    </button>
+                    <button
+                      type="button"
+                      className="auth-passkey-template__skip"
+                      onClick={handleSkipPasskeySetup}
+                      disabled={socialLoading.length > 0}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </form>
+        <div className="auth-divider" aria-hidden="true"><span>or</span></div>
+        <div className="auth-social-buttons">
+          <button
+            type="button"
+            className="auth-oauth-btn"
+            onClick={handleGoogleSignIn}
+            disabled={formDisabled}
+          >
+            <span className="auth-oauth-icon auth-oauth-icon--google" aria-hidden="true">G</span>
+            {socialLoading === 'google' ? 'Connecting Google…' : 'Continue with Google'}
+          </button>
+          <button
+            type="button"
+            className="auth-oauth-btn"
+            onClick={handleAppleSignIn}
+            disabled={formDisabled}
+          >
+            <span className="auth-oauth-icon auth-oauth-icon--apple" aria-hidden="true"></span>
+            {socialLoading === 'apple' ? 'Connecting Apple…' : 'Continue with Apple'}
+          </button>
+        </div>
+        <p className="auth-footer-text">
+          Don&apos;t have an account? <Link to={registerRoute}>Register</Link>
+        </p>
+      </div>
     </div>
   );
 };
