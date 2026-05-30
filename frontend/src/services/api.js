@@ -71,7 +71,8 @@ api.interceptors.response.use(
     const shouldExpireSession = isTokenAuthFailure
       && hadBearerAuthHeader
       && isProtectedRequestPath(requestMethod, requestPath);
-    if (shouldExpireSession && typeof window !== 'undefined') {
+    const skipSessionExpiryLogout = Boolean(error?.config?.skipSessionExpiryLogout);
+    if (shouldExpireSession && !skipSessionExpiryLogout && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('homekey:auth-session-expired'));
     }
     return Promise.reject(error);
@@ -167,7 +168,7 @@ export const getProperty = async (id) => {
 };
 
 export const createProperty = async (property) => {
-  const response = await api.post('/properties', property);
+  const response = await api.post('/properties', property, { skipSessionExpiryLogout: true });
   return response.data;
 };
 

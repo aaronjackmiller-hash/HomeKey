@@ -217,6 +217,13 @@ const AddListing = () => {
             const result = await createProperty(payload);
             history.push(`/properties/${result.data._id}`);
         } catch (err) {
+            const status = Number(err?.response?.status || 0);
+            const apiMessage = String(err?.response?.data?.message || '');
+            const isTokenAuthFailure = status === 401 && /token (invalid|expired)/i.test(apiMessage);
+            if (isTokenAuthFailure) {
+                setError('Your session expired while publishing. Please sign in again and then retry publishing.');
+                return;
+            }
             const apiErrors = err.response?.data?.errors;
             if (apiErrors) {
                 setError(apiErrors.map((entry) => entry.msg).join(', '));
