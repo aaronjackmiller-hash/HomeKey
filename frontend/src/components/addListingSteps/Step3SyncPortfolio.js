@@ -1,6 +1,53 @@
 import React from 'react';
 import { getPublicYad2SyncStatus, runYad2SyncNowForUser } from '../../services/api';
 
+const containsNoMatchReason = (value) => {
+    if (typeof value !== 'string') return false;
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    return (
+        normalized.includes('zero listings')
+        || normalized.includes('no listings')
+        || normalized.includes('no matches')
+        || normalized.includes('returned zero')
+        || normalized.includes('wrote zero listings')
+    );
+};
+
+const readFiniteNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const hasNoMatchedListings = (result) => {
+    if (!result || typeof result !== 'object') return false;
+
+    const fetched = readFiniteNumber(result.fetched);
+    const total = readFiniteNumber(result.total);
+    const created = readFiniteNumber(result.created);
+    const updated = readFiniteNumber(result.updated);
+    const skipped = readFiniteNumber(result.skipped);
+    const skipFlag = result.skipped === true;
+
+    if (containsNoMatchReason(result.reason) || containsNoMatchReason(result.message)) {
+        return true;
+    }
+
+    if (fetched === 0 || total === 0) {
+        return true;
+    }
+
+    if (created !== null && updated !== null && (created + updated) === 0) {
+        const hadRowsToEvaluate = (fetched !== null && fetched > 0) || (total !== null && total > 0);
+        const allRowsSkipped = total !== null && total > 0 && skipped !== null && skipped === total;
+        if (hadRowsToEvaluate || allRowsSkipped || skipFlag) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
 export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
     const [statusLoading, setStatusLoading] = React.useState(false);
     const [syncLoading, setSyncLoading] = React.useState(false);
@@ -48,6 +95,11 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
     React.useEffect(() => {
         handleRefreshStatus();
     }, [handleRefreshStatus]);
+
+    const showNoMatchesNote = React.useMemo(() => {
+        if (hasNoMatchedListings(syncResult)) return true;
+        return hasNoMatchedListings(syncStatus?.lastResult);
+    }, [syncResult, syncStatus]);
 
     return (
         <div className="wizard-step-card">
@@ -98,6 +150,12 @@ export const Step3SyncPortfolio = ({ prevStep, onDone, totalSteps = 3 }) => {
                         {syncResult.message || 'Portfolio sync completed.'}
                     </p>
                 </div>
+            ) : null}
+
+            {showNoMatchesNote ? (
+                <p className="listing-wizard-status listing-wizard-status--info">
+                    No listing matches were found for your connected portfolio. Please verify your source account and try syncing again, or continue by creating a listing manually.
+                </p>
             ) : null}
 
             <div className="wizard-actions">
