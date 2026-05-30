@@ -1,8 +1,18 @@
 import React from 'react';
 
-export const Step2EnterpriseModel = ({ data, updateData, nextStep, prevStep }) => {
+export const Step2EnterpriseModel = ({
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    totalSteps = 6,
+}) => {
     const [showRequiredHint, setShowRequiredHint] = React.useState(false);
     const hasSelection = Boolean(data.onboardingMethod);
+    const progressPercent = Math.round((2 / totalSteps) * 100);
+    const continueLabel = data.onboardingMethod === 'SyncPortfolio'
+        ? 'Continue to Portfolio Sync'
+        : 'Continue to Step 3';
 
     const handleContinue = () => {
         setShowRequiredHint(true);
@@ -15,11 +25,11 @@ export const Step2EnterpriseModel = ({ data, updateData, nextStep, prevStep }) =
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: '34%' }} />
+                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
                 <h2>Step 2: Enterprise model</h2>
-                <span className="wizard-step-counter">Step 2 of 6</span>
+                <span className="wizard-step-counter">{`Step 2 of ${totalSteps}`}</span>
             </div>
 
             <p className="wizard-step-note" style={{ marginTop: 0 }}>
@@ -52,7 +62,7 @@ export const Step2EnterpriseModel = ({ data, updateData, nextStep, prevStep }) =
                     onClick={handleContinue}
                     className="wizard-btn wizard-btn--full"
                 >
-                    Continue to Step 3
+                    {continueLabel}
                 </button>
             </div>
         </div>

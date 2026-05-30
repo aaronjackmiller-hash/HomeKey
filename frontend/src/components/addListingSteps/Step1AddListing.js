@@ -62,7 +62,9 @@ const HouseIcon = () => (
 export const Step1AddListing = ({ data, updateData, nextStep }) => {
     const [showRequiredHints, setShowRequiredHints] = React.useState(false);
     const usesEnterpriseModel = data.relation === 'property manager';
-    const totalSteps = usesEnterpriseModel ? 6 : 5;
+    const usesSyncPortfolio = usesEnterpriseModel && data.onboardingMethod === 'SyncPortfolio';
+    const totalSteps = usesSyncPortfolio ? 3 : (usesEnterpriseModel ? 6 : 5);
+    const progressPercent = Math.round((1 / totalSteps) * 100);
     const relationSelected = String(data.relation || '').trim().length > 0;
     const trimmedStreet = String(data.address.street || '').trim();
     const trimmedNumber = String(data.address.number || '').trim();
@@ -102,7 +104,7 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: '20%' }} />
+                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
                 <h2>Step 1: Add your listing</h2>

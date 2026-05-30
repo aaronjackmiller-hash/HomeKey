@@ -4,6 +4,7 @@ import { createProperty } from '../services/api';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
 import { Step2EnterpriseModel } from './addListingSteps/Step2EnterpriseModel';
 import { Step2CreateListing } from './addListingSteps/Step2CreateListing';
+import { Step3SyncPortfolio } from './addListingSteps/Step3SyncPortfolio';
 import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
 import { Step5PublishListing } from './addListingSteps/Step5PublishListing';
@@ -72,8 +73,10 @@ const AddListing = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const usesEnterpriseModel = data.relation === 'property manager';
-    const totalSteps = usesEnterpriseModel ? 6 : 5;
+    const usesSyncPortfolioFlow = usesEnterpriseModel && data.onboardingMethod === 'SyncPortfolio';
+    const totalSteps = usesSyncPortfolioFlow ? 3 : (usesEnterpriseModel ? 6 : 5);
     const createListingStep = usesEnterpriseModel ? 3 : 2;
+    const syncPortfolioStep = 3;
     const amenitiesStep = createListingStep + 1;
     const mediaStep = createListingStep + 2;
     const publishStep = createListingStep + 3;
@@ -90,7 +93,7 @@ const AddListing = () => {
     };
 
     const nextStep = () => {
-        setStep((prev) => Math.min(prev + 1, usesEnterpriseModel ? 6 : 5));
+        setStep((prev) => Math.min(prev + 1, totalSteps));
     };
 
     const prevStep = () => {
@@ -219,9 +222,17 @@ const AddListing = () => {
                     updateData={updateData}
                     nextStep={nextStep}
                     prevStep={prevStep}
+                    totalSteps={totalSteps}
                 />
             ) : null}
-            {step === createListingStep ? (
+            {usesSyncPortfolioFlow && step === syncPortfolioStep ? (
+                <Step3SyncPortfolio
+                    prevStep={prevStep}
+                    onDone={() => history.push('/')}
+                    totalSteps={totalSteps}
+                />
+            ) : null}
+            {!usesSyncPortfolioFlow && step === createListingStep ? (
                 <Step2CreateListing
                     data={data}
                     updateData={updateData}
@@ -232,7 +243,7 @@ const AddListing = () => {
                     progressPercent={progressForStep(createListingStep)}
                 />
             ) : null}
-            {step === amenitiesStep ? (
+            {!usesSyncPortfolioFlow && step === amenitiesStep ? (
                 <Step3Amenities
                     data={data}
                     updateData={updateData}
@@ -243,7 +254,7 @@ const AddListing = () => {
                     progressPercent={progressForStep(amenitiesStep)}
                 />
             ) : null}
-            {step === mediaStep ? (
+            {!usesSyncPortfolioFlow && step === mediaStep ? (
                 <Step4Media
                     data={data}
                     updateData={updateData}
@@ -254,7 +265,7 @@ const AddListing = () => {
                     progressPercent={progressForStep(mediaStep)}
                 />
             ) : null}
-            {step === publishStep ? (
+            {!usesSyncPortfolioFlow && step === publishStep ? (
                 <Step5PublishListing
                     data={data}
                     prevStep={prevStep}
