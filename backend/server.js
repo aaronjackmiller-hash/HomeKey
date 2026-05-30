@@ -281,15 +281,34 @@ const connectMongo = async (initialUri) => {
 // MongoDB connection
 const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey');
 const PORT = process.env.PORT || 5000;
+const JWT_FALLBACK_SECRET_PATH = path.join(__dirname, '.jwt-fallback-secret');
 
 const ensureJwtSecret = () => {
     if (typeof process.env.JWT_SECRET === 'string' && process.env.JWT_SECRET.trim().length > 0) {
         return;
     }
-    // Keep auth endpoints operational in misconfigured environments.
-    // Tokens signed with this ephemeral secret are invalidated on process restart.
-    process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
-    console.warn('[startup] JWT_SECRET is missing. Generated an ephemeral fallback secret for this process.');
+
+    // Keep auth endpoints operational in misconfigured environments while
+    // avoiding unexpected session invalidation after server restarts.
+    try {
+        const hasPersistedSecret = fs.existsSync(JWT_FALLBACK_SECRET_PATH);
+        if (hasPersistedSecret) {
+            const persistedSecret = String(fs.readFileSync(JWT_FALLBACK_SECRET_PATH, 'utf8') || '').trim();
+            if (persistedSecret.length > 0) {
+                process.env.JWT_SECRET = persistedSecret;
+                console.warn('[startup] JWT_SECRET is missing. Reusing persisted fallback secret.');
+                return;
+            }
+        }
+
+        const generatedSecret = crypto.randomBytes(48).toString('hex');
+        fs.writeFileSync(JWT_FALLBACK_SECRET_PATH, generatedSecret, { mode: 0o600 });
+        process.env.JWT_SECRET = generatedSecret;
+        console.warn('[startup] JWT_SECRET is missing. Generated and persisted fallback secret.');
+    } catch (err) {
+        process.env.JWT_SECRET = crypto.randomBytes(48).toString('hex');
+        console.warn(`[startup] JWT_SECRET is missing. Failed to persist fallback secret (${err.message}). Using ephemeral secret.`);
+    }
 };
 
 ensureJwtSecret();

@@ -3,3 +3,4 @@ node_modules/
 *.log
 npm-debug.log*
 frontend/build/
+backend/.jwt-fallback-secret
