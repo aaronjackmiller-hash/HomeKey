@@ -10,6 +10,7 @@ const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
+const TOUCH_MIN_CIRCLE_RADIUS_METERS = 650;
 const EARTH_RADIUS_METERS = 6371000;
 const ZOOM_STEP = 1;
 const BRAND_CHARCOAL = '#1A1A1A';
@@ -606,6 +607,10 @@ const GoogleListingsMap = ({
     drawListenersRef.current = [];
   };
 
+  const getMinimumCircleRadius = (touchLikeMode = touchLikeUiMode) => (
+    touchLikeMode ? TOUCH_MIN_CIRCLE_RADIUS_METERS : MIN_CIRCLE_RADIUS_METERS
+  );
+
   const removeDraftCircle = () => {
     if (draftCircleRef.current) {
       draftCircleRef.current.setMap(null);
@@ -1093,12 +1098,46 @@ const GoogleListingsMap = ({
     });
 
     const getEventPoint = (event) => {
-      if (!event || !event.latLng) return null;
+      if (!event) return null;
       const latValue = event.latLng;
-      const lat = typeof latValue.lat === 'function' ? Number(latValue.lat()) : Number(latValue.lat);
-      const lng = typeof latValue.lng === 'function' ? Number(latValue.lng()) : Number(latValue.lng);
+      if (latValue) {
+        const lat = typeof latValue.lat === 'function' ? Number(latValue.lat()) : Number(latValue.lat);
+        const lng = typeof latValue.lng === 'function' ? Number(latValue.lng()) : Number(latValue.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return { lat, lng, latLng: event.latLng };
+      }
+      const domEvent = event.domEvent || event;
+      const touch = domEvent.touches && domEvent.touches[0]
+        ? domEvent.touches[0]
+        : domEvent.changedTouches && domEvent.changedTouches[0]
+          ? domEvent.changedTouches[0]
+          : null;
+      const clientX = touch ? touch.clientX : domEvent.clientX;
+      const clientY = touch ? touch.clientY : domEvent.clientY;
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY) || !mapContainerRef.current || !mapRef.current) return null;
+      const bounds = typeof mapRef.current.getBounds === 'function' ? mapRef.current.getBounds() : null;
+      const northEast = bounds && typeof bounds.getNorthEast === 'function' ? bounds.getNorthEast() : null;
+      const southWest = bounds && typeof bounds.getSouthWest === 'function' ? bounds.getSouthWest() : null;
+      if (!northEast || !southWest) return null;
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const xRatio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const yRatio = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
+      const north = Number(northEast.lat());
+      const south = Number(southWest.lat());
+      const east = Number(northEast.lng());
+      const west = Number(southWest.lng());
+      const lat = north - ((north - south) * yRatio);
+      const lng = west + ((east - west) * xRatio);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-      return { lat, lng, latLng: event.latLng };
+      return { lat, lng, latLng: new mapsApi.LatLng(lat, lng) };
+    };
+
+    const suppressTouchEvent = (event) => {
+      const domEvent = event && (event.domEvent || event);
+      if (!domEvent || typeof domEvent.type !== 'string' || !domEvent.type.startsWith('touch')) return;
+      if (typeof domEvent.preventDefault === 'function') domEvent.preventDefault();
+      if (typeof domEvent.stopPropagation === 'function') domEvent.stopPropagation();
     };
 
     const startDraftCircle = (point) => {
@@ -1110,7 +1149,7 @@ const GoogleListingsMap = ({
       draftCircleRef.current = new mapsApi.Circle({
         map: mapRef.current,
         center: point.latLng || { lat: point.lat, lng: point.lng },
-        radius: MIN_CIRCLE_RADIUS_METERS,
+        radius: getMinimumCircleRadius(touchLikeDrawMode),
         strokeColor: '#0e8a88',
         strokeOpacity: 0.9,
         strokeWeight: 2,
@@ -1123,12 +1162,13 @@ const GoogleListingsMap = ({
     const updateDraftCircleRadius = (point) => {
       if (!point || !drawStartRef.current || !draftCircleRef.current) return;
       const radiusMeters = getDistanceMeters(drawStartRef.current, { lat: point.lat, lng: point.lng });
-      draftCircleRef.current.setRadius(Math.max(MIN_CIRCLE_RADIUS_METERS, radiusMeters));
+      draftCircleRef.current.setRadius(Math.max(getMinimumCircleRadius(touchLikeDrawMode), radiusMeters));
       lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
     };
 
     const completeDraftCircle = (event) => {
-      const point = getEventPoint(event);
+      suppressTouchEvent(event);
+      const point = getEventPoint(event) || lastDraftPointerRef.current;
       if (point) updateDraftCircleRadius(point);
       if (!draftCircleRef.current) return;
       isDraftDrawing = false;
@@ -1195,12 +1235,14 @@ const GoogleListingsMap = ({
     };
 
     const handlePointerDown = (event) => {
+      suppressTouchEvent(event);
       const point = getEventPoint(event);
       if (!point) return;
       startDraftCircle(point);
     };
 
     const handlePointerMove = (event) => {
+      suppressTouchEvent(event);
       const point = getEventPoint(event);
       if (!point) return;
       updateDraftCircleRadius(point);
@@ -1214,13 +1256,37 @@ const GoogleListingsMap = ({
       }
     };
 
+    const registerDomDrawListener = (eventName, handler) => {
+      if (!mapContainerRef.current) return null;
+      mapContainerRef.current.addEventListener(eventName, handler, { passive: false, capture: true });
+      return {
+        remove: () => {
+          if (mapContainerRef.current) {
+            mapContainerRef.current.removeEventListener(eventName, handler, true);
+          }
+        },
+      };
+    };
+
     if (touchLikeDrawMode) {
-      // In touch mode, complete only on explicit second tap to avoid one-tap min-radius circles.
+      // Touch users can drag in one gesture; click remains as a tap-to-set fallback.
+      const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
       const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
+      const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
+      const onDomTouchStart = registerDomDrawListener('touchstart', handlePointerDown);
+      const onDomTouchMove = registerDomDrawListener('touchmove', handlePointerMove);
+      const onDomTouchEnd = registerDomDrawListener('touchend', completeDraftCircle);
+      const onDomTouchCancel = registerDomDrawListener('touchcancel', completeDraftCircle);
       const onTapFallback = registerDrawListener('click', handleTapFallback);
       const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
       drawListenersRef.current = [
+        onTouchStart,
         onTouchMove,
+        onTouchEnd,
+        onDomTouchStart,
+        onDomTouchMove,
+        onDomTouchEnd,
+        onDomTouchCancel,
         onTapFallback,
         onMouseMove,
       ].filter(Boolean);
@@ -1518,7 +1584,7 @@ const GoogleListingsMap = ({
               className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
               onClick={toggleDrawMode}
             >
-              {t('map.drawSearchCircle')}
+              {isMobileOverlay ? t('map.drawCircleShort') : t('map.drawSearchCircle')}
             </button>
             <button
               type="button"
@@ -1526,7 +1592,7 @@ const GoogleListingsMap = ({
               onClick={clearCircleFilter}
               disabled={!drawMode && !activeCircleRef.current}
             >
-              {t('map.clearArea')}
+              {isMobileOverlay ? t('map.clearAreaShort') : t('map.clearArea')}
             </button>
             <div
               className="google-listings-map-search-count"

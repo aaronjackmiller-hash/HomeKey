@@ -5795,8 +5795,8 @@ legend {
   .property-list-page .google-listings-map-overlay-info {
     top: 8px;
     left: 8px;
-    right: 8px;
-    width: auto;
+    right: auto;
+    width: min(360px, calc(100% - 16px));
     border-radius: 10px;
   }
 
@@ -5819,15 +5819,32 @@ legend {
   }
 
   .property-list-page .google-listings-map-toolbar {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 12px 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr) auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 8px 8px;
     border-top-color: rgba(148, 163, 184, 0.56);
+    overflow: visible;
+  }
+
+  .property-list-page .map-draw-btn {
+    min-height: 36px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.78rem;
   }
 
   .property-list-page .google-listings-map-search-count {
-    width: 100%;
+    width: auto;
     justify-content: flex-end;
+    margin-left: 2px;
+    gap: 4px;
+    font-size: 0.78rem;
+  }
+
+  .property-list-page .google-listings-map-search-count-icon {
+    width: 1rem;
   }
 
   .property-list-page .google-listings-map-caption {
