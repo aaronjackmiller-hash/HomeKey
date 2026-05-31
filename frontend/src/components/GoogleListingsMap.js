@@ -484,6 +484,7 @@ const GoogleListingsMap = ({
   const geocoderRef = useRef(null);
   const infoWindowRef = useRef(null);
   const markerEntriesRef = useRef([]);
+  const activeMapHoverEntryRef = useRef(null);
   const markerHydrationInProgressRef = useRef(false);
   const expectedMarkerCountRef = useRef(0);
   const hasInitializedViewportRef = useRef(false);
@@ -570,6 +571,21 @@ const GoogleListingsMap = ({
 
     if (!entry.markerIcon || typeof entry.marker.setIcon !== 'function') return;
 
+    if (entry.frameMarker) {
+      if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+        const iconIndex = isHoveredFromList && !isHoveredFromMap
+          ? pulsePhase % entry.markerHoverIcons.length
+          : 0;
+        entry.frameMarker.setIcon(entry.markerHoverIcons[iconIndex] || entry.markerHoverIcon);
+        entry.frameMarker.setZIndex(elevatedZIndex + 1);
+        entry.frameMarker.setMap(mapRef.current);
+      } else {
+        entry.frameMarker.setMap(null);
+      }
+      entry.marker.setIcon(entry.markerIcon);
+      return;
+    }
+
     if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
       const iconIndex = isHoveredFromList && !isHoveredFromMap
         ? pulsePhase % entry.markerHoverIcons.length
@@ -585,6 +601,19 @@ const GoogleListingsMap = ({
     }
 
     entry.marker.setIcon(entry.markerIcon);
+  };
+
+  const setActiveMapHoverEntry = (nextEntry) => {
+    if (activeMapHoverEntryRef.current && activeMapHoverEntryRef.current !== nextEntry) {
+      activeMapHoverEntryRef.current.isMapHovered = false;
+      applyMarkerHoverVisualState(activeMapHoverEntryRef.current);
+    }
+
+    activeMapHoverEntryRef.current = nextEntry || null;
+    if (nextEntry) {
+      nextEntry.isMapHovered = true;
+      applyMarkerHoverVisualState(nextEntry);
+    }
   };
 
   const emitCircleSelection = (nextSelection) => {
@@ -790,6 +819,7 @@ const GoogleListingsMap = ({
 
     let cancelled = false;
 
+    activeMapHoverEntryRef.current = null;
     markerEntriesRef.current.forEach((entry) => {
       if (typeof entry.cleanupHoverListeners === 'function') {
         entry.cleanupHoverListeners();
@@ -916,31 +946,46 @@ const GoogleListingsMap = ({
             zIndex: isHoveredFromList ? 100 : 2,
             optimized: true,
           });
+        const frameMarker = !canUseAdvancedMarker && markerHoverIcon
+          ? new mapsApi.Marker({
+            map: null,
+            position: coords,
+            title: '',
+            icon: markerHoverIcon,
+            clickable: false,
+            optimized: false,
+            zIndex: 121,
+          })
+          : null;
 
-        marker.addListener('click', () => {
-          const title = safeText(item.property.title) || t('map.propertyListing');
-          const price = item.property.price != null
-            ? `₪${Number(item.property.price).toLocaleString(locale)}`
-            : t('map.priceUnavailable');
-          const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
+        const title = safeText(item.property.title) || t('map.propertyListing');
+        const price = item.property.price != null
+          ? `₪${Number(item.property.price).toLocaleString(locale)}`
+          : t('map.priceUnavailable');
+        const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
+        const markerPopupHtml = buildMarkerPopupCardHtml({
+          href: listingHref,
+          title,
+          price,
+          detailLine: markerDetailLine || item.addressQuery,
+          imageUrl: markerImageUrl,
+          ctaLabel: t('map.infoWindowCta'),
+        });
+        const openMarkerSummary = () => {
           infoWindow.setOptions({ maxWidth: 286 });
-          infoWindow.setContent(buildMarkerPopupCardHtml({
-            href: listingHref,
-            title,
-            price,
-            detailLine: markerDetailLine || item.addressQuery,
-            imageUrl: markerImageUrl,
-            ctaLabel: t('map.infoWindowCta'),
-          }));
+          infoWindow.setContent(markerPopupHtml);
           if (canUseAdvancedMarker) {
             infoWindow.open({ map, anchor: marker });
           } else {
             infoWindow.open(map, marker);
           }
+        };
+        marker.addListener('click', () => {
+          openMarkerSummary();
         });
         const markerEntry = {
           marker,
-          frameMarker: null,
+          frameMarker,
           propertyId,
           coords,
           markerElement,
@@ -950,13 +995,15 @@ const GoogleListingsMap = ({
           markerHoverIcons,
           isMapHovered: false,
           cleanupHoverListeners: null,
+          openMarkerSummary,
         };
         if (markerElement) {
           const handleMarkerMouseEnter = () => {
-            markerEntry.isMapHovered = true;
-            applyMarkerHoverVisualState(markerEntry);
+            setActiveMapHoverEntry(markerEntry);
+            openMarkerSummary();
           };
           const handleMarkerMouseLeave = () => {
+            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
             markerEntry.isMapHovered = false;
             applyMarkerHoverVisualState(markerEntry);
           };
@@ -972,10 +1019,11 @@ const GoogleListingsMap = ({
           };
         } else if (markerHoverIcon && !canUseAdvancedMarker) {
           const mouseOverListener = marker.addListener('mouseover', () => {
-            markerEntry.isMapHovered = true;
-            applyMarkerHoverVisualState(markerEntry);
+            setActiveMapHoverEntry(markerEntry);
+            openMarkerSummary();
           });
           const mouseOutListener = marker.addListener('mouseout', () => {
+            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
             markerEntry.isMapHovered = false;
             applyMarkerHoverVisualState(markerEntry);
           });
@@ -1019,6 +1067,7 @@ const GoogleListingsMap = ({
 
     return () => {
       cancelled = true;
+      activeMapHoverEntryRef.current = null;
       markerEntriesRef.current.forEach((entry) => {
         if (typeof entry.cleanupHoverListeners === 'function') {
           entry.cleanupHoverListeners();
