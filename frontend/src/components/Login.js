@@ -19,11 +19,29 @@ const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/js
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
+const STALE_DEMO_LOGIN_EMAILS = new Set([
+  'agent@homekey.demo',
+  'avi.cohen@homekey-demo.il',
+]);
 let oauthConfigPromise;
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+
+const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
+
+const clearStaleDemoRememberedLoginEmail = () => {
+  if (typeof window === 'undefined') return false;
+  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  if (!isStaleDemoLoginEmail(rememberedEmail)) return false;
+  window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  return true;
+};
 
 const getRememberedLoginEmail = () => {
   if (typeof window === 'undefined') return '';
-  return String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  if (clearStaleDemoRememberedLoginEmail()) return '';
+  return rememberedEmail;
 };
 
 const resolveSafeRedirectPath = (rawValue) => {
@@ -111,14 +129,23 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   useEffect(() => {
+    if (typeof window === 'undefined' || rememberUsername) return;
+    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  }, [rememberUsername]);
+
+  useEffect(() => {
+    clearStaleDemoRememberedLoginEmail();
+  });
+
+  const rememberAuthenticatedEmail = (email) => {
     if (typeof window === 'undefined') return;
-    const normalizedEmail = String(form.email || '').trim();
-    if (rememberUsername && normalizedEmail) {
+    const normalizedEmail = String(email || '').trim();
+    if (rememberUsername && normalizedEmail && !isStaleDemoLoginEmail(normalizedEmail)) {
       window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
       return;
     }
     window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-  }, [form.email, rememberUsername]);
+  };
 
   const finishAuthAndRedirect = () => {
     if (typeof window !== 'undefined' && authDestination.isSaveSearchIntent) {
@@ -159,6 +186,7 @@ const Login = () => {
 
   const loginWithPassword = async () => {
     const data = await loginUser(form);
+    rememberAuthenticatedEmail(form.email);
     login(data);
     return data;
   };
@@ -177,6 +205,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('passkey-setup');
+    let didRedirect = false;
     try {
       const enrollment = await maybeEnrollPasskey({ force: true });
       closePasskeySetup();
@@ -184,11 +213,14 @@ const Login = () => {
         setNotice(enrollment.message);
       }
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Passkey setup failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -197,6 +229,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setLoading(true);
+    let didRedirect = false;
     try {
       await loginWithPassword();
       if (enablePasskey && supportsWebAuthn()) {
@@ -205,11 +238,14 @@ const Login = () => {
         return;
       }
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
       setError(msg);
     } finally {
-      setLoading(false);
+      if (!didRedirect) {
+        setLoading(false);
+      }
     }
   };
 
@@ -225,6 +261,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('passkey');
+    let didRedirect = false;
     try {
       const optionsResponse = await getPasskeyAuthenticationOptions(form.email.trim());
       const credential = await startAuthentication({ optionsJSON: optionsResponse.options });
@@ -232,8 +269,10 @@ const Login = () => {
         email: form.email.trim(),
         credential,
       });
+      rememberAuthenticatedEmail(form.email);
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const status = Number(err.response?.status || 0);
       const apiMessage = String(err.response?.data?.message || '').trim();
@@ -256,7 +295,9 @@ const Login = () => {
       const msg = err.response?.data?.message || err.message || 'Passkey sign-in failed. Try email + password.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -269,6 +310,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('google');
+    let didRedirect = false;
     try {
       await loadExternalScript(GOOGLE_IDENTITY_SCRIPT, 'homekey-google-identity');
       if (!window.google?.accounts?.id) {
@@ -310,11 +352,14 @@ const Login = () => {
       const data = await loginWithGoogle({ idToken: credential });
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Google sign-in failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -328,6 +373,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('apple');
+    let didRedirect = false;
     try {
       await loadExternalScript(APPLE_IDENTITY_SCRIPT, 'homekey-apple-identity');
       if (!window.AppleID?.auth) {
@@ -352,11 +398,14 @@ const Login = () => {
       const data = await loginWithApple({ idToken, name });
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Apple sign-in failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -384,7 +433,7 @@ const Login = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              autoComplete="email"
+              autoComplete="username"
               required
               disabled={formDisabled}
             />
