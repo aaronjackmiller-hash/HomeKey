@@ -388,7 +388,7 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const radarRadii = pulsePhase % 2 === 0 ? [22, 38, 54] : [26, 44, 62];
   const radarMarkup = showRadarPulse
     ? radarRadii.map((radius) =>
-      `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(255, 255, 255)" stroke-opacity="1" stroke-width="4" />`
+      `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgba(15, 23, 42, 0.38)" stroke-opacity="1" stroke-width="6" /><circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(255, 255, 255)" stroke-opacity="1" stroke-width="4" />`
     ).join('')
     : '';
   const pinPath = [
