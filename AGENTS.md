@@ -42,6 +42,7 @@ HomeKey is a monorepo with two services:
 ### Testing
 
 There are no automated test files in this codebase. The frontend `package.json` includes `react-scripts test` but no test files exist. Manual API/browser testing is the primary verification method.
+For visual snapshots, update baselines only when the captured UI change is intentional.
 
 ### PR testing checklist (use on every PR)
 
