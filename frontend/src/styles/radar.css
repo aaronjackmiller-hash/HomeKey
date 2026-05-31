@@ -25,13 +25,17 @@
   z-index: 1;
   opacity: 0;
   box-shadow:
-    0 0 0 30px rgba(0, 0, 0, 0.03),
-    0 0 0 70px rgba(0, 0, 0, 0.02),
-    0 0 0 110px rgba(0, 0, 0, 0.01);
+    0 0 0 22px rgba(15, 60, 109, 0.16),
+    0 0 0 42px rgba(15, 60, 109, 0.1),
+    0 0 0 64px rgba(15, 60, 109, 0.06);
 }
 
 .map-listing-marker.is-hovered .faint-radar-rings,
 .map-listing-marker.is-hovered .radar-pulse-ring,
+.map-listing-marker.is-list-hovered .faint-radar-rings,
+.map-listing-marker.is-list-hovered .radar-pulse-ring,
+.map-listing-marker.is-map-hovered .faint-radar-rings,
+.map-listing-marker.is-map-hovered .radar-pulse-ring,
 .map-listing-marker:hover .faint-radar-rings,
 .map-listing-marker:hover .radar-pulse-ring {
   opacity: 1;
