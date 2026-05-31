@@ -116,13 +116,13 @@
   border: 1px solid #b9c4d2;
   border-radius: 12px;
   background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
-  min-height: 142px;
-  padding: 8px 10px;
+  min-height: 192px;
+  padding: 6px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 2px;
   font-weight: 700;
   color: #243447;
   cursor: pointer;
@@ -133,19 +133,20 @@
 }
 
 .wizard-property-illustration {
-  width: 126px;
-  height: 90px;
+  width: 100%;
+  max-width: 210px;
+  height: 150px;
   display: block;
 }
 
 .wizard-property-illustration--apartment {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 150px;
 }
 
 .wizard-property-illustration--house {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 150px;
 }
 
 .wizard-property-card.is-selected {

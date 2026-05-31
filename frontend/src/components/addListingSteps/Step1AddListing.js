@@ -2,7 +2,7 @@ import React from 'react';
 
 const ApartmentIcon = () => (
     <div className="wizard-property-illustration wizard-property-illustration--apartment" aria-hidden="true">
-        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="8 22 84 66" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
             <g fill="none" stroke="#2C3E50" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M 20 85 L 20 42 L 40 42 L 40 85" fill="#EAECEE" />
                 <rect x="25" y="50" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
@@ -32,7 +32,7 @@ const ApartmentIcon = () => (
 
 const HouseIcon = () => (
     <div className="wizard-property-illustration wizard-property-illustration--house" aria-hidden="true">
-        <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="13 16 74 60" style={{ width: '100%', height: '100%' }} xmlns="http://www.w3.org/2000/svg">
             <g fill="none" stroke="#2C3E50" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M 22 45 C 15 30, 45 20, 65 25 C 80 30, 85 45, 75 55 C 65 65, 30 60, 22 45 Z" fill="#EBF5FB" stroke="none" opacity="0.6" />
                 <path d="M 75 42 C 70 30, 84 30, 84 42 C 84 52, 70 52, 75 42 Z" fill="#ABEBC6" />
