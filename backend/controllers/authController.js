@@ -106,11 +106,28 @@ const isPasskeyChallengeValid = (user) => {
     return new Date(user.passkeyChallengeExpiresAt).getTime() > Date.now();
 };
 
-const getGoogleClientId = () => String(
-    process.env.GOOGLE_CLIENT_ID
-    || process.env.REACT_APP_GOOGLE_CLIENT_ID
+const parseGoogleClientIds = (...values) => {
+    const seen = new Set();
+    return values
+        .flatMap((value) => String(value || '').split(','))
+        .map((value) => value.trim())
+        .filter((value) => {
+            if (!value || seen.has(value)) return false;
+            seen.add(value);
+            return true;
+        });
+};
+
+const getGoogleBrowserClientId = () => (
+    parseGoogleClientIds(process.env.REACT_APP_GOOGLE_CLIENT_ID)[0]
+    || parseGoogleClientIds(process.env.GOOGLE_CLIENT_ID)[0]
     || ''
-).trim();
+);
+
+const getGoogleAudienceClientIds = () => parseGoogleClientIds(
+    process.env.REACT_APP_GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_ID
+);
 
 const getAppleClientId = () => String(process.env.APPLE_CLIENT_ID || '').trim();
 
@@ -312,16 +329,16 @@ const loginWithGoogle = async (req, res) => {
     if (!idToken) {
         return res.status(400).json({ success: false, message: 'Google credential is required.' });
     }
-    const clientId = getGoogleClientId();
-    if (!clientId) {
+    const clientIds = getGoogleAudienceClientIds();
+    if (clientIds.length === 0) {
         return res.status(503).json({
             success: false,
-            message: 'Google sign-in is not configured. Set GOOGLE_CLIENT_ID.',
+            message: 'Google sign-in is not configured. Set GOOGLE_CLIENT_ID or REACT_APP_GOOGLE_CLIENT_ID.',
         });
     }
     try {
-        const oauthClient = new OAuth2Client(clientId);
-        const ticket = await oauthClient.verifyIdToken({ idToken, audience: clientId });
+        const oauthClient = new OAuth2Client();
+        const ticket = await oauthClient.verifyIdToken({ idToken, audience: clientIds });
         const payload = ticket.getPayload();
         const providerSub = String(payload?.sub || '').trim();
         if (!providerSub) {
@@ -348,7 +365,7 @@ const getOAuthConfig = async (_req, res) => {
     return res.json({
         success: true,
         data: {
-            googleClientId: getGoogleClientId(),
+            googleClientId: getGoogleBrowserClientId(),
             appleClientId: getAppleClientId(),
             appleRedirectUri: getAppleRedirectUri(),
         },
