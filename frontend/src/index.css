@@ -6046,28 +6046,28 @@ legend {
 
 @media (max-width: 767px) {
   .premium-header__search-pill {
-    grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     min-height: 44px;
   }
 
   .premium-header__search-segment--voice,
   .premium-header__search-segment--ai {
-    display: none;
+    display: block;
   }
 
   .premium-header__search-segment--price,
   .premium-header__search-segment--rooms {
-    display: block;
+    display: none;
   }
 
-  .premium-header__search-segment .premium-header__price-toggle,
-  .premium-header__search-segment .premium-header__rooms-toggle {
+  .premium-header__search-segment .premium-header__voice-toggle,
+  .premium-header__search-segment .premium-header__ai-toggle {
     display: inline-flex;
   }
 
   .premium-header__search-segment input,
-  .premium-header__search-segment .premium-header__price-toggle,
-  .premium-header__search-segment .premium-header__rooms-toggle,
+  .premium-header__search-segment .premium-header__voice-toggle,
+  .premium-header__search-segment .premium-header__ai-toggle,
   .premium-header__search-segment .premium-header__filters-toggle {
     height: 32px;
     font-size: 0.82rem;
@@ -6077,31 +6077,31 @@ legend {
 
 @media (max-width: 560px) {
   .premium-header__search-pill {
-    grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     min-height: 44px;
   }
 
   .premium-header__search-segment--voice,
   .premium-header__search-segment--ai {
-    display: none;
+    display: block;
   }
 
   .premium-header__search-segment--price,
   .premium-header__search-segment--rooms {
-    display: block;
+    display: none;
   }
 
   .premium-header__search-segment input,
-  .premium-header__search-segment .premium-header__price-toggle,
-  .premium-header__search-segment .premium-header__rooms-toggle,
+  .premium-header__search-segment .premium-header__voice-toggle,
+  .premium-header__search-segment .premium-header__ai-toggle,
   .premium-header__search-segment .premium-header__filters-toggle {
     height: 32px;
     font-size: 0.82rem;
     padding: 5px 8px;
   }
 
-  .premium-header__search-segment .premium-header__price-toggle,
-  .premium-header__search-segment .premium-header__rooms-toggle {
+  .premium-header__search-segment .premium-header__voice-toggle,
+  .premium-header__search-segment .premium-header__ai-toggle {
     display: inline-flex;
   }
 }
