@@ -5237,7 +5237,11 @@ legend {
   --map-marker-pin-bg: #0f3c6d;
   border-color: #0f3c6d;
   transform: scale(1.15);
-  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.26);
+  box-shadow:
+    0 0 0 22px rgba(15, 60, 109, 0.16),
+    0 0 0 42px rgba(15, 60, 109, 0.1),
+    0 0 0 64px rgba(15, 60, 109, 0.06),
+    0 12px 20px rgba(15, 23, 42, 0.26);
 }
 
 .map-listing-marker.is-list-hovered .radar-pulse-ring,
@@ -5350,6 +5354,11 @@ legend {
 @media (hover: hover) and (pointer: fine) {
   .map-listing-marker:hover .map-listing-marker-pin {
     transform: scale(1.08);
+    box-shadow:
+      0 0 0 22px rgba(15, 60, 109, 0.16),
+      0 0 0 42px rgba(15, 60, 109, 0.1),
+      0 0 0 64px rgba(15, 60, 109, 0.06),
+      0 12px 20px rgba(15, 23, 42, 0.26);
   }
 }
 
