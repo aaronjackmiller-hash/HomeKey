@@ -19,11 +19,24 @@ const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/js
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
+const STALE_DEMO_LOGIN_EMAILS = new Set([
+  'agent@homekey.demo',
+  'avi.cohen@homekey-demo.il',
+]);
 let oauthConfigPromise;
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+
+const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
 
 const getRememberedLoginEmail = () => {
   if (typeof window === 'undefined') return '';
-  return String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  if (isStaleDemoLoginEmail(rememberedEmail)) {
+    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+    return '';
+  }
+  return rememberedEmail;
 };
 
 const resolveSafeRedirectPath = (rawValue) => {
@@ -111,14 +124,19 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   useEffect(() => {
+    if (typeof window === 'undefined' || rememberUsername) return;
+    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  }, [rememberUsername]);
+
+  const rememberAuthenticatedEmail = (email) => {
     if (typeof window === 'undefined') return;
-    const normalizedEmail = String(form.email || '').trim();
-    if (rememberUsername && normalizedEmail) {
+    const normalizedEmail = String(email || '').trim();
+    if (rememberUsername && normalizedEmail && !isStaleDemoLoginEmail(normalizedEmail)) {
       window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
       return;
     }
     window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-  }, [form.email, rememberUsername]);
+  };
 
   const finishAuthAndRedirect = () => {
     if (typeof window !== 'undefined' && authDestination.isSaveSearchIntent) {
@@ -159,6 +177,7 @@ const Login = () => {
 
   const loginWithPassword = async () => {
     const data = await loginUser(form);
+    rememberAuthenticatedEmail(form.email);
     login(data);
     return data;
   };
@@ -232,6 +251,7 @@ const Login = () => {
         email: form.email.trim(),
         credential,
       });
+      rememberAuthenticatedEmail(form.email);
       login(data);
       finishAuthAndRedirect();
     } catch (err) {
