@@ -29,13 +29,18 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
 
+const clearStaleDemoRememberedLoginEmail = () => {
+  if (typeof window === 'undefined') return false;
+  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  if (!isStaleDemoLoginEmail(rememberedEmail)) return false;
+  window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  return true;
+};
+
 const getRememberedLoginEmail = () => {
   if (typeof window === 'undefined') return '';
   const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
-  if (isStaleDemoLoginEmail(rememberedEmail)) {
-    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-    return '';
-  }
+  if (clearStaleDemoRememberedLoginEmail()) return '';
   return rememberedEmail;
 };
 
@@ -127,6 +132,10 @@ const Login = () => {
     if (typeof window === 'undefined' || rememberUsername) return;
     window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
   }, [rememberUsername]);
+
+  useEffect(() => {
+    clearStaleDemoRememberedLoginEmail();
+  });
 
   const rememberAuthenticatedEmail = (email) => {
     if (typeof window === 'undefined') return;
