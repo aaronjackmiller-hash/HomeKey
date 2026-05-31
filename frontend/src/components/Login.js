@@ -433,7 +433,7 @@ const Login = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              autoComplete="email"
+              autoComplete="username"
               required
               disabled={formDisabled}
             />
