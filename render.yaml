@@ -35,18 +35,64 @@ services:
       # Admin secret for the POST /api/admin/seed endpoint
       - key: ADMIN_SECRET
         generateValue: true
+      - key: ADMIN_IMPORT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: PASSWORD_RESET_EXPIRES_MINUTES
+        value: 30
       # Optional Yad2 live sync controls
       - key: YAD2_SYNC_ENABLED
         value: true
+      - key: YAD2_SYNC_FEED_URL
+        sync: false
+      - key: YAD2_SYNC_INTERVAL_MINUTES
+        value: 5
+      - key: YAD2_SYNC_SOURCE_TAG
+        value: yad2-live-sync
+      - key: YAD2_SYNC_AUTH_HEADER_NAME
+        sync: false
+      - key: YAD2_SYNC_AUTH_HEADER_VALUE
+        sync: false
+      - key: YAD2_SYNC_PRUNE_MISSING
+        value: false
+      - key: YAD2_SYNC_MIRROR_DELETES
+        value: false
       - key: LIVE_YAD2_ONLY
         value: true
       - key: YAD2_REAL_SCRAPE_ONLY
         value: true
+      - key: REAL_YAD2_SCRAPE_ONLY
+        value: true
+      - key: YAD2_SCRAPE_FALLBACK_ENABLED
+        value: true
+      - key: YAD2_SCRAPE_MAX_ITEMS
+        value: 120
+      - key: YAD2_SEGMENTED_SCRAPE_ENABLED
+        value: true
+      - key: YAD2_SCRAPE_SEGMENTS
+        value: center-and-sharon,tel-aviv-area,jerusalem-area,south,coastal-north,north-and-valleys
+      - key: YAD2_SCRAPE_PROXY_ENABLED
+        value: true
+      - key: YAD2_SCRAPE_PROXY_TEMPLATE
+        value: https://api.codetabs.com/v1/proxy?quest={url}
+      - key: YAD2_CAPTCHA_FALLBACK_URL
+        sync: false
+      - key: YAD2_CAPTCHA_FALLBACK_TIMEOUT_MS
+        value: 30000
+      - key: YAD2_CAPTCHA_FALLBACK_MAX_ROWS
+        value: 120
       # Provider mode: native scrape/feed | apify
       - key: YAD2_PROVIDER
         value: apify
       # Apify provider credentials/configuration
       - key: APIFY_TOKEN
+        sync: false
+      - key: APIFY_TASK_ID
+        sync: false
+      - key: APIFY_ACTOR_ID
         sync: false
       - key: APIFY_DATASET_ID
         sync: false
@@ -59,11 +105,22 @@ services:
         value: 90000
       - key: APIFY_DATASET_CLEAN
         value: true
+      - key: APIFY_INPUT_JSON
+        sync: false
       # Google OAuth sign-in (required for "Continue with Google")
       # Use the same Web OAuth client ID value for both keys.
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
+      # Apple sign-in (required for "Continue with Apple")
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_REDIRECT_URI
+        sync: false
+      - key: REACT_APP_APPLE_CLIENT_ID
+        sync: false
+      - key: REACT_APP_APPLE_REDIRECT_URI
         sync: false
       # Passkey/WebAuthn settings (required outside localhost)
       - key: PASSKEY_RP_NAME
@@ -75,3 +132,23 @@ services:
       # Google Maps Platform browser key for homepage listing map markers
       - key: REACT_APP_GOOGLE_MAPS_API_KEY
         sync: false
+      - key: REACT_APP_GOOGLE_MAPS_MAP_ID
+        sync: false
+      # Optional API override for split frontend/API deployments; combined service uses /api.
+      - key: REACT_APP_API_URL
+        value: /api
+      # Imported listing localization and manual listing lifecycle
+      - key: IMPORTED_CONTENT_AUTO_TRANSLATE
+        value: true
+      - key: LISTING_LIFECYCLE_ENABLED
+        value: true
+      - key: LISTING_LIFECYCLE_SWEEP_MINUTES
+        value: 60
+      - key: MANUAL_LISTING_USER_EXPIRY_DAYS
+        value: 30
+      - key: MANUAL_LISTING_AGENT_EXPIRY_DAYS
+        value: 60
+      - key: MANUAL_LISTING_REMINDER_WINDOW_DAYS
+        value: 3
+      - key: MANUAL_LISTING_DELETE_GRACE_DAYS
+        value: 30
