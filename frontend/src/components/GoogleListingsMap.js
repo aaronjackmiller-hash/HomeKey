@@ -1425,22 +1425,6 @@ const GoogleListingsMap = ({
     });
   }, []);
 
-  if (touchLikeUiMode) {
-    return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        searchResultCount={searchResultCount}
-        favoritePropertyIds={favoritePropertyIds}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-        isVisible={isVisible}
-        hoveredListingId={hoveredListingId}
-      />
-    );
-  }
-
   if (!apiKey) {
     return (
       <ConnectedListingsMapFallback
