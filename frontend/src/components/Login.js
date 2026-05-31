@@ -196,6 +196,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('passkey-setup');
+    let didRedirect = false;
     try {
       const enrollment = await maybeEnrollPasskey({ force: true });
       closePasskeySetup();
@@ -203,11 +204,14 @@ const Login = () => {
         setNotice(enrollment.message);
       }
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Passkey setup failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -216,6 +220,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setLoading(true);
+    let didRedirect = false;
     try {
       await loginWithPassword();
       if (enablePasskey && supportsWebAuthn()) {
@@ -224,11 +229,14 @@ const Login = () => {
         return;
       }
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed. Please try again.';
       setError(msg);
     } finally {
-      setLoading(false);
+      if (!didRedirect) {
+        setLoading(false);
+      }
     }
   };
 
@@ -244,6 +252,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('passkey');
+    let didRedirect = false;
     try {
       const optionsResponse = await getPasskeyAuthenticationOptions(form.email.trim());
       const credential = await startAuthentication({ optionsJSON: optionsResponse.options });
@@ -254,6 +263,7 @@ const Login = () => {
       rememberAuthenticatedEmail(form.email);
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const status = Number(err.response?.status || 0);
       const apiMessage = String(err.response?.data?.message || '').trim();
@@ -276,7 +286,9 @@ const Login = () => {
       const msg = err.response?.data?.message || err.message || 'Passkey sign-in failed. Try email + password.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -289,6 +301,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('google');
+    let didRedirect = false;
     try {
       await loadExternalScript(GOOGLE_IDENTITY_SCRIPT, 'homekey-google-identity');
       if (!window.google?.accounts?.id) {
@@ -330,11 +343,14 @@ const Login = () => {
       const data = await loginWithGoogle({ idToken: credential });
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Google sign-in failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
@@ -348,6 +364,7 @@ const Login = () => {
     setError('');
     setNotice('');
     setSocialLoading('apple');
+    let didRedirect = false;
     try {
       await loadExternalScript(APPLE_IDENTITY_SCRIPT, 'homekey-apple-identity');
       if (!window.AppleID?.auth) {
@@ -372,11 +389,14 @@ const Login = () => {
       const data = await loginWithApple({ idToken, name });
       login(data);
       finishAuthAndRedirect();
+      didRedirect = true;
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Apple sign-in failed.';
       setError(msg);
     } finally {
-      setSocialLoading('');
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
     }
   };
 
