@@ -490,10 +490,18 @@ a {
   padding: 8px 12px;
 }
 
-.filter-menu__type-row {
+.filter-menu__type-row,
+.filter-menu__option-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.filter-menu__type-row {
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+}
+
+.filter-menu__option-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .filter-menu__chip {
@@ -5414,13 +5422,14 @@ legend {
   }
 
   .premium-header__brand-cell {
-    grid-column: 1 / -1;
-    justify-self: center;
-    padding-left: 0;
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    padding-left: 4px;
   }
 
   .premium-header__brand {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .premium-header__brand-image {
@@ -5430,11 +5439,107 @@ legend {
   }
 
   .premium-header__likes-cell {
-    display: none;
+    display: inline-flex;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .premium-header__likes {
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 1px solid #d7deea;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  }
+
+  .premium-header__likes-copy {
+    font-size: 0.72rem;
   }
 
   .premium-header__search-cell {
     grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .premium-header__actions-cell {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: stretch;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .premium-header__actions {
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    overflow: visible;
+    padding: 0 2px;
+  }
+
+  .premium-header__actions-utility {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .premium-header__cta,
+  .premium-header__greeting,
+  .premium-header__login {
+    display: inline-flex;
+  }
+
+  .premium-header__action-pill,
+  .premium-header__login,
+  .premium-header__alerts-link,
+  .premium-header__language-toggle {
+    flex: 0 0 auto;
+    min-height: 34px;
+    border-radius: 999px;
+    align-items: center;
+  }
+
+  .premium-header__action-pill {
+    padding: 0 12px;
+    font-size: 0.78rem;
+  }
+
+  .premium-header__login,
+  .premium-header__alerts-link,
+  .premium-header__language-toggle {
+    padding: 0 10px;
+    background: #ffffff;
+    border: 1px solid #d7deea;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .premium-header__language-text {
+    font-size: 0.82rem;
+  }
+
+  .premium-header__greeting {
+    min-height: 34px;
+    padding: 4px 10px;
+    border: 1px solid #d7deea;
+    border-radius: 999px;
+    background: #ffffff;
+    align-items: flex-start;
+    flex: 0 0 auto;
+  }
+
+  .premium-header__greeting-label {
+    font-size: 0.58rem;
+  }
+
+  .premium-header__greeting-name {
+    max-width: 86px;
+    font-size: 0.74rem;
   }
 
   .premium-header__search-pill {
