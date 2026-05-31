@@ -1043,7 +1043,7 @@ const ConnectedListingsMapFallback = ({
               type="button"
               className="secondary-btn map-draw-btn"
               onClick={clearCircleFilter}
-              disabled={!drawMode && !activeCircleRef.current}
+              disabled={!drawMode && !hasActiveCircle}
             >
               {isMobileOverlay ? t('map.clearAreaShort') : t('map.clearArea')}
             </button>

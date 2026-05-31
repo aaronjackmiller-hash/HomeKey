@@ -1594,7 +1594,7 @@ const GoogleListingsMap = ({
               type="button"
               className="secondary-btn map-draw-btn"
               onClick={clearCircleFilter}
-              disabled={!drawMode && !activeCircleRef.current}
+              disabled={!drawMode && circleRadiusMeters <= 0}
             >
               {isMobileOverlay ? t('map.clearAreaShort') : t('map.clearArea')}
             </button>
