@@ -459,7 +459,7 @@ const Login = () => {
                 }}
                 disabled={formDisabled}
               />
-              <span>Remember my email</span>
+              <span>Remember my password</span>
             </label>
             <Link to="/forgot-password" className="auth-forgot-link">Forgot password?</Link>
           </div>
