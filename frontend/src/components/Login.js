@@ -19,6 +19,7 @@ const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/js
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
+const REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY = 'homekey:remembered-login-password';
 const STALE_DEMO_LOGIN_EMAILS = new Set([
   'agent@homekey.demo',
   'avi.cohen@homekey-demo.il',
@@ -29,19 +30,22 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
 
-const clearStaleDemoRememberedLoginEmail = () => {
-  if (typeof window === 'undefined') return false;
-  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
-  if (!isStaleDemoLoginEmail(rememberedEmail)) return false;
+const clearRememberedLoginCredentials = () => {
+  if (typeof window === 'undefined') return;
   window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-  return true;
+  window.localStorage.removeItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY);
 };
 
-const getRememberedLoginEmail = () => {
-  if (typeof window === 'undefined') return '';
+const getRememberedLoginCredentials = () => {
+  const emptyCredentials = { email: '', password: '' };
+  if (typeof window === 'undefined') return emptyCredentials;
   const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
-  if (clearStaleDemoRememberedLoginEmail()) return '';
-  return rememberedEmail;
+  const rememberedPassword = String(window.localStorage.getItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY) || '');
+  if (isStaleDemoLoginEmail(rememberedEmail) || !rememberedEmail || !rememberedPassword) {
+    clearRememberedLoginCredentials();
+    return emptyCredentials;
+  }
+  return { email: rememberedEmail, password: rememberedPassword };
 };
 
 const resolveSafeRedirectPath = (rawValue) => {
@@ -97,14 +101,19 @@ const Login = () => {
   const { login } = useAuth();
   const history = useHistory();
   const location = useLocation();
-  const rememberedEmailOnLoad = getRememberedLoginEmail();
-  const [form, setForm] = useState(() => ({ email: rememberedEmailOnLoad, password: '' }));
+  const rememberedCredentialsOnLoad = getRememberedLoginCredentials();
+  const [form, setForm] = useState(() => ({
+    email: rememberedCredentialsOnLoad.email,
+    password: rememberedCredentialsOnLoad.password,
+  }));
   const [socialLoading, setSocialLoading] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [enablePasskey, setEnablePasskey] = useState(false);
-  const [rememberUsername, setRememberUsername] = useState(() => rememberedEmailOnLoad.length > 0);
+  const [rememberPassword, setRememberPassword] = useState(() => (
+    rememberedCredentialsOnLoad.email.length > 0 && rememberedCredentialsOnLoad.password.length > 0
+  ));
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
   const passkeySetupOpen = passkeySetupStep.length > 0;
   const authDestination = useMemo(() => {
@@ -129,22 +138,24 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   useEffect(() => {
-    if (typeof window === 'undefined' || rememberUsername) return;
-    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-  }, [rememberUsername]);
+    if (rememberPassword) return;
+    clearRememberedLoginCredentials();
+  }, [rememberPassword]);
 
   useEffect(() => {
-    clearStaleDemoRememberedLoginEmail();
+    getRememberedLoginCredentials();
   });
 
-  const rememberAuthenticatedEmail = (email) => {
+  const rememberAuthenticatedCredentials = ({ email, password }) => {
     if (typeof window === 'undefined') return;
     const normalizedEmail = String(email || '').trim();
-    if (rememberUsername && normalizedEmail && !isStaleDemoLoginEmail(normalizedEmail)) {
+    const rawPassword = String(password || '');
+    if (rememberPassword && normalizedEmail && rawPassword && !isStaleDemoLoginEmail(normalizedEmail)) {
       window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
+      window.localStorage.setItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY, rawPassword);
       return;
     }
-    window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+    clearRememberedLoginCredentials();
   };
 
   const finishAuthAndRedirect = () => {
@@ -186,7 +197,7 @@ const Login = () => {
 
   const loginWithPassword = async () => {
     const data = await loginUser(form);
-    rememberAuthenticatedEmail(form.email);
+    rememberAuthenticatedCredentials(form);
     login(data);
     return data;
   };
@@ -269,7 +280,9 @@ const Login = () => {
         email: form.email.trim(),
         credential,
       });
-      rememberAuthenticatedEmail(form.email);
+      if (!rememberPassword) {
+        clearRememberedLoginCredentials();
+      }
       login(data);
       finishAuthAndRedirect();
       didRedirect = true;
@@ -424,7 +437,7 @@ const Login = () => {
         </div>
         {error && <p className="auth-feedback auth-feedback--error">{error}</p>}
         {notice && <p className="auth-feedback auth-feedback--notice">{notice}</p>}
-        <form className="auth-signin-form" onSubmit={handleSubmit}>
+        <form className="auth-signin-form" onSubmit={handleSubmit} autoComplete="off">
           <div className="input-field">
             <label htmlFor="signin-email">Email</label>
             <input
@@ -433,7 +446,7 @@ const Login = () => {
               name="email"
               value={form.email}
               onChange={handleChange}
-              autoComplete="username"
+              autoComplete="off"
               required
               disabled={formDisabled}
             />
@@ -445,17 +458,17 @@ const Login = () => {
             onChange={handleChange}
             required
             disabled={formDisabled}
-            autoComplete="current-password"
+            autoComplete="new-password"
           />
           <div className="auth-form-options">
-            <label className="auth-remember-row" htmlFor="remember-username">
+            <label className="auth-remember-row" htmlFor="remember-password">
               <input
-                id="remember-username"
+                id="remember-password"
                 type="checkbox"
-                checked={rememberUsername}
+                checked={rememberPassword}
                 onChange={(event) => {
                   const nextChecked = event.target.checked;
-                  setRememberUsername(nextChecked);
+                  setRememberPassword(nextChecked);
                 }}
                 disabled={formDisabled}
               />
