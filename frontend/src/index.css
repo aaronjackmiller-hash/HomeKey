@@ -5238,9 +5238,9 @@ legend {
   border-color: #0f3c6d;
   transform: scale(1.15);
   box-shadow:
-    0 0 0 22px rgba(15, 60, 109, 0.3),
-    0 0 0 42px rgba(15, 60, 109, 0.2),
-    0 0 0 64px rgba(15, 60, 109, 0.12),
+    0 0 0 18px rgba(15, 60, 109, 0.45),
+    0 0 0 36px rgba(15, 60, 109, 0.3),
+    0 0 0 58px rgba(15, 60, 109, 0.18),
     0 12px 20px rgba(15, 23, 42, 0.26);
 }
 
@@ -5355,9 +5355,9 @@ legend {
   .map-listing-marker:hover .map-listing-marker-pin {
     transform: scale(1.08);
     box-shadow:
-      0 0 0 22px rgba(15, 60, 109, 0.3),
-      0 0 0 42px rgba(15, 60, 109, 0.2),
-      0 0 0 64px rgba(15, 60, 109, 0.12),
+      0 0 0 18px rgba(15, 60, 109, 0.45),
+      0 0 0 36px rgba(15, 60, 109, 0.3),
+      0 0 0 58px rgba(15, 60, 109, 0.18),
       0 12px 20px rgba(15, 23, 42, 0.26);
   }
 }
