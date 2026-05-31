@@ -162,6 +162,11 @@ export const getProperties = async (params) => {
   return response.data;
 };
 
+export const interpretSearchPrompt = async ({ prompt, language }) => {
+  const response = await api.post('/search/interpret', { prompt, language });
+  return response.data;
+};
+
 export const getProperty = async (id) => {
   const response = await api.get(`/properties/${id}`);
   return response.data;
