@@ -942,7 +942,9 @@ const ConnectedListingsMapFallback = ({
       map.on('touchmove', onPointerMove);
       map.on('touchend', completeDraftCircle);
       map.on('click', onTapFallback);
+      map.on('mousedown', onPointerDown);
       map.on('mousemove', onPointerMove);
+      map.on('mouseup', completeDraftCircle);
       addDomTouchListener('touchstart', onPointerDown);
       addDomTouchListener('touchmove', onPointerMove);
       addDomTouchListener('touchend', completeDraftCircle);

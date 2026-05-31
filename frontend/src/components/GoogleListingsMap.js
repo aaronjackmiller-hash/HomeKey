@@ -1278,7 +1278,9 @@ const GoogleListingsMap = ({
       const onDomTouchEnd = registerDomDrawListener('touchend', completeDraftCircle);
       const onDomTouchCancel = registerDomDrawListener('touchcancel', completeDraftCircle);
       const onTapFallback = registerDrawListener('click', handleTapFallback);
+      const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
       const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
+      const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
       drawListenersRef.current = [
         onTouchStart,
         onTouchMove,
@@ -1288,7 +1290,9 @@ const GoogleListingsMap = ({
         onDomTouchEnd,
         onDomTouchCancel,
         onTapFallback,
+        onMouseDown,
         onMouseMove,
+        onMouseUp,
       ].filter(Boolean);
     } else {
       const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
