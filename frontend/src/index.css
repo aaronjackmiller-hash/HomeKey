@@ -5231,9 +5231,9 @@ legend {
 
 .map-hovered-listing-caption {
   position: absolute;
-  top: 50%;
-  left: calc(100% + 14px);
-  transform: translateY(-50%);
+  bottom: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%);
   display: none;
   flex-direction: column;
   gap: 10px;
@@ -5251,14 +5251,14 @@ legend {
 .map-hovered-listing-caption::before {
   content: "";
   position: absolute;
-  left: -8px;
-  top: 50%;
+  left: 50%;
+  bottom: -8px;
   width: 14px;
   height: 14px;
-  border-left: 1px solid #d8dde6;
+  border-right: 1px solid #d8dde6;
   border-bottom: 1px solid #d8dde6;
   background: #ffffff;
-  transform: translateY(-50%) rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
 }
 
 .map-hovered-listing-caption__text-card {
