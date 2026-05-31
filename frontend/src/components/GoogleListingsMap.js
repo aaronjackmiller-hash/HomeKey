@@ -3,6 +3,7 @@ import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
 import { buildAddressQuery } from '../utils/addressLocalization';
+import { getPublicConfigValue } from '../utils/publicConfig';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const MAP_AUTH_FAILURE_EVENT = 'homekey-google-maps-auth-failure';
@@ -476,10 +477,8 @@ const GoogleListingsMap = ({
 }) => {
   const { t, locale, language } = useLanguage();
   const mapLanguage = language === 'he' ? 'he' : 'en';
-  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-  const configuredMapId = typeof process.env.REACT_APP_GOOGLE_MAPS_MAP_ID === 'string'
-    ? process.env.REACT_APP_GOOGLE_MAPS_MAP_ID.trim()
-    : '';
+  const apiKey = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_API_KEY');
+  const configuredMapId = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_MAP_ID');
   const canUseAdvancedMarkers = Boolean(configuredMapId);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -1453,6 +1452,7 @@ const GoogleListingsMap = ({
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
         hoveredListingId={hoveredListingId}
+        statusNotice={t('map.googleMapsMissingKeyFallbackNotice')}
       />
     );
   }
@@ -1469,6 +1469,7 @@ const GoogleListingsMap = ({
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
         hoveredListingId={hoveredListingId}
+        statusNotice={t('map.googleMapsUnavailableFallbackNotice', { reason: mapError })}
       />
     );
   }

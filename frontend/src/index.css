@@ -5142,6 +5142,13 @@ legend {
   background: #f8fafc;
 }
 
+.property-list-page .google-listings-map-status-notice {
+  display: block;
+  margin-bottom: 3px;
+  color: #92400e;
+  font-weight: 600;
+}
+
 .property-list-page .google-listings-map-note {
   margin: 0;
   padding: 12px;

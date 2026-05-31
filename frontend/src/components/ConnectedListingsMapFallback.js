@@ -307,6 +307,7 @@ const ConnectedListingsMapFallback = ({
   onDrawModeChange,
   isVisible = true,
   hoveredListingId = null,
+  statusNotice = '',
 }) => {
   const { t, locale, language } = useLanguage();
   const mapContainerRef = useRef(null);
@@ -1083,6 +1084,7 @@ const ConnectedListingsMapFallback = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
+        {statusNotice ? <span className="google-listings-map-status-notice">{statusNotice}</span> : null}
         {hasActiveCircle
           ? t('map.showingInsideRadius', {
             visible: markerCount,

@@ -203,6 +203,8 @@ export const translations = {
       propertyListing: 'Property listing',
       priceUnavailable: 'Price unavailable',
       unableToLoadMap: 'Unable to load Google Maps.',
+      googleMapsMissingKeyFallbackNotice: 'Google Maps key is not available in the browser. Showing fallback map.',
+      googleMapsUnavailableFallbackNotice: 'Google Maps is unavailable ({{reason}}). Showing fallback map.',
     },
     diagnostics: {
       unableToLoadLiveSync: 'Unable to load live Yad2 sync diagnostics.',
@@ -426,6 +428,8 @@ export const translations = {
       propertyListing: 'מודעת נכס',
       priceUnavailable: 'מחיר לא זמין',
       unableToLoadMap: 'לא ניתן לטעון את Google Maps.',
+      googleMapsMissingKeyFallbackNotice: 'מפתח Google Maps אינו זמין בדפדפן. מוצגת מפת גיבוי.',
+      googleMapsUnavailableFallbackNotice: 'Google Maps אינו זמין ({{reason}}). מוצגת מפת גיבוי.',
     },
     diagnostics: {
       unableToLoadLiveSync: 'לא ניתן לטעון נתוני אבחון לסנכרון Yad2.',
