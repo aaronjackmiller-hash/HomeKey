@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, Link, useLocation } from 'react-router-dom';
 import {
   getPasskeyAuthenticationOptions,
@@ -115,6 +115,9 @@ const Login = () => {
     rememberedCredentialsOnLoad.email.length > 0 && rememberedCredentialsOnLoad.password.length > 0
   ));
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
+  const [googleButtonReady, setGoogleButtonReady] = useState(false);
+  const [googleButtonError, setGoogleButtonError] = useState('');
+  const googleButtonRef = useRef(null);
   const passkeySetupOpen = passkeySetupStep.length > 0;
   const authDestination = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -158,12 +161,93 @@ const Login = () => {
     clearRememberedLoginCredentials();
   };
 
-  const finishAuthAndRedirect = () => {
+  const finishAuthAndRedirect = useCallback(() => {
     if (typeof window !== 'undefined' && authDestination.isSaveSearchIntent) {
       window.sessionStorage.setItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY, '1');
     }
     history.push(authDestination.redirectPath);
-  };
+  }, [authDestination.isSaveSearchIntent, authDestination.redirectPath, history]);
+
+  const handleGoogleCredential = useCallback(async (credential) => {
+    if (!credential) {
+      setError('Google did not return an ID token.');
+      return;
+    }
+    setError('');
+    setNotice('');
+    setSocialLoading('google');
+    let didRedirect = false;
+    try {
+      const data = await loginWithGoogle({ idToken: credential });
+      login(data);
+      finishAuthAndRedirect();
+      didRedirect = true;
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Google sign-in failed.';
+      setError(msg);
+    } finally {
+      if (!didRedirect) {
+        setSocialLoading('');
+      }
+    }
+  }, [finishAuthAndRedirect, login]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const renderGoogleButton = async () => {
+      setGoogleButtonReady(false);
+      setGoogleButtonError('');
+      try {
+        const googleClientId = await resolveGoogleClientId();
+        if (cancelled) return;
+        if (!googleClientId) {
+          setGoogleButtonError('Google sign-in is not configured. Set GOOGLE_CLIENT_ID (backend) or REACT_APP_GOOGLE_CLIENT_ID (frontend).');
+          return;
+        }
+
+        await loadExternalScript(GOOGLE_IDENTITY_SCRIPT, 'homekey-google-identity');
+        if (cancelled) return;
+        if (!window.google?.accounts?.id) {
+          throw new Error('Google Identity SDK did not initialize.');
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response) => handleGoogleCredential(response?.credential),
+          use_fedcm_for_button: true,
+        });
+
+        if (googleButtonRef.current) {
+          const buttonWidth = Math.min(
+            Math.max(Math.floor(googleButtonRef.current.offsetWidth || 320), 200),
+            400
+          );
+          googleButtonRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleButtonRef.current, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: buttonWidth,
+          });
+          setGoogleButtonReady(true);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setGoogleButtonError(err.message || 'Google sign-in failed to initialize.');
+        }
+      }
+    };
+
+    renderGoogleButton();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [handleGoogleCredential]);
 
   const maybeEnrollPasskey = async ({ force = false } = {}) => {
     if ((!enablePasskey && !force) || !supportsWebAuthn()) {
@@ -306,68 +390,6 @@ const Login = () => {
         }
       }
       const msg = err.response?.data?.message || err.message || 'Passkey sign-in failed. Try email + password.';
-      setError(msg);
-    } finally {
-      if (!didRedirect) {
-        setSocialLoading('');
-      }
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    const googleClientId = await resolveGoogleClientId();
-    if (!googleClientId) {
-      setError('Google sign-in is not configured. Set GOOGLE_CLIENT_ID (backend) or REACT_APP_GOOGLE_CLIENT_ID (frontend).');
-      return;
-    }
-    setError('');
-    setNotice('');
-    setSocialLoading('google');
-    let didRedirect = false;
-    try {
-      await loadExternalScript(GOOGLE_IDENTITY_SCRIPT, 'homekey-google-identity');
-      if (!window.google?.accounts?.id) {
-        throw new Error('Google Identity SDK did not initialize.');
-      }
-
-      const credential = await new Promise((resolve, reject) => {
-        let settled = false;
-        const timeoutId = setTimeout(() => {
-          if (settled) return;
-          settled = true;
-          reject(new Error('Google sign-in timed out. Please try again.'));
-        }, 30000);
-
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: (response) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeoutId);
-            if (!response?.credential) {
-              reject(new Error('Google did not return an ID token.'));
-              return;
-            }
-            resolve(response.credential);
-          },
-        });
-
-        window.google.accounts.id.prompt((notification) => {
-          if (settled) return;
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            settled = true;
-            clearTimeout(timeoutId);
-            reject(new Error('Google sign-in prompt was blocked or unavailable.'));
-          }
-        });
-      });
-
-      const data = await loginWithGoogle({ idToken: credential });
-      login(data);
-      finishAuthAndRedirect();
-      didRedirect = true;
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Google sign-in failed.';
       setError(msg);
     } finally {
       if (!didRedirect) {
@@ -559,15 +581,31 @@ const Login = () => {
         </form>
         <div className="auth-divider" aria-hidden="true"><span>or</span></div>
         <div className="auth-social-buttons">
-          <button
-            type="button"
-            className="auth-oauth-btn"
-            onClick={handleGoogleSignIn}
-            disabled={formDisabled}
-          >
-            <span className="auth-oauth-icon auth-oauth-icon--google" aria-hidden="true">G</span>
-            {socialLoading === 'google' ? 'Connecting Google…' : 'Continue with Google'}
-          </button>
+          {googleButtonError ? (
+            <button
+              type="button"
+              className="auth-oauth-btn"
+              onClick={() => setError(googleButtonError)}
+              disabled={formDisabled}
+            >
+              <span className="auth-oauth-icon auth-oauth-icon--google" aria-hidden="true">G</span>
+              Continue with Google
+            </button>
+          ) : (
+            <div
+              className="auth-google-button-slot"
+              data-disabled={formDisabled ? 'true' : 'false'}
+              aria-disabled={formDisabled || undefined}
+            >
+              <div ref={googleButtonRef} className="auth-google-button-rendered" />
+              {!googleButtonReady && (
+                <button type="button" className="auth-oauth-btn auth-google-button-loading" disabled>
+                  <span className="auth-oauth-icon auth-oauth-icon--google" aria-hidden="true">G</span>
+                  Loading Google…
+                </button>
+              )}
+            </div>
+          )}
           <button
             type="button"
             className="auth-oauth-btn"
