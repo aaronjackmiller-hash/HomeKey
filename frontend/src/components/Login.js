@@ -18,8 +18,9 @@ const GOOGLE_IDENTITY_SCRIPT = 'https://accounts.google.com/gsi/client';
 const APPLE_IDENTITY_SCRIPT = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
 const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
-const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
-const REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY = 'homekey:remembered-login-password';
+const LAST_LOGIN_EMAIL_STORAGE_KEY = 'homekey:last-login-email';
+const LEGACY_REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
+const LEGACY_REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY = 'homekey:remembered-login-password';
 const STALE_DEMO_LOGIN_EMAILS = new Set([
   'agent@homekey.demo',
   'avi.cohen@homekey-demo.il',
@@ -30,22 +31,21 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
 
-const clearRememberedLoginCredentials = () => {
+const clearLegacyRememberedLoginCredentials = () => {
   if (typeof window === 'undefined') return;
-  window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
-  window.localStorage.removeItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
+  window.localStorage.removeItem(LEGACY_REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY);
 };
 
-const getRememberedLoginCredentials = () => {
-  const emptyCredentials = { email: '', password: '' };
-  if (typeof window === 'undefined') return emptyCredentials;
-  const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
-  const rememberedPassword = String(window.localStorage.getItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY) || '');
-  if (isStaleDemoLoginEmail(rememberedEmail) || !rememberedEmail || !rememberedPassword) {
-    clearRememberedLoginCredentials();
-    return emptyCredentials;
+const getLastLoginEmail = () => {
+  if (typeof window === 'undefined') return '';
+  clearLegacyRememberedLoginCredentials();
+  const lastEmail = String(window.localStorage.getItem(LAST_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
+  if (isStaleDemoLoginEmail(lastEmail)) {
+    window.localStorage.removeItem(LAST_LOGIN_EMAIL_STORAGE_KEY);
+    return '';
   }
-  return { email: rememberedEmail, password: rememberedPassword };
+  return lastEmail;
 };
 
 const resolveSafeRedirectPath = (rawValue) => {
@@ -101,19 +101,16 @@ const Login = () => {
   const { login } = useAuth();
   const history = useHistory();
   const location = useLocation();
-  const rememberedCredentialsOnLoad = getRememberedLoginCredentials();
+  const lastLoginEmailOnLoad = getLastLoginEmail();
   const [form, setForm] = useState(() => ({
-    email: rememberedCredentialsOnLoad.email,
-    password: rememberedCredentialsOnLoad.password,
+    email: lastLoginEmailOnLoad,
+    password: '',
   }));
   const [socialLoading, setSocialLoading] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [enablePasskey, setEnablePasskey] = useState(false);
-  const [rememberPassword, setRememberPassword] = useState(() => (
-    rememberedCredentialsOnLoad.email.length > 0 && rememberedCredentialsOnLoad.password.length > 0
-  ));
   const [passkeySetupStep, setPasskeySetupStep] = useState('');
   const passkeySetupOpen = passkeySetupStep.length > 0;
   const authDestination = useMemo(() => {
@@ -138,24 +135,29 @@ const Login = () => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   useEffect(() => {
-    if (rememberPassword) return;
-    clearRememberedLoginCredentials();
-  }, [rememberPassword]);
+    clearLegacyRememberedLoginCredentials();
+  }, []);
 
   useEffect(() => {
-    getRememberedLoginCredentials();
-  });
+    const cleanupBrowserAutofill = window.setTimeout(() => {
+      setForm((current) => ({
+        ...current,
+        email: getLastLoginEmail(),
+        password: '',
+      }));
+    }, 250);
+    return () => window.clearTimeout(cleanupBrowserAutofill);
+  }, []);
 
-  const rememberAuthenticatedCredentials = ({ email, password }) => {
+  const rememberLastLoginEmail = (email) => {
     if (typeof window === 'undefined') return;
     const normalizedEmail = String(email || '').trim();
-    const rawPassword = String(password || '');
-    if (rememberPassword && normalizedEmail && rawPassword && !isStaleDemoLoginEmail(normalizedEmail)) {
-      window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
-      window.localStorage.setItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY, rawPassword);
+    clearLegacyRememberedLoginCredentials();
+    if (normalizedEmail && !isStaleDemoLoginEmail(normalizedEmail)) {
+      window.localStorage.setItem(LAST_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
       return;
     }
-    clearRememberedLoginCredentials();
+    window.localStorage.removeItem(LAST_LOGIN_EMAIL_STORAGE_KEY);
   };
 
   const finishAuthAndRedirect = () => {
@@ -197,7 +199,7 @@ const Login = () => {
 
   const loginWithPassword = async () => {
     const data = await loginUser(form);
-    rememberAuthenticatedCredentials(form);
+    rememberLastLoginEmail(data?.data?.email || form.email);
     login(data);
     return data;
   };
@@ -280,9 +282,7 @@ const Login = () => {
         email: form.email.trim(),
         credential,
       });
-      if (!rememberPassword) {
-        clearRememberedLoginCredentials();
-      }
+      rememberLastLoginEmail(data?.data?.email || form.email);
       login(data);
       finishAuthAndRedirect();
       didRedirect = true;
@@ -363,6 +363,7 @@ const Login = () => {
       });
 
       const data = await loginWithGoogle({ idToken: credential });
+      rememberLastLoginEmail(data?.data?.email);
       login(data);
       finishAuthAndRedirect();
       didRedirect = true;
@@ -409,6 +410,7 @@ const Login = () => {
         throw new Error('Apple sign-in did not return an ID token.');
       }
       const data = await loginWithApple({ idToken, name });
+      rememberLastLoginEmail(data?.data?.email);
       login(data);
       finishAuthAndRedirect();
       didRedirect = true;
@@ -460,20 +462,7 @@ const Login = () => {
             disabled={formDisabled}
             autoComplete="new-password"
           />
-          <div className="auth-form-options">
-            <label className="auth-remember-row" htmlFor="remember-password">
-              <input
-                id="remember-password"
-                type="checkbox"
-                checked={rememberPassword}
-                onChange={(event) => {
-                  const nextChecked = event.target.checked;
-                  setRememberPassword(nextChecked);
-                }}
-                disabled={formDisabled}
-              />
-              <span>Remember my password</span>
-            </label>
+          <div className="auth-form-options auth-form-options--end">
             <Link to="/forgot-password" className="auth-forgot-link">Forgot password?</Link>
           </div>
           <button type="submit" className="auth-submit-btn" disabled={formDisabled}>
