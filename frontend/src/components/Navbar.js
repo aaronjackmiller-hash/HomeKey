@@ -821,7 +821,7 @@ const Navbar = () => {
   const interestSummary = useMemo(() => getInterestSummary(), [interestVersion]);
   const likedCount = (interestSummary.favoriteIds || []).length;
   const userFirstName = getUserFirstName(user);
-  const shouldShowGreeting = isAuthenticated && Boolean(userFirstName);
+  const greetingName = userFirstName || t('navbar.myAccount');
   const isListingsRoute = location.pathname === '/';
   const alertsOverlayTarget = useMemo(() => {
     const params = new URLSearchParams(location.pathname === '/' ? location.search : '');
@@ -1236,16 +1236,16 @@ const Navbar = () => {
                     {t('navbar.myAccount')}
                   </Link>
                 )}
-                {shouldShowGreeting ? (
+                {isAuthenticated ? (
                   <button
                     type="button"
                     className="premium-header__greeting"
-                    aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
-                    title={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                    aria-label={t('navbar.logoutAriaLabel', { name: greetingName })}
+                    title={t('navbar.logoutAriaLabel', { name: greetingName })}
                     onClick={handleLogoutFromGreeting}
                   >
                     <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
-                    <span className="premium-header__greeting-name">{userFirstName}</span>
+                    <span className="premium-header__greeting-name">{greetingName}</span>
                   </button>
                 ) : (
                   <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
@@ -1282,16 +1282,16 @@ const Navbar = () => {
                   {t('navbar.myAccount')}
                 </Link>
               )}
-              {shouldShowGreeting ? (
+              {isAuthenticated ? (
                 <button
                   type="button"
                   className="premium-header__greeting"
-                  aria-label={t('navbar.logoutAriaLabel', { name: userFirstName })}
-                  title={t('navbar.logoutAriaLabel', { name: userFirstName })}
+                  aria-label={t('navbar.logoutAriaLabel', { name: greetingName })}
+                  title={t('navbar.logoutAriaLabel', { name: greetingName })}
                   onClick={handleLogoutFromGreeting}
                 >
                   <span className="premium-header__greeting-label">{t('navbar.hello')}</span>
-                  <span className="premium-header__greeting-name">{userFirstName}</span>
+                  <span className="premium-header__greeting-name">{greetingName}</span>
                 </button>
               ) : (
                 <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
