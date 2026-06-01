@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
 import { buildAddressQuery } from '../utils/addressLocalization';
@@ -253,6 +252,18 @@ const getMarkerImageUrl = (property, propertyId) => {
 
 const getMarkerStylePreset = (presetKey) =>
   MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
+
+const GoogleMapsUnavailableState = ({ title, message }) => (
+  <div className="google-listings-map-shell google-listings-map-shell--unavailable">
+    <div className="google-listings-map-unavailable-card" role="status" aria-live="polite">
+      <div className="google-listings-map-unavailable-icon" aria-hidden="true">G</div>
+      <div>
+        <h2>{title}</h2>
+        <p>{message}</p>
+      </div>
+    </div>
+  </div>
+);
 
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
@@ -1544,34 +1555,18 @@ const GoogleListingsMap = ({
 
   if (!apiKey) {
     return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        searchResultCount={searchResultCount}
-        favoritePropertyIds={favoritePropertyIds}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-        isVisible={isVisible}
-        hoveredListingId={hoveredListingId}
-        statusNotice={t('map.googleMapsMissingKeyFallbackNotice')}
+      <GoogleMapsUnavailableState
+        title={t('map.googleMapsMissingKeyTitle')}
+        message={t('map.googleMapsMissingKeyMessage')}
       />
     );
   }
 
   if (mapError) {
     return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        searchResultCount={searchResultCount}
-        favoritePropertyIds={favoritePropertyIds}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-        isVisible={isVisible}
-        hoveredListingId={hoveredListingId}
-        statusNotice={t('map.googleMapsUnavailableFallbackNotice', { reason: mapError })}
+      <GoogleMapsUnavailableState
+        title={t('map.googleMapsUnavailableTitle')}
+        message={t('map.googleMapsUnavailableMessage', { reason: mapError })}
       />
     );
   }
