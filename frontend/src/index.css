@@ -6582,6 +6582,10 @@ legend {
     padding-right: 12px;
   }
 
+  .premium-header__cta {
+    display: inline-flex;
+  }
+
   .premium-header__likes-cell {
     grid-column: 2;
   }
