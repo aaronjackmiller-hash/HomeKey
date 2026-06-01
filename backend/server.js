@@ -408,6 +408,7 @@ connectMongo(MONGODB_URI)
 // always check the server state.
 app.use('/api', (req, res, next) => {
     if (req.path === '/health') return next();
+    if (req.path === '/search/interpret') return next();
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ success: false, message: 'Database not ready. Please try again shortly.' });
     }
@@ -417,6 +418,7 @@ app.use('/api', (req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/properties', require('./routes/properties'));
+app.use('/api/search', require('./routes/search'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/agents', require('./routes/agents'));
 app.use('/api/alerts', require('./routes/alerts'));

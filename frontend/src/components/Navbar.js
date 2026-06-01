@@ -5,6 +5,7 @@ import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { interpretSearchPrompt } from '../services/api';
 
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
@@ -209,6 +210,34 @@ const parseAiSearchInput = (rawInput = '') => {
   };
 };
 
+const normalizeInterpretedSearch = (rawFilters = {}, fallbackPrompt = '') => {
+  const filters = rawFilters && typeof rawFilters === 'object' ? rawFilters : {};
+  const minRaw = filters.minPrice;
+  const maxRaw = filters.maxPrice;
+  let minPriceInput = minRaw == null || minRaw === '' ? PRICE_SLIDER_MIN : clampPriceValue(minRaw);
+  let maxPriceInput = maxRaw == null || maxRaw === '' ? PRICE_SLIDER_MAX : clampPriceValue(maxRaw);
+  if (minPriceInput > maxPriceInput) {
+    const midpoint = Math.round((minPriceInput + maxPriceInput) / 2 / PRICE_SLIDER_STEP) * PRICE_SLIDER_STEP;
+    minPriceInput = midpoint;
+    maxPriceInput = midpoint;
+  }
+  const normalizedPropertyCategory = String(filters.propertyCategory || '').trim().toLowerCase();
+  const featureFilters = (Array.isArray(filters.features) ? filters.features : [])
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value, index, values) => FEATURE_FILTER_OPTIONS.includes(value) && values.indexOf(value) === index);
+
+  return {
+    city: String(filters.q || filters.city || fallbackPrompt || '').trim(),
+    rooms: ROOM_OPTION_VALUES.includes(String(filters.rooms || '').trim()) ? String(filters.rooms || '').trim() : '',
+    baths: BATH_OPTION_VALUES.includes(String(filters.baths || '').trim()) ? String(filters.baths || '').trim() : '',
+    listingType: sanitizeListingType(filters.type || 'all'),
+    propertyCategory: PROPERTY_CATEGORY_OPTIONS.includes(normalizedPropertyCategory) ? normalizedPropertyCategory : '',
+    featureFilters,
+    minPriceInput,
+    maxPriceInput,
+  };
+};
+
 const getRoomsBathsSummaryLabel = ({
   rooms = '',
   baths = '',
@@ -343,6 +372,7 @@ const Navbar = () => {
   const [saveSearchStatus, setSaveSearchStatus] = useState('');
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [voiceSearchStatus, setVoiceSearchStatus] = useState('');
+  const [isAiSearchInterpreting, setIsAiSearchInterpreting] = useState(false);
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const filtersRef = useRef(null);
@@ -611,10 +641,7 @@ const Navbar = () => {
     }, timeoutMs);
   };
 
-  const applyAiPrompt = (rawPrompt = '') => {
-    const prompt = String(rawPrompt || '').trim();
-    if (!prompt) return;
-    const aiSearch = parseAiSearchInput(prompt);
+  const applyInterpretedSearch = (aiSearch) => {
     setCity(aiSearch.city);
     setRooms(aiSearch.rooms);
     setBaths(aiSearch.baths);
@@ -640,6 +667,24 @@ const Navbar = () => {
     setPriceExpanded(false);
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
+  };
+
+  const applyAiPrompt = async (rawPrompt = '', { appliedStatus = t('navbar.aiSearchAppliedStatus') } = {}) => {
+    const prompt = String(rawPrompt || '').trim();
+    if (!prompt) return false;
+    setIsAiSearchInterpreting(true);
+    setTransientVoiceStatus(t('navbar.aiSearchInterpretingStatus'), 0);
+    try {
+      const result = await interpretSearchPrompt({ prompt, language });
+      const aiSearch = normalizeInterpretedSearch(result?.data?.filters, prompt);
+      applyInterpretedSearch(aiSearch);
+      setTransientVoiceStatus(result?.data?.fallbackUsed ? t('navbar.aiSearchFallbackStatus') : appliedStatus);
+    } catch (_err) {
+      applyInterpretedSearch(parseAiSearchInput(prompt));
+      setTransientVoiceStatus(t('navbar.aiSearchFallbackStatus'));
+    } finally {
+      setIsAiSearchInterpreting(false);
+    }
     return true;
   };
 
@@ -677,7 +722,7 @@ const Navbar = () => {
         setTransientVoiceStatus(t('navbar.voiceSearchListeningStatus'), 0);
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = async (event) => {
         const transcript = Array.from(event.results || [])
           .map((result) => (result && result[0] ? String(result[0].transcript || '') : ''))
           .join(' ')
@@ -687,8 +732,7 @@ const Navbar = () => {
           return;
         }
         setCity(transcript);
-        const applied = applyAiPrompt(transcript);
-        if (applied) setTransientVoiceStatus(t('navbar.voiceSearchAppliedStatus'));
+        await applyAiPrompt(transcript, { appliedStatus: t('navbar.voiceSearchAppliedStatus') });
       };
 
       recognition.onerror = (event) => {
@@ -942,9 +986,10 @@ const Navbar = () => {
                   className={`premium-header__ai-toggle ${city.trim() ? 'is-active' : ''}`}
                   aria-label={t('navbar.aiSearchAriaLabel')}
                   onClick={handleMobileAiSearch}
-                  disabled={!city.trim()}
+                  disabled={!city.trim() || isAiSearchInterpreting}
+                  aria-busy={isAiSearchInterpreting}
                 >
-                  <span>{t('navbar.aiSearch')}</span>
+                  <span>{isAiSearchInterpreting ? t('navbar.aiSearchLoading') : t('navbar.aiSearch')}</span>
                 </button>
               </div>
               <div className="premium-header__search-segment premium-header__search-segment--price" ref={priceRef}>
