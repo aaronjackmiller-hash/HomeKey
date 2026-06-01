@@ -3,34 +3,38 @@ import React from 'react';
 const DrawAreaIcon = () => (
   <svg
     className="map-area-control-icon map-area-control-icon--draw"
-    viewBox="0 0 24 24"
+    viewBox="0 0 32 32"
     aria-hidden="true"
     focusable="false"
   >
-    <circle
-      cx="12"
-      cy="11.3"
-      r="8.8"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeDasharray="3.4 2.4"
-    />
+    <defs>
+      <marker
+        id="draw-area-arrowhead"
+        markerWidth="7"
+        markerHeight="7"
+        refX="5.7"
+        refY="3.5"
+        orient="auto"
+      >
+        <path d="M0 0L7 3.5L0 7Z" fill="currentColor" />
+      </marker>
+    </defs>
     <path
-      d="M7.2 16.6L4.2 19.6"
+      d="M26.1 14.4C25.3 8.7 20.4 4.5 14.6 4.9C8.2 5.2 3.3 10.7 3.8 17.1C4.2 23.5 9.7 28.4 16.1 27.9C21.2 27.6 25.3 24.2 26.7 19.6"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M3.4 20.4L5.6 21"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.6"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeDasharray="4 2.4"
+      markerEnd="url(#draw-area-arrowhead)"
+    />
+    <path
+      d="M8.2 20.5L4.5 24.2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
     />
   </svg>
 );
