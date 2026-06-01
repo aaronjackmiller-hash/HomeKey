@@ -38,6 +38,14 @@ const sendPublicRuntimeConfig = (_req, res) => {
         .send(`window.__HOMEKEY_PUBLIC_CONFIG__ = Object.freeze(${configJson});\n`);
 };
 
+const sendFrontendIndex = (frontendIndexPath) => (_req, res) => {
+    res
+        .set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+        .set('Pragma', 'no-cache')
+        .set('Expires', '0')
+        .sendFile(frontendIndexPath);
+};
+
 // Middleware
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -799,10 +807,10 @@ if (process.env.NODE_ENV === 'production') {
     if (fs.existsSync(frontendIndexPath)) {
         app.use(generalLimiter);
         app.get('/runtime-env.js', sendPublicRuntimeConfig);
-        app.use(express.static(frontendBuild));
-        app.get('*', (req, res) => {
-            res.sendFile(frontendIndexPath);
-        });
+        app.get('/', sendFrontendIndex(frontendIndexPath));
+        app.get('/index.html', sendFrontendIndex(frontendIndexPath));
+        app.use(express.static(frontendBuild, { index: false }));
+        app.get('*', sendFrontendIndex(frontendIndexPath));
     } else {
         // Keep API-only production deployments alive even when frontend assets
         // are hosted separately (or intentionally omitted).
