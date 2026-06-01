@@ -1500,6 +1500,9 @@ const Navbar = () => {
             </>
           )}
         </div>
+        <Link to="/add-listing" className="premium-header__cta premium-header__mobile-cta premium-header__action-pill">
+          {t('navbar.listProperty')}
+        </Link>
       </div>
     </nav>
   );
