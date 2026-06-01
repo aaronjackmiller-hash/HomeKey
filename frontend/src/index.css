@@ -6309,8 +6309,8 @@ legend {
 }
 
 .premium-header__brand-image {
-  width: 24px;
-  height: 32px;
+  width: 31px;
+  height: 42px;
   max-width: none;
   object-fit: contain;
   object-position: center;
@@ -6318,7 +6318,7 @@ legend {
 
 .premium-header__brand-wordmark {
   color: #111827;
-  font-size: 18px;
+  font-size: 23px;
   font-weight: 500;
   letter-spacing: -0.02em;
 }
@@ -6491,6 +6491,10 @@ legend {
 .premium-header__search-segment input::placeholder {
   color: #20262d;
   opacity: 1;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .premium-header__search-segment input.is-active {
@@ -6644,14 +6648,14 @@ legend {
   }
 
   .premium-header__brand-image {
-    width: 22px;
-    height: 30px;
+    width: 29px;
+    height: 39px;
     max-width: none;
     margin: 0;
   }
 
   .premium-header__brand-wordmark {
-    font-size: 17px;
+    font-size: 22px;
   }
 
   .premium-header__likes-cell {
