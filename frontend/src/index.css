@@ -6473,6 +6473,14 @@ legend {
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
 }
 
+.premium-header__filters-panel {
+  position: fixed;
+  top: 122px;
+  right: 18px;
+  max-height: calc(100vh - 142px);
+  overflow-y: auto;
+}
+
 @media (max-width: 900px) {
   .premium-header__inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -6596,5 +6604,13 @@ legend {
     left: 0;
     right: auto;
     min-width: min(330px, calc(100vw - 22px));
+  }
+
+  .premium-header__filters-panel {
+    position: absolute;
+    top: calc(100% + 9px);
+    right: 0;
+    max-height: none;
+    overflow-y: visible;
   }
 }
