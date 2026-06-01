@@ -8,16 +8,19 @@ const DrawAreaIcon = () => (
     focusable="false"
   >
     <circle
-      cx="18.5"
-      cy="21.5"
-      r="13.2"
+      cx="20"
+      cy="20"
+      r="17"
       fill="none"
       stroke="currentColor"
-      strokeWidth="3.2"
-      strokeLinecap="round"
+      strokeWidth="2.5"
     />
     <path
-      d="M28 6L35 16L23.5 15Z"
+      d="M20 5L25.8 12.4H22.8V27.6H25.8L20 35L14.2 27.6H17.2V12.4H14.2L20 5Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5 20L12.4 14.2V17.2H27.6V14.2L35 20L27.6 25.8V22.8H12.4V25.8L5 20Z"
       fill="currentColor"
     />
   </svg>
@@ -25,24 +28,23 @@ const DrawAreaIcon = () => (
 
 const ClearAreaIcon = () => (
   <svg
-    className="map-area-control-icon"
-    viewBox="0 0 24 24"
+    className="map-area-control-icon map-area-control-icon--clear"
+    viewBox="0 0 40 32"
     aria-hidden="true"
     focusable="false"
   >
     <path
-      d="M7.5 7.3H17.4C18.3 7.3 19.1 8.1 19.1 9V15C19.1 15.9 18.3 16.7 17.4 16.7H7.5L4.2 12L7.5 7.3Z"
+      d="M3 16L14 5H36V27H14L3 16Z"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
+      strokeWidth="3.4"
       strokeLinejoin="round"
     />
     <path
-      d="M10.1 10.1L14.3 14.3M14.3 10.1L10.1 14.3"
+      d="M19.4 10.8L28.6 20M28.6 10.8L19.4 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="4.5"
       strokeLinecap="round"
     />
   </svg>
