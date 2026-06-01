@@ -5165,7 +5165,7 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .property-list-page .map-area-control-icon {
@@ -5175,8 +5175,8 @@ legend {
 }
 
 .property-list-page .map-area-control-icon--draw {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
 }
 
 .property-list-page .map-area-control:disabled .map-area-control-icon {
@@ -5919,7 +5919,7 @@ legend {
   }
 
   .property-list-page .map-area-control {
-    gap: 5px;
+    gap: 7px;
   }
 
   .property-list-page .map-area-control-icon {
