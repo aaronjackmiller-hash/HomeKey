@@ -6586,7 +6586,7 @@ legend {
     padding-right: 12px;
   }
 
-  .premium-header__cta {
+  .premium-header__actions > .premium-header__cta {
     display: inline-flex;
   }
 
