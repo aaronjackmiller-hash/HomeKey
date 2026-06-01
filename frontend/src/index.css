@@ -4949,6 +4949,58 @@ legend {
   background: #dbe4f1;
 }
 
+.property-list-page .google-listings-map-shell--unavailable {
+  min-height: 520px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(226, 232, 240, 0.78), rgba(248, 250, 252, 0.92)),
+    repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.16) 0 1px, transparent 1px 36px),
+    repeating-linear-gradient(90deg, rgba(148, 163, 184, 0.16) 0 1px, transparent 1px 36px);
+}
+
+.property-list-page .google-listings-map-unavailable-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: 420px;
+  padding: 20px;
+  border: 1px solid rgba(30, 41, 59, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+}
+
+.property-list-page .google-listings-map-unavailable-icon {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #4285f4;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.property-list-page .google-listings-map-unavailable-card h2 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.property-list-page .google-listings-map-unavailable-card p {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .property-list-page .google-listings-map-shell .gm-style .gm-style-iw-c {
   padding: 0 !important;
   border-radius: 16px !important;
@@ -4958,21 +5010,6 @@ legend {
 
 .property-list-page .google-listings-map-shell .gm-style .gm-style-iw-d {
   overflow: visible !important;
-}
-
-.property-list-page .google-listings-map-shell .leaflet-popup-content-wrapper {
-  padding: 0;
-  border-radius: 16px;
-  background: transparent;
-  box-shadow: none;
-}
-
-.property-list-page .google-listings-map-shell .leaflet-popup-content {
-  margin: 0;
-}
-
-.property-list-page .google-listings-map-shell .leaflet-popup-tip {
-  background: #ffffff;
 }
 
 /* The Map Container */
