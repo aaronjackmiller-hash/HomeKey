@@ -6474,10 +6474,10 @@ legend {
 }
 
 .premium-header__filters-panel {
-  position: fixed;
-  top: 122px;
-  right: 18px;
-  max-height: calc(100vh - 142px);
+  position: absolute;
+  top: 52px;
+  right: 0;
+  max-height: calc(100vh - 150px);
   overflow-y: auto;
 }
 
@@ -6607,9 +6607,7 @@ legend {
   }
 
   .premium-header__filters-panel {
-    position: absolute;
-    top: calc(100% + 9px);
-    right: 0;
+    top: 49px;
     max-height: none;
     overflow-y: visible;
   }
