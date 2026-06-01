@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import MapAreaControls from './MapAreaControls';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,6 +17,92 @@ const ZOOM_STEP = 1;
 const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.12;
+const ASPIRATIONAL_MUTED_MAP_STYLE = [
+  {
+    elementType: 'geometry',
+    stylers: [{ color: '#f3efe7' }],
+  },
+  {
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#6f6a61' }],
+  },
+  {
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#f8f5ef' }],
+  },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#d7d0c4' }],
+  },
+  {
+    featureType: 'administrative.land_parcel',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'landscape.natural',
+    elementType: 'geometry',
+    stylers: [{ color: '#eee6d8' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'geometry',
+    stylers: [{ color: '#e8dfcf' }],
+  },
+  {
+    featureType: 'poi.business',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'geometry.fill',
+    stylers: [{ color: '#dce6d8' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#ffffff' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#ded7cc' }],
+  },
+  {
+    featureType: 'road.arterial',
+    elementType: 'geometry',
+    stylers: [{ color: '#f6f2eb' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry',
+    stylers: [{ color: '#e5dac9' }],
+  },
+  {
+    featureType: 'road.highway',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#cfc4b3' }],
+  },
+  {
+    featureType: 'road.local',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#8f877c' }],
+  },
+  {
+    featureType: 'transit',
+    stylers: [{ visibility: 'off' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry.fill',
+    stylers: [{ color: '#c9d7d9' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#71868a' }],
+  },
+];
 const FAVORITE_PRICE_PIN_STYLE = {
   pinColor: '#FF0000',
   pinStrokeColor: '#000000',
@@ -254,6 +339,18 @@ const getMarkerImageUrl = (property, propertyId) => {
 
 const getMarkerStylePreset = (presetKey) =>
   MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
+
+const GoogleMapsUnavailableState = ({ title, message }) => (
+  <div className="google-listings-map-shell google-listings-map-shell--unavailable">
+    <div className="google-listings-map-unavailable-card" role="status" aria-live="polite">
+      <div className="google-listings-map-unavailable-icon" aria-hidden="true">G</div>
+      <div>
+        <h2>{title}</h2>
+        <p>{message}</p>
+      </div>
+    </div>
+  </div>
+);
 
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
   const parsedPrice = Number(price);
@@ -783,6 +880,8 @@ const GoogleListingsMap = ({
           mapRef.current = new mapsApi.Map(mapContainerRef.current, {
             center: DEFAULT_CENTER,
             zoom: 10,
+            backgroundColor: '#f3efe7',
+            styles: ASPIRATIONAL_MUTED_MAP_STYLE,
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
@@ -1533,32 +1632,18 @@ const GoogleListingsMap = ({
 
   if (!apiKey) {
     return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        favoritePropertyIds={favoritePropertyIds}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-        isVisible={isVisible}
-        hoveredListingId={hoveredListingId}
-        statusNotice={t('map.googleMapsMissingKeyFallbackNotice')}
+      <GoogleMapsUnavailableState
+        title={t('map.googleMapsMissingKeyTitle')}
+        message={t('map.googleMapsMissingKeyMessage')}
       />
     );
   }
 
   if (mapError) {
     return (
-      <ConnectedListingsMapFallback
-        properties={properties}
-        favoritePropertyIds={favoritePropertyIds}
-        onCircleSelectionChange={onCircleSelectionChange}
-        clearSignal={clearSignal}
-        drawModeToggleSignal={drawModeToggleSignal}
-        onDrawModeChange={onDrawModeChange}
-        isVisible={isVisible}
-        hoveredListingId={hoveredListingId}
-        statusNotice={t('map.googleMapsUnavailableFallbackNotice', { reason: mapError })}
+      <GoogleMapsUnavailableState
+        title={t('map.googleMapsUnavailableTitle')}
+        message={t('map.googleMapsUnavailableMessage', { reason: mapError })}
       />
     );
   }
