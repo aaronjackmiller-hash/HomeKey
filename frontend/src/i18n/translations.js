@@ -61,7 +61,7 @@ export const translations = {
       saveSearchSaved: 'Saved',
       saveSearchFailed: 'Failed',
       languageToggleAriaLabel: 'Switch language to {{targetLanguage}}',
-      listProperty: 'List a Property',
+      listProperty: 'List your property. Effortlessly free',
       savedSearch: 'Saved Search',
       myAccount: 'My Account',
       hello: 'Hello',
