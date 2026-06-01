@@ -5174,6 +5174,11 @@ legend {
   flex: 0 0 auto;
 }
 
+.property-list-page .map-area-control-icon--draw {
+  width: 22px;
+  height: 22px;
+}
+
 .property-list-page .map-area-control:disabled .map-area-control-icon {
   opacity: 0.55;
 }
@@ -5920,6 +5925,11 @@ legend {
   .property-list-page .map-area-control-icon {
     width: 15px;
     height: 15px;
+  }
+
+  .property-list-page .map-area-control-icon--draw {
+    width: 18px;
+    height: 18px;
   }
 
   .property-list-page .google-listings-map-search-count {
