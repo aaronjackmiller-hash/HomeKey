@@ -5165,7 +5165,7 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .property-list-page .map-area-control-icon {
@@ -5175,8 +5175,13 @@ legend {
 }
 
 .property-list-page .map-area-control-icon--draw {
-  width: 20px;
-  height: 20px;
+  width: 34px;
+  height: 34px;
+}
+
+.property-list-page .map-area-control-icon--clear {
+  width: 32px;
+  height: 26px;
 }
 
 .property-list-page .map-area-control:disabled .map-area-control-icon {
@@ -5919,7 +5924,7 @@ legend {
   }
 
   .property-list-page .map-area-control {
-    gap: 7px;
+    gap: 9px;
   }
 
   .property-list-page .map-area-control-icon {
@@ -5928,8 +5933,13 @@ legend {
   }
 
   .property-list-page .map-area-control-icon--draw {
-    width: 18px;
-    height: 18px;
+    width: 29px;
+    height: 29px;
+  }
+
+  .property-list-page .map-area-control-icon--clear {
+    width: 27px;
+    height: 22px;
   }
 
   .property-list-page .google-listings-map-search-count {
