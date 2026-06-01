@@ -6481,6 +6481,16 @@ legend {
   overflow-y: auto;
 }
 
+.premium-header .premium-header__search-segment--all-filters > .premium-header__filters-panel.is-open {
+  position: absolute !important;
+  top: 52px !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  max-height: calc(100vh - 150px) !important;
+  transform: none !important;
+}
+
 @media (max-width: 900px) {
   .premium-header__inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
