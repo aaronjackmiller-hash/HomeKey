@@ -977,6 +977,10 @@ a {
   opacity: 0.9;
 }
 
+.premium-header__mobile-cta {
+  display: none;
+}
+
 .premium-header__login {
   text-decoration: none;
   color: #111827;
@@ -6608,7 +6612,7 @@ legend {
 @media (max-width: 767px) {
   .premium-header__inner {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: 54px auto;
+    grid-template-rows: 54px auto auto;
     row-gap: 0;
     padding: 0;
   }
@@ -6647,7 +6651,16 @@ legend {
     padding: 0;
   }
 
-  .premium-header__cta {
+  .premium-header__actions > .premium-header__cta {
+    display: none;
+  }
+
+  .premium-header__mobile-cta {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: stretch;
+    margin: 0 10px 8px;
     min-height: 32px;
     padding: 0 12px;
     font-size: 12px;
@@ -6659,7 +6672,7 @@ legend {
   }
 
   .premium-header__search-cell {
-    grid-row: 2;
+    grid-row: 3;
     padding: 8px 10px 9px;
   }
 
