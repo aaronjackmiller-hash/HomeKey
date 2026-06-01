@@ -5099,6 +5099,13 @@ legend {
   overflow-x: auto;
 }
 
+.property-list-page .google-listings-map-area-controls {
+  padding: 8px;
+  border-top: 0;
+  background: #f9f7f2;
+  overflow: visible;
+}
+
 .property-list-page .map-draw-btn,
 .property-list-page .map-marker-preset-btn {
   min-height: 44px;
@@ -5111,6 +5118,23 @@ legend {
   color: #475569;
   background: #ffffff;
   border: 1px solid #94a3b8;
+}
+
+.property-list-page .map-area-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.property-list-page .map-area-control-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.property-list-page .map-area-control:disabled .map-area-control-icon {
+  opacity: 0.55;
 }
 
 .property-list-page .map-draw-btn.is-active {
@@ -5836,11 +5860,25 @@ legend {
     overflow: visible;
   }
 
+  .property-list-page .google-listings-map-area-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 6px;
+  }
+
   .property-list-page .map-draw-btn {
     min-height: 36px;
     padding: 6px 10px;
     border-radius: 10px;
     font-size: 0.78rem;
+  }
+
+  .property-list-page .map-area-control {
+    gap: 5px;
+  }
+
+  .property-list-page .map-area-control-icon {
+    width: 15px;
+    height: 15px;
   }
 
   .property-list-page .google-listings-map-search-count {

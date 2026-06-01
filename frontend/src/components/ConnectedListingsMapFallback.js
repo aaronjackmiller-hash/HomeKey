@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import MapAreaControls from './MapAreaControls';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
 import { buildAddressQuery } from '../utils/addressLocalization';
@@ -300,7 +301,6 @@ const isCoarsePointerDevice = () => {
 
 const ConnectedListingsMapFallback = ({
   properties = [],
-  searchResultCount = null,
   favoritePropertyIds = [],
   onCircleSelectionChange,
   clearSignal = 0,
@@ -329,19 +329,9 @@ const ConnectedListingsMapFallback = ({
   const [hasActiveCircle, setHasActiveCircle] = useState(false);
   const markerPresetKey = DEFAULT_FALLBACK_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
-  const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
   const markerPreset = getFallbackMarkerStylePreset(markerPresetKey);
   const coarsePointerDevice = isCoarsePointerDevice();
   const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
-  const resolvedSearchCount = useMemo(() => {
-    const parsedCount = Number(searchResultCount);
-    if (Number.isFinite(parsedCount) && parsedCount >= 0) return parsedCount;
-    return Number(properties.length || 0);
-  }, [properties.length, searchResultCount]);
-  const formattedSearchCount = useMemo(
-    () => resolvedSearchCount.toLocaleString(locale),
-    [resolvedSearchCount, locale]
-  );
   const overlayCardStyle = useMemo(
     () => ({
       border: '1px solid rgba(30, 41, 59, 0.9)',
@@ -530,7 +520,6 @@ const ConnectedListingsMapFallback = ({
     const syncOverlayMode = (eventLike) => {
       const matches = Boolean(eventLike && eventLike.matches);
       setIsMobileOverlay(matches);
-      setIsOverlayCollapsed(matches);
     };
 
     syncOverlayMode(mediaQuery);
@@ -1022,97 +1011,18 @@ const ConnectedListingsMapFallback = ({
   return (
     <div className="google-listings-map-shell">
       <div
-        className={`google-listings-map-overlay-info ${isOverlayCollapsed ? 'is-collapsed' : ''}`}
+        className="google-listings-map-overlay-info"
         style={overlayCardStyle}
       >
-        <header className="google-listings-map-header">
-          {isMobileOverlay ? (
-            <div className="google-listings-map-header-top">
-              <button
-                type="button"
-                className="secondary-btn google-listings-map-collapse-btn"
-                onClick={() => setIsOverlayCollapsed((value) => !value)}
-              >
-                {isOverlayCollapsed ? t('map.expand') : t('map.collapse')}
-              </button>
-            </div>
-          ) : null}
-          {!isOverlayCollapsed ? (
-            <div className="google-listings-map-copy-block">
-              <h2>{t('map.title')}</h2>
-              <p>{t('map.subtitle')}</p>
-            </div>
-          ) : null}
-        </header>
-        {!isOverlayCollapsed ? (
-          <div className="google-listings-map-toolbar">
-            <button
-              type="button"
-              className={`secondary-btn map-draw-btn ${drawMode ? 'is-active' : ''}`}
-              onClick={toggleDrawMode}
-            >
-              {isMobileOverlay ? t('map.drawCircleShort') : t('map.drawSearchCircle')}
-            </button>
-            <button
-              type="button"
-              className="secondary-btn map-draw-btn"
-              onClick={clearCircleFilter}
-              disabled={!drawMode && !hasActiveCircle}
-            >
-              {isMobileOverlay ? t('map.clearAreaShort') : t('map.clearArea')}
-            </button>
-            <div
-              className="google-listings-map-search-count"
-              aria-label={t('map.listingsFoundAriaLabel', { count: formattedSearchCount })}
-            >
-              <svg
-                className="google-listings-map-search-count-icon"
-                viewBox="0 0 24 24"
-                role="img"
-                aria-hidden="true"
-              >
-                <path
-                  d="M5 12L12 5.7L19 12V20.2H5V12Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M3.6 12.2L12 4.7L20.4 12.2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M9.7 20.2V16H14.3V20.2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M12 13.9C11.2 12.7 9.5 13.1 9.5 14.7C9.5 15.8 10.6 16.7 12 17.8C13.4 16.7 14.5 15.8 14.5 14.7C14.5 13.1 12.8 12.7 12 13.9Z"
-                  fill="currentColor"
-                  stroke="none"
-                />
-                <path
-                  d="M16.4 7.8V6.1"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>{formattedSearchCount}</span>
-            </div>
-          </div>
-        ) : null}
+        <MapAreaControls
+          drawMode={drawMode}
+          onToggleDrawMode={toggleDrawMode}
+          onClearArea={clearCircleFilter}
+          clearDisabled={!drawMode && !hasActiveCircle}
+          drawLabel={t('map.drawSearchArea')}
+          clearLabel={t('map.clearArea')}
+          toolbarLabel={t('map.areaControlsAriaLabel')}
+        />
       </div>
       <div className="google-listings-map-canvas-wrap">
         <div
