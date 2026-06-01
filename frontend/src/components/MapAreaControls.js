@@ -2,32 +2,33 @@ import React from 'react';
 
 const DrawAreaIcon = () => (
   <svg
-    className="map-area-control-icon"
+    className="map-area-control-icon map-area-control-icon--draw"
     viewBox="0 0 24 24"
     aria-hidden="true"
     focusable="false"
   >
-    <path
-      d="M5.2 8.4C7.3 4.9 12.4 4.2 16.1 6.1C20.1 8.2 20.9 13.2 18.5 16.4C16.3 19.4 11.1 20.1 7.5 18.2C3.8 16.2 3.1 11.9 5.2 8.4Z"
+    <circle
+      cx="12"
+      cy="11.3"
+      r="8.8"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="2"
       strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeDasharray="3 2.4"
+      strokeDasharray="3.4 2.4"
     />
     <path
-      d="M7.5 15.9L4.8 18.6"
+      d="M7.2 16.6L4.2 19.6"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="2"
       strokeLinecap="round"
     />
     <path
-      d="M4.1 19.3L6 20.1"
+      d="M3.4 20.4L5.6 21"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />

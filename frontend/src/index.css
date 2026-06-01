@@ -5165,13 +5165,18 @@ legend {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .property-list-page .map-area-control-icon {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
+}
+
+.property-list-page .map-area-control-icon--draw {
+  width: 20px;
+  height: 20px;
 }
 
 .property-list-page .map-area-control:disabled .map-area-control-icon {
@@ -5914,12 +5919,17 @@ legend {
   }
 
   .property-list-page .map-area-control {
-    gap: 5px;
+    gap: 7px;
   }
 
   .property-list-page .map-area-control-icon {
     width: 15px;
     height: 15px;
+  }
+
+  .property-list-page .map-area-control-icon--draw {
+    width: 18px;
+    height: 18px;
   }
 
   .property-list-page .google-listings-map-search-count {
