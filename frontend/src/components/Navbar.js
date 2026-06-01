@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
-import homeKeyWordmark from '../assets/H Logo Gemini_Generated_Image_8ckrj88ckrj88ckr.png';
+import hKeyholeLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import FilterMenu from './FilterMenu';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
@@ -268,6 +268,65 @@ const getUserFirstName = (user = null) => {
     .split(/\s+/)[0];
 };
 
+const HeaderIcon = ({ name }) => {
+  const iconProps = {
+    className: 'premium-header__icon',
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '1.8',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    focusable: 'false',
+    'aria-hidden': 'true',
+  };
+  const paths = {
+    location: (
+      <>
+        <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z" />
+        <circle cx="12" cy="10" r="2.1" />
+      </>
+    ),
+    price: (
+      <>
+        <path d="M6 7h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
+        <path d="M8 12h.01M16 12h.01" />
+        <circle cx="12" cy="12" r="2.2" />
+      </>
+    ),
+    bed: (
+      <>
+        <path d="M4 11V6.8A1.8 1.8 0 0 1 5.8 5h4.4A1.8 1.8 0 0 1 12 6.8V11" />
+        <path d="M12 11V7.8A1.8 1.8 0 0 1 13.8 6h4.4A1.8 1.8 0 0 1 20 7.8V11" />
+        <path d="M3 19v-5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v5" />
+        <path d="M3 16h18" />
+      </>
+    ),
+    building: (
+      <>
+        <path d="M5 21V5a2 2 0 0 1 2-2h7v18" />
+        <path d="M14 8h3a2 2 0 0 1 2 2v11" />
+        <path d="M8 7h2M8 11h2M8 15h2M16 12h1M16 16h1M4 21h17" />
+      </>
+    ),
+    filters: (
+      <>
+        <path d="M4 7h16M4 12h16M4 17h16" />
+        <circle cx="8" cy="7" r="1.6" />
+        <circle cx="15" cy="12" r="1.6" />
+        <circle cx="11" cy="17" r="1.6" />
+      </>
+    ),
+    user: (
+      <>
+        <circle cx="12" cy="8" r="3.2" />
+        <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+      </>
+    ),
+  };
+  return <svg {...iconProps}>{paths[name]}</svg>;
+};
+
 const parseSearchFromLocation = (search = '') => {
   const params = new URLSearchParams(search);
   const city = params.get('q') || '';
@@ -365,6 +424,7 @@ const Navbar = () => {
   const [likedOnly, setLikedOnly] = useState(parsedFromLocation.likedOnly);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [roomsBathsExpanded, setRoomsBathsExpanded] = useState(false);
+  const [propertyTypeExpanded, setPropertyTypeExpanded] = useState(false);
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
@@ -375,6 +435,7 @@ const Navbar = () => {
   const [isAiSearchInterpreting, setIsAiSearchInterpreting] = useState(false);
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
+  const propertyTypeRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
@@ -409,6 +470,7 @@ const Navbar = () => {
     keepFilterSheetOpenRef.current = false;
     setFiltersExpanded((currentValue) => (keepFilterSheetOpen ? currentValue : false));
     setRoomsBathsExpanded(false);
+    setPropertyTypeExpanded(false);
   }, [parsedFromLocation]);
 
   useEffect(() => () => {
@@ -506,6 +568,26 @@ const Navbar = () => {
   }, [roomsBathsExpanded]);
 
   useEffect(() => {
+    if (!propertyTypeExpanded) return undefined;
+    const handlePointerDown = (event) => {
+      if (propertyTypeRef.current && !propertyTypeRef.current.contains(event.target)) {
+        setPropertyTypeExpanded(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPropertyTypeExpanded(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [propertyTypeExpanded]);
+
+  useEffect(() => {
     if (!filtersExpanded) return undefined;
     const closeFiltersFromOutsideInteraction = (event) => {
       const eventTarget = event.target;
@@ -544,6 +626,7 @@ const Navbar = () => {
     const handleOpenMobileFilters = () => {
       setPriceExpanded(false);
       setRoomsBathsExpanded(false);
+      setPropertyTypeExpanded(false);
       setFiltersExpanded(true);
     };
     window.addEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
@@ -626,6 +709,7 @@ const Navbar = () => {
     setPriceExpanded(false);
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
+    setPropertyTypeExpanded(false);
   };
 
   const setTransientVoiceStatus = (message, timeoutMs = 2600) => {
@@ -667,6 +751,7 @@ const Navbar = () => {
     setPriceExpanded(false);
     setFiltersExpanded(false);
     setRoomsBathsExpanded(false);
+    setPropertyTypeExpanded(false);
   };
 
   const applyAiPrompt = async (rawPrompt = '', { appliedStatus = t('navbar.aiSearchAppliedStatus') } = {}) => {
@@ -834,6 +919,7 @@ const Navbar = () => {
     minPriceDraftRef.current = PRICE_SLIDER_MIN;
     maxPriceDraftRef.current = PRICE_SLIDER_MAX;
     setFiltersExpanded(false);
+    setPropertyTypeExpanded(false);
     applySearch({
       nextRooms: '',
       nextBaths: '',
@@ -940,7 +1026,10 @@ const Navbar = () => {
   const languageTarget = language === 'he' ? 'English' : 'עברית';
   const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
-  const hasAdvancedFilters = listingType !== 'all' || Boolean(propertyCategory) || featureFilters.length > 0;
+  const hasAdvancedFilters = featureFilters.length > 0;
+  const propertyTypeSummary = propertyCategory
+    ? t(`filterMenu.${propertyCategory}`)
+    : (listingType !== 'all' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
 
   return (
     <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
@@ -951,7 +1040,8 @@ const Navbar = () => {
             className="premium-header__brand"
             aria-label={t('navbar.homeAriaLabel', { brand: homeKeyBrand })}
           >
-            <img className="premium-header__brand-image" src={homeKeyWordmark} alt={`${homeKeyBrand} logo`} />
+            <img className="premium-header__brand-image" src={hKeyholeLogo} alt="" aria-hidden="true" />
+            <span className="premium-header__brand-wordmark">{homeKeyBrand}</span>
           </Link>
         </div>
 
@@ -959,10 +1049,11 @@ const Navbar = () => {
           <form className="premium-header__search-form" onSubmit={handleHeaderSearchSubmit}>
             <div className="premium-header__search-pill" role="group" aria-label={t('navbar.propertySearchAriaLabel')}>
               <div className="premium-header__search-segment premium-header__search-segment--location">
+                <HeaderIcon name="location" />
                 <input
                   id="header-search-query"
                   type="text"
-                  placeholder={t('navbar.searchPlaceholder')}
+                  placeholder={t('navbar.location')}
                   className={city.trim() ? 'is-active' : ''}
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
@@ -1002,11 +1093,13 @@ const Navbar = () => {
                   aria-controls="header-price-slider-panel"
                   onClick={() => {
                     setRoomsBathsExpanded(false);
+                    setPropertyTypeExpanded(false);
                     setFiltersExpanded(false);
                     setPriceExpanded((isExpanded) => !isExpanded);
                   }}
                 >
-                  <span>{t('navbar.price')}</span>
+                  <HeaderIcon name="price" />
+                  <span>{t('filterMenu.priceRange')}</span>
                 </button>
                 <div
                   id="header-price-slider-panel"
@@ -1068,6 +1161,7 @@ const Navbar = () => {
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
                   onClick={() => {
                     setPriceExpanded(false);
+                    setPropertyTypeExpanded(false);
                     setFiltersExpanded(false);
                     setRoomsBathsExpanded((isExpanded) => {
                       const nextExpanded = !isExpanded;
@@ -1081,6 +1175,7 @@ const Navbar = () => {
                   aria-expanded={roomsBathsExpanded}
                   aria-controls="header-rooms-baths-panel"
                 >
+                  <HeaderIcon name="bed" />
                   <span>{roomsBathsSummaryLabel}</span>
                 </button>
                 <div
@@ -1146,6 +1241,59 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
+              <div className="premium-header__search-segment premium-header__search-segment--property-type" ref={propertyTypeRef}>
+                <button
+                  id="header-search-property-type-toggle"
+                  type="button"
+                  className={`premium-header__property-type-toggle ${listingType !== 'all' || propertyCategory ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setPriceExpanded(false);
+                    setRoomsBathsExpanded(false);
+                    setFiltersExpanded(false);
+                    setPropertyTypeExpanded((value) => !value);
+                  }}
+                  aria-expanded={propertyTypeExpanded}
+                  aria-controls="header-property-type-panel"
+                >
+                  <HeaderIcon name="building" />
+                  <span>{propertyTypeSummary}</span>
+                </button>
+                <div
+                  id="header-property-type-panel"
+                  className={`premium-header__property-type-panel ${propertyTypeExpanded ? 'is-open' : ''}`}
+                >
+                  <div className="premium-header__property-type-section">
+                    <p className="premium-header__rooms-section-title">{t('filterMenu.listingType')}</p>
+                    <div className="premium-header__rooms-options-grid">
+                      {['all', 'sale', 'rental'].map((typeOption) => (
+                        <button
+                          key={typeOption}
+                          type="button"
+                          className={`premium-header__chip-btn ${listingType === typeOption ? 'is-selected' : ''}`}
+                          onClick={() => handleFilterMenuListingTypeChange(typeOption)}
+                        >
+                          {typeOption === 'all' ? t('filterMenu.allListings') : t(`filterMenu.${typeOption}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="premium-header__property-type-section">
+                    <p className="premium-header__rooms-section-title">{t('filterMenu.propertyTypes')}</p>
+                    <div className="premium-header__rooms-options-grid">
+                      {PROPERTY_CATEGORY_OPTIONS.map((categoryOption) => (
+                        <button
+                          key={categoryOption}
+                          type="button"
+                          className={`premium-header__chip-btn ${propertyCategory === categoryOption ? 'is-selected' : ''}`}
+                          onClick={() => handleTogglePropertyCategory(categoryOption)}
+                        >
+                          {t(`filterMenu.${categoryOption}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                 <button
                   id="header-search-filter-toggle"
@@ -1154,11 +1302,13 @@ const Navbar = () => {
                   onClick={() => {
                     setPriceExpanded(false);
                     setRoomsBathsExpanded(false);
+                    setPropertyTypeExpanded(false);
                     setFiltersExpanded((value) => !value);
                   }}
                   aria-expanded={filtersExpanded}
                   aria-controls="header-filters-panel"
                 >
+                  <HeaderIcon name="filters" />
                   <span>{t('navbar.allFilters')}</span>
                 </button>
                 <div
@@ -1244,7 +1394,7 @@ const Navbar = () => {
               </span>
             </span>
             <div className="premium-header__likes-copy">
-              <span>{t('navbar.likedCount', { count: likedCount })}</span>
+              <span>{t('navbar.saved')}</span>
             </div>
           </button>
         </div>
@@ -1293,7 +1443,10 @@ const Navbar = () => {
                     <span className="premium-header__greeting-name">{greetingName}</span>
                   </button>
                 ) : (
-                  <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
+                  <Link to="/login" className="premium-header__login">
+                    <HeaderIcon name="user" />
+                    <span>{t('navbar.login')}</span>
+                  </Link>
                 )}
               </span>
             </>
@@ -1339,7 +1492,10 @@ const Navbar = () => {
                   <span className="premium-header__greeting-name">{greetingName}</span>
                 </button>
               ) : (
-                <Link to="/login" className="premium-header__login">{t('navbar.login')}</Link>
+                <Link to="/login" className="premium-header__login">
+                  <HeaderIcon name="user" />
+                  <span>{t('navbar.login')}</span>
+                </Link>
               )}
             </>
           )}
