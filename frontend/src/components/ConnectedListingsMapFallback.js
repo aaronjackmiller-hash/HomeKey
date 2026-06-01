@@ -307,6 +307,7 @@ const ConnectedListingsMapFallback = ({
   onDrawModeChange,
   isVisible = true,
   hoveredListingId = null,
+  statusNotice = '',
 }) => {
   const { t, locale, language } = useLanguage();
   const mapContainerRef = useRef(null);
@@ -651,9 +652,22 @@ const ConnectedListingsMapFallback = ({
       };
       marker.on('mouseover', handleMarkerMouseOver);
       marker.on('mouseout', handleMarkerMouseOut);
+      const markerDomElement = typeof marker.getElement === 'function' ? marker.getElement() : null;
+      if (markerDomElement) {
+        markerDomElement.addEventListener('mouseenter', handleMarkerMouseOver);
+        markerDomElement.addEventListener('mouseleave', handleMarkerMouseOut);
+        markerDomElement.addEventListener('focusin', handleMarkerMouseOver);
+        markerDomElement.addEventListener('focusout', handleMarkerMouseOut);
+      }
       markerEntry.cleanupHoverListeners = () => {
         marker.off('mouseover', handleMarkerMouseOver);
         marker.off('mouseout', handleMarkerMouseOut);
+        if (markerDomElement) {
+          markerDomElement.removeEventListener('mouseenter', handleMarkerMouseOver);
+          markerDomElement.removeEventListener('mouseleave', handleMarkerMouseOut);
+          markerDomElement.removeEventListener('focusin', handleMarkerMouseOver);
+          markerDomElement.removeEventListener('focusout', handleMarkerMouseOut);
+        }
       };
       markersRef.current.push(markerEntry);
       applyFallbackMarkerHoverVisualState(markerEntry);
@@ -1083,6 +1097,7 @@ const ConnectedListingsMapFallback = ({
         </div>
       </div>
       <p className="google-listings-map-caption">
+        {statusNotice ? <span className="google-listings-map-status-notice">{statusNotice}</span> : null}
         {hasActiveCircle
           ? t('map.showingInsideRadius', {
             visible: markerCount,

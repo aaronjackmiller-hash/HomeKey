@@ -16,6 +16,28 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
+const PUBLIC_RUNTIME_CONFIG_ENTRIES = [
+    ['REACT_APP_GOOGLE_MAPS_API_KEY', ['REACT_APP_GOOGLE_MAPS_API_KEY', 'GOOGLE_MAPS_API_KEY']],
+    ['REACT_APP_GOOGLE_MAPS_MAP_ID', ['REACT_APP_GOOGLE_MAPS_MAP_ID', 'GOOGLE_MAPS_MAP_ID']],
+];
+
+const getPublicRuntimeConfig = () => PUBLIC_RUNTIME_CONFIG_ENTRIES.reduce((config, [publicKey, envKeys]) => {
+    const value = envKeys
+        .map((envKey) => process.env[envKey])
+        .find((candidate) => typeof candidate === 'string' && candidate.trim());
+    if (value) config[publicKey] = value.trim();
+    return config;
+}, {});
+
+const sendPublicRuntimeConfig = (_req, res) => {
+    const configJson = JSON.stringify(getPublicRuntimeConfig()).replace(/</g, '\\u003c');
+    res
+        .type('application/javascript')
+        .set('Cache-Control', 'no-store')
+        .set('X-Content-Type-Options', 'nosniff')
+        .send(`window.__HOMEKEY_PUBLIC_CONFIG__ = Object.freeze(${configJson});\n`);
+};
+
 // Middleware
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cookieParser());
@@ -776,6 +798,7 @@ if (process.env.NODE_ENV === 'production') {
     const frontendIndexPath = path.join(frontendBuild, 'index.html');
     if (fs.existsSync(frontendIndexPath)) {
         app.use(generalLimiter);
+        app.get('/runtime-env.js', sendPublicRuntimeConfig);
         app.use(express.static(frontendBuild));
         app.get('*', (req, res) => {
             res.sendFile(frontendIndexPath);

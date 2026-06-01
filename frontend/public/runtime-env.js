@@ -1,0 +1,1 @@
+window.__HOMEKEY_PUBLIC_CONFIG__ = window.__HOMEKEY_PUBLIC_CONFIG__ || {};

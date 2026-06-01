@@ -18,24 +18,51 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100px;
-  height: 40px;
-  border-radius: 9999px;
+  width: 56px;
+  height: 56px;
+  border: 5px solid #ffffff;
+  border-radius: 50%;
   pointer-events: none;
   z-index: 1;
   opacity: 0;
-  box-shadow:
-    0 0 0 30px rgba(0, 0, 0, 0.03),
-    0 0 0 70px rgba(0, 0, 0, 0.02),
-    0 0 0 110px rgba(0, 0, 0, 0.01);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.38);
+}
+
+.faint-radar-rings::before,
+.faint-radar-rings::after,
+.radar-pulse-ring::before,
+.radar-pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  border: 5px solid #ffffff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.38);
+}
+
+.faint-radar-rings::before,
+.radar-pulse-ring::before {
+  width: 88px;
+  height: 88px;
+}
+
+.faint-radar-rings::after,
+.radar-pulse-ring::after {
+  width: 120px;
+  height: 120px;
 }
 
 .map-listing-marker.is-hovered .faint-radar-rings,
 .map-listing-marker.is-hovered .radar-pulse-ring,
+.map-listing-marker.is-list-hovered .faint-radar-rings,
+.map-listing-marker.is-list-hovered .radar-pulse-ring,
+.map-listing-marker.is-map-hovered .faint-radar-rings,
+.map-listing-marker.is-map-hovered .radar-pulse-ring,
 .map-listing-marker:hover .faint-radar-rings,
 .map-listing-marker:hover .radar-pulse-ring {
   opacity: 1;
-  animation: gentleLuxuryPulse 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  animation: none;
 }
 
 /* Smooth keyframe logic that gently scales and waves the rings */

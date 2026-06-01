@@ -3,6 +3,7 @@ import ConnectedListingsMapFallback from './ConnectedListingsMapFallback';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { useLanguage } from '../context/LanguageContext';
 import { buildAddressQuery } from '../utils/addressLocalization';
+import { getPublicConfigValue } from '../utils/publicConfig';
 
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const MAP_AUTH_FAILURE_EVENT = 'homekey-google-maps-auth-failure';
@@ -386,10 +387,9 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const radarCenterY = Math.round((pinHeight / 2) + radarPadding);
   const radarRadii = pulsePhase % 2 === 0 ? [22, 38, 54] : [26, 44, 62];
   const radarMarkup = showRadarPulse
-    ? radarRadii.map((radius, index) => {
-      const opacity = [0.36, 0.24, 0.14][index] || 0.12;
-      return `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(15, 60, 109)" stroke-opacity="${opacity}" stroke-width="2.4" />`;
-    }).join('')
+    ? radarRadii.map((radius) =>
+      `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgba(15, 23, 42, 0.38)" stroke-opacity="1" stroke-width="6" /><circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(255, 255, 255)" stroke-opacity="1" stroke-width="4" />`
+    ).join('')
     : '';
   const pinPath = [
     `M${leftX + safeRadius} ${topY}`,
@@ -476,16 +476,15 @@ const GoogleListingsMap = ({
 }) => {
   const { t, locale, language } = useLanguage();
   const mapLanguage = language === 'he' ? 'he' : 'en';
-  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-  const configuredMapId = typeof process.env.REACT_APP_GOOGLE_MAPS_MAP_ID === 'string'
-    ? process.env.REACT_APP_GOOGLE_MAPS_MAP_ID.trim()
-    : '';
+  const apiKey = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_API_KEY');
+  const configuredMapId = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_MAP_ID');
   const canUseAdvancedMarkers = Boolean(configuredMapId);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
   const infoWindowRef = useRef(null);
   const markerEntriesRef = useRef([]);
+  const activeMapHoverEntryRef = useRef(null);
   const markerHydrationInProgressRef = useRef(false);
   const expectedMarkerCountRef = useRef(0);
   const hasInitializedViewportRef = useRef(false);
@@ -572,6 +571,21 @@ const GoogleListingsMap = ({
 
     if (!entry.markerIcon || typeof entry.marker.setIcon !== 'function') return;
 
+    if (entry.frameMarker) {
+      if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+        const iconIndex = isHoveredFromList && !isHoveredFromMap
+          ? pulsePhase % entry.markerHoverIcons.length
+          : 0;
+        entry.frameMarker.setIcon(entry.markerHoverIcons[iconIndex] || entry.markerHoverIcon);
+        entry.frameMarker.setZIndex(elevatedZIndex + 1);
+        entry.frameMarker.setMap(mapRef.current);
+      } else {
+        entry.frameMarker.setMap(null);
+      }
+      entry.marker.setIcon(entry.markerIcon);
+      return;
+    }
+
     if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
       const iconIndex = isHoveredFromList && !isHoveredFromMap
         ? pulsePhase % entry.markerHoverIcons.length
@@ -587,6 +601,19 @@ const GoogleListingsMap = ({
     }
 
     entry.marker.setIcon(entry.markerIcon);
+  };
+
+  const setActiveMapHoverEntry = (nextEntry) => {
+    if (activeMapHoverEntryRef.current && activeMapHoverEntryRef.current !== nextEntry) {
+      activeMapHoverEntryRef.current.isMapHovered = false;
+      applyMarkerHoverVisualState(activeMapHoverEntryRef.current);
+    }
+
+    activeMapHoverEntryRef.current = nextEntry || null;
+    if (nextEntry) {
+      nextEntry.isMapHovered = true;
+      applyMarkerHoverVisualState(nextEntry);
+    }
   };
 
   const emitCircleSelection = (nextSelection) => {
@@ -792,6 +819,7 @@ const GoogleListingsMap = ({
 
     let cancelled = false;
 
+    activeMapHoverEntryRef.current = null;
     markerEntriesRef.current.forEach((entry) => {
       if (typeof entry.cleanupHoverListeners === 'function') {
         entry.cleanupHoverListeners();
@@ -918,31 +946,46 @@ const GoogleListingsMap = ({
             zIndex: isHoveredFromList ? 100 : 2,
             optimized: true,
           });
+        const frameMarker = !canUseAdvancedMarker && markerHoverIcon
+          ? new mapsApi.Marker({
+            map: null,
+            position: coords,
+            title: '',
+            icon: markerHoverIcon,
+            clickable: false,
+            optimized: false,
+            zIndex: 121,
+          })
+          : null;
 
-        marker.addListener('click', () => {
-          const title = safeText(item.property.title) || t('map.propertyListing');
-          const price = item.property.price != null
-            ? `₪${Number(item.property.price).toLocaleString(locale)}`
-            : t('map.priceUnavailable');
-          const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
+        const title = safeText(item.property.title) || t('map.propertyListing');
+        const price = item.property.price != null
+          ? `₪${Number(item.property.price).toLocaleString(locale)}`
+          : t('map.priceUnavailable');
+        const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
+        const markerPopupHtml = buildMarkerPopupCardHtml({
+          href: listingHref,
+          title,
+          price,
+          detailLine: markerDetailLine || item.addressQuery,
+          imageUrl: markerImageUrl,
+          ctaLabel: t('map.infoWindowCta'),
+        });
+        const openMarkerSummary = () => {
           infoWindow.setOptions({ maxWidth: 286 });
-          infoWindow.setContent(buildMarkerPopupCardHtml({
-            href: listingHref,
-            title,
-            price,
-            detailLine: markerDetailLine || item.addressQuery,
-            imageUrl: markerImageUrl,
-            ctaLabel: t('map.infoWindowCta'),
-          }));
+          infoWindow.setContent(markerPopupHtml);
           if (canUseAdvancedMarker) {
             infoWindow.open({ map, anchor: marker });
           } else {
             infoWindow.open(map, marker);
           }
+        };
+        marker.addListener('click', () => {
+          openMarkerSummary();
         });
         const markerEntry = {
           marker,
-          frameMarker: null,
+          frameMarker,
           propertyId,
           coords,
           markerElement,
@@ -952,13 +995,15 @@ const GoogleListingsMap = ({
           markerHoverIcons,
           isMapHovered: false,
           cleanupHoverListeners: null,
+          openMarkerSummary,
         };
         if (markerElement) {
           const handleMarkerMouseEnter = () => {
-            markerEntry.isMapHovered = true;
-            applyMarkerHoverVisualState(markerEntry);
+            setActiveMapHoverEntry(markerEntry);
+            openMarkerSummary();
           };
           const handleMarkerMouseLeave = () => {
+            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
             markerEntry.isMapHovered = false;
             applyMarkerHoverVisualState(markerEntry);
           };
@@ -974,10 +1019,11 @@ const GoogleListingsMap = ({
           };
         } else if (markerHoverIcon && !canUseAdvancedMarker) {
           const mouseOverListener = marker.addListener('mouseover', () => {
-            markerEntry.isMapHovered = true;
-            applyMarkerHoverVisualState(markerEntry);
+            setActiveMapHoverEntry(markerEntry);
+            openMarkerSummary();
           });
           const mouseOutListener = marker.addListener('mouseout', () => {
+            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
             markerEntry.isMapHovered = false;
             applyMarkerHoverVisualState(markerEntry);
           });
@@ -1021,6 +1067,7 @@ const GoogleListingsMap = ({
 
     return () => {
       cancelled = true;
+      activeMapHoverEntryRef.current = null;
       markerEntriesRef.current.forEach((entry) => {
         if (typeof entry.cleanupHoverListeners === 'function') {
           entry.cleanupHoverListeners();
@@ -1437,6 +1484,7 @@ const GoogleListingsMap = ({
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
         hoveredListingId={hoveredListingId}
+        statusNotice={t('map.googleMapsMissingKeyFallbackNotice')}
       />
     );
   }
@@ -1453,6 +1501,7 @@ const GoogleListingsMap = ({
         onDrawModeChange={onDrawModeChange}
         isVisible={isVisible}
         hoveredListingId={hoveredListingId}
+        statusNotice={t('map.googleMapsUnavailableFallbackNotice', { reason: mapError })}
       />
     );
   }
