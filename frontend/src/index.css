@@ -6350,7 +6350,7 @@ legend {
 .premium-header__actions {
   max-width: 100%;
   min-width: 0;
-  gap: 14px;
+  gap: 18px;
   justify-content: flex-end;
   overflow-x: auto;
   scrollbar-width: none;
@@ -6382,6 +6382,10 @@ legend {
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
+}
+
+.premium-header__login {
+  margin-inline-start: 4px;
 }
 
 .premium-header__likes-copy {
