@@ -731,7 +731,7 @@
 .wizard-profile-type-card {
   border: 1.5px solid #b9c4d2;
   border-radius: 14px;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+  background: #ffffff;
   padding: 10px 8px 12px;
   display: flex;
   flex-direction: column;
@@ -745,29 +745,29 @@
 .wizard-profile-type-card--wide {
   width: 100%;
   margin-bottom: 10px;
-  flex-direction: row;
-  gap: 14px;
-  padding: 10px 16px;
-  text-align: left;
-  align-items: center;
+  padding: 10px 8px 12px;
 }
 
 .wizard-profile-type-card.is-selected {
   border-color: #114a78;
   box-shadow: inset 0 0 0 1px #114a78;
-  background: linear-gradient(180deg, #e7f2fb 0%, #dceaf8 100%);
+  background: #f7fbff;
 }
 
 .wizard-profile-type-illustration {
-  width: 100%;
-  height: 140px;
+  width: calc(100% + 16px);
+  height: 132px;
+  margin: -10px -8px 2px;
   display: block;
+  overflow: hidden;
+  border-bottom: 1px solid #d9e1ea;
+  border-radius: 12px 12px 8px 8px;
+  background: #f7efe4;
 }
 
 .wizard-profile-type-illustration--wide {
-  width: 120px;
-  height: 100px;
-  flex-shrink: 0;
+  width: calc(100% + 16px);
+  height: 126px;
 }
 
 .wizard-profile-type-label {
