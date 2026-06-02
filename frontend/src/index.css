@@ -504,6 +504,11 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.filter-menu__listing-type-row .filter-menu__chip {
+  justify-self: stretch;
+  width: 100%;
+}
+
 .filter-menu__option-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
