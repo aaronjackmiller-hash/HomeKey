@@ -729,9 +729,11 @@
 }
 
 .wizard-profile-type-card {
+  appearance: none;
   border: 1.5px solid #b9c4d2;
   border-radius: 14px;
   background: #ffffff;
+  color: #111827;
   padding: 10px 8px 12px;
   display: flex;
   flex-direction: column;
@@ -742,16 +744,27 @@
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
+.wizard-profile-type-card:hover,
+.wizard-profile-type-card:focus,
+.wizard-profile-type-card:active {
+  background: #ffffff;
+  color: #111827;
+}
+
 .wizard-profile-type-card--wide {
   width: 100%;
   margin-bottom: 10px;
   padding: 10px 8px 12px;
 }
 
-.wizard-profile-type-card.is-selected {
+.wizard-profile-type-card.is-selected,
+.wizard-profile-type-card.is-selected:hover,
+.wizard-profile-type-card.is-selected:focus,
+.wizard-profile-type-card.is-selected:active {
   border-color: #114a78;
   box-shadow: inset 0 0 0 1px #114a78;
   background: #f7fbff;
+  color: #111827;
 }
 
 .wizard-profile-type-illustration {
