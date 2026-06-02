@@ -500,6 +500,19 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
 }
 
+.filter-menu__listing-type-row {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+.filter-menu__listing-type-row .filter-menu__chip {
+  flex: 0 1 108px;
+  min-width: 0;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .filter-menu__option-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

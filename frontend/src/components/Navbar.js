@@ -12,6 +12,7 @@ const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
 const ROOM_OPTION_VALUES = ['', 'studio', '1', '2', '3', '4+'];
 const BATH_OPTION_VALUES = ['', '1', '2', '3+'];
+const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
@@ -23,6 +24,7 @@ const FEATURE_FILTER_OPTIONS = [
   'mamad',
 ];
 const AI_LISTING_TYPE_KEYWORDS = {
+  roommates: ['roommate', 'roommates', 'shared apartment', 'shared flat'],
   rental: ['rent', 'rental', 'lease'],
   sale: ['buy', 'sale', 'purchase'],
 };
@@ -67,7 +69,7 @@ const getPriceSummaryLabel = (minValue, maxValue, locale = 'en-US') => {
 
 const sanitizeListingType = (rawValue) => {
   const normalized = String(rawValue || '').toLowerCase();
-  if (normalized === 'sale' || normalized === 'rental') return normalized;
+  if (LISTING_TYPE_OPTIONS.includes(normalized)) return normalized;
   return 'all';
 };
 
@@ -148,7 +150,7 @@ const parseAiPriceRange = (rawInput = '') => {
 const extractAiCityCandidate = (rawInput = '') => {
   const strippedText = String(rawInput || '')
     .replace(/[$₪]/g, ' ')
-    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|roommate|roommates|shared apartment|shared flat|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
     .replace(/[^a-zA-Z\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -165,7 +167,9 @@ const parseAiSearchInput = (rawInput = '') => {
   const normalized = trimmedInput.toLowerCase();
 
   let listingType = 'all';
-  if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.rental)) {
+  if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.roommates)) {
+    listingType = 'roommates';
+  } else if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.rental)) {
     listingType = 'rental';
   } else if (includesAnyKeyword(normalized, AI_LISTING_TYPE_KEYWORDS.sale)) {
     listingType = 'sale';
@@ -1265,14 +1269,14 @@ const Navbar = () => {
                   <div className="premium-header__property-type-section">
                     <p className="premium-header__rooms-section-title">{t('filterMenu.listingType')}</p>
                     <div className="premium-header__rooms-options-grid">
-                      {['all', 'sale', 'rental'].map((typeOption) => (
+                      {LISTING_TYPE_OPTIONS.map((typeOption) => (
                         <button
                           key={typeOption}
                           type="button"
                           className={`premium-header__chip-btn ${listingType === typeOption ? 'is-selected' : ''}`}
                           onClick={() => handleFilterMenuListingTypeChange(typeOption)}
                         >
-                          {typeOption === 'all' ? t('filterMenu.allListings') : t(`filterMenu.${typeOption}`)}
+                          {t(`filterMenu.${typeOption}`)}
                         </button>
                       ))}
                     </div>

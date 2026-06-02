@@ -10,6 +10,8 @@ const FEATURE_ITEMS = [
   { id: 'furnished', labelKey: 'filterMenu.furnished', icon: 'FR' },
 ];
 
+const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
+
 const FilterMenu = ({
   onClearAllFilters,
   listingType,
@@ -70,27 +72,36 @@ const FilterMenu = ({
 
       <section className="filter-menu__section">
         <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+        <div className="filter-menu__type-row filter-menu__listing-type-row">
+          {LISTING_TYPE_OPTIONS.map((typeOption) => (
+            <button
+              key={typeOption}
+              type="button"
+              className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
+              onClick={() => onListingTypeChange(typeOption)}
+            >
+              {t(`filterMenu.${typeOption}`)}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="filter-menu__section">
+        <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
         <div className="filter-menu__type-row">
           <button
             type="button"
-            className={`filter-menu__chip ${listingType === 'all' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('all')}
+            className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`}
+            onClick={() => onTogglePropertyCategory('apartments')}
           >
-            {t('filterMenu.allListings')}
+            {t('filterMenu.apartments')}
           </button>
           <button
             type="button"
-            className={`filter-menu__chip ${listingType === 'sale' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('sale')}
+            className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`}
+            onClick={() => onTogglePropertyCategory('houses')}
           >
-            {t('filterMenu.sale')}
-          </button>
-          <button
-            type="button"
-            className={`filter-menu__chip ${listingType === 'rental' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('rental')}
-          >
-            {t('filterMenu.rental')}
+            {t('filterMenu.houses')}
           </button>
         </div>
       </section>
@@ -124,26 +135,6 @@ const FilterMenu = ({
               {option.label}
             </button>
           ))}
-        </div>
-      </section>
-
-      <section className="filter-menu__section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
-        <div className="filter-menu__type-row">
-          <button
-            type="button"
-            className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`}
-            onClick={() => onTogglePropertyCategory('apartments')}
-          >
-            {t('filterMenu.apartments')}
-          </button>
-          <button
-            type="button"
-            className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`}
-            onClick={() => onTogglePropertyCategory('houses')}
-          >
-            {t('filterMenu.houses')}
-          </button>
         </div>
       </section>
 

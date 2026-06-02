@@ -48,6 +48,7 @@ const SUPPORTED_SOURCE_FILTERS = new Set([
   'sync',
   'manual',
 ]);
+const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
@@ -370,6 +371,16 @@ const matchesBathroomsSelection = (bathroomsValue, bathroomsSelection) => {
   const selectedBathrooms = Number(selected);
   if (Number.isNaN(selectedBathrooms)) return true;
   return almostEqual(bathrooms, selectedBathrooms);
+};
+
+const matchesListingType = (property = {}, listingType = 'all') => {
+  const normalizedListingType = String(listingType || '').trim().toLowerCase();
+  if (!normalizedListingType || normalizedListingType === 'all') return true;
+  const propertyType = String(property?.type || '').trim().toLowerCase();
+  if (normalizedListingType === 'roommates') {
+    return propertyType === 'roommates' || propertyType === 'roommate' || property?.lookingForRoommates === true;
+  }
+  return propertyType === normalizedListingType;
 };
 
 const toNumericCount = (...values) => {
@@ -736,7 +747,7 @@ const PropertyList = () => {
       .map((value) => String(value || '').trim().toLowerCase())
       .filter((value) => FEATURE_FILTER_OPTIONS.includes(value));
     const nextTypeRaw = String(params.get('type') || '').toLowerCase();
-    const nextType = nextTypeRaw === 'sale' || nextTypeRaw === 'rental' ? nextTypeRaw : 'all';
+    const nextType = LISTING_TYPE_OPTIONS.includes(nextTypeRaw) ? nextTypeRaw : 'all';
     const nextSource = normalizeSourceFilterValue(params.get('source'));
     const parseOptionalPrice = (rawValue) => {
       if (rawValue == null || rawValue === '') return '';
@@ -813,7 +824,7 @@ const PropertyList = () => {
         if (sourceSearch !== 'all') {
           params.source = sourceSearch;
         }
-        if (filter !== 'all') params.type = filter;
+        if (filter !== 'all' && filter !== 'roommates') params.type = filter;
         if (citySearch.trim()) params.q = citySearch.trim();
         if (roomsSearch.trim()) params.rooms = roomsSearch.trim();
         if (bathsSearch.trim()) params.baths = bathsSearch.trim();
@@ -939,7 +950,7 @@ const PropertyList = () => {
     let displayProperties;
     if (dbIsEmpty) {
       let samples = [...SAMPLE_PROPERTIES];
-      if (filter !== 'all') samples = samples.filter((p) => p.type === filter);
+      if (filter !== 'all') samples = samples.filter((p) => matchesListingType(p, filter));
       if (citySearch.trim()) {
         samples = samples.filter((p) => matchesKeywordSearch(p, citySearch));
       }
@@ -961,7 +972,7 @@ const PropertyList = () => {
     } else {
       // Keep filters functional even when data is served from local cache fallback.
       displayProperties = [...properties];
-      if (filter !== 'all') displayProperties = displayProperties.filter((p) => p?.type === filter);
+      if (filter !== 'all') displayProperties = displayProperties.filter((p) => matchesListingType(p, filter));
       if (citySearch.trim()) {
         displayProperties = displayProperties.filter((p) => matchesKeywordSearch(p, citySearch));
       }
@@ -1116,7 +1127,7 @@ const PropertyList = () => {
         ? t('propertyList.sale')
         : filter === 'rental'
           ? t('propertyList.rental')
-          : t('propertyList.searchNameType');
+          : (filter === 'roommates' ? t('propertyList.roommates') : t('propertyList.searchNameType'));
       const generatedName = `${cityLabel || t('propertyList.my')} ${typeLabel} ${new Date().toLocaleDateString(locale)}`;
       const payload = {
         name: generatedName,
