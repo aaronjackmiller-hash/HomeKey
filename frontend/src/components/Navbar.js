@@ -12,7 +12,7 @@ const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
 const ROOM_OPTION_VALUES = ['', 'studio', '1', '2', '3', '4+'];
 const BATH_OPTION_VALUES = ['', '1', '2', '3+'];
-const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
+const LISTING_TYPE_OPTIONS = ['rental', 'roommates', 'sale'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',

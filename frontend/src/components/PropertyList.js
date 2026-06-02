@@ -48,7 +48,7 @@ const SUPPORTED_SOURCE_FILTERS = new Set([
   'sync',
   'manual',
 ]);
-const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
+const LISTING_TYPE_OPTIONS = ['rental', 'roommates', 'sale'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',

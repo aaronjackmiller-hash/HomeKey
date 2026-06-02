@@ -10,7 +10,7 @@ const FEATURE_ITEMS = [
   { id: 'furnished', labelKey: 'filterMenu.furnished', icon: 'FR' },
 ];
 
-const LISTING_TYPE_OPTIONS = ['sale', 'rental', 'roommates'];
+const LISTING_TYPE_OPTIONS = ['rental', 'roommates', 'sale'];
 
 const FilterMenu = ({
   onClearAllFilters,
