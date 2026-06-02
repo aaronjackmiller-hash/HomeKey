@@ -501,16 +501,7 @@ a {
 }
 
 .filter-menu__listing-type-row {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-}
-
-.filter-menu__listing-type-row .filter-menu__chip {
-  flex: 0 1 108px;
-  min-width: 0;
-  padding: 0 12px;
-  white-space: nowrap;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .filter-menu__option-grid {
@@ -601,6 +592,7 @@ a {
   background: #fff;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+  margin-bottom: 10px;
 }
 
 .filter-menu__mamad-btn:hover {

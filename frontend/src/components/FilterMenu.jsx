@@ -19,21 +19,15 @@ const FilterMenu = ({
   bathOptions,
   rooms,
   baths,
-  minPrice,
-  maxPrice,
   propertyCategory,
   selectedFeatures,
   onListingTypeChange,
   onRoomsChange,
   onBathsChange,
-  onMinPriceChange,
-  onMaxPriceChange,
   onTogglePropertyCategory,
   onToggleFeature,
 }) => {
   const { t } = useLanguage();
-  const normalizedMin = Number(minPrice);
-  const normalizedMax = Number(maxPrice);
   const selectedFeatureSet = new Set(selectedFeatures || []);
   return (
     <div className="filter-menu">
@@ -43,32 +37,6 @@ const FilterMenu = ({
           {t('filterMenu.clearAll')}
         </button>
       </div>
-
-      <section className="filter-menu__section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.priceRange')}</h3>
-        <div className="filter-menu__price-grid">
-          <div className="filter-menu__price-field">
-            <label htmlFor="filter-menu-min-price">{t('filterMenu.minPrice')}</label>
-            <input
-              id="filter-menu-min-price"
-              type="number"
-              placeholder={t('filterMenu.noMin')}
-              value={normalizedMin > 0 ? normalizedMin : ''}
-              onChange={(event) => onMinPriceChange(event.target.value)}
-            />
-          </div>
-          <div className="filter-menu__price-field">
-            <label htmlFor="filter-menu-max-price">{t('filterMenu.maxPrice')}</label>
-            <input
-              id="filter-menu-max-price"
-              type="number"
-              placeholder={t('filterMenu.noMax')}
-              value={normalizedMax > 0 ? normalizedMax : ''}
-              onChange={(event) => onMaxPriceChange(event.target.value)}
-            />
-          </div>
-        </div>
-      </section>
 
       <section className="filter-menu__section">
         <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
@@ -140,6 +108,17 @@ const FilterMenu = ({
 
       <section className="filter-menu__section">
         <h3 className="filter-menu__section-title">{t('filterMenu.propertyCharacteristics')}</h3>
+        <button
+          type="button"
+          className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`}
+          onClick={() => onToggleFeature('mamad')}
+        >
+          <span className="filter-menu__mamad-icon" aria-hidden="true">🛡</span>
+          <div className="filter-menu__mamad-copy">
+            <span>{t('filterMenu.mamad')}</span>
+            <span>({t('filterMenu.securityRoom')})</span>
+          </div>
+        </button>
         <div className="filter-menu__features-grid">
           {FEATURE_ITEMS.map((feature) => (
             <FeatureCard
@@ -152,18 +131,6 @@ const FilterMenu = ({
           ))}
         </div>
       </section>
-
-      <button
-        type="button"
-        className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`}
-        onClick={() => onToggleFeature('mamad')}
-      >
-        <span className="filter-menu__mamad-icon" aria-hidden="true">🛡</span>
-        <div className="filter-menu__mamad-copy">
-          <span>{t('filterMenu.mamad')}</span>
-          <span>({t('filterMenu.securityRoom')})</span>
-        </div>
-      </button>
     </div>
   );
 };
@@ -182,15 +149,11 @@ FilterMenu.defaultProps = {
   bathOptions: [],
   rooms: '',
   baths: '',
-  minPrice: 0,
-  maxPrice: 20000,
   propertyCategory: '',
   selectedFeatures: [],
   onListingTypeChange: () => {},
   onRoomsChange: () => {},
   onBathsChange: () => {},
-  onMinPriceChange: () => {},
-  onMaxPriceChange: () => {},
   onTogglePropertyCategory: () => {},
   onToggleFeature: () => {},
 };
