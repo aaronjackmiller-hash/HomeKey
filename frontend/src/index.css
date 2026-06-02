@@ -32,6 +32,10 @@ html[dir="rtl"] .premium-header__brand-image {
   direction: ltr;
 }
 
+html[dir="rtl"] .premium-header__inner {
+  direction: ltr;
+}
+
 html[dir="rtl"] .premium-header__search-pill {
   direction: rtl;
 }
@@ -859,6 +863,10 @@ a {
 }
 
 .premium-header__actions--hebrew .premium-header__save-search-btn {
+  order: 2;
+}
+
+.premium-header__actions--hebrew .premium-header__likes--action {
   order: 2;
 }
 
@@ -6288,9 +6296,9 @@ legend {
 .premium-header__inner {
   min-height: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: 58px auto;
-  column-gap: 18px;
+  column-gap: 16px;
   row-gap: 0;
   align-items: center;
   padding: 0;
@@ -6322,27 +6330,40 @@ legend {
   letter-spacing: -0.02em;
 }
 
-.premium-header__likes-cell {
-  grid-column: 3;
+.premium-header__actions-cell {
+  grid-column: 2;
   grid-row: 1;
   justify-self: end;
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.premium-header__actions-cell {
-  grid-column: 4;
-  grid-row: 1;
-  justify-self: end;
-  padding-right: 18px;
+.premium-header__actions-cell::-webkit-scrollbar {
+  display: none;
 }
 
 .premium-header__actions {
+  max-width: 100%;
+  min-width: 0;
   gap: 18px;
+  justify-content: flex-end;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.premium-header__actions::-webkit-scrollbar {
+  display: none;
 }
 
 .premium-header__save-search-btn,
 .premium-header__language-toggle,
 .premium-header__alerts-link {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .premium-header__likes,
@@ -6361,6 +6382,10 @@ legend {
   text-decoration: none;
 }
 
+.premium-header__login {
+  margin-inline-start: 4px;
+}
+
 .premium-header__likes-copy {
   color: #151b23;
   font-size: 13px;
@@ -6369,6 +6394,24 @@ legend {
 
 .premium-header__likes-heart {
   color: #111827;
+}
+
+.premium-header__likes--action .premium-header__likes-heart {
+  color: var(--hk-heart-red);
+}
+
+.premium-header__likes--action .property-heart-icon {
+  fill: none;
+  stroke: var(--hk-heart-red);
+  stroke-width: 1.9;
+}
+
+.premium-header__likes--action .premium-header__likes-heart.is-active .property-heart-icon {
+  fill: var(--hk-heart-red);
+}
+
+.premium-header__likes--action {
+  margin-inline-end: 8px;
 }
 
 .premium-header__likes-heart .property-heart-icon {
@@ -6609,7 +6652,7 @@ legend {
 
 @media (max-width: 900px) {
   .premium-header__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: 56px auto;
     column-gap: 12px;
   }
@@ -6621,10 +6664,6 @@ legend {
 
   .premium-header__actions > .premium-header__cta {
     display: inline-flex;
-  }
-
-  .premium-header__likes-cell {
-    grid-column: 2;
   }
 
   .premium-header__brand-cell {
@@ -6667,40 +6706,48 @@ legend {
     font-size: 22px;
   }
 
-  .premium-header__likes-cell {
-    display: none;
-  }
-
   .premium-header__actions-cell {
-    grid-column: 2;
-    grid-row: 1;
-    padding-right: 10px;
-  }
-
-  .premium-header__actions {
-    width: auto;
-    gap: 10px;
-    flex-wrap: nowrap;
-    padding: 0;
-  }
-
-  .premium-header__actions > .premium-header__cta {
-    display: none;
-  }
-
-  .premium-header__mobile-cta {
-    display: inline-flex;
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: stretch;
-    margin: 0 10px 8px;
-    min-height: 32px;
-    padding: 0 12px;
-    font-size: 12px;
+    min-width: 0;
+    padding: 0 10px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
+  .premium-header__actions-cell::-webkit-scrollbar {
+    display: none;
+  }
+
+  .premium-header__actions {
+    width: 100%;
+    gap: 8px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .premium-header__actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .premium-header__actions > .premium-header__cta {
+    display: inline-flex;
+  }
+
+  .premium-header__mobile-cta {
+    display: none;
+  }
+
+  .premium-header__action-pill,
+  .premium-header__language-toggle,
+  .premium-header__alerts-link,
   .premium-header__login {
     min-height: 32px;
+    flex: 0 0 auto;
     font-size: 12px;
   }
 
