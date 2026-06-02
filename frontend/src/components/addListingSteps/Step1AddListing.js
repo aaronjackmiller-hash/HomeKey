@@ -59,12 +59,13 @@ const HouseIcon = () => (
     </div>
 );
 
-export const Step1AddListing = ({ data, updateData, nextStep }) => {
+export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, totalSteps: totalStepsProp }) => {
     const [showRequiredHints, setShowRequiredHints] = React.useState(false);
     const usesEnterpriseModel = data.relation === 'property manager';
     const usesSyncPortfolio = usesEnterpriseModel && data.onboardingMethod === 'SyncPortfolio';
-    const totalSteps = usesSyncPortfolio ? 3 : (usesEnterpriseModel ? 6 : 5);
-    const progressPercent = Math.round((1 / totalSteps) * 100);
+    const derivedTotalSteps = usesSyncPortfolio ? 4 : (usesEnterpriseModel ? 7 : 6);
+    const totalSteps = totalStepsProp != null ? totalStepsProp : derivedTotalSteps;
+    const progressPercent = Math.round((stepNumber / totalSteps) * 100);
     const relationSelected = String(data.relation || '').trim().length > 0;
     const trimmedStreet = String(data.address.street || '').trim();
     const trimmedNumber = String(data.address.number || '').trim();
@@ -112,8 +113,8 @@ export const Step1AddListing = ({ data, updateData, nextStep }) => {
                 <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 1: Add your listing</h2>
-                <span className="wizard-step-counter">{`Step 1 of ${totalSteps}`}</span>
+                <h2>{`Step ${stepNumber}: Add your listing`}</h2>
+                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
             <div className="wizard-row">

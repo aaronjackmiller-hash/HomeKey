@@ -719,9 +719,88 @@
   color: #ffffff;
 }
 
+/* ── Profile-type step (Step 0) ─────────────────────────────────── */
+
+.wizard-profile-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wizard-profile-type-card {
+  border: 1.5px solid #b9c4d2;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+  padding: 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.wizard-profile-type-card--wide {
+  width: 100%;
+  margin-bottom: 10px;
+  flex-direction: row;
+  gap: 14px;
+  padding: 10px 16px;
+  text-align: left;
+  align-items: center;
+}
+
+.wizard-profile-type-card.is-selected {
+  border-color: #114a78;
+  box-shadow: inset 0 0 0 1px #114a78;
+  background: linear-gradient(180deg, #e7f2fb 0%, #dceaf8 100%);
+}
+
+.wizard-profile-type-illustration {
+  width: 100%;
+  height: 140px;
+  display: block;
+}
+
+.wizard-profile-type-illustration--wide {
+  width: 120px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.wizard-profile-type-label {
+  font-size: 0.93rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.wizard-profile-type-desc {
+  font-size: 0.76rem;
+  color: #4b5563;
+  line-height: 1.3;
+}
+
+.wizard-profile-type-required {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #fff8f1;
+  border: 1px solid #e2842f;
+  color: #92400e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ────────────────────────────────────────────────────────────────── */
+
 @media (max-width: 540px) {
   .wizard-step2-grid,
   .wizard-card-grid,
+  .wizard-profile-type-grid,
   .wizard-step1-grid-two,
   .wizard-address-grid,
   .wizard-amenities-grid,

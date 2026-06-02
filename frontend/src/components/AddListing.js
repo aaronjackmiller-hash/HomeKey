@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createProperty } from '../services/api';
+import { Step0ProfileType } from './addListingSteps/Step0ProfileType';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
 import { Step2EnterpriseModel } from './addListingSteps/Step2EnterpriseModel';
 import { Step2CreateListing } from './addListingSteps/Step2CreateListing';
@@ -41,6 +42,7 @@ import './addListingSteps/addListingWizard.css';
 
 /** @returns {ListingData} */
 const createInitialListingData = () => ({
+    profileType: '',
     propertyType: '',
     listingType: '',
     lookingForRoommates: null,
@@ -81,7 +83,7 @@ const initialEnterpriseListings = [
 
 const AddListing = () => {
     const history = useHistory();
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(0);
     const [data, setData] = useState(createInitialListingData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -95,7 +97,7 @@ const AddListing = () => {
         : '';
     const usesSyncPortfolioFlow = usesEnterpriseModel && effectiveOnboardingMethod === 'SyncPortfolio';
     const usesManualEnterpriseFlow = usesEnterpriseModel && effectiveOnboardingMethod === 'AddManualSingle';
-    const totalSteps = usesEnterpriseModel ? 6 : 5;
+    const totalSteps = usesEnterpriseModel ? 7 : 6;
     const createListingStep = usesEnterpriseModel ? 3 : 2;
     const feedConnectStep = 3;
     const amenitiesStep = usesEnterpriseModel ? 4 : 3;
@@ -127,7 +129,7 @@ const AddListing = () => {
     };
 
     const prevStep = () => {
-        setStep((prev) => Math.max(prev - 1, 1));
+        setStep((prev) => Math.max(prev - 1, 0));
     };
 
     const handleEnterpriseAgentChange = (listingId, agentId) => {
@@ -275,7 +277,15 @@ const AddListing = () => {
             {error ? <p className="listing-wizard-status listing-wizard-status--error">{error}</p> : null}
             {loading ? <p className="listing-wizard-status listing-wizard-status--loading">Publishing listing...</p> : null}
 
-            {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} /> : null}
+            {step === 0 ? (
+                <Step0ProfileType
+                    profileType={data.profileType}
+                    onSelectProfileType={(pt) => updateData({ profileType: pt })}
+                    onContinue={nextStep}
+                    totalSteps={totalSteps}
+                />
+            ) : null}
+            {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} stepNumber={2} totalSteps={totalSteps} /> : null}
             {usesEnterpriseModel && step === 2 ? (
                 <Step2EnterpriseModel
                     data={data}
@@ -293,9 +303,9 @@ const AddListing = () => {
                     onSyncComplete={setSyncedPortfolioCount}
                     prevStep={prevStep}
                     nextStep={nextStep}
-                    stepNumber={feedConnectStep}
+                    stepNumber={feedConnectStep + 1}
                     totalSteps={totalSteps}
-                    progressPercent={progressForStep(feedConnectStep)}
+                    progressPercent={progressForStep(feedConnectStep + 1)}
                 />
             ) : null}
             {(!usesEnterpriseModel && step === createListingStep) || (usesManualEnterpriseFlow && step === createListingStep) ? (
@@ -304,9 +314,9 @@ const AddListing = () => {
                     updateData={updateData}
                     nextStep={nextStep}
                     prevStep={prevStep}
-                    stepNumber={createListingStep}
+                    stepNumber={createListingStep + 1}
                     totalSteps={totalSteps}
-                    progressPercent={progressForStep(createListingStep)}
+                    progressPercent={progressForStep(createListingStep + 1)}
                 />
             ) : null}
             {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === amenitiesStep ? (
@@ -315,9 +325,9 @@ const AddListing = () => {
                     updateData={updateData}
                     nextStep={nextStep}
                     prevStep={prevStep}
-                    stepNumber={amenitiesStep}
+                    stepNumber={amenitiesStep + 1}
                     totalSteps={totalSteps}
-                    progressPercent={progressForStep(amenitiesStep)}
+                    progressPercent={progressForStep(amenitiesStep + 1)}
                     isEnterpriseTrack={usesEnterpriseModel}
                 />
             ) : null}
@@ -327,9 +337,9 @@ const AddListing = () => {
                     updateData={updateData}
                     nextStep={nextStep}
                     prevStep={prevStep}
-                    stepNumber={mediaStep}
+                    stepNumber={mediaStep + 1}
                     totalSteps={totalSteps}
-                    progressPercent={progressForStep(mediaStep)}
+                    progressPercent={progressForStep(mediaStep + 1)}
                     isEnterpriseTrack={usesEnterpriseModel}
                 />
             ) : null}
@@ -338,7 +348,7 @@ const AddListing = () => {
                     data={data}
                     prevStep={prevStep}
                     onPublishFinished={onPublishFinished}
-                    stepNumber={publishStep}
+                    stepNumber={publishStep + 1}
                     totalSteps={totalSteps}
                 />
             ) : null}
@@ -352,7 +362,7 @@ const AddListing = () => {
                     onToggleBooster={handleEnterpriseBoosterToggle}
                     prevStep={prevStep}
                     onLaunch={handleEnterpriseLaunch}
-                    stepNumber={publishStep}
+                    stepNumber={publishStep + 1}
                     totalSteps={totalSteps}
                 />
             ) : null}
