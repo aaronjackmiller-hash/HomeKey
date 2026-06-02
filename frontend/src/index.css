@@ -6400,6 +6400,10 @@ legend {
   color: var(--hk-heart-red);
 }
 
+.premium-header__likes--action {
+  margin-inline-end: 8px;
+}
+
 .premium-header__likes-heart .property-heart-icon {
   width: 18px;
   height: 18px;
