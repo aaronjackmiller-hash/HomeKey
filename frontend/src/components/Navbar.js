@@ -44,7 +44,6 @@ const getSpeechRecognitionConstructor = () => {
   const recognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
   return typeof recognitionConstructor === 'function' ? recognitionConstructor : null;
 };
-const SAVE_SEARCH_AUTH_INTENT = 'save-search';
 const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 
 const clampPriceValue = (value) => {
@@ -428,8 +427,8 @@ const Navbar = () => {
   const [roomsDraft, setRoomsDraft] = useState(parsedFromLocation.rooms);
   const [bathsDraft, setBathsDraft] = useState(parsedFromLocation.baths);
   const [interestVersion, setInterestVersion] = useState(0);
-  const [isSavingSearch, setIsSavingSearch] = useState(false);
-  const [saveSearchStatus, setSaveSearchStatus] = useState('');
+  const [, setIsSavingSearch] = useState(false);
+  const [, setSaveSearchStatus] = useState('');
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [voiceSearchStatus, setVoiceSearchStatus] = useState('');
   const [isAiSearchInterpreting, setIsAiSearchInterpreting] = useState(false);
@@ -962,18 +961,6 @@ const Navbar = () => {
       search: serialized ? `?${serialized}` : '?alerts=1',
     };
   }, [location.pathname, location.search]);
-  const loginForSaveSearchTarget = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set('intent', SAVE_SEARCH_AUTH_INTENT);
-    const redirectPath = `${location.pathname || '/'}${location.search || ''}`;
-    params.set('redirect', redirectPath.startsWith('/') ? redirectPath : '/');
-    const serialized = params.toString();
-    return {
-      pathname: '/login',
-      search: serialized ? `?${serialized}` : '',
-    };
-  }, [location.pathname, location.search]);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!isAuthenticated || !isListingsRoute) return;
@@ -990,20 +977,6 @@ const Navbar = () => {
     }, 180);
   }, [isAuthenticated, isListingsRoute]);
 
-  const handleSaveCurrentSearch = () => {
-    if (!isListingsRoute || isSavingSearch) return;
-    if (!isAuthenticated) {
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem(SAVE_SEARCH_AFTER_AUTH_SESSION_KEY, '1');
-      }
-      history.push(loginForSaveSearchTarget);
-      return;
-    }
-    setIsSavingSearch(true);
-    setSaveSearchStatus('saving');
-    window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
-  };
-
   const handleLogoutFromGreeting = () => {
     logout();
     history.push('/');
@@ -1016,13 +989,31 @@ const Navbar = () => {
     count: likedCount,
     stateMessage: likedStateMessage,
   });
-  const saveSearchButtonLabel = !isAuthenticated
-    ? t('navbar.signInToSave')
-    : (isSavingSearch
-      ? t('navbar.saveSearchSaving')
-      : (saveSearchStatus === 'saved'
-        ? t('navbar.saveSearchSaved')
-        : (saveSearchStatus === 'failed' ? t('navbar.saveSearchFailed') : t('navbar.saveSearch'))));
+  const likedHeaderButton = (
+    <button
+      type="button"
+      className={`premium-header__likes premium-header__likes--action ${likedOnly ? 'is-active' : ''}`}
+      onClick={() => {
+        const nextLikedOnly = !likedOnly;
+        setLikedOnly(nextLikedOnly);
+        applySearch({ nextLikedOnly });
+      }}
+      aria-live="polite"
+      aria-label={likedAriaLabel}
+      aria-pressed={likedOnly}
+    >
+      <span className={`premium-header__likes-heart ${likedOnly ? 'is-active' : ''}`} aria-hidden="true">
+        <span className="property-heart-icon-wrap">
+          <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
+            <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+          </svg>
+        </span>
+      </span>
+      <div className="premium-header__likes-copy">
+        <span>{t('navbar.likedCount', { count: likedCount })}</span>
+      </div>
+    </button>
+  );
   const languageTarget = language === 'he' ? 'English' : 'עברית';
   const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
@@ -1373,35 +1364,10 @@ const Navbar = () => {
           </form>
         </div>
 
-        <div className="premium-header__likes-cell">
-          <button
-            type="button"
-            className={`premium-header__likes ${likedOnly ? 'is-active' : ''}`}
-            onClick={() => {
-              const nextLikedOnly = !likedOnly;
-              setLikedOnly(nextLikedOnly);
-              applySearch({ nextLikedOnly });
-            }}
-            aria-live="polite"
-            aria-label={likedAriaLabel}
-            aria-pressed={likedOnly}
-          >
-            <span className={`premium-header__likes-heart ${likedOnly ? 'is-active' : ''}`} aria-hidden="true">
-              <span className="property-heart-icon-wrap">
-                <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
-                  <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
-                </svg>
-              </span>
-            </span>
-            <div className="premium-header__likes-copy">
-              <span>{t('navbar.likedCount', { count: likedCount })}</span>
-            </div>
-          </button>
-        </div>
-
         <div className={`premium-header__actions premium-header__actions-cell${isHebrew ? ' premium-header__actions--hebrew' : ''}`}>
           {isHebrew ? (
             <>
+              {likedHeaderButton}
               <button
                 className="premium-header__language-toggle"
                 type="button"
@@ -1412,16 +1378,6 @@ const Navbar = () => {
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
               <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
-              {isListingsRoute && (
-                <button
-                  type="button"
-                  className={`premium-header__save-search-btn premium-header__action-pill ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
-                  onClick={handleSaveCurrentSearch}
-                  disabled={isSavingSearch}
-                >
-                  {saveSearchButtonLabel}
-                </button>
-              )}
               <span className="premium-header__actions-utility">
                 <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
                   {t('navbar.savedSearch')}
@@ -1452,16 +1408,7 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              {isListingsRoute && (
-                <button
-                  type="button"
-                  className={`premium-header__save-search-btn premium-header__action-pill ${saveSearchStatus === 'saved' ? 'is-success' : ''}`}
-                  onClick={handleSaveCurrentSearch}
-                  disabled={isSavingSearch}
-                >
-                  {saveSearchButtonLabel}
-                </button>
-              )}
+              {likedHeaderButton}
               <button
                 className="premium-header__language-toggle"
                 type="button"
