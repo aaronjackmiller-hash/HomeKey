@@ -32,6 +32,10 @@ html[dir="rtl"] .premium-header__brand-image {
   direction: ltr;
 }
 
+html[dir="rtl"] .premium-header__inner {
+  direction: ltr;
+}
+
 html[dir="rtl"] .premium-header__search-pill {
   direction: rtl;
 }
@@ -6288,9 +6292,9 @@ legend {
 .premium-header__inner {
   min-height: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
   grid-template-rows: 58px auto;
-  column-gap: 18px;
+  column-gap: 16px;
   row-gap: 0;
   align-items: center;
   padding: 0;
@@ -6323,20 +6327,37 @@ legend {
 }
 
 .premium-header__likes-cell {
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 1;
   justify-self: end;
 }
 
 .premium-header__actions-cell {
-  grid-column: 4;
+  grid-column: 3;
   grid-row: 1;
   justify-self: end;
+  min-width: 0;
+  max-width: 100%;
   padding-right: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.premium-header__actions-cell::-webkit-scrollbar {
+  display: none;
 }
 
 .premium-header__actions {
-  gap: 18px;
+  max-width: 100%;
+  min-width: 0;
+  gap: 14px;
+  justify-content: flex-end;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.premium-header__actions::-webkit-scrollbar {
+  display: none;
 }
 
 .premium-header__save-search-btn,
@@ -6611,7 +6632,7 @@ legend {
 
 @media (max-width: 900px) {
   .premium-header__inner {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr);
     grid-template-rows: 56px auto;
     column-gap: 12px;
   }
