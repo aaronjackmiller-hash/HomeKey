@@ -1394,7 +1394,7 @@ const Navbar = () => {
               </span>
             </span>
             <div className="premium-header__likes-copy">
-              <span>{t('navbar.saved')}</span>
+              <span>{t('navbar.likedCount', { count: likedCount })}</span>
             </div>
           </button>
         </div>
