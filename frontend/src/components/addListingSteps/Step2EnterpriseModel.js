@@ -5,13 +5,13 @@ export const Step2EnterpriseModel = ({
     updateData,
     onContinue,
     prevStep,
-    totalSteps = 6,
+    totalSteps = 7,
 }) => {
     const [selectedMethod, setSelectedMethod] = React.useState(data.onboardingMethod || '');
     const [showRequiredHint, setShowRequiredHint] = React.useState(false);
     const hasSelection = Boolean(selectedMethod);
-    const progressPercent = Math.round((2 / totalSteps) * 100);
-    const continueLabel = 'Continue to Step 3';
+    const progressPercent = Math.round((3 / totalSteps) * 100);
+    const continueLabel = 'Continue to Step 4';
 
     React.useEffect(() => {
         setSelectedMethod(data.onboardingMethod || '');
@@ -31,8 +31,8 @@ export const Step2EnterpriseModel = ({
                 <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="wizard-step-header">
-                <h2>Step 2: Enterprise model</h2>
-                <span className="wizard-step-counter">{`Step 2 of ${totalSteps}`}</span>
+                <h2>Step 3: Enterprise model</h2>
+                <span className="wizard-step-counter">{`Step 3 of ${totalSteps}`}</span>
             </div>
 
             <p className="wizard-step-note" style={{ marginTop: 0 }}>
