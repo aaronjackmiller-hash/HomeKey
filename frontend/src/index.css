@@ -648,6 +648,11 @@ a {
   margin: 0 0 7px;
 }
 
+.roommate-filters__field-note {
+  color: #4b5563;
+  font-weight: 500;
+}
+
 .roommate-filters__field-label {
   color: #6b7280;
   display: block;

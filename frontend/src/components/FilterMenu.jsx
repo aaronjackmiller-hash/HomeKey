@@ -207,6 +207,7 @@ const FilterMenu = ({
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
   const [rentAmount, setRentAmount] = useState('3500');
   const [totalRoommates, setTotalRoommates] = useState('1');
+  const [locationPreference, setLocationPreference] = useState('');
   const [bedrooms, setBedrooms] = useState('Any');
   const [bathrooms, setBathrooms] = useState('Any');
   const [gender, setGender] = useState('Male');
@@ -221,6 +222,7 @@ const FilterMenu = ({
     setRoommatesNeeded('1');
     setRentAmount('3500');
     setTotalRoommates('1');
+    setLocationPreference('');
     setBedrooms('Any');
     setBathrooms('Any');
     setGender('Male');
@@ -285,6 +287,7 @@ const FilterMenu = ({
           roommatesNeeded={roommatesNeeded}
           rentAmount={rentAmount}
           totalRoommates={totalRoommates}
+          locationPreference={locationPreference}
           bedrooms={bedrooms}
           bathrooms={bathrooms}
           gender={gender}
@@ -297,6 +300,7 @@ const FilterMenu = ({
           onRoommatesNeededChange={setRoommatesNeeded}
           onRentAmountChange={setRentAmount}
           onTotalRoommatesChange={setTotalRoommates}
+          onLocationPreferenceChange={setLocationPreference}
           onBedroomsChange={setBedrooms}
           onBathroomsChange={setBathrooms}
           onGenderChange={setGender}
@@ -413,6 +417,7 @@ const RoommateFilters = ({
   roommatesNeeded,
   rentAmount,
   totalRoommates,
+  locationPreference,
   bedrooms,
   bathrooms,
   gender,
@@ -425,6 +430,7 @@ const RoommateFilters = ({
   onRoommatesNeededChange,
   onRentAmountChange,
   onTotalRoommatesChange,
+  onLocationPreferenceChange,
   onBedroomsChange,
   onBathroomsChange,
   onGenderChange,
@@ -550,6 +556,20 @@ const RoommateFilters = ({
             onChange={onTotalRoommatesChange}
             compact
             ariaLabel="Total roommates in apartment"
+          />
+        </div>
+        <div>
+          <label className="roommate-filters__field-title" htmlFor="roommate-location-preference">
+            Location Preference <span className="roommate-filters__field-note">(City, neighborhood...)</span>
+          </label>
+          <input
+            id="roommate-location-preference"
+            type="text"
+            value={locationPreference}
+            onChange={(event) => onLocationPreferenceChange(event.target.value)}
+            placeholder="City, neighborhood..."
+            className="roommate-text-input"
+            required
           />
         </div>
         <div className="roommate-filters__two-column">
