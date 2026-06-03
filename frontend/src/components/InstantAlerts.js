@@ -70,6 +70,11 @@ const SUPPORTED_FEATURE_FILTERS = new Set([
   'renovated',
   'furnished',
   'mamad',
+  'oven',
+  'balcony',
+  'stovetop',
+  'laundry-facilities',
+  'in-unit-washer-dryer',
 ]);
 
 const buildSavedSearchQuery = (search = {}) => {

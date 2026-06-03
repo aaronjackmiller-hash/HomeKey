@@ -113,6 +113,11 @@ export const translations = {
       furnished: 'Furnished',
       mamad: 'Mamad',
       securityRoom: 'Security Room',
+      oven: 'Oven',
+      balcony: 'Balcony',
+      stovetop: 'Stovetop',
+      laundryFacilities: 'Laundry Facilities',
+      inUnitWasherDryer: 'In-Unit Washer & Dryer',
     },
     propertyList: {
       loadingHomes: 'Loading homes...',
@@ -353,6 +358,11 @@ export const translations = {
       furnished: 'מרוהט',
       mamad: 'ממ״ד',
       securityRoom: 'חדר ביטחון',
+      oven: 'תנור',
+      balcony: 'מרפסת',
+      stovetop: 'כיריים',
+      laundryFacilities: 'מתקני כביסה',
+      inUnitWasherDryer: 'מכונת כביסה ומייבש ביחידה',
     },
     propertyList: {
       loadingHomes: 'טוען נכסים...',

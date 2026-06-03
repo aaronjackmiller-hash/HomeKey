@@ -10,6 +10,14 @@ const FEATURE_ITEMS = [
   { id: 'furnished', labelKey: 'filterMenu.furnished', icon: 'FR' },
 ];
 
+const DETAIL_ITEMS = [
+  { id: 'oven', labelKey: 'filterMenu.oven' },
+  { id: 'balcony', labelKey: 'filterMenu.balcony' },
+  { id: 'stovetop', labelKey: 'filterMenu.stovetop' },
+  { id: 'laundry-facilities', labelKey: 'filterMenu.laundryFacilities' },
+  { id: 'in-unit-washer-dryer', labelKey: 'filterMenu.inUnitWasherDryer' },
+];
+
 const LISTING_TYPE_OPTIONS = ['rental', 'sale', 'roommates'];
 
 const FilterMenu = ({
@@ -128,6 +136,18 @@ const FilterMenu = ({
               isSelected={selectedFeatureSet.has(feature.id)}
               onClick={() => onToggleFeature(feature.id)}
             />
+          ))}
+        </div>
+        <div className="filter-menu__details-grid">
+          {DETAIL_ITEMS.map((detail) => (
+            <button
+              key={detail.id}
+              type="button"
+              className={`filter-menu__detail-chip ${selectedFeatureSet.has(detail.id) ? 'is-selected' : ''}`}
+              onClick={() => onToggleFeature(detail.id)}
+            >
+              {t(detail.labelKey)}
+            </button>
           ))}
         </div>
       </section>
