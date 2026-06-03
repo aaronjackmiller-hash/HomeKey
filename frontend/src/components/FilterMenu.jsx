@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const FilterBar = ({ onClearAllFilters, onApplyFilters }) => {
+  const [locationPreference, setLocationPreference] = useState('');
+
+  const handleReset = () => {
+    setLocationPreference('');
+    onClearAllFilters();
+  };
+
   return (
     <div className="filter-menu filter-bar">
       <div className="filter-bar__inner">
@@ -11,6 +18,8 @@ const FilterBar = ({ onClearAllFilters, onApplyFilters }) => {
           <input
             id="filter-location-preference"
             type="text"
+            value={locationPreference}
+            onChange={(event) => setLocationPreference(event.target.value)}
             placeholder="City, neighborhood..."
             className="filter-bar__input"
           />
@@ -23,7 +32,7 @@ const FilterBar = ({ onClearAllFilters, onApplyFilters }) => {
         </div>
 
         <div className="filter-bar__actions">
-          <button type="button" className="filter-bar__reset" onClick={onClearAllFilters}>
+          <button type="button" className="filter-bar__reset" onClick={handleReset}>
             Reset
           </button>
           <button type="button" className="filter-bar__apply" onClick={onApplyFilters}>
