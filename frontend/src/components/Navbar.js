@@ -66,6 +66,12 @@ const getPriceSummaryLabel = (minValue, maxValue, locale = 'en-US') => {
   return `${minLabel} - ${maxLabel}`;
 };
 
+const formatRoomsBathsSummaryPart = (countLabel = '', suffixLabel = '') =>
+  [countLabel, suffixLabel]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ');
+
 const sanitizeListingType = (rawValue) => {
   const normalized = String(rawValue || '').toLowerCase();
   if (LISTING_TYPE_OPTIONS.includes(normalized)) return normalized;
@@ -254,8 +260,8 @@ const getRoomsBathsSummaryLabel = ({
   const roomOption = roomOptions.find((option) => option.value === normalizedRooms);
   const bathOption = bathOptions.find((option) => option.value === normalizedBaths);
   const summaryParts = [];
-  if (roomOption) summaryParts.push(`${roomOption.label} ${t('navbar.roomSummarySuffix')}`);
-  if (bathOption) summaryParts.push(`${bathOption.label} ${t('navbar.bathSummarySuffix')}`);
+  if (roomOption) summaryParts.push(formatRoomsBathsSummaryPart(roomOption.label, t('navbar.roomSummarySuffix')));
+  if (bathOption) summaryParts.push(formatRoomsBathsSummaryPart(bathOption.label, t('navbar.bathSummarySuffix')));
   return summaryParts.join(' / ');
 };
 
