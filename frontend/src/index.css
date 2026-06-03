@@ -8314,3 +8314,461 @@ legend {
     rgba(8, 18, 38, 0.88) !important;
   color: #ffffff !important;
 }
+
+/* Room Wanted reference: light cream layout and controls from the supplied mockup. */
+.filter-menu--roommates.filter-menu--room-wanted {
+  --room-wanted-cream: #f8ecd6;
+  --room-wanted-cream-deep: #eed3a7;
+  --room-wanted-green: #133f34;
+  --room-wanted-soft-green: #dcebdc;
+  width: min(100vw, 390px);
+  color: #141414 !important;
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 255, 255, 0.62), transparent 24%),
+    radial-gradient(circle at 18% 74%, rgba(234, 202, 145, 0.34), transparent 28%),
+    linear-gradient(180deg, #fbf5e9 0%, var(--room-wanted-cream) 52%, #f2ddb7 100%) !important;
+  border: 1px solid #d8c29e !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__sticky-top,
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__header,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--room-wanted .filter-menu__sticky-top {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(247, 234, 211, 0.94)) !important;
+  border-bottom: 2px solid #174236 !important;
+  box-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__header {
+  margin-bottom: 6px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__title {
+  color: #141414 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__cancel {
+  min-height: auto !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #263029 !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  padding: 0 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters {
+  gap: 0;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__section {
+  margin-bottom: 7px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__section-title {
+  margin: 0 0 3px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  color: #141414 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .filter-menu__section-title span {
+  color: #303030 !important;
+  font-size: 0.58rem;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__looking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card {
+  min-height: 96px !important;
+  padding: 5px 5px 4px !important;
+  border: 1px solid #bdb8af !important;
+  border-radius: 7px !important;
+  background: #fffdfa !important;
+  color: #191919 !important;
+  box-shadow: 0 1px 2px rgba(87, 68, 35, 0.2) !important;
+  backdrop-filter: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card::before,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card::after,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__control::before,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-option::before,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-segmented button::before,
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity::before,
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-lease-option::before,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions button::before {
+  display: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card.is-selected {
+  background: #dfeee0 !important;
+  border-color: #83a58c !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration {
+  width: 42px !important;
+  height: 32px !important;
+  margin-bottom: 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration svg {
+  width: 44px !important;
+  height: 32px !important;
+  color: #4a5568 !important;
+  filter: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration--room svg rect {
+  fill: #e9ded0 !important;
+  stroke: #5d6470 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration--room svg path {
+  stroke: #5d6470 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration--room svg path[fill]:not([fill="none"]) {
+  fill: #b69063 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration--roommate svg circle {
+  fill: #d8b08c !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__illustration--roommate svg path {
+  fill: #2d5a47 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__title,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__title strong,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__subtitle,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__control-label,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__field-title,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__sub-label,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__hint,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__field-label {
+  color: #151515 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  text-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__title {
+  display: block;
+  font-size: 0.64rem !important;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__title strong {
+  display: inline !important;
+  font-size: 0.64rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__subtitle {
+  font-size: 0.54rem !important;
+  margin: 1px 0 3px !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__control {
+  border-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-card__control-label {
+  min-height: 0 !important;
+  margin-bottom: 2px !important;
+  font-size: 0.48rem !important;
+  font-weight: 700 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-option-group,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-segmented {
+  width: 100%;
+  max-width: none !important;
+  gap: 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-option,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-segmented button,
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-lease-option {
+  min-height: 22px !important;
+  border: 1px solid #c8c5bf !important;
+  border-radius: 5px !important;
+  background: #ffffff !important;
+  color: #242424 !important;
+  box-shadow: 0 1px 2px rgba(87, 68, 35, 0.16) !important;
+  font-size: 0.62rem !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  padding: 3px 5px !important;
+  text-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-option.is-selected,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-segmented button.is-selected,
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-lease-option.is-selected {
+  background: #dcebdc !important;
+  border-color: #97b39b !important;
+  color: #173d31 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__budget-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 14px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__field-title {
+  margin: 0 0 2px !important;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  line-height: 1.05;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__hint,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__sub-label {
+  margin-bottom: 2px !important;
+  font-size: 0.56rem !important;
+  font-weight: 600 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__labels,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__values {
+  color: #151515 !important;
+  font-size: 0.54rem !important;
+  font-weight: 600;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track {
+  height: 18px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track::before {
+  height: 3px;
+  background: #cacaca !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track::after {
+  height: 3px;
+  background: #6e6e6e !important;
+  box-shadow: none !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track input {
+  height: 18px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track input::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #6f6f6f !important;
+  background: #f8f8f8 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-budget-range__track input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #6f6f6f !important;
+  background: #f8f8f8 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-month-input,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-text-input,
+.filter-menu--roommates.filter-menu--room-wanted .roommate-money-input {
+  min-height: 22px !important;
+  border: 1px solid #d4c9ba !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  color: #151515 !important;
+  box-shadow: inset 0 1px 2px rgba(87, 68, 35, 0.12) !important;
+  font-size: 0.62rem !important;
+  font-weight: 500 !important;
+  padding: 3px 6px !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row {
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.8fr) !important;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row__control {
+  justify-content: flex-end;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__stack {
+  gap: 5px !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filters__habits {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 10px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-toggle-row {
+  min-height: 22px;
+  gap: 5px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-toggle {
+  width: 28px;
+  height: 16px;
+  border: 1px solid #b8b5ae !important;
+  background: #bdbdbd !important;
+  padding: 1px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-toggle__knob {
+  width: 12px;
+  height: 12px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-toggle.is-on .roommate-toggle__knob {
+  transform: translateX(12px);
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-toggle-row span {
+  color: #151515 !important;
+  font-size: 0.58rem !important;
+  font-weight: 600;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-lease-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 36px));
+  gap: 8px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity {
+  min-height: 40px;
+  border: 1px solid #c8c2b8;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #202020;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 4px;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(87, 68, 35, 0.14);
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity.is-selected {
+  background: #dcebdc;
+  border-color: #97b39b;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity__icon {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #9fa599;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #526153;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity span:last-child {
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .room-wanted-amenity .filter-menu__characteristic-svg {
+  width: 12px;
+  height: 12px;
+  color: currentColor !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions {
+  background: linear-gradient(180deg, rgba(248, 236, 214, 0), #f2ddb7 24%, #f2ddb7) !important;
+  gap: 8px;
+  margin: 0 -2px;
+  padding: 6px 2px 0;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions button {
+  min-height: 30px !important;
+  border-radius: 5px !important;
+  box-shadow: 0 1px 2px rgba(87, 68, 35, 0.24) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions__apply {
+  border: 1px solid #0f3d35 !important;
+  background: #0f3d35 !important;
+  color: #ffffff !important;
+}
+
+.filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions__save {
+  border: 1px solid #a8c4a8 !important;
+  background: #dcebdc !important;
+  color: #173d31 !important;
+}
+
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--room-wanted + .mobile-filter-sheet-close-btn {
+  min-height: 34px !important;
+  border: 1px solid #0f3d35 !important;
+  border-radius: 5px !important;
+  background: #0f3d35 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(87, 68, 35, 0.24) !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions .roommate-filter-actions__save {
+  background: #dcebdc !important;
+  background-color: #dcebdc !important;
+  border-color: #a8c4a8 !important;
+  color: #173d31 !important;
+}
