@@ -648,6 +648,11 @@ a {
   margin: 0 0 7px;
 }
 
+.roommate-filters__field-title--compact {
+  margin-top: 8px;
+  margin-bottom: 5px;
+}
+
 .roommate-filters__field-label {
   color: #6b7280;
   display: block;
@@ -699,6 +704,116 @@ a {
   border-color: #2d5a27;
 }
 
+.roommate-filters__budget-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.roommate-budget-range__labels,
+.roommate-budget-range__values {
+  color: #111827;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.roommate-budget-range__labels {
+  margin-bottom: 6px;
+}
+
+.roommate-budget-range__values {
+  margin-top: 5px;
+  font-weight: 600;
+}
+
+.roommate-budget-range__track {
+  position: relative;
+  height: 26px;
+}
+
+.roommate-budget-range__track::before,
+.roommate-budget-range__track::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.roommate-budget-range__track::before {
+  background: #d7ded5;
+}
+
+.roommate-budget-range__track::after {
+  left: var(--roommate-budget-min);
+  right: calc(100% - var(--roommate-budget-max));
+  background: #2d5a27;
+}
+
+.roommate-budget-range__track input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 26px;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.roommate-budget-range__track input::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #111827;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+  pointer-events: auto;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.roommate-budget-range__track input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #111827;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.roommate-budget-range__track input::-moz-range-track {
+  background: transparent;
+  border: 0;
+}
+
+.roommate-month-input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 7px 9px;
+}
+
+.roommate-month-input:focus {
+  border-color: #2d5a27;
+  outline: none;
+}
+
 .roommate-filters__stack {
   display: flex;
   flex-direction: column;
@@ -710,6 +825,18 @@ a {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.roommate-inline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(146px, 0.8fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.roommate-inline-row__control {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .roommate-option-group {
@@ -897,6 +1024,38 @@ a {
 
 .roommate-amenity.is-selected .filter-menu__characteristic-svg {
   color: #2d5a27;
+}
+
+.roommate-filter-actions {
+  position: sticky;
+  bottom: -10px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 2px -4px 0;
+  padding: 10px 4px 0;
+  background: linear-gradient(180deg, rgba(249, 246, 238, 0), #f9f6ee 28%, #f9f6ee);
+}
+
+.roommate-filter-actions button {
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.roommate-filter-actions__apply {
+  border: 1px solid #0f4a43;
+  background: #0f4a43;
+  color: #ffffff;
+}
+
+.roommate-filter-actions__save {
+  border: 1px solid #b8dcb0;
+  background: #dff5d5;
+  color: #12351f;
 }
 
 .filter-menu__option-grid {
