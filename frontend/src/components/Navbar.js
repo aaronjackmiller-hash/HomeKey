@@ -22,6 +22,11 @@ const FEATURE_FILTER_OPTIONS = [
   'renovated',
   'furnished',
   'mamad',
+  'oven',
+  'balcony',
+  'stovetop',
+  'laundry-facilities',
+  'in-unit-washer-dryer',
 ];
 const AI_LISTING_TYPE_KEYWORDS = {
   roommates: ['roommate', 'roommates', 'shared apartment', 'shared flat'],
@@ -40,6 +45,11 @@ const AI_FEATURE_KEYWORDS = {
   renovated: ['renovated', 'refurbished'],
   furnished: ['furnished'],
   mamad: ['mamad', 'safe room', 'security room'],
+  oven: ['oven'],
+  balcony: ['balcony', 'terrace', 'mirpeset'],
+  stovetop: ['stovetop', 'cooktop', 'hob'],
+  'laundry-facilities': ['laundry', 'laundry facilities', 'laundry room'],
+  'in-unit-washer-dryer': ['in-unit washer', 'in unit washer', 'washer dryer', 'washer & dryer', 'washer and dryer'],
 };
 const getSpeechRecognitionConstructor = () => {
   if (typeof window === 'undefined') return null;
@@ -149,7 +159,7 @@ const parseAiPriceRange = (rawInput = '') => {
 const extractAiCityCandidate = (rawInput = '') => {
   const strippedText = String(rawInput || '')
     .replace(/[$₪]/g, ' ')
-    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|roommate|roommates|shared apartment|shared flat|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|roommate|roommates|shared apartment|shared flat|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|oven|balcony|terrace|mirpeset|stovetop|cooktop|hob|laundry|laundry facilities|laundry room|in-unit washer|in unit washer|washer dryer|washer\s*(?:&|and)\s*dryer|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
     .replace(/[^a-zA-Z\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

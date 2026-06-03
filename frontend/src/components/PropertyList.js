@@ -58,6 +58,11 @@ const FEATURE_FILTER_OPTIONS = [
   'renovated',
   'furnished',
   'mamad',
+  'oven',
+  'balcony',
+  'stovetop',
+  'laundry-facilities',
+  'in-unit-washer-dryer',
 ];
 const PROPERTY_CATEGORY_KEYWORDS = {
   apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
@@ -71,6 +76,19 @@ const FEATURE_KEYWORDS = {
   renovated: ['renovated', 'newly renovated', 'refurbished', 'משופץ'],
   furnished: ['furnished', 'fully furnished', 'מרוהט'],
   mamad: ['mamad', 'security room', 'safe room', 'ממד', 'ממ״ד'],
+  oven: ['oven', 'תנור'],
+  balcony: ['balcony', 'terrace', 'mirpeset', 'מרפסת'],
+  stovetop: ['stovetop', 'cooktop', 'hob', 'כיריים'],
+  'laundry-facilities': ['laundry', 'laundry facilities', 'laundry room', 'laundromat', 'כביסה', 'חדר כביסה'],
+  'in-unit-washer-dryer': [
+    'in-unit washer',
+    'in unit washer',
+    'washer dryer',
+    'washer & dryer',
+    'washer and dryer',
+    'מכונת כביסה',
+    'מייבש',
+  ],
 };
 
 const formatCurrency = (value, locale = 'en-US') => {
