@@ -36,6 +36,12 @@ const ROOMMATE_AMENITY_ITEMS = [
   { id: 'Pets Allowed', icon: 'pets' },
   { id: 'Disabled Access', icon: 'accessibility' },
   { id: 'Renovated', icon: 'renovated' },
+  { id: 'Furnished', icon: 'furnished' },
+  { id: 'Oven', icon: 'oven' },
+  { id: 'Balcony', icon: 'balcony' },
+  { id: 'Stovetop', icon: 'stovetop' },
+  { id: 'Laundry Facilities', icon: 'laundry' },
+  { id: 'In-Unit Washer & Dryer', icon: 'washer' },
 ];
 
 const CHARACTERISTIC_ICONS = {
