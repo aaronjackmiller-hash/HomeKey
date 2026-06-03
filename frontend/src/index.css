@@ -6723,6 +6723,9 @@ legend {
     width: 100% !important;
     min-width: 0 !important;
     max-height: min(76vh, 640px) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
     transform: none !important;
   }
 }
