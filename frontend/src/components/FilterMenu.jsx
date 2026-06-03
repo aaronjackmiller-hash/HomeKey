@@ -20,9 +20,16 @@ const DETAIL_ITEMS = [
 
 const LISTING_TYPE_OPTIONS = ['rental', 'sale', 'roommates'];
 const ROOMMATE_COUNT_OPTIONS = ['1', '2', '3+'];
+const ROOMMATE_UNIT_OPTIONS = ['Any', '1', '2', '3+'];
 const ROOMMATE_GENDER_OPTIONS = ['Male', 'Female', 'Either', 'Non-Binary/Other'];
 const ROOMMATE_SMOKING_OPTIONS = ['Smoker Ok', 'Non-Smoker Only'];
 const ROOMMATE_FLEXIBILITY_OPTIONS = ['Strict', '±3 days', '±7 days'];
+const ROOMMATE_LIFESTYLE_ITEMS = [
+  { id: 'Quiet', icon: 'volume-off' },
+  { id: 'Social', icon: 'users' },
+  { id: 'WFH', icon: 'briefcase' },
+  { id: 'Late Sleeper', icon: 'moon' },
+];
 const ROOMMATE_AMENITY_ITEMS = [
   { id: 'Mamad', icon: 'shield' },
   { id: 'Elevator', icon: 'elevator' },
@@ -210,32 +217,50 @@ const FilterMenu = ({
   const [lookingFor, setLookingFor] = useState('room');
   const [bedroomsNeeded, setBedroomsNeeded] = useState('1');
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
+  const [rentAmount, setRentAmount] = useState('3500');
   const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_MONTH);
   const [flexibility, setFlexibility] = useState('Strict');
   const [totalRoommates, setTotalRoommates] = useState('1');
+  const [bedrooms, setBedrooms] = useState('Any');
+  const [bathrooms, setBathrooms] = useState('Any');
   const [locationPreference, setLocationPreference] = useState('');
   const [gender, setGender] = useState('Male');
   const [smoking, setSmoking] = useState('Smoker Ok');
   const [kosher, setKosher] = useState(false);
+  const [lifestyle, setLifestyle] = useState(['Quiet']);
   const [amenities, setAmenities] = useState(['Mamad']);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const resetRoommateFilters = () => {
     setLookingFor('room');
     setBedroomsNeeded('1');
     setRoommatesNeeded('1');
+    setRentAmount('3500');
     setMoveInDate(DEFAULT_MOVE_IN_MONTH);
     setFlexibility('Strict');
     setTotalRoommates('1');
+    setBedrooms('Any');
+    setBathrooms('Any');
     setLocationPreference('');
     setGender('Male');
     setSmoking('Smoker Ok');
     setKosher(false);
+    setLifestyle(['Quiet']);
     setAmenities(['Mamad']);
+    setPhoneNumber('');
   };
 
   const handleClearAll = () => {
     resetRoommateFilters();
     onClearAllFilters();
+  };
+
+  const toggleLifestyle = (item) => {
+    setLifestyle((currentItems) => (
+      currentItems.includes(item)
+        ? currentItems.filter((currentItem) => currentItem !== item)
+        : [...currentItems, item]
+    ));
   };
 
   const toggleAmenity = (item) => {
@@ -280,30 +305,40 @@ const FilterMenu = ({
           lookingFor={lookingFor}
           bedroomsNeeded={bedroomsNeeded}
           roommatesNeeded={roommatesNeeded}
+          rentAmount={rentAmount}
           minPrice={minPrice}
           maxPrice={maxPrice}
           locale={locale}
           moveInDate={moveInDate}
           flexibility={flexibility}
           totalRoommates={totalRoommates}
+          bedrooms={bedrooms}
+          bathrooms={bathrooms}
           locationPreference={locationPreference}
           gender={gender}
           smoking={smoking}
           kosher={kosher}
+          lifestyle={lifestyle}
           amenities={amenities}
+          phoneNumber={phoneNumber}
           onLookingForChange={setLookingFor}
           onBedroomsNeededChange={setBedroomsNeeded}
           onRoommatesNeededChange={setRoommatesNeeded}
+          onRentAmountChange={setRentAmount}
           onMinPriceChange={onMinPriceChange}
           onMaxPriceChange={onMaxPriceChange}
           onMoveInDateChange={setMoveInDate}
           onFlexibilityChange={setFlexibility}
           onTotalRoommatesChange={setTotalRoommates}
+          onBedroomsChange={setBedrooms}
+          onBathroomsChange={setBathrooms}
           onLocationPreferenceChange={setLocationPreference}
           onGenderChange={setGender}
           onSmokingChange={setSmoking}
           onKosherChange={setKosher}
+          onLifestyleToggle={toggleLifestyle}
           onAmenityToggle={toggleAmenity}
+          onPhoneNumberChange={setPhoneNumber}
           onApplyFilters={onApplyFilters}
           onSaveFilters={onSaveFilters}
         />
@@ -413,30 +448,40 @@ const RoommateFilters = ({
   lookingFor,
   bedroomsNeeded,
   roommatesNeeded,
+  rentAmount,
   minPrice,
   maxPrice,
   locale,
   moveInDate,
   flexibility,
   totalRoommates,
+  bedrooms,
+  bathrooms,
   locationPreference,
   gender,
   smoking,
   kosher,
+  lifestyle,
   amenities,
+  phoneNumber,
   onLookingForChange,
   onBedroomsNeededChange,
   onRoommatesNeededChange,
+  onRentAmountChange,
   onMinPriceChange,
   onMaxPriceChange,
   onMoveInDateChange,
   onFlexibilityChange,
   onTotalRoommatesChange,
+  onBedroomsChange,
+  onBathroomsChange,
   onLocationPreferenceChange,
   onGenderChange,
   onSmokingChange,
   onKosherChange,
+  onLifestyleToggle,
   onAmenityToggle,
+  onPhoneNumberChange,
   onApplyFilters,
   onSaveFilters,
 }) => (
@@ -532,6 +577,90 @@ const RoommateFilters = ({
       </div>
     </section>
 
+    {lookingFor === 'room' ? (
+      <RoomSeekerFilterSections
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        locale={locale}
+        moveInDate={moveInDate}
+        flexibility={flexibility}
+        totalRoommates={totalRoommates}
+        locationPreference={locationPreference}
+        gender={gender}
+        smoking={smoking}
+        kosher={kosher}
+        amenities={amenities}
+        onMinPriceChange={onMinPriceChange}
+        onMaxPriceChange={onMaxPriceChange}
+        onMoveInDateChange={onMoveInDateChange}
+        onFlexibilityChange={onFlexibilityChange}
+        onTotalRoommatesChange={onTotalRoommatesChange}
+        onLocationPreferenceChange={onLocationPreferenceChange}
+        onGenderChange={onGenderChange}
+        onSmokingChange={onSmokingChange}
+        onKosherChange={onKosherChange}
+        onAmenityToggle={onAmenityToggle}
+      />
+    ) : (
+      <RoommateOwnerFilterSections
+        rentAmount={rentAmount}
+        totalRoommates={totalRoommates}
+        bedrooms={bedrooms}
+        bathrooms={bathrooms}
+        gender={gender}
+        smoking={smoking}
+        kosher={kosher}
+        lifestyle={lifestyle}
+        amenities={amenities}
+        phoneNumber={phoneNumber}
+        onRentAmountChange={onRentAmountChange}
+        onTotalRoommatesChange={onTotalRoommatesChange}
+        onBedroomsChange={onBedroomsChange}
+        onBathroomsChange={onBathroomsChange}
+        onGenderChange={onGenderChange}
+        onSmokingChange={onSmokingChange}
+        onKosherChange={onKosherChange}
+        onLifestyleToggle={onLifestyleToggle}
+        onAmenityToggle={onAmenityToggle}
+        onPhoneNumberChange={onPhoneNumberChange}
+      />
+    )}
+
+    <div className="roommate-filter-actions">
+      <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
+        Apply Filters
+      </button>
+      <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
+        Save Filters
+      </button>
+    </div>
+  </div>
+);
+
+const RoomSeekerFilterSections = ({
+  minPrice,
+  maxPrice,
+  locale,
+  moveInDate,
+  flexibility,
+  totalRoommates,
+  locationPreference,
+  gender,
+  smoking,
+  kosher,
+  amenities,
+  onMinPriceChange,
+  onMaxPriceChange,
+  onMoveInDateChange,
+  onFlexibilityChange,
+  onTotalRoommatesChange,
+  onLocationPreferenceChange,
+  onGenderChange,
+  onSmokingChange,
+  onKosherChange,
+  onAmenityToggle,
+}) => (
+  <>
     <section className="filter-menu__section roommate-filters__section">
       <h3 className="filter-menu__section-title">Budget & Availability</h3>
       <div className="roommate-filters__budget-grid">
@@ -598,82 +727,231 @@ const RoommateFilters = ({
       </div>
     </section>
 
+    <RoommateProfileSection
+      gender={gender}
+      smoking={smoking}
+      kosher={kosher}
+      onGenderChange={onGenderChange}
+      onSmokingChange={onSmokingChange}
+      onKosherChange={onKosherChange}
+    />
+
+    <RoommateAmenitiesSection amenities={amenities} onAmenityToggle={onAmenityToggle} />
+  </>
+);
+
+const RoommateOwnerFilterSections = ({
+  rentAmount,
+  totalRoommates,
+  bedrooms,
+  bathrooms,
+  gender,
+  smoking,
+  kosher,
+  lifestyle,
+  amenities,
+  phoneNumber,
+  onRentAmountChange,
+  onTotalRoommatesChange,
+  onBedroomsChange,
+  onBathroomsChange,
+  onGenderChange,
+  onSmokingChange,
+  onKosherChange,
+  onLifestyleToggle,
+  onAmenityToggle,
+  onPhoneNumberChange,
+}) => (
+  <>
+    <section className="filter-menu__section roommate-filters__section">
+      <h3 className="filter-menu__section-title">Budget & Availability</h3>
+      <p className="roommate-filters__field-title">Total Monthly Rent</p>
+      <label className="roommate-filters__field-label" htmlFor="roommate-rent-amount">Monthly Rent Amount</label>
+      <div className="roommate-money-input">
+        <span aria-hidden="true">₪</span>
+        <input
+          id="roommate-rent-amount"
+          type="text"
+          inputMode="numeric"
+          value={rentAmount}
+          onChange={(event) => onRentAmountChange(event.target.value)}
+          required
+        />
+      </div>
+    </section>
+
     <section className="filter-menu__section roommate-filters__section">
       <h3 className="filter-menu__section-title">
-        Roommate Profile <span>(preferences)</span>
+        Apartment Details <span>(applies to the entire unit)</span>
       </h3>
       <div className="roommate-filters__stack">
         <div>
-          <p className="roommate-filters__field-title">Gender</p>
-          <SegmentedButtonGroup
-            options={ROOMMATE_GENDER_OPTIONS}
-            selectedValue={gender}
-            onChange={onGenderChange}
-            ariaLabel="Gender preference"
+          <p className="roommate-filters__field-title">Total Roommates in Apartment</p>
+          <p className="roommate-filters__hint">(including you)</p>
+          <OptionButtonGroup
+            options={ROOMMATE_COUNT_OPTIONS}
+            selectedValue={totalRoommates}
+            onChange={onTotalRoommatesChange}
+            compact
+            ariaLabel="Total roommates in apartment"
           />
         </div>
-        <div>
-          <p className="roommate-filters__field-title">Habits</p>
-          <div className="roommate-filters__habits">
-            <div>
-              <p className="roommate-filters__sub-label">Smoking Preference</p>
-              <SegmentedButtonGroup
-                options={ROOMMATE_SMOKING_OPTIONS}
-                selectedValue={smoking}
-                onChange={onSmokingChange}
-                ariaLabel="Smoking preference"
-              />
-            </div>
-            <div>
-              <p className="roommate-filters__sub-label">Keep Kosher Kitchen</p>
-              <div className="roommate-toggle-row">
-                <button
-                  type="button"
-                  className={`roommate-toggle ${kosher ? 'is-on' : ''}`}
-                  onClick={() => onKosherChange(!kosher)}
-                  aria-pressed={kosher}
-                  aria-label="Keep kosher kitchen required"
-                >
-                  <span className="roommate-toggle__knob" />
-                </button>
-                <span>Required/Not Required</span>
-              </div>
-            </div>
+        <div className="roommate-filters__two-column">
+          <div>
+            <p className="roommate-filters__field-title">Total Bedrooms in Apartment</p>
+            <OptionButtonGroup
+              options={ROOMMATE_UNIT_OPTIONS}
+              selectedValue={bedrooms}
+              onChange={onBedroomsChange}
+              ariaLabel="Total bedrooms in apartment"
+            />
+          </div>
+          <div>
+            <p className="roommate-filters__field-title">Total Bathrooms in Apartment</p>
+            <OptionButtonGroup
+              options={ROOMMATE_UNIT_OPTIONS}
+              selectedValue={bathrooms}
+              onChange={onBathroomsChange}
+              ariaLabel="Total bathrooms in apartment"
+            />
           </div>
         </div>
       </div>
     </section>
 
-    <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">Property Amenities (New)</h3>
-      <div className="roommate-amenities-grid" aria-label="Property amenities">
-        {ROOMMATE_AMENITY_ITEMS.map((amenity) => {
-          const isSelected = amenities.includes(amenity.id);
-          return (
-            <button
-              key={amenity.id}
-              type="button"
-              className={`roommate-amenity ${isSelected ? 'is-selected' : ''}`}
-              onClick={() => onAmenityToggle(amenity.id)}
-              aria-pressed={isSelected}
-            >
-              <CharacteristicIcon name={amenity.icon} />
-              <span>{amenity.id}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+    <RoommateProfileSection
+      gender={gender}
+      smoking={smoking}
+      kosher={kosher}
+      lifestyle={lifestyle}
+      onGenderChange={onGenderChange}
+      onSmokingChange={onSmokingChange}
+      onKosherChange={onKosherChange}
+      onLifestyleToggle={onLifestyleToggle}
+    />
 
-    <div className="roommate-filter-actions">
-      <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
-        Apply Filters
-      </button>
-      <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
-        Save Filters
-      </button>
+    <RoommateAmenitiesSection amenities={amenities} onAmenityToggle={onAmenityToggle} />
+
+    <section className="filter-menu__section roommate-filters__section">
+      <h3 className="filter-menu__section-title">
+        Contact Information <span>(For Person Looking For Roommate)</span>
+      </h3>
+      <label className="roommate-filters__field-title" htmlFor="roommate-phone-number">Phone Number</label>
+      <input
+        id="roommate-phone-number"
+        type="tel"
+        value={phoneNumber}
+        onChange={(event) => onPhoneNumberChange(event.target.value)}
+        placeholder="[+972 5X-XXXXXXX]"
+        className="roommate-text-input"
+        required
+      />
+    </section>
+  </>
+);
+
+const RoommateProfileSection = ({
+  gender,
+  smoking,
+  kosher,
+  lifestyle,
+  onGenderChange,
+  onSmokingChange,
+  onKosherChange,
+  onLifestyleToggle,
+}) => (
+  <section className="filter-menu__section roommate-filters__section">
+    <h3 className="filter-menu__section-title">
+      Roommate Profile <span>(preferences)</span>
+    </h3>
+    <div className="roommate-filters__stack">
+      <div>
+        <p className="roommate-filters__field-title">Gender</p>
+        <SegmentedButtonGroup
+          options={ROOMMATE_GENDER_OPTIONS}
+          selectedValue={gender}
+          onChange={onGenderChange}
+          ariaLabel="Gender preference"
+        />
+      </div>
+      <div>
+        <p className="roommate-filters__field-title">Habits</p>
+        <div className="roommate-filters__habits">
+          <div>
+            <p className="roommate-filters__sub-label">Smoking Preference</p>
+            <SegmentedButtonGroup
+              options={ROOMMATE_SMOKING_OPTIONS}
+              selectedValue={smoking}
+              onChange={onSmokingChange}
+              ariaLabel="Smoking preference"
+            />
+          </div>
+          <div>
+            <p className="roommate-filters__sub-label">Keep Kosher Kitchen</p>
+            <div className="roommate-toggle-row">
+              <button
+                type="button"
+                className={`roommate-toggle ${kosher ? 'is-on' : ''}`}
+                onClick={() => onKosherChange(!kosher)}
+                aria-pressed={kosher}
+                aria-label="Keep kosher kitchen required"
+              >
+                <span className="roommate-toggle__knob" />
+              </button>
+              <span>Required/Not Required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {lifestyle && (
+        <div>
+          <p className="roommate-filters__field-title">
+            Lifestyle Match <span className="roommate-filters__optional">(optional section)</span>
+          </p>
+          <div className="roommate-pill-grid">
+            {ROOMMATE_LIFESTYLE_ITEMS.map((item) => {
+              const isSelected = lifestyle.includes(item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`roommate-pill ${isSelected ? 'is-selected' : ''}`}
+                  onClick={() => onLifestyleToggle(item.id)}
+                  aria-pressed={isSelected}
+                >
+                  <CharacteristicIcon name={item.icon} />
+                  <span>{item.id}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
-  </div>
+  </section>
+);
+
+const RoommateAmenitiesSection = ({ amenities, onAmenityToggle }) => (
+  <section className="filter-menu__section roommate-filters__section">
+    <h3 className="filter-menu__section-title">Property Amenities</h3>
+    <div className="roommate-amenities-grid" aria-label="Property amenities">
+      {ROOMMATE_AMENITY_ITEMS.map((amenity) => {
+        const isSelected = amenities.includes(amenity.id);
+        return (
+          <button
+            key={amenity.id}
+            type="button"
+            className={`roommate-amenity ${isSelected ? 'is-selected' : ''}`}
+            onClick={() => onAmenityToggle(amenity.id)}
+            aria-pressed={isSelected}
+          >
+            <CharacteristicIcon name={amenity.icon} />
+            <span>{amenity.id}</span>
+          </button>
+        );
+      })}
+    </div>
+  </section>
 );
 
 const clampFilterPriceValue = (value) => {
