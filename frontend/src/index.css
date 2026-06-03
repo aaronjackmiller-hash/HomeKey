@@ -869,13 +869,14 @@ a {
   display: flex;
   gap: 8px;
   justify-content: flex-start;
-  min-height: 74px;
-  padding: 10px;
+  min-height: 88px;
+  padding: 12px 10px;
   text-align: left;
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .roommate-amenity span {
+  font-size: 0.76rem;
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
