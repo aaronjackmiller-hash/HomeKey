@@ -7504,3 +7504,443 @@ legend {
     overflow-y: visible;
   }
 }
+
+/* Roommate filters: premium dark/metallic treatment based on provided visual references. */
+.filter-menu--roommates {
+  --roommate-ink: #f8fafc;
+  --roommate-muted: #c7d0dc;
+  --roommate-panel-strong: #0a1220;
+  color: var(--roommate-ink);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.16), transparent 28%),
+    linear-gradient(142deg, #1b2738 0%, #0d1524 48%, #060b14 100%);
+  border: 1px solid rgba(225, 232, 241, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 20px 48px rgba(5, 10, 18, 0.5);
+}
+
+.filter-menu--roommates .filter-menu__sticky-top,
+.filter-menu--roommates .filter-menu__header,
+.filter-menu--roommates .filter-menu__listing-type-section,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates .filter-menu__sticky-top {
+  background:
+    linear-gradient(180deg, rgba(25, 36, 54, 0.98), rgba(11, 18, 31, 0.96)),
+    var(--roommate-panel-strong);
+  border-bottom: 1px solid rgba(229, 236, 246, 0.42);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.filter-menu--roommates .filter-menu__title {
+  color: #ffffff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.42rem;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.16);
+}
+
+.filter-menu--roommates .filter-menu__cancel {
+  border: 1px solid rgba(229, 236, 246, 0.44);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(245, 247, 250, 0.18), rgba(145, 158, 176, 0.08));
+  color: #f8fafc;
+  padding: 7px 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.filter-menu--roommates .filter-menu__cancel:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.72);
+}
+
+.filter-menu--roommates .roommate-filters__section {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid rgba(223, 230, 241, 0.34);
+  border-radius: 18px;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 42%, rgba(3, 9, 18, 0.16)),
+    rgba(12, 22, 38, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -20px 38px rgba(0, 0, 0, 0.1),
+    0 10px 22px rgba(0, 0, 0, 0.2);
+}
+
+.filter-menu--roommates .filter-menu__section-title {
+  color: #eef4ff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 0.98rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.filter-menu--roommates .filter-menu__section-title span,
+.filter-menu--roommates .roommate-filters__optional {
+  color: var(--roommate-muted);
+}
+
+.filter-menu--roommates .roommate-filters__looking-grid {
+  gap: 10px;
+}
+
+.filter-menu--roommates .roommate-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 218px;
+  border: 1px solid rgba(231, 237, 246, 0.42);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 26% 8%, rgba(255, 255, 255, 0.24), transparent 28%),
+    linear-gradient(145deg, #26354a 0%, #111d30 48%, #07101d 100%);
+  color: var(--roommate-ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -24px 48px rgba(0, 0, 0, 0.2),
+    0 12px 26px rgba(0, 0, 0, 0.28);
+}
+
+.filter-menu--roommates .roommate-card::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  bottom: -42px;
+  width: 92px;
+  height: 92px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 64%);
+  pointer-events: none;
+}
+
+.filter-menu--roommates .roommate-card.is-selected {
+  border-color: rgba(255, 255, 255, 0.86);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.3), transparent 30%),
+    linear-gradient(145deg, #334159 0%, #172235 46%, #0a1220 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 24px rgba(219, 226, 236, 0.18),
+    0 16px 30px rgba(0, 0, 0, 0.34);
+}
+
+.filter-menu--roommates .roommate-card__illustration {
+  width: 74px;
+  height: 58px;
+  align-items: center;
+  margin-bottom: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.06)),
+    rgba(14, 24, 39, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+.filter-menu--roommates .roommate-card__illustration svg {
+  color: #eef4ff;
+  filter: drop-shadow(0 2px 6px rgba(255, 255, 255, 0.12));
+}
+
+.filter-menu--roommates .roommate-card__illustration svg [stroke] {
+  stroke: currentColor;
+}
+
+.filter-menu--roommates .roommate-card__illustration svg [fill]:not([fill="none"]) {
+  fill: rgba(226, 232, 240, 0.34);
+}
+
+.filter-menu--roommates .roommate-card__title {
+  color: #f8fafc;
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
+}
+
+.filter-menu--roommates .roommate-card__title strong {
+  display: block;
+  color: #ffffff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.05;
+  letter-spacing: 0.035em;
+}
+
+.filter-menu--roommates .roommate-card__subtitle,
+.filter-menu--roommates .roommate-card__control-label,
+.filter-menu--roommates .roommate-filters__hint,
+.filter-menu--roommates .roommate-filters__sub-label,
+.filter-menu--roommates .roommate-filters__field-label {
+  color: var(--roommate-muted);
+}
+
+.filter-menu--roommates .roommate-card__control {
+  border-top-color: rgba(231, 237, 246, 0.26);
+}
+
+.filter-menu--roommates .roommate-filters__field-title {
+  color: #f8fafc;
+  letter-spacing: 0.02em;
+}
+
+.filter-menu--roommates .roommate-money-input,
+.filter-menu--roommates .roommate-text-input,
+.filter-menu--roommates .roommate-month-input,
+.filter-menu--roommates .roommate-segmented,
+.filter-menu--roommates .roommate-option,
+.filter-menu--roommates .roommate-pill,
+.filter-menu--roommates .roommate-amenity {
+  border-color: rgba(229, 236, 246, 0.34);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(8, 17, 31, 0.72);
+  color: #eef4ff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 6px 14px rgba(0, 0, 0, 0.16);
+}
+
+.filter-menu--roommates .roommate-money-input input,
+.filter-menu--roommates .roommate-text-input,
+.filter-menu--roommates .roommate-month-input {
+  color: #ffffff;
+}
+
+.filter-menu--roommates .roommate-money-input span {
+  color: #eef4ff;
+}
+
+.filter-menu--roommates .roommate-text-input::placeholder {
+  color: rgba(226, 232, 240, 0.6);
+}
+
+.filter-menu--roommates .roommate-money-input:focus-within,
+.filter-menu--roommates .roommate-text-input:focus,
+.filter-menu--roommates .roommate-month-input:focus {
+  border-color: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 22px rgba(209, 217, 230, 0.18);
+}
+
+.filter-menu--roommates .roommate-option.is-selected,
+.filter-menu--roommates .roommate-segmented button.is-selected,
+.filter-menu--roommates .roommate-pill.is-selected,
+.filter-menu--roommates .roommate-amenity.is-selected {
+  border-color: rgba(255, 255, 255, 0.78);
+  background:
+    linear-gradient(135deg, #f9fafb 0%, #aeb8c7 52%, #f4f7fb 100%);
+  color: #0a1220;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 0 18px rgba(226, 232, 240, 0.22);
+}
+
+.filter-menu--roommates .roommate-segmented button {
+  border-right-color: rgba(229, 236, 246, 0.28);
+  background: transparent;
+  color: #dbe4f0;
+}
+
+.filter-menu--roommates .roommate-toggle {
+  border-color: rgba(229, 236, 246, 0.38);
+  background: rgba(8, 17, 31, 0.84);
+}
+
+.filter-menu--roommates .roommate-toggle.is-on {
+  background: linear-gradient(135deg, #f9fafb 0%, #aeb8c7 100%);
+}
+
+.filter-menu--roommates .roommate-toggle__knob {
+  background: #ffffff;
+}
+
+.filter-menu--roommates .roommate-toggle-row span,
+.filter-menu--roommates .roommate-budget-range__labels,
+.filter-menu--roommates .roommate-budget-range__values {
+  color: #e7edf7;
+}
+
+.filter-menu--roommates .roommate-budget-range__track::before {
+  background: rgba(226, 232, 240, 0.25);
+}
+
+.filter-menu--roommates .roommate-budget-range__track::after {
+  background: linear-gradient(90deg, #d5dce7, #ffffff, #9da9ba);
+  box-shadow: 0 0 16px rgba(226, 232, 240, 0.32);
+}
+
+.filter-menu--roommates .roommate-budget-range__track input::-webkit-slider-thumb {
+  border-color: #e8edf5;
+  background: radial-gradient(circle at 30% 28%, #ffffff, #9aa6b8 72%);
+}
+
+.filter-menu--roommates .roommate-budget-range__track input::-moz-range-thumb {
+  border-color: #e8edf5;
+  background: radial-gradient(circle at 30% 28%, #ffffff, #9aa6b8 72%);
+}
+
+.filter-menu--roommates .roommate-amenity {
+  min-height: 82px;
+}
+
+.filter-menu--roommates .roommate-pill .filter-menu__characteristic-svg,
+.filter-menu--roommates .roommate-amenity .filter-menu__characteristic-svg {
+  color: #eef4ff;
+}
+
+.filter-menu--roommates .roommate-amenity.is-selected .filter-menu__characteristic-svg,
+.filter-menu--roommates .roommate-pill.is-selected .filter-menu__characteristic-svg {
+  color: #0a1220;
+}
+
+.filter-menu--roommates .roommate-filter-actions {
+  background: linear-gradient(180deg, rgba(8, 17, 31, 0), #0b1424 24%, #0b1424);
+}
+
+.filter-menu--roommates .roommate-filter-actions button,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn {
+  border: 1px solid rgba(229, 236, 246, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.filter-menu--roommates .roommate-filter-actions__apply,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn {
+  background: linear-gradient(135deg, #f8fafc 0%, #aeb8c7 48%, #f4f7fb 100%);
+  color: #07101d;
+}
+
+.filter-menu--roommates .roommate-filter-actions__save {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06));
+  color: #f8fafc;
+}
+
+@media (max-width: 560px) {
+  .filter-menu--roommates .roommate-filters__looking-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-menu--roommates .roommate-card {
+    min-height: 0;
+  }
+
+  .filter-menu--roommates .roommate-amenities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.filter-menu--roommates .filter-menu__cancel,
+.filter-menu--roommates .roommate-option,
+.filter-menu--roommates .roommate-segmented button,
+.filter-menu--roommates .roommate-pill,
+.filter-menu--roommates .roommate-amenity,
+.filter-menu--roommates .roommate-filter-actions button,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-menu--roommates .filter-menu__cancel::before,
+.filter-menu--roommates .roommate-option::before,
+.filter-menu--roommates .roommate-segmented button::before,
+.filter-menu--roommates .roommate-pill::before,
+.filter-menu--roommates .roommate-amenity::before,
+.filter-menu--roommates .roommate-filter-actions button::before,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 42%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.filter-menu--roommates .roommate-option {
+  min-height: 38px;
+  border-radius: 11px;
+  border-color: rgba(236, 242, 250, 0.54);
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.22) 0%, rgba(138, 151, 171, 0.12) 45%, rgba(8, 17, 31, 0.84) 100%);
+  color: #f8fafc;
+  font-weight: 800;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.36);
+}
+
+.filter-menu--roommates .roommate-option.is-selected {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #c9d1dc 36%, #7e8c9f 68%, #f7f9fc 100%);
+  color: #07101d;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.filter-menu--roommates .roommate-segmented {
+  border-color: rgba(236, 242, 250, 0.5);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(15, 25, 42, 0.9)),
+    #0b1424;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.filter-menu--roommates .roommate-segmented button {
+  min-height: 42px;
+  color: #eef4ff;
+  font-weight: 800;
+}
+
+.filter-menu--roommates .roommate-segmented button.is-selected {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #c7cfdb 48%, #edf2f8 100%);
+  color: #07101d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -8px 18px rgba(80, 91, 108, 0.18);
+}
+
+.filter-menu--roommates .roommate-money-input,
+.filter-menu--roommates .roommate-text-input,
+.filter-menu--roommates .roommate-month-input {
+  min-height: 46px;
+  border-color: rgba(238, 244, 255, 0.58);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04) 46%, rgba(0, 0, 0, 0.16)),
+    rgba(7, 16, 29, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -14px 26px rgba(0, 0, 0, 0.14),
+    0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.filter-menu--roommates .roommate-filter-actions button,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn {
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+}
+
+.filter-menu--roommates .roommate-filter-actions__apply,
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates + .mobile-filter-sheet-close-btn {
+  background:
+    radial-gradient(circle at 86% 80%, rgba(255, 255, 255, 0.7), transparent 16%),
+    linear-gradient(135deg, #ffffff 0%, #c5ceda 38%, #758397 64%, #f8fafc 100%);
+  border-color: rgba(255, 255, 255, 0.86);
+}
+
+.filter-menu--roommates .roommate-filter-actions__save {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08)),
+    #152238;
+  border-color: rgba(236, 242, 250, 0.58);
+}
