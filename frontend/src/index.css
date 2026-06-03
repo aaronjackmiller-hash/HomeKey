@@ -1058,6 +1058,36 @@ a {
   color: #12351f;
 }
 
+@media (max-width: 560px) {
+  .roommate-filters__budget-grid,
+  .roommate-filters__two-column,
+  .roommate-filters__habits,
+  .roommate-inline-row {
+    grid-template-columns: 1fr;
+  }
+
+  .roommate-inline-row__control {
+    justify-content: stretch;
+  }
+
+  .roommate-option-group {
+    width: 100%;
+  }
+
+  .roommate-option-group--compact {
+    max-width: none;
+  }
+
+  .roommate-segmented {
+    flex-wrap: wrap;
+  }
+
+  .roommate-segmented button {
+    flex-basis: 50%;
+    min-width: 50%;
+  }
+}
+
 .filter-menu__option-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
