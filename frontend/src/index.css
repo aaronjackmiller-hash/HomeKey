@@ -417,6 +417,8 @@ a {
 
 .premium-header__filters-panel.is-open {
   display: block;
+  max-height: calc(100vh - 150px);
+  overflow: hidden;
 }
 
 .mobile-filter-sheet-backdrop,
@@ -431,19 +433,29 @@ a {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   width: min(90vw, 420px);
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.filter-menu__sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #f5efe2;
+  border-bottom: 3px solid #0f766e;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  margin: -20px -20px 20px;
+  padding: 20px 20px 14px;
 }
 
 .filter-menu__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 2;
   background: #f5efe2;
-  border-bottom: 3px solid #0f766e;
   padding-bottom: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .filter-menu__title {
@@ -526,19 +538,18 @@ a {
 }
 
 .filter-menu__listing-type-section {
-  position: sticky;
-  top: 58px;
-  z-index: 3;
+  position: static;
   background: #f5efe2;
-  border-bottom: 1px solid rgba(45, 90, 39, 0.18);
-  padding-bottom: 14px;
-  margin-bottom: 20px;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 .filter-menu--roommates {
   background: #f9f6ee;
 }
 
+.filter-menu--roommates .filter-menu__sticky-top,
 .filter-menu--roommates .filter-menu__header,
 .filter-menu--roommates .filter-menu__listing-type-section {
   background: #f9f6ee;
@@ -753,7 +764,10 @@ a {
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 600;
+  line-height: 1.15;
   padding: 6px 5px;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .roommate-segmented button:last-child {
@@ -6274,15 +6288,27 @@ legend {
     overscroll-behavior: contain;
   }
 
-  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu__header {
+  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu__sticky-top {
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 4;
     margin: -16px -16px 16px;
-    padding: 16px 16px 10px;
+    padding: 16px 16px 12px;
     background: #f5efe2;
     border-bottom: 3px solid #0f766e;
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  }
+
+  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu--roommates .filter-menu__sticky-top {
+    background: #f9f6ee;
+  }
+
+  .premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu__header {
+    position: static;
+    margin: 0 0 14px;
+    padding: 0;
+    border-bottom: none;
+    box-shadow: none;
   }
 
   .mobile-filter-sheet-close-btn {

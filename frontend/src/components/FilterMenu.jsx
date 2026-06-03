@@ -248,28 +248,30 @@ const FilterMenu = ({
 
   return (
     <div className={`filter-menu ${isRoommatesView ? 'filter-menu--roommates' : ''}`}>
-      <div className="filter-menu__header">
-        <h2 className="filter-menu__title">{t('filterMenu.title')}</h2>
-        <button type="button" className="filter-menu__cancel" onClick={handleClearAll}>
-          {t('filterMenu.clearAll')}
-        </button>
-      </div>
-
-      <section className="filter-menu__section filter-menu__listing-type-section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
-        <div className="filter-menu__type-row filter-menu__listing-type-row">
-          {LISTING_TYPE_OPTIONS.map((typeOption) => (
-            <button
-              key={typeOption}
-              type="button"
-              className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
-              onClick={() => onListingTypeChange(typeOption)}
-            >
-              {t(`filterMenu.${typeOption}`)}
-            </button>
-          ))}
+      <div className="filter-menu__sticky-top">
+        <div className="filter-menu__header">
+          <h2 className="filter-menu__title">{t('filterMenu.title')}</h2>
+          <button type="button" className="filter-menu__cancel" onClick={handleClearAll}>
+            {t('filterMenu.clearAll')}
+          </button>
         </div>
-      </section>
+
+        <section className="filter-menu__section filter-menu__listing-type-section">
+          <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+          <div className="filter-menu__type-row filter-menu__listing-type-row">
+            {LISTING_TYPE_OPTIONS.map((typeOption) => (
+              <button
+                key={typeOption}
+                type="button"
+                className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
+                onClick={() => onListingTypeChange(typeOption)}
+              >
+                {t(`filterMenu.${typeOption}`)}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
 
       {isRoommatesView ? (
         <RoommateFilters
