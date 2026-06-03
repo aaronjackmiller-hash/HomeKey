@@ -507,6 +507,12 @@ a {
 .filter-menu__listing-type-row .filter-menu__chip {
   justify-self: stretch;
   width: 100%;
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(0.76rem, 2.8vw, 0.9rem);
 }
 
 .filter-menu__option-grid {
