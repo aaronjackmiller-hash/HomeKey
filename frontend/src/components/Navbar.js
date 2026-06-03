@@ -1327,7 +1327,6 @@ const Navbar = () => {
                 >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
-                    onApplyFilters={() => setFiltersExpanded(false)}
                     listingType={listingType}
                     roomOptions={roomOptions}
                     bathOptions={bathOptions}
