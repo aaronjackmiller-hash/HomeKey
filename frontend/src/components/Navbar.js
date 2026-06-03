@@ -902,6 +902,10 @@ const Navbar = () => {
   const handleFilterMenuListingTypeChange = (nextListingType) => {
     const normalizedListingType = sanitizeListingType(nextListingType);
     setListingType(normalizedListingType);
+    if (normalizedListingType === 'roommates') {
+      setPropertyTypeExpanded(false);
+      setFiltersExpanded(true);
+    }
     applyFilterMenuSearch({ nextListingType: normalizedListingType });
   };
 
