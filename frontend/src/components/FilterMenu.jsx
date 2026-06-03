@@ -10,6 +10,8 @@ const FEATURE_ITEMS = [
   { id: 'furnished', labelKey: 'filterMenu.furnished', icon: 'FR' },
 ];
 
+const LISTING_TYPE_OPTIONS = ['rental', 'sale', 'roommates'];
+
 const FilterMenu = ({
   onClearAllFilters,
   listingType,
@@ -17,21 +19,15 @@ const FilterMenu = ({
   bathOptions,
   rooms,
   baths,
-  minPrice,
-  maxPrice,
   propertyCategory,
   selectedFeatures,
   onListingTypeChange,
   onRoomsChange,
   onBathsChange,
-  onMinPriceChange,
-  onMaxPriceChange,
   onTogglePropertyCategory,
   onToggleFeature,
 }) => {
   const { t } = useLanguage();
-  const normalizedMin = Number(minPrice);
-  const normalizedMax = Number(maxPrice);
   const selectedFeatureSet = new Set(selectedFeatures || []);
   return (
     <div className="filter-menu">
@@ -43,54 +39,37 @@ const FilterMenu = ({
       </div>
 
       <section className="filter-menu__section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.priceRange')}</h3>
-        <div className="filter-menu__price-grid">
-          <div className="filter-menu__price-field">
-            <label htmlFor="filter-menu-min-price">{t('filterMenu.minPrice')}</label>
-            <input
-              id="filter-menu-min-price"
-              type="number"
-              placeholder={t('filterMenu.noMin')}
-              value={normalizedMin > 0 ? normalizedMin : ''}
-              onChange={(event) => onMinPriceChange(event.target.value)}
-            />
-          </div>
-          <div className="filter-menu__price-field">
-            <label htmlFor="filter-menu-max-price">{t('filterMenu.maxPrice')}</label>
-            <input
-              id="filter-menu-max-price"
-              type="number"
-              placeholder={t('filterMenu.noMax')}
-              value={normalizedMax > 0 ? normalizedMax : ''}
-              onChange={(event) => onMaxPriceChange(event.target.value)}
-            />
-          </div>
+        <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+        <div className="filter-menu__type-row filter-menu__listing-type-row">
+          {LISTING_TYPE_OPTIONS.map((typeOption) => (
+            <button
+              key={typeOption}
+              type="button"
+              className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
+              onClick={() => onListingTypeChange(typeOption)}
+            >
+              {t(`filterMenu.${typeOption}`)}
+            </button>
+          ))}
         </div>
       </section>
 
       <section className="filter-menu__section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+        <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
         <div className="filter-menu__type-row">
           <button
             type="button"
-            className={`filter-menu__chip ${listingType === 'all' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('all')}
+            className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`}
+            onClick={() => onTogglePropertyCategory('apartments')}
           >
-            {t('filterMenu.allListings')}
+            {t('filterMenu.apartments')}
           </button>
           <button
             type="button"
-            className={`filter-menu__chip ${listingType === 'sale' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('sale')}
+            className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`}
+            onClick={() => onTogglePropertyCategory('houses')}
           >
-            {t('filterMenu.sale')}
-          </button>
-          <button
-            type="button"
-            className={`filter-menu__chip ${listingType === 'rental' ? 'is-selected' : ''}`}
-            onClick={() => onListingTypeChange('rental')}
-          >
-            {t('filterMenu.rental')}
+            {t('filterMenu.houses')}
           </button>
         </div>
       </section>
@@ -128,27 +107,18 @@ const FilterMenu = ({
       </section>
 
       <section className="filter-menu__section">
-        <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
-        <div className="filter-menu__type-row">
-          <button
-            type="button"
-            className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`}
-            onClick={() => onTogglePropertyCategory('apartments')}
-          >
-            {t('filterMenu.apartments')}
-          </button>
-          <button
-            type="button"
-            className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`}
-            onClick={() => onTogglePropertyCategory('houses')}
-          >
-            {t('filterMenu.houses')}
-          </button>
-        </div>
-      </section>
-
-      <section className="filter-menu__section">
         <h3 className="filter-menu__section-title">{t('filterMenu.propertyCharacteristics')}</h3>
+        <button
+          type="button"
+          className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`}
+          onClick={() => onToggleFeature('mamad')}
+        >
+          <span className="filter-menu__mamad-icon" aria-hidden="true">🛡</span>
+          <div className="filter-menu__mamad-copy">
+            <span>{t('filterMenu.mamad')}</span>
+            <span>({t('filterMenu.securityRoom')})</span>
+          </div>
+        </button>
         <div className="filter-menu__features-grid">
           {FEATURE_ITEMS.map((feature) => (
             <FeatureCard
@@ -161,18 +131,6 @@ const FilterMenu = ({
           ))}
         </div>
       </section>
-
-      <button
-        type="button"
-        className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`}
-        onClick={() => onToggleFeature('mamad')}
-      >
-        <span className="filter-menu__mamad-icon" aria-hidden="true">🛡</span>
-        <div className="filter-menu__mamad-copy">
-          <span>{t('filterMenu.mamad')}</span>
-          <span>({t('filterMenu.securityRoom')})</span>
-        </div>
-      </button>
     </div>
   );
 };
@@ -191,15 +149,11 @@ FilterMenu.defaultProps = {
   bathOptions: [],
   rooms: '',
   baths: '',
-  minPrice: 0,
-  maxPrice: 20000,
   propertyCategory: '',
   selectedFeatures: [],
   onListingTypeChange: () => {},
   onRoomsChange: () => {},
   onBathsChange: () => {},
-  onMinPriceChange: () => {},
-  onMaxPriceChange: () => {},
   onTogglePropertyCategory: () => {},
   onToggleFeature: () => {},
 };
