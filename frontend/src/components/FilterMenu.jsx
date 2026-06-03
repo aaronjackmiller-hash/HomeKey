@@ -20,15 +20,9 @@ const DETAIL_ITEMS = [
 
 const LISTING_TYPE_OPTIONS = ['rental', 'sale', 'roommates'];
 const ROOMMATE_COUNT_OPTIONS = ['1', '2', '3+'];
-const ROOMMATE_UNIT_OPTIONS = ['Any', '1', '2', '3+'];
 const ROOMMATE_GENDER_OPTIONS = ['Male', 'Female', 'Either', 'Non-Binary/Other'];
 const ROOMMATE_SMOKING_OPTIONS = ['Smoker Ok', 'Non-Smoker Only'];
-const ROOMMATE_LIFESTYLE_ITEMS = [
-  { id: 'Quiet', icon: 'volume-off' },
-  { id: 'Social', icon: 'users' },
-  { id: 'WFH', icon: 'briefcase' },
-  { id: 'Late Sleeper', icon: 'moon' },
-];
+const ROOMMATE_FLEXIBILITY_OPTIONS = ['Strict', '±3 days', '±7 days'];
 const ROOMMATE_AMENITY_ITEMS = [
   { id: 'Mamad', icon: 'shield' },
   { id: 'Elevator', icon: 'elevator' },
@@ -43,6 +37,10 @@ const ROOMMATE_AMENITY_ITEMS = [
   { id: 'Laundry Facilities', icon: 'laundry' },
   { id: 'In-Unit Washer & Dryer', icon: 'washer' },
 ];
+const FILTER_PRICE_MIN = 0;
+const FILTER_PRICE_MAX = 20000;
+const FILTER_PRICE_STEP = 500;
+const DEFAULT_MOVE_IN_MONTH = '2026-07';
 
 const CHARACTERISTIC_ICONS = {
   'volume-off': (
@@ -192,56 +190,52 @@ const FilterMenu = ({
   bathOptions,
   rooms,
   baths,
+  minPrice,
+  maxPrice,
   propertyCategory,
   selectedFeatures,
   onListingTypeChange,
   onRoomsChange,
   onBathsChange,
+  onMinPriceChange,
+  onMaxPriceChange,
   onTogglePropertyCategory,
   onToggleFeature,
+  onApplyFilters,
+  onSaveFilters,
 }) => {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const selectedFeatureSet = new Set(selectedFeatures || []);
   const isRoommatesView = listingType === 'roommates';
-  const [lookingFor, setLookingFor] = useState('roommate');
+  const [lookingFor, setLookingFor] = useState('room');
+  const [bedroomsNeeded, setBedroomsNeeded] = useState('1');
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
-  const [rentAmount, setRentAmount] = useState('3500');
+  const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_MONTH);
+  const [flexibility, setFlexibility] = useState('Strict');
   const [totalRoommates, setTotalRoommates] = useState('1');
-  const [bedrooms, setBedrooms] = useState('Any');
-  const [bathrooms, setBathrooms] = useState('Any');
+  const [locationPreference, setLocationPreference] = useState('');
   const [gender, setGender] = useState('Male');
   const [smoking, setSmoking] = useState('Smoker Ok');
   const [kosher, setKosher] = useState(false);
-  const [lifestyle, setLifestyle] = useState(['Quiet']);
   const [amenities, setAmenities] = useState(['Mamad']);
-  const [phoneNumber, setPhoneNumber] = useState('');
 
   const resetRoommateFilters = () => {
-    setLookingFor('roommate');
+    setLookingFor('room');
+    setBedroomsNeeded('1');
     setRoommatesNeeded('1');
-    setRentAmount('3500');
+    setMoveInDate(DEFAULT_MOVE_IN_MONTH);
+    setFlexibility('Strict');
     setTotalRoommates('1');
-    setBedrooms('Any');
-    setBathrooms('Any');
+    setLocationPreference('');
     setGender('Male');
     setSmoking('Smoker Ok');
     setKosher(false);
-    setLifestyle(['Quiet']);
     setAmenities(['Mamad']);
-    setPhoneNumber('');
   };
 
   const handleClearAll = () => {
     resetRoommateFilters();
     onClearAllFilters();
-  };
-
-  const toggleLifestyle = (item) => {
-    setLifestyle((currentItems) => (
-      currentItems.includes(item)
-        ? currentItems.filter((currentItem) => currentItem !== item)
-        : [...currentItems, item]
-    ));
   };
 
   const toggleAmenity = (item) => {
@@ -262,49 +256,56 @@ const FilterMenu = ({
           </button>
         </div>
 
-        <section className="filter-menu__section filter-menu__listing-type-section">
-          <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
-          <div className="filter-menu__type-row filter-menu__listing-type-row">
-            {LISTING_TYPE_OPTIONS.map((typeOption) => (
-              <button
-                key={typeOption}
-                type="button"
-                className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
-                onClick={() => onListingTypeChange(typeOption)}
-              >
-                {t(`filterMenu.${typeOption}`)}
-              </button>
-            ))}
-          </div>
-        </section>
+        {!isRoommatesView && (
+          <section className="filter-menu__section filter-menu__listing-type-section">
+            <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+            <div className="filter-menu__type-row filter-menu__listing-type-row">
+              {LISTING_TYPE_OPTIONS.map((typeOption) => (
+                <button
+                  key={typeOption}
+                  type="button"
+                  className={`filter-menu__chip ${listingType === typeOption ? 'is-selected' : ''}`}
+                  onClick={() => onListingTypeChange(typeOption)}
+                >
+                  {t(`filterMenu.${typeOption}`)}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {isRoommatesView ? (
         <RoommateFilters
           lookingFor={lookingFor}
+          bedroomsNeeded={bedroomsNeeded}
           roommatesNeeded={roommatesNeeded}
-          rentAmount={rentAmount}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          locale={locale}
+          moveInDate={moveInDate}
+          flexibility={flexibility}
           totalRoommates={totalRoommates}
-          bedrooms={bedrooms}
-          bathrooms={bathrooms}
+          locationPreference={locationPreference}
           gender={gender}
           smoking={smoking}
           kosher={kosher}
-          lifestyle={lifestyle}
           amenities={amenities}
-          phoneNumber={phoneNumber}
           onLookingForChange={setLookingFor}
+          onBedroomsNeededChange={setBedroomsNeeded}
           onRoommatesNeededChange={setRoommatesNeeded}
-          onRentAmountChange={setRentAmount}
+          onMinPriceChange={onMinPriceChange}
+          onMaxPriceChange={onMaxPriceChange}
+          onMoveInDateChange={setMoveInDate}
+          onFlexibilityChange={setFlexibility}
           onTotalRoommatesChange={setTotalRoommates}
-          onBedroomsChange={setBedrooms}
-          onBathroomsChange={setBathrooms}
+          onLocationPreferenceChange={setLocationPreference}
           onGenderChange={setGender}
           onSmokingChange={setSmoking}
           onKosherChange={setKosher}
-          onLifestyleToggle={toggleLifestyle}
           onAmenityToggle={toggleAmenity}
-          onPhoneNumberChange={setPhoneNumber}
+          onApplyFilters={onApplyFilters}
+          onSaveFilters={onSaveFilters}
         />
       ) : (
         <>
@@ -410,34 +411,83 @@ const FilterMenu = ({
 
 const RoommateFilters = ({
   lookingFor,
+  bedroomsNeeded,
   roommatesNeeded,
-  rentAmount,
+  minPrice,
+  maxPrice,
+  locale,
+  moveInDate,
+  flexibility,
   totalRoommates,
-  bedrooms,
-  bathrooms,
+  locationPreference,
   gender,
   smoking,
   kosher,
-  lifestyle,
   amenities,
-  phoneNumber,
   onLookingForChange,
+  onBedroomsNeededChange,
   onRoommatesNeededChange,
-  onRentAmountChange,
+  onMinPriceChange,
+  onMaxPriceChange,
+  onMoveInDateChange,
+  onFlexibilityChange,
   onTotalRoommatesChange,
-  onBedroomsChange,
-  onBathroomsChange,
+  onLocationPreferenceChange,
   onGenderChange,
   onSmokingChange,
   onKosherChange,
-  onLifestyleToggle,
   onAmenityToggle,
-  onPhoneNumberChange,
+  onApplyFilters,
+  onSaveFilters,
 }) => (
   <div className="roommate-filters">
     <section className="filter-menu__section roommate-filters__section">
       <h3 className="filter-menu__section-title">I am looking for:</h3>
       <div className="roommate-filters__looking-grid">
+        <div
+          role="button"
+          tabIndex={0}
+          className={`roommate-card ${lookingFor === 'room' ? 'is-selected' : ''}`}
+          onClick={() => onLookingForChange('room')}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onLookingForChange('room');
+            }
+          }}
+          aria-pressed={lookingFor === 'room'}
+        >
+          <span className="roommate-card__illustration" aria-hidden="true">
+            <svg viewBox="0 0 60 45" focusable="false">
+              <rect x="21" y="8" width="21" height="28" rx="1.5" fill="#f7fafc" stroke="#4A5568" strokeWidth="1.4" />
+              <path d="M27 36V20h11v16" fill="#f3d29b" stroke="#4A5568" strokeWidth="1.2" />
+              <path d="M8 37h43" stroke="#4A5568" strokeWidth="1.2" />
+              <path d="M15 37c0-7 5-10 5-10s5 3 5 10" fill="#7bbf8a" opacity="0.85" />
+              <path d="M12 30c4 0 7 3 8 7" stroke="#2d5a27" strokeWidth="1.4" fill="none" />
+              <path d="M24 29c-4 0-7 3-8 8" stroke="#2d5a27" strokeWidth="1.4" fill="none" />
+            </svg>
+          </span>
+          <span className="roommate-card__title">Looking for a <strong>ROOM</strong></span>
+          <span className="roommate-card__subtitle">(I need an apartment)</span>
+          <span
+            className="roommate-card__control"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <span className="roommate-card__control-label">Number of bedrooms needed:</span>
+            <OptionButtonGroup
+              options={ROOMMATE_COUNT_OPTIONS}
+              selectedValue={bedroomsNeeded}
+              onChange={(nextValue) => {
+                onLookingForChange('room');
+                onBedroomsNeededChange(nextValue);
+              }}
+              compact
+              ariaLabel="Number of bedrooms needed"
+            />
+          </span>
+        </div>
+
         <div
           role="button"
           tabIndex={0}
@@ -453,10 +503,10 @@ const RoommateFilters = ({
         >
           <span className="roommate-card__illustration" aria-hidden="true">
             <svg viewBox="0 0 60 45" focusable="false">
-              <circle cx="22" cy="16" r="8" fill="#4A5568" opacity="0.3" />
-              <path d="M10 40 C10 30, 34 30, 34 40" fill="#2D5A27" opacity="0.4" />
-              <circle cx="38" cy="18" r="7" fill="#4A5568" opacity="0.4" />
-              <path d="M26 40 C26 32, 50 32, 50 40" fill="#4A5568" opacity="0.2" />
+              <circle cx="22" cy="15" r="7" fill="#4A5568" opacity="0.34" />
+              <path d="M11 40 C11 30, 33 30, 33 40" fill="#2D5A27" opacity="0.42" />
+              <circle cx="39" cy="16" r="7" fill="#4A5568" opacity="0.46" />
+              <path d="M28 40 C28 31, 50 31, 50 40" fill="#4A5568" opacity="0.24" />
             </svg>
           </span>
           <span className="roommate-card__title">Looking for a <strong>ROOMMATE</strong></span>
@@ -470,49 +520,12 @@ const RoommateFilters = ({
             <OptionButtonGroup
               options={ROOMMATE_COUNT_OPTIONS}
               selectedValue={roommatesNeeded}
-              onChange={onRoommatesNeededChange}
+              onChange={(nextValue) => {
+                onLookingForChange('roommate');
+                onRoommatesNeededChange(nextValue);
+              }}
               compact
               ariaLabel="Number of roommates needed"
-            />
-          </span>
-        </div>
-
-        <div
-          role="button"
-          tabIndex={0}
-          className={`roommate-card ${lookingFor === 'room' ? 'is-selected' : ''}`}
-          onClick={() => onLookingForChange('room')}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onLookingForChange('room');
-            }
-          }}
-          aria-pressed={lookingFor === 'room'}
-        >
-          <span className="roommate-card__illustration" aria-hidden="true">
-            <svg viewBox="0 0 45 45" focusable="false">
-              <rect x="10" y="5" width="25" height="35" rx="1" stroke="#4A5568" strokeWidth="1.5" fill="none" />
-              <line x1="22" y1="5" x2="22" y2="40" stroke="#4A5568" strokeWidth="1.5" />
-              <circle cx="19" cy="22" r="1" fill="#4A5568" />
-              <circle cx="25" cy="22" r="1" fill="#4A5568" />
-            </svg>
-          </span>
-          <span className="roommate-card__title">Looking for a <strong>ROOM</strong></span>
-          <span className="roommate-card__subtitle">(I need an apartment)</span>
-          <span
-            className="roommate-card__control"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <span className="roommate-card__control-label">Number of roommates needed:</span>
-            <OptionButtonGroup
-              options={ROOMMATE_COUNT_OPTIONS}
-              selectedValue=""
-              onChange={() => {}}
-              compact
-              disabled
-              ariaLabel="Number of roommates needed is unavailable when looking for a room"
             />
           </span>
         </div>
@@ -521,18 +534,31 @@ const RoommateFilters = ({
 
     <section className="filter-menu__section roommate-filters__section">
       <h3 className="filter-menu__section-title">Budget & Availability</h3>
-      <p className="roommate-filters__field-title">Total Monthly Rent</p>
-      <label className="roommate-filters__field-label" htmlFor="roommate-rent-amount">Monthly Rent Amount</label>
-      <div className="roommate-money-input">
-        <span aria-hidden="true">₪</span>
-        <input
-          id="roommate-rent-amount"
-          type="text"
-          inputMode="numeric"
-          value={rentAmount}
-          onChange={(event) => onRentAmountChange(event.target.value)}
-          required
+      <div className="roommate-filters__budget-grid">
+        <BudgetRange
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          locale={locale}
+          onMinPriceChange={onMinPriceChange}
+          onMaxPriceChange={onMaxPriceChange}
         />
+        <div className="roommate-date-group">
+          <label className="roommate-filters__field-title" htmlFor="roommate-move-in-date">Move-in Date</label>
+          <input
+            id="roommate-move-in-date"
+            type="month"
+            value={moveInDate}
+            onChange={(event) => onMoveInDateChange(event.target.value)}
+            className="roommate-month-input"
+          />
+          <p className="roommate-filters__field-title roommate-filters__field-title--compact">Flexibility:</p>
+          <SegmentedButtonGroup
+            options={ROOMMATE_FLEXIBILITY_OPTIONS}
+            selectedValue={flexibility}
+            onChange={onFlexibilityChange}
+            ariaLabel="Move-in date flexibility"
+          />
+        </div>
       </div>
     </section>
 
@@ -541,36 +567,33 @@ const RoommateFilters = ({
         Apartment Details <span>(applies to the entire unit)</span>
       </h3>
       <div className="roommate-filters__stack">
-        <div>
-          <p className="roommate-filters__field-title">Total Roommates in Apartment</p>
-          <p className="roommate-filters__hint">(including you)</p>
-          <OptionButtonGroup
-            options={ROOMMATE_COUNT_OPTIONS}
-            selectedValue={totalRoommates}
-            onChange={onTotalRoommatesChange}
-            compact
-            ariaLabel="Total roommates in apartment"
-          />
+        <div className="roommate-inline-row">
+          <div>
+            <p className="roommate-filters__field-title">Total Roommates in Apartment</p>
+            <p className="roommate-filters__hint">(incl. you)</p>
+          </div>
+          <div className="roommate-inline-row__control">
+            <OptionButtonGroup
+              options={ROOMMATE_COUNT_OPTIONS}
+              selectedValue={totalRoommates}
+              onChange={onTotalRoommatesChange}
+              compact
+              ariaLabel="Total roommates in apartment"
+            />
+          </div>
         </div>
-        <div className="roommate-filters__two-column">
-          <div>
-            <p className="roommate-filters__field-title">Total Bedrooms in Apartment</p>
-            <OptionButtonGroup
-              options={ROOMMATE_UNIT_OPTIONS}
-              selectedValue={bedrooms}
-              onChange={onBedroomsChange}
-              ariaLabel="Total bedrooms in apartment"
-            />
-          </div>
-          <div>
-            <p className="roommate-filters__field-title">Total Bathrooms in Apartment</p>
-            <OptionButtonGroup
-              options={ROOMMATE_UNIT_OPTIONS}
-              selectedValue={bathrooms}
-              onChange={onBathroomsChange}
-              ariaLabel="Total bathrooms in apartment"
-            />
-          </div>
+        <div>
+          <label className="roommate-filters__field-title" htmlFor="roommate-location-preference">
+            Location Preference <span>(e.g., Neighborhood, Landmark)</span>
+          </label>
+          <input
+            id="roommate-location-preference"
+            type="text"
+            value={locationPreference}
+            onChange={(event) => onLocationPreferenceChange(event.target.value)}
+            placeholder="Location Landmark"
+            className="roommate-text-input"
+          />
         </div>
       </div>
     </section>
@@ -618,33 +641,11 @@ const RoommateFilters = ({
             </div>
           </div>
         </div>
-        <div>
-          <p className="roommate-filters__field-title">
-            Lifestyle Match <span className="roommate-filters__optional">(optional section)</span>
-          </p>
-          <div className="roommate-pill-grid">
-            {ROOMMATE_LIFESTYLE_ITEMS.map((item) => {
-              const isSelected = lifestyle.includes(item.id);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`roommate-pill ${isSelected ? 'is-selected' : ''}`}
-                  onClick={() => onLifestyleToggle(item.id)}
-                  aria-pressed={isSelected}
-                >
-                  <CharacteristicIcon name={item.icon} />
-                  <span>{item.id}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </section>
 
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">Property Amenities</h3>
+      <h3 className="filter-menu__section-title">Property Amenities (New)</h3>
       <div className="roommate-amenities-grid" aria-label="Property amenities">
         {ROOMMATE_AMENITY_ITEMS.map((amenity) => {
           const isSelected = amenities.includes(amenity.id);
@@ -664,23 +665,86 @@ const RoommateFilters = ({
       </div>
     </section>
 
-    <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">
-        Contact Information <span>(For Person Looking For Roommate)</span>
-      </h3>
-      <label className="roommate-filters__field-title" htmlFor="roommate-phone-number">Phone Number</label>
-      <input
-        id="roommate-phone-number"
-        type="tel"
-        value={phoneNumber}
-        onChange={(event) => onPhoneNumberChange(event.target.value)}
-        placeholder="[+972 5X-XXXXXXX]"
-        className="roommate-text-input"
-        required
-      />
-    </section>
+    <div className="roommate-filter-actions">
+      <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
+        Apply Filters
+      </button>
+      <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
+        Save Filters
+      </button>
+    </div>
   </div>
 );
+
+const clampFilterPriceValue = (value) => {
+  const asNumber = Number(value);
+  if (Number.isNaN(asNumber)) return FILTER_PRICE_MIN;
+  return Math.min(FILTER_PRICE_MAX, Math.max(FILTER_PRICE_MIN, asNumber));
+};
+
+const formatFilterPriceLabel = (value, isUpper = false, locale = 'en-US') => {
+  const normalizedValue = clampFilterPriceValue(value);
+  const formattedValue = normalizedValue.toLocaleString(locale);
+  return isUpper && normalizedValue >= FILTER_PRICE_MAX ? `₪${formattedValue}+` : `₪${formattedValue}`;
+};
+
+const BudgetRange = ({ minPrice, maxPrice, locale, onMinPriceChange, onMaxPriceChange }) => {
+  const normalizedMin = clampFilterPriceValue(minPrice);
+  const normalizedMax = Math.max(normalizedMin + FILTER_PRICE_STEP, clampFilterPriceValue(maxPrice));
+  const boundedMax = Math.min(FILTER_PRICE_MAX, normalizedMax);
+  const minPercent = ((normalizedMin - FILTER_PRICE_MIN) / (FILTER_PRICE_MAX - FILTER_PRICE_MIN)) * 100;
+  const maxPercent = ((boundedMax - FILTER_PRICE_MIN) / (FILTER_PRICE_MAX - FILTER_PRICE_MIN)) * 100;
+
+  const handleMinChange = (event) => {
+    const nextValue = Math.min(clampFilterPriceValue(event.target.value), boundedMax - FILTER_PRICE_STEP);
+    onMinPriceChange(String(nextValue));
+  };
+
+  const handleMaxChange = (event) => {
+    const nextValue = Math.max(clampFilterPriceValue(event.target.value), normalizedMin + FILTER_PRICE_STEP);
+    onMaxPriceChange(String(nextValue));
+  };
+
+  return (
+    <div className="roommate-budget-range">
+      <p className="roommate-filters__field-title">Total Monthly Rent</p>
+      <div className="roommate-budget-range__labels" aria-hidden="true">
+        <span>Min</span>
+        <span>Max</span>
+      </div>
+      <div
+        className="roommate-budget-range__track"
+        style={{
+          '--roommate-budget-min': `${minPercent}%`,
+          '--roommate-budget-max': `${maxPercent}%`,
+        }}
+      >
+        <input
+          type="range"
+          min={FILTER_PRICE_MIN}
+          max={FILTER_PRICE_MAX}
+          step={FILTER_PRICE_STEP}
+          value={normalizedMin}
+          onChange={handleMinChange}
+          aria-label="Minimum total monthly rent"
+        />
+        <input
+          type="range"
+          min={FILTER_PRICE_MIN}
+          max={FILTER_PRICE_MAX}
+          step={FILTER_PRICE_STEP}
+          value={boundedMax}
+          onChange={handleMaxChange}
+          aria-label="Maximum total monthly rent"
+        />
+      </div>
+      <div className="roommate-budget-range__values" aria-live="polite">
+        <span>{formatFilterPriceLabel(normalizedMin, false, locale)}</span>
+        <span>{formatFilterPriceLabel(boundedMax, true, locale)}</span>
+      </div>
+    </div>
+  );
+};
 
 const OptionButtonGroup = ({ options, selectedValue, onChange, disabled, compact, ariaLabel }) => (
   <div className={`roommate-option-group ${compact ? 'roommate-option-group--compact' : ''}`} aria-label={ariaLabel}>
@@ -737,13 +801,19 @@ FilterMenu.defaultProps = {
   bathOptions: [],
   rooms: '',
   baths: '',
+  minPrice: FILTER_PRICE_MIN,
+  maxPrice: FILTER_PRICE_MAX,
   propertyCategory: '',
   selectedFeatures: [],
   onListingTypeChange: () => {},
   onRoomsChange: () => {},
   onBathsChange: () => {},
+  onMinPriceChange: () => {},
+  onMaxPriceChange: () => {},
   onTogglePropertyCategory: () => {},
   onToggleFeature: () => {},
+  onApplyFilters: () => {},
+  onSaveFilters: () => {},
 };
 
 export default FilterMenu;

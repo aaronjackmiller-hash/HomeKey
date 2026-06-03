@@ -948,6 +948,18 @@ const Navbar = () => {
     });
   };
 
+  const handleApplyFilterMenu = () => {
+    setFiltersExpanded(false);
+  };
+
+  const handleSaveFilterMenu = () => {
+    setIsSavingSearch(true);
+    setSaveSearchStatus('Saving...');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('homekey:save-current-search'));
+    }
+  };
+
   const hasCustomPrice = minPriceInput > PRICE_SLIDER_MIN || maxPriceInput < PRICE_SLIDER_MAX;
   const roomOptions = useMemo(() => ROOM_OPTION_VALUES.map((value) => {
     if (value === '') return { value: '', label: t('common.any') };
@@ -1343,6 +1355,8 @@ const Navbar = () => {
                     onMaxPriceChange={handleFilterMenuMaxPriceChange}
                     onTogglePropertyCategory={handleTogglePropertyCategory}
                     onToggleFeature={handleToggleFeatureFilter}
+                    onApplyFilters={handleApplyFilterMenu}
+                    onSaveFilters={handleSaveFilterMenu}
                   />
                   <button
                     type="button"
