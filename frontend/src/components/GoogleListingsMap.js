@@ -1679,19 +1679,21 @@ const GoogleListingsMap = ({
 
   return (
     <div className="google-listings-map-shell">
-      <div
-        className="google-listings-map-overlay-info"
-        style={overlayCardStyle}
-      >
-        <MapAreaControls
-          drawMode={drawMode}
-          onToggleDrawMode={toggleDrawMode}
-          onClearArea={clearCircleFilter}
-          clearDisabled={!drawMode && circleRadiusMeters <= 0}
-          drawLabel={t('map.drawSearchArea')}
-          clearLabel={t('map.clearArea')}
-          toolbarLabel={t('map.areaControlsAriaLabel')}
-        />
+      <div className="google-listings-map-controls-layer">
+        <div
+          className="google-listings-map-overlay-info"
+          style={overlayCardStyle}
+        >
+          <MapAreaControls
+            drawMode={drawMode}
+            onToggleDrawMode={toggleDrawMode}
+            onClearArea={clearCircleFilter}
+            clearDisabled={!drawMode && circleRadiusMeters <= 0}
+            drawLabel={t('map.drawSearchArea')}
+            clearLabel={t('map.clearArea')}
+            toolbarLabel={t('map.areaControlsAriaLabel')}
+          />
+        </div>
       </div>
       <div className="google-listings-map-canvas-wrap">
         <div
