@@ -245,6 +245,18 @@ const CHARACTERISTIC_ICONS = {
       <path d="M12 18v3" />
     </>
   ),
+  calendar: (
+    <>
+      <path d="M7 3.5V6" />
+      <path d="M17 3.5V6" />
+      <path d="M5 8h14" />
+      <path d="M6 5h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+      <path d="M8 11h2" />
+      <path d="M12 11h2" />
+      <path d="M8 15h2" />
+      <path d="M12 15h2" />
+    </>
+  ),
 };
 
 const FilterMenu = ({
@@ -736,13 +748,21 @@ const RoomSeekerFilterSections = ({
         />
         <div className="roommate-date-group">
           <label className="roommate-filters__field-title" htmlFor="roommate-move-in-date">Move-in Date</label>
-          <input
-            id="roommate-move-in-date"
-            type="month"
-            value={moveInDate}
-            onChange={(event) => onMoveInDateChange(event.target.value)}
-            className="roommate-month-input"
-          />
+          <div className="roommate-month-field">
+            <span className="roommate-month-field__icon" aria-hidden="true">
+              <CharacteristicIcon name="calendar" />
+            </span>
+            <input
+              id="roommate-move-in-date"
+              type="month"
+              value={moveInDate}
+              onChange={(event) => onMoveInDateChange(event.target.value)}
+              className="roommate-month-input"
+            />
+            <span className="roommate-month-field__icon" aria-hidden="true">
+              <CharacteristicIcon name="calendar" />
+            </span>
+          </div>
           <p className="roommate-filters__field-title roommate-filters__field-title--compact">Flexibility:</p>
           <SegmentedButtonGroup
             options={ROOMMATE_FLEXIBILITY_OPTIONS}
