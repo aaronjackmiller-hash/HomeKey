@@ -451,6 +451,7 @@ const Navbar = () => {
   const propertyTypeRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
+  const headerRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
@@ -507,6 +508,41 @@ const Navbar = () => {
       }
       voiceRecognitionRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !headerRef.current) {
+      return undefined;
+    }
+    const headerElement = headerRef.current;
+    const rootElement = document.documentElement;
+    const syncHeaderHeight = () => {
+      rootElement.style.setProperty(
+        '--hk-sticky-header-height',
+        `${Math.ceil(headerElement.getBoundingClientRect().height)}px`
+      );
+    };
+    syncHeaderHeight();
+
+    const ResizeObserverConstructor = window.ResizeObserver;
+    let resizeObserver = null;
+    if (typeof ResizeObserverConstructor === 'function') {
+      resizeObserver = new ResizeObserverConstructor(syncHeaderHeight);
+      resizeObserver.observe(headerElement);
+    } else {
+      window.addEventListener('resize', syncHeaderHeight);
+    }
+    window.addEventListener('orientationchange', syncHeaderHeight);
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener('resize', syncHeaderHeight);
+      }
+      window.removeEventListener('orientationchange', syncHeaderHeight);
+      rootElement.style.removeProperty('--hk-sticky-header-height');
+    };
   }, []);
 
   useEffect(() => {
@@ -1053,7 +1089,7 @@ const Navbar = () => {
     : (listingType !== 'all' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
 
   return (
-    <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
+    <nav ref={headerRef} className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
       <div className="premium-header__inner">
         <div className="premium-header__brand-cell">
           <Link

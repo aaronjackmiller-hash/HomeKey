@@ -14,6 +14,7 @@
   --hk-radius-container: 12px;
   --hk-heart-red: #FF0000;
   --hk-heart-border: #000000;
+  --hk-sticky-header-height: 74px;
 }
 
 body {
@@ -5255,7 +5256,7 @@ legend {
   border-radius: var(--hk-radius-container);
   overflow: hidden;
   background: var(--hk-brand-cream);
-  min-height: calc(100vh - 114px);
+  min-height: calc(100vh - var(--hk-sticky-header-height));
 }
 
 .minimalist-scrollbar {
@@ -5283,7 +5284,7 @@ legend {
 .desktop-discovery-list-column {
   grid-area: list;
   min-width: 0;
-  max-height: calc(100vh - 114px);
+  max-height: calc(100vh - var(--hk-sticky-header-height));
   overflow-y: auto;
   padding: 8px 10px 12px;
   background: var(--hk-brand-cream);
@@ -5297,9 +5298,9 @@ legend {
 .desktop-discovery-map-column {
   grid-area: map;
   min-width: 0;
-  height: calc(100vh - 114px);
+  height: calc(100vh - var(--hk-sticky-header-height));
   position: sticky;
-  top: 74px;
+  top: var(--hk-sticky-header-height);
 }
 
 .property-list-page .container,
@@ -5507,13 +5508,21 @@ legend {
   background: #f5efe2;
 }
 
-.property-list-page .google-listings-map-overlay-info {
+.property-list-page .google-listings-map-controls-layer {
   position: absolute;
   top: 10px;
+  left: 10px;
   right: 10px;
   z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.property-list-page .google-listings-map-overlay-info {
+  position: relative;
   width: fit-content;
-  max-width: calc(100% - 20px);
+  max-width: 100%;
   border: 1px solid rgba(30, 41, 59, 0.9) !important;
   outline: 1px solid rgba(30, 41, 59, 0.9);
   outline-offset: -1px;
@@ -5523,6 +5532,7 @@ legend {
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .property-list-page .google-listings-map-header h2 {
