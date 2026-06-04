@@ -8772,3 +8772,71 @@ body .filter-menu--roommates.filter-menu--room-wanted .roommate-filter-actions .
   border-color: #a8c4a8 !important;
   color: #173d31 !important;
 }
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-date-group .roommate-segmented {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  width: 100% !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-date-group .roommate-segmented button {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 0 1 auto !important;
+  flex-basis: auto !important;
+  min-height: 22px !important;
+  border: 1px solid #c8c5bf !important;
+  border-radius: 5px !important;
+  background: #ffffff !important;
+  color: #242424 !important;
+  font-size: 0.6rem !important;
+  font-weight: 600 !important;
+  padding: 3px 4px !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-date-group .roommate-segmented button.is-selected {
+  background: #dcebdc !important;
+  border-color: #97b39b !important;
+  color: #173d31 !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row {
+  position: relative !important;
+  display: block !important;
+  min-height: 34px !important;
+  padding-right: 156px !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row > div:first-child {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row__control {
+  position: absolute !important;
+  right: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  width: 146px !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row__control .roommate-option-group {
+  width: 146px !important;
+  max-width: 146px !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+body .filter-menu--roommates.filter-menu--room-wanted .roommate-inline-row__control .roommate-option {
+  min-height: 28px !important;
+  font-size: 0.78rem !important;
+}
