@@ -33,7 +33,7 @@ html[dir="rtl"] .premium-header__brand-image {
 }
 
 html[dir="rtl"] .premium-header__inner {
-  direction: ltr;
+  direction: rtl;
 }
 
 html[dir="rtl"] .premium-header__search-pill {
@@ -1496,29 +1496,29 @@ a {
 }
 
 .premium-header__actions--hebrew {
-  direction: ltr;
+  direction: rtl;
   flex-direction: row;
 }
 
 .premium-header__actions--hebrew .premium-header__actions-utility {
-  order: 1;
-  flex-direction: row-reverse;
+  order: 0;
+  flex-direction: row;
 }
 
 .premium-header__actions--hebrew .premium-header__save-search-btn {
-  order: 2;
+  order: 0;
 }
 
 .premium-header__actions--hebrew .premium-header__likes--action {
-  order: 2;
+  order: 0;
 }
 
 .premium-header__actions--hebrew .premium-header__cta {
-  order: 3;
+  order: 0;
 }
 
 .premium-header__actions--hebrew .premium-header__language-toggle {
-  order: 4;
+  order: 0;
 }
 
 .premium-header__actions-utility {
@@ -7472,5 +7472,68 @@ legend {
     top: 49px;
     max-height: none;
     overflow-y: visible;
+  }
+}
+
+html[dir="rtl"] .premium-header__brand-cell {
+  justify-self: end;
+  padding-right: 28px;
+  padding-left: 0;
+}
+
+html[dir="rtl"] .premium-header__actions-cell {
+  justify-self: start;
+  padding-right: 0;
+  padding-left: 18px;
+}
+
+html[dir="rtl"] .premium-header__search-pill {
+  direction: rtl;
+}
+
+html[dir="rtl"] .premium-header__search-segment--location,
+html[dir="rtl"] .premium-header__price-toggle,
+html[dir="rtl"] .premium-header__rooms-toggle,
+html[dir="rtl"] .premium-header__property-type-toggle,
+html[dir="rtl"] .premium-header__filters-toggle {
+  text-align: right;
+}
+
+html[dir="rtl"] .premium-header__price-panel,
+html[dir="rtl"] .premium-header__rooms-panel,
+html[dir="rtl"] .premium-header__property-type-panel {
+  right: 0;
+  left: auto;
+  direction: rtl;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  html[dir="rtl"] .premium-header__brand-cell {
+    padding-right: 14px;
+    padding-left: 0;
+  }
+
+  html[dir="rtl"] .premium-header__actions-cell {
+    padding-right: 0;
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  html[dir="rtl"] .premium-header__brand-cell {
+    padding-right: 12px;
+    padding-left: 0;
+  }
+
+  html[dir="rtl"] .premium-header__actions-cell {
+    padding: 0 10px 8px;
+  }
+
+  html[dir="rtl"] .premium-header__price-panel,
+  html[dir="rtl"] .premium-header__rooms-panel,
+  html[dir="rtl"] .premium-header__property-type-panel {
+    right: 0;
+    left: auto;
   }
 }
