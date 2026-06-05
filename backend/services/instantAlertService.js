@@ -17,6 +17,8 @@ const PROPERTY_CATEGORY_KEYWORDS = {
     apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
     houses: ['house', 'villa', 'duplex', 'townhouse', 'cottage', 'home', 'בית', 'וילה', 'קוטג'],
 };
+
+const DEFAULT_ALERT_SEARCH_NAME = 'My Alerts';
 const FEATURE_KEYWORDS = {
     elevator: ['elevator', 'lift', 'מעלית'],
     parking: ['parking', 'garage', 'carport', 'חניה', 'חניון'],
@@ -219,7 +221,7 @@ const buildSourceSignature = ({ criteria = {}, sourceContext = {} }) => {
     return JSON.stringify(signatureObject);
 };
 
-const makeDefaultSearchName = ({ criteria = {}, sourceContext = {}, fallbackName = 'Saved Search' }) => {
+const makeDefaultSearchName = ({ criteria = {}, sourceContext = {}, fallbackName = DEFAULT_ALERT_SEARCH_NAME }) => {
     const typeLabel = criteria.type === 'sale'
         ? 'Sale'
         : criteria.type === 'rental'
@@ -237,13 +239,13 @@ const makeDefaultSearchName = ({ criteria = {}, sourceContext = {}, fallbackName
     return parts.length > 0 ? parts.join(' ') : fallbackName;
 };
 
-const normalizeSearchPayload = (payload = {}, fallbackName = 'Saved Search') => {
+const normalizeSearchPayload = (payload = {}, fallbackName = DEFAULT_ALERT_SEARCH_NAME) => {
     const criteria = normalizeAlertCriteria(payload.criteria || {});
     const sourceContext = normalizeSourceContext(payload.sourceContext || {}, criteria);
     const fallbackSearchName = makeDefaultSearchName({
         criteria,
         sourceContext,
-        fallbackName: fallbackName || 'Saved Search',
+        fallbackName: fallbackName || DEFAULT_ALERT_SEARCH_NAME,
     });
     const name = normalizeText(payload.name) || fallbackSearchName;
     return {
@@ -503,7 +505,7 @@ const queueInstantAlertsForProperties = async (propertiesInput = []) => {
                 existingKeys.add(dedupeKey);
                 newAlerts.push({
                     searchId: search._id,
-                    searchName: normalizeText(search.name) || 'Saved Search',
+                    searchName: normalizeText(search.name) || DEFAULT_ALERT_SEARCH_NAME,
                     propertyId: property._id,
                     propertySnapshot: buildPropertySnapshot(property),
                     message: makeAlertMessage(property, search),

@@ -20,6 +20,10 @@ const normalizeBoolean = (value, fallback = false) => {
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
+const DEFAULT_ALERT_SEARCH_NAME = 'My Alerts';
+const LEGACY_DEFAULT_ALERT_NAME_PATTERN = new RegExp('^saved\\s+search(?:\\s+(\\d+))?$', 'i');
+const CURRENT_DEFAULT_ALERT_NAME_PATTERN = /^my alerts(?:\s+(\d+))?$/i;
+
 const normalizeDeliveryPreference = (value, fallback = 'account') => {
     const normalized = normalizeText(value).toLowerCase();
     if (['account', 'email', 'whatsapp'].includes(normalized)) return normalized;
@@ -36,7 +40,19 @@ const getTimeOrFallback = (value, fallback = 0) => {
     return Number.isNaN(parsed.getTime()) ? fallback : parsed.getTime();
 };
 
-const isDefaultSavedSearchName = (value) => /^saved search \d+$/i.test(normalizeText(value));
+const isDefaultAlertSearchName = (value) => {
+    const normalized = normalizeText(value);
+    return LEGACY_DEFAULT_ALERT_NAME_PATTERN.test(normalized) || CURRENT_DEFAULT_ALERT_NAME_PATTERN.test(normalized);
+};
+
+const normalizeDefaultAlertSearchName = (value, fallbackName = DEFAULT_ALERT_SEARCH_NAME) => {
+    const normalized = normalizeText(value);
+    const legacyMatch = normalized.match(LEGACY_DEFAULT_ALERT_NAME_PATTERN);
+    if (legacyMatch) {
+        return legacyMatch[1] ? `${DEFAULT_ALERT_SEARCH_NAME} ${legacyMatch[1]}` : DEFAULT_ALERT_SEARCH_NAME;
+    }
+    return normalized || fallbackName;
+};
 
 const mergeDuplicateSavedSearch = (current, incoming) => {
     const currentUpdatedAt = getTimeOrFallback(current.updatedAt);
@@ -47,7 +63,7 @@ const mergeDuplicateSavedSearch = (current, incoming) => {
     const currentName = normalizeText(current.name);
 
     current.enabled = current.enabled !== false || incoming.enabled !== false;
-    if (!currentName || (isDefaultSavedSearchName(currentName) && incomingName && !isDefaultSavedSearchName(incomingName))) {
+    if (!currentName || (isDefaultAlertSearchName(currentName) && incomingName && !isDefaultAlertSearchName(incomingName))) {
         current.name = incoming.name;
     } else if (incomingUpdatedAt > currentUpdatedAt && incomingName) {
         current.name = incoming.name;
@@ -69,7 +85,7 @@ const sanitizeSavedSearches = (savedSearches = []) => {
 
     (Array.isArray(savedSearches) ? savedSearches : [])
         .forEach((search, index) => {
-            const fallbackName = `Saved Search ${index + 1}`;
+            const fallbackName = `${DEFAULT_ALERT_SEARCH_NAME} ${index + 1}`;
             const criteria = normalizeAlertCriteria(search && search.criteria ? search.criteria : {});
             const sourceContext = normalizeSourceContext(
                 search && search.sourceContext ? search.sourceContext : {},
@@ -81,7 +97,7 @@ const sanitizeSavedSearches = (savedSearches = []) => {
             const now = new Date();
             const normalized = {
                 _id: search && search._id ? search._id : undefined,
-                name: normalizeText(search && search.name) || fallbackName,
+                name: normalizeDefaultAlertSearchName(search && search.name, fallbackName),
                 enabled: search ? search.enabled !== false : true,
                 criteria,
                 sourceSignature,
@@ -243,7 +259,7 @@ const upsertMyInstantAlertSearch = async (req, res) => {
         }
 
         const searchId = String(req.body.searchId || '').trim();
-        const payload = normalizeSearchPayload(req.body, `Saved Search ${user.instantAlerts.savedSearches.length + 1}`);
+        const payload = normalizeSearchPayload(req.body, `${DEFAULT_ALERT_SEARCH_NAME} ${user.instantAlerts.savedSearches.length + 1}`);
         let targetSearch = null;
         const explicitName = normalizeText(req.body.name);
 

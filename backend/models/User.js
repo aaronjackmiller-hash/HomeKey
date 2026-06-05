@@ -55,7 +55,7 @@ const SavedAlertSearchSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            default: 'Saved Search',
+            default: 'My Alerts',
         },
         enabled: {
             type: Boolean,

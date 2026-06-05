@@ -253,7 +253,7 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
         accountPreferredContactMethod: data.accountPreferredContactMethod || previous.accountPreferredContactMethod || 'email',
         unreadCount: Number(data.unreadCount || previous.unreadCount || 0),
       }));
-      setStatusMessage('Saved search settings updated.');
+      setStatusMessage('My Alerts settings updated.');
     } catch (err) {
       handleAlertApiError(err, 'Failed to update alert settings.');
     } finally {
@@ -275,9 +275,9 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
         sourceContext: search.sourceContext || {},
       });
       await loadAlertsData();
-      setStatusMessage('Saved search updated.');
+      setStatusMessage('My Alerts updated.');
     } catch (err) {
-      handleAlertApiError(err, 'Failed to update saved search.');
+      handleAlertApiError(err, 'Failed to update My Alerts.');
     } finally {
       setSaving(false);
     }
@@ -291,9 +291,9 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
     try {
       await deleteMyInstantAlertSearch(searchId);
       await loadAlertsData();
-      setStatusMessage('Saved search deleted.');
+      setStatusMessage('My Alerts criteria deleted.');
     } catch (err) {
-      handleAlertApiError(err, 'Failed to delete saved search.');
+      handleAlertApiError(err, 'Failed to delete My Alerts criteria.');
     } finally {
       setSaving(false);
     }
@@ -325,11 +325,11 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
   const pageContent = (
     <div className={`alerts-page ${isOverlay ? 'alerts-page--overlay' : ''}`}>
       <div className="alerts-card">
-        {isOverlay ? <h3>Search alert settings</h3> : <h2>Saved Search</h2>}
+        {isOverlay ? <h3>My Alerts settings</h3> : <h2>My Alerts</h2>}
         <p className="form-helper-text">
-          Your filters and map circle are captured from your active search. Click "Save Search" in the header to save criteria without re-entering fields.
+          Your filters and map circle are captured from your active search. Click "Save Search" in the header to add criteria to My Alerts without re-entering fields.
         </p>
-        {loading && <p className="status-message">Loading your saved search preferences...</p>}
+        {loading && <p className="status-message">Loading your My Alerts preferences...</p>}
         {!loading && (
           <>
             {error && <p className="status-message status-message-error">{error}</p>}
@@ -342,7 +342,7 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
                   onChange={(event) => updateSettings({ enabled: event.target.checked })}
                   disabled={saving}
                 />
-                Enable saved search alerts
+                Enable My Alerts
               </label>
               <label className="alerts-delivery-preference">
                 <span>Notify via</span>
@@ -372,9 +372,9 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
       {!loading && (
         <div className="alerts-card">
           <div className="alerts-search-list">
-            <h3>Saved criteria</h3>
+            <h3>Alert criteria</h3>
             {savedSearches.length === 0 && (
-              <p className="form-helper-text">No saved criteria yet. Apply filters on listings, then click "Save Search".</p>
+              <p className="form-helper-text">No alert criteria yet. Apply filters on listings, then click "Save Search".</p>
             )}
             {savedSearches.map((search) => (
               <div key={search._id} className="alerts-search-item">
@@ -416,7 +416,7 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
             {inbox.map((item) => (
               <div key={item._id} className={`alerts-inbox-item ${item.readAt ? 'is-read' : 'is-unread'}`}>
                 <div>
-                  <p className="alerts-inbox-title">{item.message || 'Saved search match received.'}</p>
+                  <p className="alerts-inbox-title">{item.message || 'My Alerts match received.'}</p>
                   <p className="alerts-inbox-meta">
                     {item.propertySnapshot?.title || 'Listing'} •
                     {' '}
@@ -449,11 +449,11 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
   if (!isOverlay) return pageContent;
 
   return (
-    <div className="alerts-overlay" role="dialog" aria-modal="true" aria-label="Saved search settings">
-      <button type="button" className="alerts-overlay-backdrop" onClick={handleClose} aria-label="Close saved search overlay" />
+    <div className="alerts-overlay" role="dialog" aria-modal="true" aria-label="My Alerts settings">
+      <button type="button" className="alerts-overlay-backdrop" onClick={handleClose} aria-label="Close My Alerts overlay" />
       <div className="alerts-overlay-panel">
         <div className="alerts-overlay-header">
-          <h2>Saved Search</h2>
+          <h2>My Alerts</h2>
           <button type="button" className="alerts-overlay-close" onClick={handleClose}>
             Back to Map
           </button>
