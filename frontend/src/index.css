@@ -600,6 +600,13 @@ a {
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
 }
 
+.roommate-card:hover,
+.roommate-card:focus-visible {
+  border-color: rgba(45, 90, 39, 0.48);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+  outline: none;
+}
+
 .roommate-card__illustration {
   height: 56px;
   display: flex;
@@ -710,6 +717,16 @@ a {
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 14px;
   align-items: start;
+}
+
+.roommate-budget-range,
+.roommate-date-group {
+  min-width: 0;
+}
+
+.roommate-date-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .roommate-budget-range__labels,
@@ -868,6 +885,12 @@ a {
   font-weight: 700;
 }
 
+.roommate-option:hover:not(:disabled),
+.roommate-option:focus-visible {
+  border-color: #2d5a27;
+  outline: none;
+}
+
 .roommate-option:disabled {
   color: #9ca3af;
   cursor: not-allowed;
@@ -908,6 +931,12 @@ a {
   font-weight: 700;
 }
 
+.roommate-segmented button:hover,
+.roommate-segmented button:focus-visible {
+  background: #f3faf0;
+  outline: none;
+}
+
 .roommate-toggle-row {
   align-items: center;
   display: flex;
@@ -934,6 +963,11 @@ a {
 
 .roommate-toggle.is-on {
   background: #2d5a27;
+}
+
+.roommate-toggle:focus-visible {
+  outline: 2px solid rgba(45, 90, 39, 0.42);
+  outline-offset: 2px;
 }
 
 .roommate-toggle__knob {
@@ -1017,6 +1051,13 @@ a {
   font-weight: 700;
 }
 
+.roommate-amenity:hover,
+.roommate-amenity:focus-visible {
+  border-color: rgba(45, 90, 39, 0.48);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+  outline: none;
+}
+
 .roommate-pill .filter-menu__characteristic-svg,
 .roommate-amenity .filter-menu__characteristic-svg {
   width: 16px;
@@ -1057,6 +1098,39 @@ a {
   border: 1px solid #b8dcb0;
   background: #dff5d5;
   color: #12351f;
+}
+
+.roommate-filter-actions__apply:hover,
+.roommate-filter-actions__apply:focus-visible {
+  background: #0b3c36;
+  outline: none;
+}
+
+.roommate-filter-actions__save:hover,
+.roommate-filter-actions__save:focus-visible {
+  background: #cfedc4;
+  outline: none;
+}
+
+@media (max-width: 560px) {
+  .roommate-filters__looking-grid,
+  .roommate-filters__budget-grid,
+  .roommate-filters__habits,
+  .roommate-inline-row {
+    grid-template-columns: 1fr;
+  }
+
+  .roommate-inline-row__control {
+    justify-content: stretch;
+  }
+
+  .roommate-option-group--compact {
+    max-width: none;
+  }
+
+  .roommate-amenities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .filter-menu__option-grid {
