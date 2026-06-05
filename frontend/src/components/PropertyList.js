@@ -25,7 +25,7 @@ const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
-const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop';
+const HERO_BACKGROUND_IMAGE = 'https://images.unsplash.com/photo-1719757633949-3a0e42706f6d?q=80&w=2075&auto=format&fit=crop';
 const MOBILE_LAYOUT_BREAKPOINT = 767;
 const SAVED_SEARCH_HISTORY_QUERY_KEY = 'history';
 const SAVED_SEARCH_ID_QUERY_KEY = 'savedSearchId';
