@@ -573,6 +573,26 @@ a {
   margin-bottom: 24px;
 }
 
+.roommate-filters__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c2a1e;
+  margin: 18px 0 8px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.roommate-filters__required-badge {
+  font-size: 10px;
+  background: #f5e8e0;
+  color: #b07050;
+  border: 1px solid #d4a890;
+  border-radius: 10px;
+  padding: 2px 7px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
 .roommate-filters__looking-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -828,6 +848,28 @@ a {
   gap: 14px;
 }
 
+.roommate-filters__habit-box {
+  background: #fff;
+  border: 1.5px solid #c8bfa8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.roommate-filters__habit-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #2c2a1e;
+  margin-bottom: 2px;
+}
+
+.roommate-filters__habit-hint {
+  font-size: 11px;
+  color: #7a6a50;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
 .roommate-inline-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(146px, 0.8fr);
@@ -1054,9 +1096,66 @@ a {
 }
 
 .roommate-filter-actions__save {
-  border: 1px solid #b8dcb0;
-  background: #dff5d5;
-  color: #12351f;
+  border: 1px solid #e8e0d0;
+  background: #e8e0d0;
+  color: #2c3a2c;
+}
+
+.roommate-whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #25d366;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.roommate-phone-saved__number {
+  font-size: 13px;
+  color: #4a6a4a;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f8f0;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.roommate-phone-edit-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #8a7a60;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 8px;
+  display: block;
+}
+
+.roommate-phone-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.roommate-phone-save-btn {
+  padding: 9px 16px;
+  background: #2c3a2c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .filter-menu__option-grid {

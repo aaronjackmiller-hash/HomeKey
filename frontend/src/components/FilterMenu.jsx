@@ -442,7 +442,7 @@ const RoommateFilters = ({
 }) => (
   <div className="roommate-filters">
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">I am looking for:</h3>
+      <h3 className="filter-menu__section-title roommate-filters__title">I am looking for:</h3>
       <div className="roommate-filters__looking-grid">
         <div
           role="button"
@@ -533,7 +533,7 @@ const RoommateFilters = ({
     </section>
 
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">Budget & Availability</h3>
+      <h3 className="filter-menu__section-title roommate-filters__title">Budget & Availability</h3>
       <div className="roommate-filters__budget-grid">
         <BudgetRange
           minPrice={minPrice}
@@ -563,7 +563,7 @@ const RoommateFilters = ({
     </section>
 
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">
+      <h3 className="filter-menu__section-title roommate-filters__title">
         Apartment Details <span>(applies to the entire unit)</span>
       </h3>
       <div className="roommate-filters__stack">
@@ -599,7 +599,7 @@ const RoommateFilters = ({
     </section>
 
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">
+      <h3 className="filter-menu__section-title roommate-filters__title">
         Roommate Profile <span>(preferences)</span>
       </h3>
       <div className="roommate-filters__stack">
@@ -615,8 +615,8 @@ const RoommateFilters = ({
         <div>
           <p className="roommate-filters__field-title">Habits</p>
           <div className="roommate-filters__habits">
-            <div>
-              <p className="roommate-filters__sub-label">Smoking Preference</p>
+            <div className="roommate-filters__habit-box">
+              <p className="roommate-filters__sub-label roommate-filters__habit-label">Smoking Preference</p>
               <SegmentedButtonGroup
                 options={ROOMMATE_SMOKING_OPTIONS}
                 selectedValue={smoking}
@@ -624,8 +624,8 @@ const RoommateFilters = ({
                 ariaLabel="Smoking preference"
               />
             </div>
-            <div>
-              <p className="roommate-filters__sub-label">Keep Kosher Kitchen</p>
+            <div className="roommate-filters__habit-box">
+              <p className="roommate-filters__sub-label roommate-filters__habit-label">Keep Kosher Kitchen</p>
               <div className="roommate-toggle-row">
                 <button
                   type="button"
@@ -645,7 +645,7 @@ const RoommateFilters = ({
     </section>
 
     <section className="filter-menu__section roommate-filters__section">
-      <h3 className="filter-menu__section-title">Property Amenities (New)</h3>
+      <h3 className="filter-menu__section-title roommate-filters__title">Property Amenities (New)</h3>
       <div className="roommate-amenities-grid" aria-label="Property amenities">
         {ROOMMATE_AMENITY_ITEMS.map((amenity) => {
           const isSelected = amenities.includes(amenity.id);
