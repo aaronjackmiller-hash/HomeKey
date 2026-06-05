@@ -7096,11 +7096,13 @@ legend {
 
 .premium-header__cta {
   min-height: 34px;
-  padding: 0 17px;
+  padding: 12px 24px;
+  margin-left: 16px;
+  margin-right: 16px;
   border-color: #5f8589;
   background: #6f9296;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
 }
 
