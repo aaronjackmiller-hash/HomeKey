@@ -327,7 +327,7 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
       <div className="alerts-card">
         {isOverlay ? <h3>My Alerts settings</h3> : <h2>My Alerts</h2>}
         <p className="form-helper-text">
-          Your filters and map circle are captured from your active search. Click "Save Search" in the header to add criteria to My Alerts without re-entering fields.
+          Your filters and map circle are captured from your active search. Click "Create Alert" in the header to add criteria to My Alerts without re-entering fields.
         </p>
         {loading && <p className="status-message">Loading your My Alerts preferences...</p>}
         {!loading && (
@@ -374,7 +374,7 @@ const InstantAlerts = ({ isOverlay = false, onClose = null }) => {
           <div className="alerts-search-list">
             <h3>Alert criteria</h3>
             {savedSearches.length === 0 && (
-              <p className="form-helper-text">No alert criteria yet. Apply filters on listings, then click "Save Search".</p>
+              <p className="form-helper-text">No alert criteria yet. Apply filters on listings, then click "Create Alert".</p>
             )}
             {savedSearches.map((search) => (
               <div key={search._id} className="alerts-search-item">

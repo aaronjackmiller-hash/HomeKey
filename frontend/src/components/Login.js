@@ -453,7 +453,7 @@ const Login = () => {
         <div className="auth-signin-header">
           <h2>Sign In</h2>
           {authDestination.isSaveSearchIntent && (
-            <p className="auth-signin-intent">Sign in to save this search. We&apos;ll save it right after you sign in.</p>
+            <p className="auth-signin-intent">Sign in to create this alert. We&apos;ll create it right after you sign in.</p>
           )}
           <p className="auth-signin-subtext">Or, create an account to save listings and contact preferences.</p>
         </div>
