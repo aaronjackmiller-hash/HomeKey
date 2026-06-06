@@ -12,7 +12,8 @@ const PRICE_SLIDER_MAX = 20000;
 const PRICE_SLIDER_STEP = 500;
 const ROOM_OPTION_VALUES = ['', 'studio', '1', '2', '3', '4+'];
 const BATH_OPTION_VALUES = ['', '1', '2', '3+'];
-const LISTING_TYPE_OPTIONS = ['rental', 'sale', 'roommates'];
+// Roommates removed from here — it now has its own standalone nav button
+const LISTING_TYPE_OPTIONS = ['rental', 'sale'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator',
@@ -78,7 +79,7 @@ const getPriceSummaryLabel = (minValue, maxValue, locale = 'en-US') => {
 
 const sanitizeListingType = (rawValue) => {
   const normalized = String(rawValue || '').toLowerCase();
-  if (LISTING_TYPE_OPTIONS.includes(normalized)) return normalized;
+  if (['rental', 'sale', 'roommates'].includes(normalized)) return normalized;
   return 'all';
 };
 
@@ -336,6 +337,14 @@ const HeaderIcon = ({ name }) => {
         <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
       </>
     ),
+    roommates: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+        <circle cx="17" cy="8" r="2.5" />
+        <path d="M14 20c0-2.8 1.8-5 4-5.5" />
+      </>
+    ),
   };
   return <svg {...iconProps}>{paths[name]}</svg>;
 };
@@ -451,7 +460,6 @@ const Navbar = () => {
   const propertyTypeRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
-  const headerRef = useRef(null);
   const minPriceDraftRef = useRef(parsedFromLocation.minPriceInput);
   const maxPriceDraftRef = useRef(parsedFromLocation.maxPriceInput);
   const saveSearchFeedbackTimerRef = useRef(null);
@@ -504,45 +512,10 @@ const Navbar = () => {
       try {
         voiceRecognitionRef.current.stop();
       } catch (_err) {
-        // Ignore failures while unmounting; recognition session may already be closed.
+        // Ignore failures while unmounting
       }
       voiceRecognitionRef.current = null;
     }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined' || !headerRef.current) {
-      return undefined;
-    }
-    const headerElement = headerRef.current;
-    const rootElement = document.documentElement;
-    const syncHeaderHeight = () => {
-      rootElement.style.setProperty(
-        '--hk-sticky-header-height',
-        `${Math.ceil(headerElement.getBoundingClientRect().height)}px`
-      );
-    };
-    syncHeaderHeight();
-
-    const ResizeObserverConstructor = window.ResizeObserver;
-    let resizeObserver = null;
-    if (typeof ResizeObserverConstructor === 'function') {
-      resizeObserver = new ResizeObserverConstructor(syncHeaderHeight);
-      resizeObserver.observe(headerElement);
-    } else {
-      window.addEventListener('resize', syncHeaderHeight);
-    }
-    window.addEventListener('orientationchange', syncHeaderHeight);
-
-    return () => {
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      } else {
-        window.removeEventListener('resize', syncHeaderHeight);
-      }
-      window.removeEventListener('orientationchange', syncHeaderHeight);
-      rootElement.style.removeProperty('--hk-sticky-header-height');
-    };
   }, []);
 
   useEffect(() => {
@@ -831,7 +804,7 @@ const Navbar = () => {
       try {
         voiceRecognitionRef.current.stop();
       } catch (_err) {
-        // Ignore stop errors; this is best-effort.
+        // Ignore stop errors
       }
       setIsVoiceListening(false);
       setTransientVoiceStatus(t('navbar.voiceSearchStoppedStatus'));
@@ -943,6 +916,16 @@ const Navbar = () => {
       setFiltersExpanded(true);
     }
     applyFilterMenuSearch({ nextListingType: normalizedListingType });
+  };
+
+  // ── NEW: standalone Roommates nav button handler ──
+  const handleRoommatesNavClick = () => {
+    setPriceExpanded(false);
+    setRoomsBathsExpanded(false);
+    setPropertyTypeExpanded(false);
+    setListingType('roommates');
+    applySearch({ nextListingType: 'roommates' });
+    setFiltersExpanded(true);
   };
 
   const handleFilterMenuRoomsChange = (nextRooms) => {
@@ -1084,12 +1067,15 @@ const Navbar = () => {
   const isHebrew = language === 'he';
   const homeKeyBrand = t('brand.homeKey');
   const hasAdvancedFilters = featureFilters.length > 0;
+  const isRoommatesActive = listingType === 'roommates';
+
+  // Property type summary excludes roommates since it has its own button
   const propertyTypeSummary = propertyCategory
     ? t(`filterMenu.${propertyCategory}`)
-    : (listingType !== 'all' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
+    : (listingType !== 'all' && listingType !== 'roommates' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
 
   return (
-    <nav ref={headerRef} className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
+    <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
       <div className="premium-header__inner">
         <div className="premium-header__brand-cell">
           <Link
@@ -1298,11 +1284,13 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
+
+              {/* ── PROPERTY TYPE (Rent / Sale only — no Roommates) ── */}
               <div className="premium-header__search-segment premium-header__search-segment--property-type" ref={propertyTypeRef}>
                 <button
                   id="header-search-property-type-toggle"
                   type="button"
-                  className={`premium-header__property-type-toggle ${listingType !== 'all' || propertyCategory ? 'is-active' : ''}`}
+                  className={`premium-header__property-type-toggle ${listingType !== 'all' && listingType !== 'roommates' || propertyCategory ? 'is-active' : ''}`}
                   onClick={() => {
                     setPriceExpanded(false);
                     setRoomsBathsExpanded(false);
@@ -1351,6 +1339,21 @@ const Navbar = () => {
                   </div>
                 </div>
               </div>
+
+              {/* ── ROOMMATES — standalone nav button ── */}
+              <div className="premium-header__search-segment premium-header__search-segment--roommates">
+                <button
+                  type="button"
+                  className={`premium-header__roommates-toggle ${isRoommatesActive ? 'is-active' : ''}`}
+                  onClick={handleRoommatesNavClick}
+                  aria-pressed={isRoommatesActive}
+                >
+                  <HeaderIcon name="roommates" />
+                  <span>Roommates</span>
+                </button>
+              </div>
+
+              {/* ── ALL FILTERS ── */}
               <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                 <button
                   id="header-search-filter-toggle"
@@ -1445,10 +1448,18 @@ const Navbar = () => {
               >
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
-              <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
+              {/* ── LARGER CTA BUTTON ── */}
+              <Link
+                to="/add-listing"
+                className="premium-header__cta premium-header__action-pill"
+                style={{ padding: '12px 24px', fontSize: '15px', marginLeft: '16px', marginRight: '16px' }}
+              >
+                {t('navbar.listProperty')}
+              </Link>
               <span className="premium-header__actions-utility">
+                {/* ── MY ALERTS (replaces Saved Search) ── */}
                 <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
-                  {t('navbar.savedSearch')}
+                  My Alerts
                 </Link>
                 {isAuthenticated && (
                   <Link to="/account" className="premium-header__alerts-link">
@@ -1486,9 +1497,17 @@ const Navbar = () => {
               >
                 <span className="premium-header__language-text">{languageTarget}</span>
               </button>
-              <Link to="/add-listing" className="premium-header__cta premium-header__action-pill">{t('navbar.listProperty')}</Link>
+              {/* ── LARGER CTA BUTTON ── */}
+              <Link
+                to="/add-listing"
+                className="premium-header__cta premium-header__action-pill"
+                style={{ padding: '12px 24px', fontSize: '15px', marginLeft: '16px', marginRight: '16px' }}
+              >
+                {t('navbar.listProperty')}
+              </Link>
+              {/* ── MY ALERTS (replaces Saved Search) ── */}
               <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
-                {t('navbar.savedSearch')}
+                My Alerts
               </Link>
               {isAuthenticated && (
                 <Link to="/account" className="premium-header__alerts-link">

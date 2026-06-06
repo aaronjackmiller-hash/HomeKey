@@ -7129,7 +7129,7 @@ legend {
 
 .premium-header__search-pill {
   display: grid;
-  grid-template-columns: minmax(150px, 1.08fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(128px, 0.9fr);
+  grid-template-columns: minmax(150px, 1.08fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(128px, 0.9fr) minmax(128px, 0.9fr);
   gap: 9px;
   min-height: 42px;
   border: 0;
@@ -7169,6 +7169,7 @@ legend {
 .premium-header__search-segment .premium-header__price-toggle:focus,
 .premium-header__search-segment .premium-header__rooms-toggle:focus,
 .premium-header__search-segment .premium-header__property-type-toggle:focus,
+.premium-header__search-segment .premium-header__roommates-toggle:focus,
 .premium-header__search-segment .premium-header__filters-toggle:focus {
   outline: none;
   border-color: #7b9194;
@@ -7179,6 +7180,7 @@ legend {
 .premium-header__search-segment .premium-header__price-toggle,
 .premium-header__search-segment .premium-header__rooms-toggle,
 .premium-header__search-segment .premium-header__property-type-toggle,
+.premium-header__search-segment .premium-header__roommates-toggle,
 .premium-header__search-segment .premium-header__filters-toggle,
 .premium-header__search-segment .premium-header__ai-toggle,
 .premium-header__search-segment .premium-header__voice-toggle {
@@ -7228,6 +7230,7 @@ legend {
 .premium-header__price-toggle,
 .premium-header__rooms-toggle,
 .premium-header__property-type-toggle,
+.premium-header__roommates-toggle,
 .premium-header__filters-toggle {
   display: inline-flex;
   align-items: center;
@@ -7250,6 +7253,7 @@ legend {
 .premium-header__price-toggle span:first-child,
 .premium-header__rooms-toggle span:first-child,
 .premium-header__property-type-toggle span:first-child,
+.premium-header__roommates-toggle span:first-child,
 .premium-header__filters-toggle span:first-child {
   min-width: auto;
 }
@@ -7257,6 +7261,7 @@ legend {
 .premium-header__price-toggle span:last-child,
 .premium-header__rooms-toggle span:last-child,
 .premium-header__property-type-toggle span:last-child,
+.premium-header__roommates-toggle span:last-child,
 .premium-header__filters-toggle span:last-child {
   min-width: 0;
   overflow: hidden;
@@ -7267,6 +7272,7 @@ legend {
 .premium-header__price-toggle.is-active,
 .premium-header__rooms-toggle.is-active,
 .premium-header__property-type-toggle.is-active,
+.premium-header__roommates-toggle.is-active,
 .premium-header__filters-toggle.is-active {
   border-color: #7b9194;
   background: #ffffff;
@@ -7445,14 +7451,15 @@ legend {
   }
 
   .premium-header__search-pill {
-    grid-template-columns: repeat(5, minmax(142px, 1fr));
+    grid-template-columns: repeat(6, minmax(142px, 1fr));
     min-height: 40px;
     overflow-x: auto;
   }
 
   .premium-header__search-segment--price,
   .premium-header__search-segment--rooms,
-  .premium-header__search-segment--property-type {
+  .premium-header__search-segment--property-type,
+  .premium-header__search-segment--roommates {
     display: block;
   }
 
@@ -7466,6 +7473,7 @@ legend {
   .premium-header__search-segment .premium-header__price-toggle,
   .premium-header__search-segment .premium-header__rooms-toggle,
   .premium-header__search-segment .premium-header__property-type-toggle,
+  .premium-header__search-segment .premium-header__roommates-toggle,
   .premium-header__search-segment .premium-header__filters-toggle {
     min-height: 40px;
     height: 40px;
@@ -7507,6 +7515,7 @@ html[dir="rtl"] .premium-header__search-segment--location,
 html[dir="rtl"] .premium-header__price-toggle,
 html[dir="rtl"] .premium-header__rooms-toggle,
 html[dir="rtl"] .premium-header__property-type-toggle,
+html[dir="rtl"] .premium-header__roommates-toggle,
 html[dir="rtl"] .premium-header__filters-toggle {
   text-align: right;
 }
