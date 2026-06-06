@@ -7821,3 +7821,179 @@ html[dir="rtl"] .premium-header__property-type-panel {
 }
 
 .roomma
+/* ── ROOMMATE FILTER FONT & INPUT FIXES ── */
+
+/* Section titles - larger and bolder */
+.roommate-filters__title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #1a2a1a !important;
+  margin: 20px 0 10px !important;
+}
+
+/* Sub labels */
+.roommate-filters__sub-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #2c2a1e !important;
+  margin-bottom: 8px !important;
+}
+
+/* Segmented buttons - larger text */
+.roommate-segmented button {
+  font-size: 14px !important;
+  padding: 10px 8px !important;
+  font-weight: 500 !important;
+}
+
+/* Option buttons - larger text */
+.roommate-option {
+  font-size: 14px !important;
+  padding: 9px 16px !important;
+  font-weight: 500 !important;
+}
+
+/* Card titles */
+.roommate-card__title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #1a2a1a !important;
+}
+
+.roommate-card__subtitle {
+  font-size: 13px !important;
+  color: #5a6a50 !important;
+}
+
+.roommate-card__control-label {
+  font-size: 13px !important;
+  color: #2c2a1e !important;
+  font-weight: 500 !important;
+}
+
+/* Text inputs - always show border, larger text */
+.roommate-text-input {
+  font-size: 15px !important;
+  padding: 12px 14px !important;
+  border: 2px solid #a0b090 !important;
+  border-radius: 8px !important;
+  color: #1a2a1a !important;
+  background: #fff !important;
+  width: 100% !important;
+  display: block !important;
+  margin-top: 6px !important;
+}
+
+.roommate-text-input:focus {
+  border: 2px solid #5a7a5a !important;
+  outline: none !important;
+}
+
+.roommate-text-input::placeholder {
+  color: #8a9a80 !important;
+  font-size: 14px !important;
+}
+
+/* Month input - always show border */
+.roommate-month-field {
+  border: 2px solid #a0b090 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  background: #fff !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 6px !important;
+}
+
+.roommate-month-input {
+  font-size: 15px !important;
+  color: #1a2a1a !important;
+  font-weight: 500 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  flex: 1 !important;
+}
+
+/* Money input - always show border */
+.roommate-money-input {
+  border: 2px solid #a0b090 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  background: #fff !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin-top: 6px !important;
+}
+
+.roommate-money-input input {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #1a2a1a !important;
+}
+
+/* Habit box labels */
+.roommate-filters__habit-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #1a2a1a !important;
+  margin-bottom: 4px !important;
+}
+
+.roommate-filters__habit-hint {
+  font-size: 13px !important;
+  color: #5a6a50 !important;
+}
+
+/* Amenity labels */
+.roommate-amenity span {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #1a2a1a !important;
+}
+
+/* Phone input */
+.roommate-text-input[type="tel"] {
+  font-size: 16px !important;
+  padding: 12px 14px !important;
+}
+
+/* Action buttons */
+.roommate-filter-actions__apply,
+.roommate-filter-actions__save {
+  font-size: 16px !important;
+  padding: 16px !important;
+  font-weight: 600 !important;
+}
+
+/* Hint text */
+.roommate-filters__hint {
+  font-size: 13px !important;
+  color: #5a6a50 !important;
+  font-style: italic !important;
+  margin-bottom: 10px !important;
+}
+
+/* Required badge */
+.roommate-filters__required-badge {
+  font-size: 12px !important;
+  padding: 3px 10px !important;
+}
+
+/* Card illustrations larger */
+.roommate-card__illustration {
+  height: 110px !important;
+  background: #f0ebe0 !important;
+  border-radius: 8px !important;
+  margin-bottom: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.roommate-card__illustration svg {
+  width: 100% !important;
+  height: 110px !important;
+}
