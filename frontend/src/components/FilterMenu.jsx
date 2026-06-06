@@ -381,8 +381,6 @@ const RoommateFilters = ({
   const [amenities, setAmenities] = useState(['Mamad']);
   const [phone, setPhone] = useState('');
   const [phoneSaved, setPhoneSaved] = useState(false);
-
-  // Owner-specific state
   const [rentAmount, setRentAmount] = useState('');
   const [utilities, setUtilities] = useState('Included');
   const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_MONTH);
@@ -410,6 +408,7 @@ const RoommateFilters = ({
 
   return (
     <div className="roommate-filters">
+
       {/* I AM LOOKING FOR */}
       <section className="filter-menu__section roommate-filters__section">
         <h3 className="roommate-filters__title">I am looking for</h3>
@@ -517,7 +516,6 @@ const RoommateFilters = ({
       {/* MODE-SPECIFIC FIELDS */}
       {isRoom ? (
         <>
-          {/* BUDGET & AVAILABILITY */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Budget & availability</h3>
             <p className="roommate-filters__sub-label">Total monthly rent</p>
@@ -553,10 +551,9 @@ const RoommateFilters = ({
             </div>
           </section>
 
-          {/* APARTMENT DETAILS */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">
-              Apartment details <span style={{fontSize:'12px', fontWeight:400, color:'#8a8070'}}>(entire unit)</span>
+              Apartment details <span style={{fontSize:'12px',fontWeight:400,color:'#8a8070'}}>(entire unit)</span>
             </h3>
             <p className="roommate-filters__sub-label">I'm open to sharing with up to:</p>
             <SegmentedButtonGroup
@@ -565,7 +562,7 @@ const RoommateFilters = ({
               onChange={setSharingWith}
               ariaLabel="Sharing preference"
             />
-            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px', display:'block'}}>
+            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px',display:'block'}}>
               Location preference:
             </label>
             <input
@@ -578,7 +575,6 @@ const RoommateFilters = ({
             />
           </section>
 
-          {/* I'D BE MOST COMFORTABLE WITH */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd be most comfortable with</h3>
             <p className="roommate-filters__sub-label">I prefer to live with:</p>
@@ -609,7 +605,6 @@ const RoommateFilters = ({
             </div>
           </section>
 
-          {/* LEASE DURATION */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd like to rent for...</h3>
             <p className="roommate-filters__hint">No worries if you're not sure — just pick what feels right</p>
@@ -621,7 +616,6 @@ const RoommateFilters = ({
             />
           </section>
 
-          {/* PROPERTY AMENITIES */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
@@ -640,7 +634,6 @@ const RoommateFilters = ({
             </div>
           </section>
 
-          {/* CONTACT NUMBER */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">
               Contact number <span className="roommate-filters__required-badge">Required</span>
@@ -685,7 +678,6 @@ const RoommateFilters = ({
         </>
       ) : (
         <>
-          {/* APARTMENT OWNER FIELDS */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">About my apartment</h3>
             <div className="roommate-filters__budget-row">
@@ -739,7 +731,7 @@ const RoommateFilters = ({
                 />
               </div>
             </div>
-            <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px', display:'block'}}>
+            <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px',display:'block'}}>
               Location:
             </label>
             <input
@@ -752,7 +744,6 @@ const RoommateFilters = ({
             />
           </section>
 
-          {/* I'D BE MOST COMFORTABLE WITH */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd be most comfortable with</h3>
             <p className="roommate-filters__sub-label">I prefer to live with:</p>
@@ -783,7 +774,6 @@ const RoommateFilters = ({
             </div>
           </section>
 
-          {/* STAY DURATION */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'm looking for someone to stay for...</h3>
             <SegmentedButtonGroup
@@ -794,7 +784,6 @@ const RoommateFilters = ({
             />
           </section>
 
-          {/* PROPERTY AMENITIES */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
@@ -813,7 +802,6 @@ const RoommateFilters = ({
             </div>
           </section>
 
-          {/* CONTACT NUMBER */}
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">
               Contact number <span className="roommate-filters__required-badge">Required</span>
