@@ -8254,3 +8254,8 @@ html[dir="rtl"] .filter-menu {
 /* ── 8. My Alerts translation already handled via t() in Navbar.js ── */
 
 /* ── 9. Roommates button text translation handled via t() in Navbar.js ── */
+/* Move filter panel flush to the right edge, 
+   leaving just a tiny gap between the two scrollbars */
+.premium-header__filters-panel.is-open {
+  right: -2px !important;
+}
