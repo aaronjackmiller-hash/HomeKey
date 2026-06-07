@@ -356,12 +356,13 @@ const LocationAutocomplete = ({
 
   useEffect(() => {
     if (value.trim().length > 0) {
-      setSuggestions(buildLocationSuggestions(value, language));
       if (suppressNextOpenRef.current || selectedValueRef.current === value) {
         suppressNextOpenRef.current = false;
+        setSuggestions({ cities: [], neighborhoods: [] });
         setIsOpen(false);
         return;
       }
+      setSuggestions(buildLocationSuggestions(value, language));
       setIsOpen(true);
     } else {
       selectedValueRef.current = '';
@@ -388,6 +389,7 @@ const LocationAutocomplete = ({
     const val = item.value;
     suppressNextOpenRef.current = true;
     selectedValueRef.current = val;
+    setSuggestions({ cities: [], neighborhoods: [] });
     setIsOpen(false);
     setActiveIndex(-1);
     onChange(val);
@@ -399,6 +401,7 @@ const LocationAutocomplete = ({
   const handleRecentSelect = useCallback((term) => {
     suppressNextOpenRef.current = true;
     selectedValueRef.current = term;
+    setSuggestions({ cities: [], neighborhoods: [] });
     setIsOpen(false);
     onChange(term);
     onSelect(term);
