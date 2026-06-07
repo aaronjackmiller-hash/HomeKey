@@ -342,9 +342,10 @@ const LocationAutocomplete = ({ value, onChange, onSelect, onBlur, placeholder, 
   useEffect(() => {
     if (value.trim().length > 0) {
       setSuggestions(buildLocationSuggestions(value, language));
-      setIsOpen(true);
+      setIsOpen(typeof document !== 'undefined' && document.activeElement === inputRef.current);
     } else {
       setSuggestions({ cities: [], neighborhoods: [] });
+      if (typeof document === 'undefined' || document.activeElement !== inputRef.current) setIsOpen(false);
     }
   }, [value, language]);
 
@@ -408,7 +409,10 @@ const LocationAutocomplete = ({ value, onChange, onSelect, onBlur, placeholder, 
         className={value.trim() ? 'is-active' : ''}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setIsOpen(true)}
+        onFocus={() => {
+          if (value.trim().length > 0) setSuggestions(buildLocationSuggestions(value, language));
+          setIsOpen(true);
+        }}
         onBlur={(e) => {
           setTimeout(() => setIsOpen(false), 150);
           onBlur(e);
