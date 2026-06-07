@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import hKeyholeLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import FilterMenu from './FilterMenu';
-import ISRAEL_LOCATIONS from '../data/israelLocations';
+import ISRAEL_LOCATIONS from '../israelLocations';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
