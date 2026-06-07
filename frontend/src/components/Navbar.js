@@ -1349,8 +1349,7 @@ const Navbar = () => {
                   aria-pressed={isRoommatesActive}
                 >
                   <HeaderIcon name="roommates" />
-                  <span>Roommates</span>
-                </button>
+<span>{t('filterMenu.roommates')}</span>                </button>
               </div>
 
               {/* ── ALL FILTERS ── */}
