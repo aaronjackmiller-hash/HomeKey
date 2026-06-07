@@ -214,6 +214,8 @@ const FilterMenu = ({
   onToggleFeature,
   onApplyFilters,
   onSaveFilters,
+  roommateLocation,
+  onRoommateLocationChange,
 }) => {
   const { t, locale } = useLanguage();
   const selectedFeatureSet = new Set(selectedFeatures || []);
@@ -273,6 +275,8 @@ const FilterMenu = ({
           onRoommatesNeededChange={setRoommatesNeeded}
           onApplyFilters={onApplyFilters}
           onSaveFilters={onSaveFilters}
+          roommateLocation={roommateLocation}
+          onRoommateLocationChange={onRoommateLocationChange}
         />
       ) : (
         <>
@@ -385,6 +389,8 @@ const RoommateFilters = ({
   onRoommatesNeededChange,
   onApplyFilters,
   onSaveFilters,
+  roommateLocation = '',
+  onRoommateLocationChange = () => {},
 }) => {
   const { t, language } = useLanguage();
   const isHebrew = language === 'he';
@@ -393,7 +399,6 @@ const RoommateFilters = ({
   const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_MONTH);
   const [flexibility, setFlexibility] = useState('Strict');
   const [sharingWith, setSharingWith] = useState('1 other');
-  const [location, setLocation] = useState('');
   const [gender, setGender] = useState('No preference');
   const [smoking, setSmoking] = useState('Not at all');
   const [kosher, setKosher] = useState('Open to it');
@@ -405,7 +410,6 @@ const RoommateFilters = ({
   const [utilities, setUtilities] = useState('Included');
   const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_MONTH);
   const [totalBedrooms, setTotalBedrooms] = useState('2');
-  const [ownerLocation, setOwnerLocation] = useState('');
   const [ownerGender, setOwnerGender] = useState('No preference');
   const [ownerSmoking, setOwnerSmoking] = useState('Not at all');
   const [ownerKosher, setOwnerKosher] = useState('Not kosher');
@@ -608,8 +612,8 @@ const RoommateFilters = ({
             <input
               id="seeker-location"
               type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              value={roommateLocation}
+              onChange={(e) => onRoommateLocationChange(e.target.value)}
               placeholder="City or neighborhood…"
               className="roommate-text-input"
             />
@@ -778,8 +782,8 @@ const RoommateFilters = ({
             <input
               id="owner-location"
               type="text"
-              value={ownerLocation}
-              onChange={(e) => setOwnerLocation(e.target.value)}
+              value={roommateLocation}
+              onChange={(e) => onRoommateLocationChange(e.target.value)}
               placeholder="City or neighborhood…"
               className="roommate-text-input"
             />
