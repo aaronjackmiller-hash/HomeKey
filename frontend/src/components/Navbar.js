@@ -454,6 +454,7 @@ const LocationAutocomplete = ({
                   className="location-autocomplete__item location-autocomplete__item--recent"
                   onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}
                   onTouchStart={(e) => { e.preventDefault(); handleRecentSelect(term); }}
+                  onClick={(e) => { e.preventDefault(); handleRecentSelect(term); }}
                 >
                   <span className="location-autocomplete__item-icon">
                     <HeaderIcon name="clock" />
@@ -480,6 +481,7 @@ const LocationAutocomplete = ({
                 className={`location-autocomplete__item ${isActive ? 'is-active' : ''}`}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
                 onTouchStart={(e) => { e.preventDefault(); handleSelect(item); }}
+                onClick={(e) => { e.preventDefault(); handleSelect(item); }}
               >
                 <span className="location-autocomplete__item-icon">
                   <HeaderIcon name="location" />
