@@ -1375,6 +1375,7 @@ const Navbar = () => {
                   id="header-filters-panel"
                   ref={filtersPanelRef}
                   className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
+style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate' }}
                 >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
