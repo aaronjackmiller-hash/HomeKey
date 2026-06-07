@@ -799,7 +799,10 @@ const Navbar = () => {
     applySearch({ nextRooms: '', nextBaths: '', nextListingType: 'all', nextPropertyCategory: '', nextFeatureFilters: [], nextMinPriceInput: PRICE_SLIDER_MIN, nextMaxPriceInput: PRICE_SLIDER_MAX });
   };
 
-  const handleApplyFilterMenu = () => setFiltersExpanded(false);
+  const handleApplyFilterMenu = () => {
+    applySearch();
+    setFiltersExpanded(false);
+  };
 
   const handleSaveFilterMenu = () => {
     setIsSavingSearch(true); setSaveSearchStatus('Saving...');
@@ -862,6 +865,7 @@ const Navbar = () => {
   const propertyTypeSummary = propertyCategory ? t(`filterMenu.${propertyCategory}`) : (listingType !== 'all' && listingType !== 'roommates' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
 
   const handleCityChange = useCallback((val) => setCity(val), []);
+  const handleRoommateLocationChange = useCallback((val) => setCity(val), []);
   const handleCitySelect = useCallback((val) => {
     setCity(val);
     applySearch({ nextCity: val });
@@ -1050,7 +1054,8 @@ const Navbar = () => {
                     onListingTypeChange={handleFilterMenuListingTypeChange} onRoomsChange={handleFilterMenuRoomsChange}
                     onBathsChange={handleFilterMenuBathsChange} onMinPriceChange={handleFilterMenuMinPriceChange}
                     onMaxPriceChange={handleFilterMenuMaxPriceChange} onTogglePropertyCategory={handleTogglePropertyCategory}
-                    onToggleFeature={handleToggleFeatureFilter} onApplyFilters={handleApplyFilterMenu} onSaveFilters={handleSaveFilterMenu} />
+                    onToggleFeature={handleToggleFeatureFilter} onApplyFilters={handleApplyFilterMenu} onSaveFilters={handleSaveFilterMenu}
+                    roommateLocation={city} onRoommateLocationChange={handleRoommateLocationChange} />
                   <button type="button" className="mobile-filter-sheet-close-btn" onClick={() => setFiltersExpanded(false)}>
                     {t('navbar.showResults')}
                   </button>
