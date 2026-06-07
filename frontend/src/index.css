@@ -8116,5 +8116,3 @@ html[dir="rtl"] .roommate-amenity {
 html[dir="rtl"] .roommate-amenities-grid {
   direction: rtl;
 }
-
-/* Make filter panel wider to avoid all cutoff issues */
