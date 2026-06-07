@@ -8134,3 +8134,20 @@ html[dir="rtl"] .roommate-segmented button:first-child {
   border-right: none;
   border-left: none;
 }
+html[dir="rtl"] .premium-header__search-segment input,
+html[dir="rtl"] .premium-header__price-toggle span,
+html[dir="rtl"] .premium-header__rooms-toggle span,
+html[dir="rtl"] .premium-header__property-type-toggle span,
+html[dir="rtl"] .premium-header__roommates-toggle span,
+html[dir="rtl"] .premium-header__filters-toggle span {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+html[dir="rtl"] .premium-header__search-segment--location input {
+  font-size: 13px !important;
+}
+
+html[dir="rtl"] .premium-header__search-segment--location input::placeholder {
+  font-size: 13px !important;
+}
