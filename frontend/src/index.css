@@ -8077,8 +8077,8 @@ html[dir="rtl"] .roommate-amenity span {
    Panel was going off left edge — anchor it to right side
    ═══════════════════════════════════════════════════════ */
 html[dir="rtl"] .premium-header__filters-panel {
-  right: 0 !important;
-  left: auto !important;
+  right: auto !important;
+  left: 0 !important;
 }
 
 html[dir="rtl"] .premium-header .premium-header__search-segment--all-filters > .premium-header__filters-panel.is-open {
