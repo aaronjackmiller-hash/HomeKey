@@ -8269,3 +8269,15 @@ html[dir="rtl"] .roommate-filter-actions__save {
 .premium-header__filters-panel::before {
   display: none !important;
 }
+/* Fix gap at top of filter panel */
+.premium-header .premium-header__search-segment--all-filters > .premium-header__filters-panel.is-open {
+  top: 44px !important;
+  border-top-right-radius: 0 !important;
+  border-top-left-radius: 12px !important;
+}
+
+html[dir="rtl"] .premium-header .premium-header__search-segment--all-filters > .premium-header__filters-panel.is-open {
+  top: 44px !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 12px !important;
+}
