@@ -405,7 +405,7 @@ border-radius: 12px;
 
 .premium-header__filters-panel {
   display: none;
-  position: absolute;
+  position: fixed;
   top: calc(100% + 9px);
   right: 0;
   min-width: 340px;
