@@ -8260,3 +8260,23 @@ html[dir="rtl"] .premium-header__search-cell * {
 .roommate-card__illustration {
   height: 110px !important;
 }
+/* Wider filter panel on desktop */
+@media (min-width: 768px) {
+  .filter-menu {
+    width: min(95vw, 520px) !important;
+    max-height: calc(100vh - 120px) !important;
+  }
+
+  .premium-header__filters-panel {
+    min-width: 520px !important;
+  }
+
+  .roommate-filters__looking-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .roommate-card {
+    min-height: 220px !important;
+  }
+}
