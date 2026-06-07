@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import hKeyholeLogo from '../assets/h-letter-logo-transparent-fixed.png';
 import FilterMenu from './FilterMenu';
-import ISRAEL_LOCATIONS from '../data/israelLocations';
+import ISRAEL_LOCATIONS from '../israelLocations';
 import { getInterestSummary } from '../utils/propertyInterest';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -1041,7 +1041,7 @@ const Navbar = () => {
                   <span>{t('navbar.allFilters')}</span>
                 </button>
                 <div id="header-filters-panel" ref={filtersPanelRef}
-                  className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
+                  className={`premium-header__filters-panel ${isRoommatesActive ? 'premium-header__filters-panel--roommates' : ''} ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
                   style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isHebrew ? { left: 0, right: 'auto' } : { right: 0, left: 'auto' }) }}>
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters} listingType={listingType} roomOptions={roomOptions}
