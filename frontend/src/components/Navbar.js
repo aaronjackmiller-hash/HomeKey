@@ -355,7 +355,6 @@ const LocationAutocomplete = ({
   useEffect(() => {
     if (value.trim().length > 0) {
       setSuggestions(buildLocationSuggestions(value, language));
-      setIsOpen(true);
     } else {
       setSuggestions({ cities: [], neighborhoods: [] });
     }
@@ -420,7 +419,11 @@ const LocationAutocomplete = ({
         placeholder={placeholder}
         className={resolvedInputClassName}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+          setActiveIndex(-1);
+        }}
         onFocus={() => setIsOpen(true)}
         onBlur={(e) => {
           setTimeout(() => setIsOpen(false), 150);
