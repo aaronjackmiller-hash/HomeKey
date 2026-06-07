@@ -8281,3 +8281,16 @@ html[dir="rtl"] .premium-header .premium-header__search-segment--all-filters > .
   border-top-left-radius: 0 !important;
   border-top-right-radius: 12px !important;
 }
+/* Remove gap at top of mobile filter sheet */
+.premium-header__filters-panel.is-mobile-sheet.is-open {
+  padding-top: 0 !important;
+}
+
+.premium-header__filters-panel.is-mobile-sheet.is-open .filter-menu {
+  padding-top: 8px !important;
+}
+
+.filter-menu--roommates .filter-menu__sticky-top {
+  margin-top: 0 !important;
+  padding-top: 8px !important;
+}
