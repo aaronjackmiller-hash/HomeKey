@@ -8219,16 +8219,6 @@ html[dir="rtl"] .premium-header__search-cell * {
   min-width: 16px !important;
   flex-shrink: 0 !important;
 }
-/* Make filter panel wider to avoid all cutoff issues */
-.premium-header__filters-panel {
-  min-width: 480px !important;
-  width: 480px !important;
-}
-
-.filter-menu {
-  width: 460px !important;
-  max-width: 460px !important;
-}
 
 /* Fix the gap at the top of the filter */
 .premium-header__filters-panel.is-open {
