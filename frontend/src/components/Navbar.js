@@ -345,6 +345,7 @@ const LocationAutocomplete = ({
   const [activeIndex, setActiveIndex] = useState(-1);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const suppressNextOpenRef = useRef(false);
   const wrapperClassNames = ['location-autocomplete', wrapperClassName].filter(Boolean).join(' ');
   const resolvedInputClassName = inputClassName || (value.trim() ? 'is-active' : '');
 
@@ -355,6 +356,11 @@ const LocationAutocomplete = ({
   useEffect(() => {
     if (value.trim().length > 0) {
       setSuggestions(buildLocationSuggestions(value, language));
+      if (suppressNextOpenRef.current) {
+        suppressNextOpenRef.current = false;
+        setIsOpen(false);
+        return;
+      }
       setIsOpen(true);
     } else {
       setSuggestions({ cities: [], neighborhoods: [] });
@@ -378,6 +384,7 @@ const LocationAutocomplete = ({
 
   const handleSelect = useCallback((item) => {
     const val = item.value;
+    suppressNextOpenRef.current = true;
     onChange(val);
     onSelect(val);
     saveRecentSearch(val);
@@ -387,6 +394,7 @@ const LocationAutocomplete = ({
   }, [onChange, onSelect]);
 
   const handleRecentSelect = useCallback((term) => {
+    suppressNextOpenRef.current = true;
     onChange(term);
     onSelect(term);
     setIsOpen(false);
@@ -420,7 +428,10 @@ const LocationAutocomplete = ({
         placeholder={placeholder}
         className={resolvedInputClassName}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          suppressNextOpenRef.current = false;
+          onChange(e.target.value);
+        }}
         onFocus={() => setIsOpen(true)}
         onBlur={(e) => {
           setTimeout(() => setIsOpen(false), 150);
@@ -441,7 +452,7 @@ const LocationAutocomplete = ({
                   key={`recent-${i}`}
                   type="button"
                   className="location-autocomplete__item location-autocomplete__item--recent"
-                  onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}
+                  onPointerDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}
                 >
                   <span className="location-autocomplete__item-icon">
                     <HeaderIcon name="clock" />
@@ -466,7 +477,7 @@ const LocationAutocomplete = ({
                 key={`suggestion-${i}`}
                 type="button"
                 className={`location-autocomplete__item ${isActive ? 'is-active' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                onPointerDown={(e) => { e.preventDefault(); handleSelect(item); }}
               >
                 <span className="location-autocomplete__item-icon">
                   <HeaderIcon name="location" />
