@@ -480,6 +480,7 @@ const Navbar = () => {
   const [listingType, setListingType] = useState(parsedFromLocation.listingType);
   const [propertyCategory, setPropertyCategory] = useState(parsedFromLocation.propertyCategory);
   const [featureFilters, setFeatureFilters] = useState(parsedFromLocation.featureFilters);
+  const [roommateLocationDraft, setRoommateLocationDraft] = useState(parsedFromLocation.city);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
   const [isPriceDragging, setIsPriceDragging] = useState(false);
@@ -521,6 +522,7 @@ const Navbar = () => {
     setListingType(parsedFromLocation.listingType);
     setPropertyCategory(parsedFromLocation.propertyCategory);
     setFeatureFilters(parsedFromLocation.featureFilters);
+    setRoommateLocationDraft(parsedFromLocation.city);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
     minPriceDraftRef.current = parsedFromLocation.minPriceInput;
@@ -774,6 +776,7 @@ const Navbar = () => {
   const handleRoommatesNavClick = () => {
     setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false);
     setListingType('roommates');
+    setRoommateLocationDraft(city);
     applySearch({ nextListingType: 'roommates' });
     setFiltersExpanded(true);
   };
@@ -793,6 +796,7 @@ const Navbar = () => {
   const handleClearAllFilters = () => {
     setRooms(''); setBaths(''); setRoomsDraft(''); setBathsDraft('');
     setListingType('all'); setPropertyCategory(''); setFeatureFilters([]);
+    setRoommateLocationDraft('');
     setMinPriceInput(PRICE_SLIDER_MIN); setMaxPriceInput(PRICE_SLIDER_MAX);
     minPriceDraftRef.current = PRICE_SLIDER_MIN; maxPriceDraftRef.current = PRICE_SLIDER_MAX;
     setFiltersExpanded(false); setPropertyTypeExpanded(false);
@@ -800,7 +804,9 @@ const Navbar = () => {
   };
 
   const handleApplyFilterMenu = () => {
-    applySearch();
+    const nextCity = listingType === 'roommates' ? roommateLocationDraft : city;
+    setCity(nextCity);
+    applySearch({ nextCity });
     setFiltersExpanded(false);
   };
 
@@ -865,7 +871,7 @@ const Navbar = () => {
   const propertyTypeSummary = propertyCategory ? t(`filterMenu.${propertyCategory}`) : (listingType !== 'all' && listingType !== 'roommates' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
 
   const handleCityChange = useCallback((val) => setCity(val), []);
-  const handleRoommateLocationChange = useCallback((val) => setCity(val), []);
+  const handleRoommateLocationChange = useCallback((val) => setRoommateLocationDraft(val), []);
   const handleCitySelect = useCallback((val) => {
     setCity(val);
     applySearch({ nextCity: val });
@@ -1039,7 +1045,7 @@ const Navbar = () => {
               <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                 <button id="header-search-filter-toggle" type="button"
                   className={`premium-header__filters-toggle ${hasAdvancedFilters ? 'is-active' : ''}`}
-                  onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false); setFiltersExpanded((value) => !value); }}
+                  onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false); if (isRoommatesActive) setRoommateLocationDraft(city); setFiltersExpanded((value) => !value); }}
                   aria-expanded={filtersExpanded} aria-controls="header-filters-panel">
                   <HeaderIcon name="filters" />
                   <span>{t('navbar.allFilters')}</span>
@@ -1055,7 +1061,7 @@ const Navbar = () => {
                     onBathsChange={handleFilterMenuBathsChange} onMinPriceChange={handleFilterMenuMinPriceChange}
                     onMaxPriceChange={handleFilterMenuMaxPriceChange} onTogglePropertyCategory={handleTogglePropertyCategory}
                     onToggleFeature={handleToggleFeatureFilter} onApplyFilters={handleApplyFilterMenu} onSaveFilters={handleSaveFilterMenu}
-                    roommateLocation={city} onRoommateLocationChange={handleRoommateLocationChange} />
+                    roommateLocation={roommateLocationDraft} onRoommateLocationChange={handleRoommateLocationChange} />
                   <button type="button" className="mobile-filter-sheet-close-btn" onClick={() => setFiltersExpanded(false)}>
                     {t('navbar.showResults')}
                   </button>
