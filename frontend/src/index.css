@@ -374,7 +374,7 @@ a {
   width: min(330px, 72vw);
   min-width: 240px;
   border: 1px solid #d4dae5;
-  border-radius: 12px;
+ border-radius: 12px 0 0 12px;
   padding: 10px;
   background: #ffffff;
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
