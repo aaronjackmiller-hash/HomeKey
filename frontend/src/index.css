@@ -8268,3 +8268,11 @@ html[dir="rtl"] .filter-menu {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
 }
+.premium-header__filters-panel.is-open {
+  right: 0 !important;
+  left: auto !important;
+  margin-right: 0 !important;
+  border-right: none !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
