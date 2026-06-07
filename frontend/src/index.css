@@ -8219,3 +8219,44 @@ html[dir="rtl"] .premium-header__search-cell * {
   min-width: 16px !important;
   flex-shrink: 0 !important;
 }
+/* Make filter panel wider to avoid all cutoff issues */
+.premium-header__filters-panel {
+  min-width: 480px !important;
+  width: 480px !important;
+}
+
+.filter-menu {
+  width: 460px !important;
+  max-width: 460px !important;
+}
+
+/* Fix the gap at the top of the filter */
+.premium-header__filters-panel.is-open {
+  overflow: hidden !important;
+}
+
+.filter-menu__sticky-top {
+  margin-top: 0 !important;
+}
+
+/* Fix budget row - side by side properly */
+.roommate-filters__budget-row {
+  display: grid !important;
+  grid-template-columns: 1.2fr 0.8fr !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+/* Flexibility label fix */
+.roommate-filters__sub-label {
+  white-space: nowrap !important;
+}
+
+/* Restore roommate cards to full width */
+.roommate-card {
+  min-height: 200px !important;
+}
+
+.roommate-card__illustration {
+  height: 110px !important;
+}
