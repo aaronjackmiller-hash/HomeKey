@@ -8250,7 +8250,11 @@ html[dir="rtl"] .filter-menu {
   direction: rtl !important;
   text-align: right !important;
 }
-
+.premium-header__filters-panel.is-open {
+  position: fixed !important;
+  top: 115px !important;
+  right: 0 !important;
+}
 /* ── 8. My Alerts translation already handled via t() in Navbar.js ── */
 
 /* ── 9. Roommates button text translation handled via t() in Navbar.js ── */
