@@ -8254,3 +8254,18 @@ html[dir="rtl"] .roommate-filter-actions__save {
   font-size: 16px !important;
   font-weight: 600 !important;
 }
+/* Fix gap at top right of filter panel */
+.premium-header__filters-panel.is-open {
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+}
+
+.premium-header__filters-panel .filter-menu {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable !important;
+}
+
+.premium-header__filters-panel::before {
+  display: none !important;
+}
