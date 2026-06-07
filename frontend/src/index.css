@@ -8261,3 +8261,13 @@ html[dir="rtl"] .filter-menu {
 /* Move filter panel flush to the right edge, 
    leaving just a tiny gap between the two scrollbars */
 
+@media (min-width: 768px) {
+  .premium-header__filters-panel.is-open.premium-header__filters-panel--roommates {
+    right: -12px !important;
+  }
+
+  html[dir="rtl"] .premium-header__filters-panel.is-open.premium-header__filters-panel--roommates {
+    right: auto !important;
+    left: -12px !important;
+  }
+}
