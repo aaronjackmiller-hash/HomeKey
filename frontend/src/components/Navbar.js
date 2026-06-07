@@ -327,13 +327,26 @@ const buildSearchQuery = ({ city, rooms, baths, listingType, propertyCategory, f
 };
 
 // ── Location Autocomplete Dropdown Component ──
-const LocationAutocomplete = ({ value, onChange, onSelect, onBlur, placeholder, language, isHebrew }) => {
+const LocationAutocomplete = ({
+  value,
+  onChange,
+  onSelect = () => {},
+  onBlur = () => {},
+  placeholder,
+  language,
+  isHebrew,
+  inputId = 'header-search-query',
+  wrapperClassName = '',
+  inputClassName = '',
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState({ cities: [], neighborhoods: [] });
   const [recentSearches, setRecentSearches] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const wrapperClassNames = ['location-autocomplete', wrapperClassName].filter(Boolean).join(' ');
+  const resolvedInputClassName = inputClassName || (value.trim() ? 'is-active' : '');
 
   useEffect(() => {
     setRecentSearches(getRecentSearches());
@@ -399,13 +412,13 @@ const LocationAutocomplete = ({ value, onChange, onSelect, onBlur, placeholder, 
   const showRecent = value.trim() === '' && recentSearches.length > 0;
 
   return (
-    <div className="location-autocomplete" ref={dropdownRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+    <div className={wrapperClassNames} ref={dropdownRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
       <input
         ref={inputRef}
-        id="header-search-query"
+        id={inputId}
         type="text"
         placeholder={placeholder}
-        className={value.trim() ? 'is-active' : ''}
+        className={resolvedInputClassName}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsOpen(true)}
@@ -872,6 +885,18 @@ const Navbar = () => {
 
   const handleCityChange = useCallback((val) => setCity(val), []);
   const handleRoommateLocationChange = useCallback((val) => setRoommateLocationDraft(val), []);
+  const renderRoommateLocationInput = useCallback(({ id, value, onChange, placeholder }) => (
+    <LocationAutocomplete
+      inputId={id}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      language={language}
+      isHebrew={isHebrew}
+      wrapperClassName="location-autocomplete--roommate"
+      inputClassName="roommate-text-input"
+    />
+  ), [language, isHebrew]);
   const handleCitySelect = useCallback((val) => {
     setCity(val);
     applySearch({ nextCity: val });
@@ -1061,7 +1086,8 @@ const Navbar = () => {
                     onBathsChange={handleFilterMenuBathsChange} onMinPriceChange={handleFilterMenuMinPriceChange}
                     onMaxPriceChange={handleFilterMenuMaxPriceChange} onTogglePropertyCategory={handleTogglePropertyCategory}
                     onToggleFeature={handleToggleFeatureFilter} onApplyFilters={handleApplyFilterMenu} onSaveFilters={handleSaveFilterMenu}
-                    roommateLocation={roommateLocationDraft} onRoommateLocationChange={handleRoommateLocationChange} />
+                    roommateLocation={roommateLocationDraft} onRoommateLocationChange={handleRoommateLocationChange}
+                    renderRoommateLocationInput={renderRoommateLocationInput} />
                   <button type="button" className="mobile-filter-sheet-close-btn" onClick={() => setFiltersExpanded(false)}>
                     {t('navbar.showResults')}
                   </button>

@@ -216,6 +216,7 @@ const FilterMenu = ({
   onSaveFilters,
   roommateLocation,
   onRoommateLocationChange,
+  renderRoommateLocationInput,
 }) => {
   const { t, locale } = useLanguage();
   const selectedFeatureSet = new Set(selectedFeatures || []);
@@ -277,6 +278,7 @@ const FilterMenu = ({
           onSaveFilters={onSaveFilters}
           roommateLocation={roommateLocation}
           onRoommateLocationChange={onRoommateLocationChange}
+          renderRoommateLocationInput={renderRoommateLocationInput}
         />
       ) : (
         <>
@@ -391,6 +393,7 @@ const RoommateFilters = ({
   onSaveFilters,
   roommateLocation = '',
   onRoommateLocationChange = () => {},
+  renderRoommateLocationInput = null,
 }) => {
   const { t, language } = useLanguage();
   const isHebrew = language === 'he';
@@ -445,6 +448,28 @@ const RoommateFilters = ({
 
   const getAmenityLabel = (id) =>
     isHebrew ? (ROOMMATE_AMENITY_LABELS_HE[id] || id) : id;
+
+  const renderLocationInput = (id, placeholder = 'City or neighborhood…') => {
+    if (typeof renderRoommateLocationInput === 'function') {
+      return renderRoommateLocationInput({
+        id,
+        value: roommateLocation,
+        onChange: onRoommateLocationChange,
+        placeholder,
+      });
+    }
+
+    return (
+      <input
+        id={id}
+        type="text"
+        value={roommateLocation}
+        onChange={(e) => onRoommateLocationChange(e.target.value)}
+        placeholder={placeholder}
+        className="roommate-text-input"
+      />
+    );
+  };
 
   return (
     <div className="roommate-filters">
@@ -609,14 +634,7 @@ const RoommateFilters = ({
             <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px',display:'block'}}>
               Location preference:
             </label>
-            <input
-              id="seeker-location"
-              type="text"
-              value={roommateLocation}
-              onChange={(e) => onRoommateLocationChange(e.target.value)}
-              placeholder="City or neighborhood…"
-              className="roommate-text-input"
-            />
+            {renderLocationInput('seeker-location')}
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
@@ -779,14 +797,7 @@ const RoommateFilters = ({
             <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px',display:'block'}}>
               Location:
             </label>
-            <input
-              id="owner-location"
-              type="text"
-              value={roommateLocation}
-              onChange={(e) => onRoommateLocationChange(e.target.value)}
-              placeholder="City or neighborhood…"
-              className="roommate-text-input"
-            />
+            {renderLocationInput('owner-location')}
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
@@ -980,6 +991,7 @@ FilterMenu.defaultProps = {
   onToggleFeature: () => {},
   onApplyFilters: () => {},
   onSaveFilters: () => {},
+  renderRoommateLocationInput: null,
 };
 
 export default FilterMenu;
