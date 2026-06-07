@@ -8090,7 +8090,16 @@ html[dir="rtl"] .premium-header .premium-header__search-segment--all-filters > .
 html[dir="rtl"] .premium-header__search-segment--roommates {
   direction: rtl;
 }
+html[dir="rtl"] .premium-header__search-segment--all-filters {
+  position: static !important;
+}
 
+html[dir="rtl"] .premium-header__search-cell .premium-header__filters-panel {
+  position: fixed !important;
+  top: 115px !important;
+  left: 18px !important;
+  right: auto !important;
+}
 html[dir="rtl"] .filter-menu {
   direction: rtl;
   text-align: right;
