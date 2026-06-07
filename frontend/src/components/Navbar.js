@@ -1506,7 +1506,7 @@ style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isH
               </Link>
               {/* ── MY ALERTS (replaces Saved Search) ── */}
               <Link to={isAuthenticated ? alertsOverlayTarget : '/login'} className="premium-header__alerts-link">
-                My Alerts
+                {t('navbar.myAlerts')}
               </Link>
               {isAuthenticated && (
                 <Link to="/account" className="premium-header__alerts-link">
