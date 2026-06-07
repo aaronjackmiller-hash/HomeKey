@@ -8189,3 +8189,33 @@ html[dir="rtl"] .premium-header__search-cell * {
   max-width: 100% !important;
   overflow-x: hidden !important;
 }
+/* Fix budget row layout - prevent cutoff */
+.roommate-filters__budget-row {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+.roommate-month-field {
+  padding: 6px 8px !important;
+}
+
+.roommate-month-input {
+  min-width: 0 !important;
+  width: 100% !important;
+  font-size: 13px !important;
+}
+
+/* Make segmented flexibility buttons smaller */
+.roommate-segmented button {
+  padding: 6px 4px !important;
+  font-size: 12px !important;
+}
+
+/* Shrink the calendar icon */
+.roommate-month-field .filter-menu__characteristic-svg {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  flex-shrink: 0 !important;
+}
