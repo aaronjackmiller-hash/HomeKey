@@ -8280,3 +8280,16 @@ html[dir="rtl"] .premium-header__search-cell * {
     min-height: 220px !important;
   }
 }
+@media (min-width: 768px) {
+  .premium-header__filters-panel {
+    min-width: 0 !important;
+    width: auto !important;
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  .filter-menu {
+    width: 480px !important;
+    max-width: 480px !important;
+  }
+}
