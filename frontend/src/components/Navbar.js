@@ -1374,8 +1374,7 @@ const Navbar = () => {
                   id="header-filters-panel"
                   ref={filtersPanelRef}
                   className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
-style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate' }}
-                >
+style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isHebrew ? { left: 0, right: 'auto' } : { right: 0, left: 'auto' }) }}                >
                   <FilterMenu
                     onClearAllFilters={handleClearAllFilters}
                     listingType={listingType}
