@@ -7997,3 +7997,260 @@ html[dir="rtl"] .premium-header__property-type-panel {
   width: 100% !important;
   height: 110px !important;
 }
+/* ════════════════════════════════════════════════════════════════
+   HOMEKEY CUSTOM FIXES — complete replacement block
+   Paste this at the very end of index.css
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Filter panel — solid background, no gap, correct position ── */
+.premium-header__filters-panel {
+  background: #ffffff !important;
+}
+
+.filter-menu__sticky-top {
+  background: #f5efe2 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.filter-menu--roommates .filter-menu__sticky-top {
+  background: #f9f6ee !important;
+}
+
+/* English side — anchor panel to right */
+.premium-header__search-segment--all-filters {
+  position: relative !important;
+}
+
+.premium-header__filters-panel.is-open {
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+}
+
+.premium-header__filters-panel .filter-menu {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Remove the gap at the top of the filter panel */
+.premium-header__filters-panel.is-open.is-mobile-sheet {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.premium-header__filters-panel.is-open .filter-menu {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.filter-menu--roommates {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* ── 2. Amenity icons — larger, centered ── */
+.roommate-amenity .filter-menu__characteristic-svg {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+}
+
+.roommate-amenity {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 6px !important;
+  padding: 14px 8px !important;
+}
+
+/* ── 3. Roommate filter section headers — larger on both sides ── */
+.roommate-filters__title {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #1a2a1a !important;
+  margin: 22px 0 10px !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* ── 4. Budget row — move-in date compact, flexibility on same line ── */
+.roommate-filters__budget-row {
+  display: grid !important;
+  grid-template-columns: 1.1fr 0.9fr !important;
+  gap: 8px !important;
+  align-items: start !important;
+  overflow: hidden !important;
+}
+
+.roommate-month-field {
+  padding: 6px 8px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.roommate-month-input {
+  min-width: 0 !important;
+  width: 100% !important;
+  font-size: 12px !important;
+}
+
+.roommate-month-field .filter-menu__characteristic-svg {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+.roommate-segmented {
+  overflow: hidden !important;
+}
+
+.roommate-segmented button {
+  padding: 6px 3px !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+
+/* ── 5. Hebrew nav bar — match English font sizes ── */
+html[dir="rtl"] .premium-header__price-toggle,
+html[dir="rtl"] .premium-header__rooms-toggle,
+html[dir="rtl"] .premium-header__property-type-toggle,
+html[dir="rtl"] .premium-header__roommates-toggle,
+html[dir="rtl"] .premium-header__filters-toggle {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+}
+
+html[dir="rtl"] .premium-header__search-segment input,
+html[dir="rtl"] .premium-header__search-segment input::placeholder {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+  color: #20262d !important;
+}
+
+html[dir="rtl"] .premium-header__icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* ── 6. Hebrew filter panel — correct position ── */
+html[dir="rtl"] .premium-header__filters-panel {
+  right: auto !important;
+  left: 0 !important;
+}
+
+/* ── 7. Hebrew roommate filter — larger icons + fonts ── */
+html[dir="rtl"] .roommate-amenity .filter-menu__characteristic-svg {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+}
+
+html[dir="rtl"] .roommate-amenity {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 6px !important;
+}
+
+html[dir="rtl"] .roommate-amenity span {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+html[dir="rtl"] .roommate-filters__title {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #1a2a1a !important;
+  text-align: right !important;
+  margin: 22px 0 10px !important;
+}
+
+html[dir="rtl"] .roommate-filters__sub-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+}
+
+html[dir="rtl"] .roommate-card__title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+html[dir="rtl"] .roommate-card__subtitle {
+  font-size: 13px !important;
+}
+
+html[dir="rtl"] .roommate-card__control-label {
+  font-size: 13px !important;
+  text-align: right !important;
+  font-weight: 500 !important;
+}
+
+html[dir="rtl"] .roommate-segmented button {
+  font-size: 11px !important;
+}
+
+html[dir="rtl"] .roommate-option {
+  font-size: 14px !important;
+}
+
+html[dir="rtl"] .roommate-filters__habit-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-align: right !important;
+}
+
+html[dir="rtl"] .roommate-filters__hint {
+  font-size: 13px !important;
+  text-align: right !important;
+}
+
+html[dir="rtl"] .roommate-filter-actions__apply,
+html[dir="rtl"] .roommate-filter-actions__save {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+html[dir="rtl"] .roommate-filters__looking-grid {
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .roommate-amenities-grid {
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .roommate-filter-actions {
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .roommate-segmented {
+  direction: rtl !important;
+}
+
+html[dir="rtl"] .roommate-segmented button:last-child {
+  border-right: 1px solid #c8bfa8 !important;
+  border-left: none !important;
+}
+
+html[dir="rtl"] .roommate-segmented button:first-child {
+  border-right: none !important;
+  border-left: none !important;
+}
+
+html[dir="rtl"] .filter-menu {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+/* ── 8. My Alerts translation already handled via t() in Navbar.js ── */
+
+/* ── 9. Roommates button text translation handled via t() in Navbar.js ── */
