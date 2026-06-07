@@ -8173,3 +8173,19 @@ html[dir="rtl"] .premium-header__search-cell * {
   font-size: 16px !important;
   font-weight: 700 !important;
 }
+/* Remove horizontal scrollbar on filter panel */
+.premium-header__filters-panel,
+.filter-menu,
+.roommate-filters,
+.filter-menu__sticky-top {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.roommate-filters__looking-grid,
+.roommate-filters__budget-row,
+.roommate-segmented,
+.roommate-amenities-grid {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
