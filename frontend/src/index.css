@@ -8151,3 +8151,21 @@ html[dir="rtl"] .premium-header__search-segment--location input {
 html[dir="rtl"] .premium-header__search-segment--location input::placeholder {
   font-size: 13px !important;
 }
+html[dir="rtl"] .premium-header__search-segment input,
+html[dir="rtl"] .premium-header__price-toggle span,
+html[dir="rtl"] .premium-header__rooms-toggle span,
+html[dir="rtl"] .premium-header__property-type-toggle span,
+html[dir="rtl"] .premium-header__roommates-toggle span,
+html[dir="rtl"] .premium-header__filters-toggle span {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+html[dir="rtl"] .premium-header__search-segment--location input {
+  font-size: 16px !important;
+}
+
+html[dir="rtl"] .premium-header__search-segment--location input::placeholder {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
