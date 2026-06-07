@@ -1280,10 +1280,10 @@ const PropertyList = () => {
             {language === 'he' ? '🏠 מחפשים שותפים?' : '🏠 Looking for Roommates?'}
           </p>
           <p style={{ color: '#6b7280', marginBottom: '16px' }}>
-            {language === 'he'
-              ? 'השתמשו בפאנל השמאלי כדי לציין אם אתם מחפשים חדר או שותף לדירה שלכם.'
-              : 'Use the filter panel on the left to tell us if you\'re looking for a room or a roommate for your apartment.'}
-          </p>
+  {language === 'he'
+    ? '!היי! השתמשו במסנן הזה אם אתם מחפשים חדר או שותף לדירה שלכם. אנחנו כאן לעזור'
+    : "Hey there! Use this filter if you're looking for a room or a roommate for your apartment. We can help you!"}
+</p>
           <button
             type="button"
             className="primary-btn"
