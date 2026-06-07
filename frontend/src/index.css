@@ -8082,8 +8082,8 @@ html[dir="rtl"] .premium-header__filters-panel {
 }
 
 html[dir="rtl"] .premium-header .premium-header__search-segment--all-filters > .premium-header__filters-panel.is-open {
-  right: 0 !important;
-  left: auto !important;
+  right: auto !important;
+  left: 0 !important;
 }
 
 /* Roommate panel specifically */
