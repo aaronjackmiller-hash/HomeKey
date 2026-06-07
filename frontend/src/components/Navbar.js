@@ -1542,5 +1542,3 @@ style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isH
 };
 
 export default Navbar;
-×
-
