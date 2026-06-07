@@ -20,7 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLocalization';
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 
-const MAX_AUTO_RETRIES = 4; // 4 × 5s = 20s of auto-retry
+const MAX_AUTO_RETRIES = 4;
 const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
 const PRICE_SLIDER_MIN = 0;
@@ -675,7 +675,6 @@ const PropertyList = () => {
   const [savedSearchHistoryMatches, setSavedSearchHistoryMatches] = useState([]);
   const [hoveredListingId, setHoveredListingId] = useState(null);
 
-  // Clear any pending auto-retry timers
   const clearTimers = () => {
     if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
@@ -853,9 +852,6 @@ const PropertyList = () => {
         const data = result.data || [];
         setError('');
         setProperties(data);
-        // If the API returns 0 results with no filters, the database itself is empty.
-        // Keep the flag set until real data actually arrives so filtered searches
-        // continue to show (locally filtered) demo listings.
         if (data.length > 0) {
           setDbIsEmpty(false);
           setLiveSyncStatus(null);
@@ -866,16 +862,10 @@ const PropertyList = () => {
         }
       } catch (err) {
         const status = err.response && err.response.status;
-        // 503 = DB not ready, 502 = Render proxy warming up.
-        // !err.response means axios got no HTTP response at all (connection refused/reset
-        // during cold-start). DNS failures can't happen here because the API uses a
-        // relative URL (/api/...) resolved against the same origin.
         const isTransient = status === 503 || status === 502 || !err.response;
         const isTimeout = err.code === 'ECONNABORTED';
         const canFallbackToDemo = isTransient || isTimeout || (status >= 500 && status < 600);
 
-        // Keep the beta site usable when backend/API is temporarily unavailable.
-        // Prefer cached live listings; fall back to built-in demo listings only if no cache exists.
         let usedCachedLiveListings = false;
         if (canFallbackToDemo) {
           const cached = readCachedLiveListings();
@@ -891,7 +881,6 @@ const PropertyList = () => {
         }
 
         if (isTransient && retryCount < MAX_AUTO_RETRIES) {
-          // Server/DB still starting — auto-retry after RETRY_INTERVAL_MS
           const secs = RETRY_INTERVAL_MS / 1000;
           setAutoRetrySecondsLeft(secs);
           countdownTimerRef.current = setInterval(() => {
@@ -907,7 +896,6 @@ const PropertyList = () => {
           if (!usedCachedLiveListings) {
             setError(t('diagnostics.demoFallback'));
           } else {
-            // Cached listings keep the experience usable; avoid blocking error state.
             setError('');
           }
         } else if (isTimeout) {
@@ -988,7 +976,6 @@ const PropertyList = () => {
       if (maxPrice !== '') samples = samples.filter((p) => p.price <= Number(maxPrice));
       displayProperties = samples;
     } else {
-      // Keep filters functional even when data is served from local cache fallback.
       displayProperties = [...properties];
       if (filter !== 'all') displayProperties = displayProperties.filter((p) => matchesListingType(p, filter));
       if (citySearch.trim()) {
@@ -1035,10 +1022,12 @@ const PropertyList = () => {
     favoritesOnly,
     favoriteIdSet,
   ]);
+
   const circlePropertyIdSet = useMemo(
     () => new Set((circleSelection.propertyIds || []).map((propertyId) => String(propertyId))),
     [circleSelection.propertyIds]
   );
+
   const circleCityHints = useMemo(() => {
     if (!circleSelection.active) return [];
     const cityMap = new Map();
@@ -1258,7 +1247,9 @@ const PropertyList = () => {
       return nextSelection;
     });
   }, []);
-  // Decide what to render in the results area
+
+  const isRoommatesView = filter === 'roommates';
+
   const renderResults = () => {
     if (loading) {
       return (
@@ -1276,6 +1267,33 @@ const PropertyList = () => {
           <p className="status-message status-message-error">{error}</p>
           <button className="secondary-btn" onClick={() => { clearTimers(); setRetryCount((c) => c + 1); }}>
             {t('propertyList.tryAgain')}
+          </button>
+        </div>
+      );
+    }
+
+    // ── FIX: Roommates view shows a helpful prompt instead of "No properties found" ──
+    if (isRoommatesView && displayProperties.length === 0 && !dbIsEmpty) {
+      return (
+        <div className="status-message" style={{ textAlign: 'center', padding: '24px 16px' }}>
+          <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>
+            {language === 'he' ? '🏠 מחפשים שותפים?' : '🏠 Looking for Roommates?'}
+          </p>
+          <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+            {language === 'he'
+              ? 'השתמשו בפאנל השמאלי כדי לציין אם אתם מחפשים חדר או שותף לדירה שלכם.'
+              : 'Use the filter panel on the left to tell us if you\'re looking for a room or a roommate for your apartment.'}
+          </p>
+          <button
+            type="button"
+            className="primary-btn"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+              }
+            }}
+          >
+            {language === 'he' ? 'פתח מסנני שותפים' : 'Open Roommate Filters'}
           </button>
         </div>
       );
@@ -1670,4 +1688,3 @@ const PropertyList = () => {
 };
 
 export default PropertyList;
-
