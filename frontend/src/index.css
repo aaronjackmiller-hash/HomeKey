@@ -8450,3 +8450,7 @@ html[dir="rtl"] .filter-menu {
 .property-list-page .hero-banner-background-image {
   object-position: center bottom !important;
 }
+/* Hide H logo from hero banner */
+.hero-banner-logo {
+  display: none !important;
+}
