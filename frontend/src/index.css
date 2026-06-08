@@ -8447,3 +8447,6 @@ html[dir="rtl"] .filter-menu {
     left: -12px !important;
   }
 }
+.property-list-page .hero-banner-background-image {
+  object-position: center bottom !important;
+}
