@@ -8350,7 +8350,6 @@ html[dir="rtl"] .premium-header__actions--hebrew .premium-header__likes-heart .p
 }
 
 @media (max-width: 767px) {
-  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__action-pill,
   html[dir="rtl"] .premium-header__actions--hebrew .premium-header__language-toggle,
   html[dir="rtl"] .premium-header__actions--hebrew .premium-header__alerts-link,
   html[dir="rtl"] .premium-header__actions--hebrew .premium-header__login {
@@ -8358,7 +8357,7 @@ html[dir="rtl"] .premium-header__actions--hebrew .premium-header__likes-heart .p
   }
 
   html[dir="rtl"] .premium-header__actions--hebrew .premium-header__language-text {
-    font-size: 12px !important;
+    font-size: 0.82rem !important;
   }
 }
 
