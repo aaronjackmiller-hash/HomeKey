@@ -8315,6 +8315,53 @@ html[dir="rtl"] .premium-header__icon {
   height: 18px !important;
 }
 
+/* Hebrew top actions — keep the existing icons, match English rendered sizes. */
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__likes,
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__login {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}
+
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__likes-copy {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__alerts-link {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+}
+
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__language-text {
+  font-size: 1.06rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__login .premium-header__icon {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+html[dir="rtl"] .premium-header__actions--hebrew .premium-header__likes-heart .property-heart-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+@media (max-width: 767px) {
+  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__action-pill,
+  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__language-toggle,
+  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__alerts-link,
+  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__login {
+    font-size: 12px !important;
+  }
+
+  html[dir="rtl"] .premium-header__actions--hebrew .premium-header__language-text {
+    font-size: 12px !important;
+  }
+}
+
 /* ── 6. Hebrew filter panel — correct position ── */
 html[dir="rtl"] .premium-header__filters-panel {
   right: auto !important;
