@@ -8454,3 +8454,14 @@ html[dir="rtl"] .filter-menu {
 .hero-banner-logo {
   display: none !important;
 }
+.hero-banner-copy .hero-banner-logo {
+  display: none !important;
+}
+
+.hero-banner-grid .hero-banner-logo {
+  display: none !important;
+}
+
+[class*="hero-banner-logo"] {
+  display: none !important;
+}
