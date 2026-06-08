@@ -8465,3 +8465,6 @@ html[dir="rtl"] .filter-menu {
 [class*="hero-banner-logo"] {
   display: none !important;
 }
+.hero-banner-overlay {
+  display: none !important;
+}
