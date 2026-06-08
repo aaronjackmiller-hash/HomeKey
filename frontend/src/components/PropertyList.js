@@ -21,28 +21,7 @@ import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLo
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import heroImage from '../assets/small_telaviv.jpg';
 
-import heroImage from '../assets/small_telaviv.jpg';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
-import {
-  getMyInstantAlertInbox,
-  getProperties,
-  getPublicYad2SyncStatus,
-  saveMyCurrentSearchAlert,
-} from '../services/api';
-import GoogleListingsMap from './GoogleListingsMap';
-import SAMPLE_PROPERTIES from '../data/sampleProperties';
-import {
-  getInterestSummary,
-  incrementHeartClickCount,
-  toggleFavoriteProperty,
-} from '../utils/propertyInterest';
-import { getPropertyId } from '../utils/propertyIdentity';
-import { getContactFirstName } from '../utils/contactMessaging';
-import { writeSavedSearchContext } from '../utils/savedSearchContext';
-import { useLanguage } from '../context/LanguageContext';
-import { getAddressFieldVariants, getLocalizedAddress } from '../utils/addressLocalization';
-import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
+const MAX_AUTO_RETRIES = 4;
 const MAX_AUTO_RETRIES = 4;
 const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
