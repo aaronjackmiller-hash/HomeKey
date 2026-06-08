@@ -1,3 +1,5 @@
+import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
+import heroImage from '../assets/small_telaviv.jpg';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
@@ -25,7 +27,8 @@ const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
 const PRICE_SLIDER_MIN = 0;
 const PRICE_SLIDER_MAX = 20000;
-const HERO_BACKGROUND_IMAGE = process.env.PUBLIC_URL + '/small_telaviv.jpg';
+const HERO_BACKGROUND_IMAGE = heroImage;
+const HERO_BACKGROUND_IMAGE = heroImage
 const MOBILE_LAYOUT_BREAKPOINT = 767;
 const SAVED_SEARCH_HISTORY_QUERY_KEY = 'history';
 const SAVED_SEARCH_ID_QUERY_KEY = 'savedSearchId';
