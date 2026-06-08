@@ -22,7 +22,6 @@ import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import heroImage from '../assets/small_telaviv.jpg';
 
 const MAX_AUTO_RETRIES = 4;
-const MAX_AUTO_RETRIES = 4;
 const RETRY_INTERVAL_MS = 5000;
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v3';
 const PRICE_SLIDER_MIN = 0;
