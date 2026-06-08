@@ -7079,7 +7079,7 @@ legend {
     padding: 5px 8px;
   }
 }
-
+ 
 @media (max-width: 560px) {
   .premium-header__search-pill {
     grid-template-columns: minmax(0, 1fr) auto auto auto;
