@@ -939,7 +939,7 @@ const Navbar = () => {
   return (
     <>
     <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
-      <div className="premium-header__inner">
+      <div className="premium-header__inner" style={{ position: 'relative' }}>
 
         {/* ── BRAND ── */}
         <div className="premium-header__brand-cell">
