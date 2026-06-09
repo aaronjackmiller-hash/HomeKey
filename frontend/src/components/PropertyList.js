@@ -1273,33 +1273,6 @@ const PropertyList = () => {
       );
     }
 
-    // ── FIX: Roommates view shows a helpful prompt instead of "No properties found" ──
-    if (isRoommatesView && displayProperties.length === 0 && !dbIsEmpty) {
-      return (
-        <div className="status-message" style={{ textAlign: 'center', padding: '24px 16px' }}>
-          <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px' }}>
-            {language === 'he' ? '🏠 מחפשים שותפים?' : '🏠 Looking for Roommates?'}
-          </p>
-          <p style={{ color: '#6b7280', marginBottom: '16px' }}>
-  {language === 'he'
-    ? '!היי! השתמשו במסנן הזה אם אתם מחפשים חדר או שותף לדירה שלכם. אנחנו כאן לעזור'
-    : "Hey there! Use this filter if you're looking for a room or a roommate for your apartment. We can help you!"}
-</p>
-          <button
-            type="button"
-            className="primary-btn"
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
-              }
-            }}
-          >
-            {language === 'he' ? 'פתח מסנני שותפים' : 'Open Roommate Filters'}
-          </button>
-        </div>
-      );
-    }
-
     return (
       <div className='container'>
         {savedSearchHistoryMode && (
