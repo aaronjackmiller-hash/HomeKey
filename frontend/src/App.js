@@ -1,3 +1,4 @@
+import './styles/roommates_gateway.css';
 import React from 'react';
 import {
   BrowserRouter as Router,
