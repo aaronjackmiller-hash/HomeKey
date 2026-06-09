@@ -46,7 +46,6 @@ const ROOMMATE_AMENITY_ITEMS = [
   { id: 'In-Unit Washer & Dryer', icon: 'washer' },
 ];
 
-// FIX 3: Hebrew labels for roommate amenities
 const ROOMMATE_AMENITY_LABELS_HE = {
   'Mamad': 'ממ״ד',
   'Elevator': 'מעלית',
@@ -194,6 +193,7 @@ const CHARACTERISTIC_ICONS = {
   ),
 };
 
+// ── NEW: Accept initialLookingFor prop ──
 const FilterMenu = ({
   onClearAllFilters,
   listingType,
@@ -217,11 +217,14 @@ const FilterMenu = ({
   roommateLocation,
   onRoommateLocationChange,
   renderRoommateLocationInput,
+  initialLookingFor = 'room',  // NEW PROP — 'room' or 'roommate', set by gateway
 }) => {
   const { t, locale } = useLanguage();
   const selectedFeatureSet = new Set(selectedFeatures || []);
   const isRoommatesView = listingType === 'roommates';
-  const [lookingFor, setLookingFor] = useState('room');
+
+  // ── UPDATED: initialised from prop so gateway choice pre-selects the card ──
+  const [lookingFor, setLookingFor] = useState(initialLookingFor);
   const [bedroomsNeeded, setBedroomsNeeded] = useState('1');
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
 
@@ -238,7 +241,6 @@ const FilterMenu = ({
 
   return (
     <div className={`filter-menu ${isRoommatesView ? `filter-menu--roommates filter-menu--${lookingFor === 'room' ? 'room-wanted' : 'roommate-wanted'}` : ''}`}>
-      {/* FIX 1: solid background on sticky header so content doesn't show through */}
       <div className="filter-menu__sticky-top" style={{ background: 'var(--color-surface, #fff)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div className="filter-menu__header">
           <h2 className="filter-menu__title">{t('filterMenu.title')}</h2>
@@ -279,6 +281,7 @@ const FilterMenu = ({
           roommateLocation={roommateLocation}
           onRoommateLocationChange={onRoommateLocationChange}
           renderRoommateLocationInput={renderRoommateLocationInput}
+          initialLookingFor={initialLookingFor}
         />
       ) : (
         <>
@@ -394,6 +397,7 @@ const RoommateFilters = ({
   roommateLocation = '',
   onRoommateLocationChange = () => {},
   renderRoommateLocationInput = null,
+  initialLookingFor = 'room',
 }) => {
   const { t, language } = useLanguage();
   const isHebrew = language === 'he';
@@ -433,7 +437,6 @@ const RoommateFilters = ({
 
   const isRoom = lookingFor === 'room';
 
-  // FIX 3: Hebrew labels for card titles
   const roomCardTitle = isHebrew
     ? (<>מחפש/ת <strong>חדר</strong></>)
     : (<>Looking for a <strong>ROOM</strong></>);
@@ -458,7 +461,6 @@ const RoommateFilters = ({
         placeholder,
       });
     }
-
     return (
       <input
         id={id}
@@ -680,7 +682,6 @@ const RoommateFilters = ({
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
-            {/* FIX 2: larger icons via inline style on the grid buttons */}
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
                 <button
@@ -842,7 +843,6 @@ const RoommateFilters = ({
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
-            {/* FIX 2: larger icons */}
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
                 <button
@@ -957,7 +957,6 @@ const FeatureCard = ({ icon, label, isSelected, onClick }) => (
   </button>
 );
 
-// FIX 2: Accept a size prop, default 24 for existing uses, 32 for amenity grid
 const CharacteristicIcon = ({ name, size = 24 }) => (
   <svg
     className="filter-menu__characteristic-svg"
@@ -992,6 +991,7 @@ FilterMenu.defaultProps = {
   onApplyFilters: () => {},
   onSaveFilters: () => {},
   renderRoommateLocationInput: null,
+  initialLookingFor: 'room',
 };
 
 export default FilterMenu;
