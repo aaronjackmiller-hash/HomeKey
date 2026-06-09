@@ -1,0 +1,247 @@
+/* ============================================================
+   HomeKey — Roommates Gateway + Mode Switcher Styles
+   Add to your main stylesheet (e.g. styles/premium-header.css
+   or wherever your .premium-header__ styles live)
+   ============================================================ */
+
+/* ── MODE SWITCHER ── */
+.premium-header__mode-switcher {
+  display: flex;
+  align-items: center;
+  background: var(--color-surface-muted, #f2efe9);
+  border-radius: 32px;
+  padding: 4px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.premium-header__mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 22px;
+  border-radius: 28px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #777);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.premium-header__mode-btn:hover {
+  color: var(--color-text-primary, #1a1a1a);
+}
+
+.premium-header__mode-btn.is-active {
+  background: #fff;
+  color: var(--color-text-primary, #1a1a1a);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Roommates button gets teal when active */
+.premium-header__mode-btn--roommates.is-active {
+  background: var(--color-brand, #2d6b5e);
+  color: #fff;
+  box-shadow: 0 1px 6px rgba(45, 107, 94, 0.3);
+}
+
+.premium-header__mode-btn .premium-header__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Hide mode switcher on mobile — keep filter bar as-is */
+@media (max-width: 767px) {
+  .premium-header__mode-switcher {
+    display: none;
+  }
+}
+
+
+/* ── GATEWAY MODAL BACKDROP ── */
+.roommates-gateway-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 25, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: gatewayFadeIn 0.18s ease;
+}
+
+@keyframes gatewayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+
+/* ── GATEWAY CARD ── */
+.roommates-gateway-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 40px 28px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  text-align: center;
+  animation: gatewaySlideUp 0.2s ease;
+}
+
+@keyframes gatewaySlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.roommates-gateway-card__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a1a);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.roommates-gateway-card__subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary, #777);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+
+/* ── GATEWAY OPTIONS ── */
+.roommates-gateway-card__options {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.roommates-gateway-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 16px 18px;
+  border-radius: 14px;
+  border: 2px solid var(--color-border, #e4e0d8);
+  background: var(--color-surface-muted, #faf8f5);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+  text-align: center;
+}
+
+.roommates-gateway-option:hover {
+  border-color: var(--color-brand, #2d6b5e);
+  background: #f0f8f5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 107, 94, 0.14);
+}
+
+.roommates-gateway-option.is-selected {
+  border-color: var(--color-brand, #2d6b5e);
+  background: #f0f8f5;
+  box-shadow: 0 6px 20px rgba(45, 107, 94, 0.18);
+}
+
+.roommates-gateway-option__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 4px;
+}
+
+.roommates-gateway-option__icon svg {
+  width: 64px;
+  height: 64px;
+}
+
+.roommates-gateway-option__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a1a);
+  line-height: 1.3;
+}
+
+.roommates-gateway-option__desc {
+  font-size: 12px;
+  color: var(--color-text-secondary, #888);
+  line-height: 1.5;
+}
+
+.roommates-gateway-option__badge {
+  display: inline-block;
+  background: var(--color-brand-light, #e8f4f0);
+  color: var(--color-brand, #2d6b5e);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+
+.roommates-gateway-option__badge--lister {
+  background: #fff4e8;
+  color: #b06820;
+}
+
+
+/* ── GATEWAY DISMISS LINK ── */
+.roommates-gateway-card__dismiss {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--color-text-secondary, #aaa);
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.roommates-gateway-card__dismiss:hover {
+  color: var(--color-text-primary, #555);
+}
+
+
+/* ── MOBILE: stack options vertically ── */
+@media (max-width: 540px) {
+  .roommates-gateway-card {
+    padding: 28px 20px 20px;
+  }
+
+  .roommates-gateway-card__options {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .roommates-gateway-option {
+    flex-direction: row;
+    text-align: left;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .roommates-gateway-option__icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+
+  .roommates-gateway-option__icon svg {
+    width: 48px;
+    height: 48px;
+  }
+}
