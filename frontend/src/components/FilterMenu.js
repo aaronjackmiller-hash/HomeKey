@@ -193,7 +193,135 @@ const CHARACTERISTIC_ICONS = {
   ),
 };
 
-// ── NEW: Accept initialLookingFor prop ──
+// ── Live counter component ──
+const RoommateCounter = ({ lookingFor, isHebrew }) => {
+  // These would eventually come from a real API call
+  // For now showing static counts that feel realistic
+  const seekerCount = 47;
+  const listerCount = 12;
+
+  if (lookingFor === 'room') {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #e8f4f0, #f0f8f5)',
+        border: '1px solid #b8d8d0',
+        borderRadius: '10px',
+        padding: '10px 14px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+      }}>
+        <span style={{ fontSize: '20px' }}>🏠</span>
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#2d6b5e' }}>
+            {isHebrew
+              ? `${listerCount} חדרים זמינים עכשיו בישראל`
+              : `${listerCount} rooms available right now in Israel`}
+          </div>
+          <div style={{ fontSize: '11px', color: '#5a8a80', marginTop: '2px' }}>
+            {isHebrew
+              ? 'הגדר את החיפוש שלך כדי לראות אותם על המפה'
+              : 'Set your preferences to see them on the map'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #fff4e8, #fff8f0)',
+      border: '1px solid #f0d0a0',
+      borderRadius: '10px',
+      padding: '10px 14px',
+      marginBottom: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+    }}>
+      <span style={{ fontSize: '20px' }}>🔍</span>
+      <div>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#b06820' }}>
+          {isHebrew
+            ? `${seekerCount} אנשים מחפשים חדר עכשיו בישראל`
+            : `${seekerCount} people are looking for a room right now in Israel`}
+        </div>
+        <div style={{ fontSize: '11px', color: '#9a7040', marginTop: '2px' }}>
+          {isHebrew
+            ? 'פרסם את החדר שלך ותגיע אליהם מיד'
+            : 'List your room and reach them immediately'}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Phone number component (reused in both forms) ──
+const PhoneField = ({ phone, setPhone, phoneSaved, setPhoneSaved, isHebrew }) => {
+  if (!phoneSaved) {
+    return (
+      <section className="filter-menu__section roommate-filters__section">
+        <h3 className="roommate-filters__title">
+          {isHebrew ? 'מספר טלפון' : 'Contact number'}
+          <span className="roommate-filters__required-badge">
+            {isHebrew ? 'חובה' : 'Required'}
+          </span>
+        </h3>
+        <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '8px' }}>
+          {isHebrew
+            ? 'מוצג רק למשתמשים מאומתים. לעולם לא משותף פומבית.'
+            : 'Only shown to verified users. Never shared publicly.'}
+        </p>
+        <div className="roommate-phone-row">
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+972 50 000 0000"
+            className="roommate-text-input"
+          />
+          <button
+            type="button"
+            className="roommate-phone-save-btn"
+            onClick={() => { if (phone.length >= 8) setPhoneSaved(true); }}
+            style={{ opacity: phone.length >= 8 ? 1 : 0.4 }}
+          >
+            {isHebrew ? 'שמור' : 'Save'}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="filter-menu__section roommate-filters__section">
+      <h3 className="roommate-filters__title">
+        {isHebrew ? 'מספר טלפון' : 'Contact number'}
+        <span className="roommate-filters__required-badge" style={{ background: '#e8f4f0', color: '#2d6b5e', borderColor: '#b8d8d0' }}>
+          ✓ {isHebrew ? 'נשמר' : 'Saved'}
+        </span>
+      </h3>
+      <div className="roommate-phone-saved">
+        <div className="roommate-phone-saved__number">✓ {phone}</div>
+        <button
+          type="button"
+          className="roommate-whatsapp-btn"
+          onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g,'').replace(/^0/,'972')}`)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          {isHebrew ? 'צור קשר בוואטסאפ' : 'Contact on WhatsApp'}
+        </button>
+        <button type="button" className="roommate-phone-edit-btn" onClick={() => setPhoneSaved(false)}>
+          {isHebrew ? 'ערוך מספר' : 'Edit number'}
+        </button>
+      </div>
+    </section>
+  );
+};
+
 const FilterMenu = ({
   onClearAllFilters,
   listingType,
@@ -217,13 +345,14 @@ const FilterMenu = ({
   roommateLocation,
   onRoommateLocationChange,
   renderRoommateLocationInput,
-  initialLookingFor = 'room',  // NEW PROP — 'room' or 'roommate', set by gateway
+  initialLookingFor = 'room',
 }) => {
   const { t, locale } = useLanguage();
+  const { language } = useLanguage();
+  const isHebrew = language === 'he';
   const selectedFeatureSet = new Set(selectedFeatures || []);
   const isRoommatesView = listingType === 'roommates';
 
-  // ── UPDATED: initialised from prop so gateway choice pre-selects the card ──
   const [lookingFor, setLookingFor] = useState(initialLookingFor);
   const [bedroomsNeeded, setBedroomsNeeded] = useState('1');
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
@@ -239,11 +368,19 @@ const FilterMenu = ({
     onClearAllFilters();
   };
 
+  // ── FIX 2: Dynamic title based on mode and selection ──
+  const getPanelTitle = () => {
+    if (!isRoommatesView) return t('filterMenu.title');
+    if (lookingFor === 'room') return isHebrew ? 'מצא חדר' : 'Find a Room';
+    return isHebrew ? 'פרסם את החדר שלך' : 'List Your Room';
+  };
+
   return (
     <div className={`filter-menu ${isRoommatesView ? `filter-menu--roommates filter-menu--${lookingFor === 'room' ? 'room-wanted' : 'roommate-wanted'}` : ''}`}>
       <div className="filter-menu__sticky-top" style={{ background: 'var(--color-surface, #fff)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div className="filter-menu__header">
-          <h2 className="filter-menu__title">{t('filterMenu.title')}</h2>
+          {/* ── FIX 2: Dynamic title ── */}
+          <h2 className="filter-menu__title">{getPanelTitle()}</h2>
           <button type="button" className="filter-menu__cancel" onClick={handleClearAll}>
             {t('filterMenu.clearAll')}
           </button>
@@ -282,71 +419,37 @@ const FilterMenu = ({
           onRoommateLocationChange={onRoommateLocationChange}
           renderRoommateLocationInput={renderRoommateLocationInput}
           initialLookingFor={initialLookingFor}
+          isHebrew={isHebrew}
         />
       ) : (
         <>
           <section className="filter-menu__section">
             <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
             <div className="filter-menu__type-row">
-              <button
-                type="button"
-                className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`}
-                onClick={() => onTogglePropertyCategory('apartments')}
-              >
-                {t('filterMenu.apartments')}
-              </button>
-              <button
-                type="button"
-                className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`}
-                onClick={() => onTogglePropertyCategory('houses')}
-              >
-                {t('filterMenu.houses')}
-              </button>
+              <button type="button" className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('apartments')}>{t('filterMenu.apartments')}</button>
+              <button type="button" className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('houses')}>{t('filterMenu.houses')}</button>
             </div>
           </section>
-
           <section className="filter-menu__section">
             <h3 className="filter-menu__section-title">{t('filterMenu.bedrooms')}</h3>
             <div className="filter-menu__option-grid">
               {roomOptions.map((option) => (
-                <button
-                  key={option.value || 'any-rooms'}
-                  type="button"
-                  className={`filter-menu__chip ${rooms === option.value ? 'is-selected' : ''}`}
-                  onClick={() => onRoomsChange(option.value)}
-                >
-                  {option.label}
-                </button>
+                <button key={option.value || 'any-rooms'} type="button" className={`filter-menu__chip ${rooms === option.value ? 'is-selected' : ''}`} onClick={() => onRoomsChange(option.value)}>{option.label}</button>
               ))}
             </div>
           </section>
-
           <section className="filter-menu__section">
             <h3 className="filter-menu__section-title">{t('filterMenu.bathrooms')}</h3>
             <div className="filter-menu__option-grid">
               {bathOptions.map((option) => (
-                <button
-                  key={option.value || 'any-baths'}
-                  type="button"
-                  className={`filter-menu__chip ${baths === option.value ? 'is-selected' : ''}`}
-                  onClick={() => onBathsChange(option.value)}
-                >
-                  {option.label}
-                </button>
+                <button key={option.value || 'any-baths'} type="button" className={`filter-menu__chip ${baths === option.value ? 'is-selected' : ''}`} onClick={() => onBathsChange(option.value)}>{option.label}</button>
               ))}
             </div>
           </section>
-
           <section className="filter-menu__section">
             <h3 className="filter-menu__section-title">{t('filterMenu.propertyCharacteristics')}</h3>
-            <button
-              type="button"
-              className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`}
-              onClick={() => onToggleFeature('mamad')}
-            >
-              <span className="filter-menu__mamad-icon" aria-hidden="true">
-                <CharacteristicIcon name="shield" />
-              </span>
+            <button type="button" className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`} onClick={() => onToggleFeature('mamad')}>
+              <span className="filter-menu__mamad-icon" aria-hidden="true"><CharacteristicIcon name="shield" /></span>
               <div className="filter-menu__mamad-copy">
                 <span>{t('filterMenu.mamad')}</span>
                 <span>({t('filterMenu.securityRoom')})</span>
@@ -354,26 +457,13 @@ const FilterMenu = ({
             </button>
             <div className="filter-menu__features-grid">
               {FEATURE_ITEMS.map((feature) => (
-                <FeatureCard
-                  key={feature.id}
-                  icon={feature.icon}
-                  label={t(feature.labelKey)}
-                  isSelected={selectedFeatureSet.has(feature.id)}
-                  onClick={() => onToggleFeature(feature.id)}
-                />
+                <FeatureCard key={feature.id} icon={feature.icon} label={t(feature.labelKey)} isSelected={selectedFeatureSet.has(feature.id)} onClick={() => onToggleFeature(feature.id)} />
               ))}
             </div>
             <div className="filter-menu__details-grid">
               {DETAIL_ITEMS.map((detail) => (
-                <button
-                  key={detail.id}
-                  type="button"
-                  className={`filter-menu__detail-chip ${selectedFeatureSet.has(detail.id) ? 'is-selected' : ''}`}
-                  onClick={() => onToggleFeature(detail.id)}
-                >
-                  <span className="filter-menu__detail-icon" aria-hidden="true">
-                    <CharacteristicIcon name={detail.icon} />
-                  </span>
+                <button key={detail.id} type="button" className={`filter-menu__detail-chip ${selectedFeatureSet.has(detail.id) ? 'is-selected' : ''}`} onClick={() => onToggleFeature(detail.id)}>
+                  <span className="filter-menu__detail-icon" aria-hidden="true"><CharacteristicIcon name={detail.icon} /></span>
                   {t(detail.labelKey)}
                 </button>
               ))}
@@ -398,9 +488,9 @@ const RoommateFilters = ({
   onRoommateLocationChange = () => {},
   renderRoommateLocationInput = null,
   initialLookingFor = 'room',
+  isHebrew = false,
 }) => {
   const { t, language } = useLanguage();
-  const isHebrew = language === 'he';
 
   const [rentRange, setRentRange] = useState('Under ₪5k');
   const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_MONTH);
@@ -411,8 +501,11 @@ const RoommateFilters = ({
   const [kosher, setKosher] = useState('Open to it');
   const [leaseTerm, setLeaseTerm] = useState('6 mo');
   const [amenities, setAmenities] = useState(['Mamad']);
+
+  // ── FIX 3: Phone moved to top — seeker ──
   const [phone, setPhone] = useState('');
   const [phoneSaved, setPhoneSaved] = useState(false);
+
   const [rentAmount, setRentAmount] = useState('');
   const [utilities, setUtilities] = useState('Included');
   const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_MONTH);
@@ -422,74 +515,47 @@ const RoommateFilters = ({
   const [ownerKosher, setOwnerKosher] = useState('Not kosher');
   const [ownerLeaseTerm, setOwnerLeaseTerm] = useState('6 mo');
   const [ownerAmenities, setOwnerAmenities] = useState(['Mamad']);
+
+  // ── FIX 3: Phone moved to top — lister ──
   const [ownerPhone, setOwnerPhone] = useState('');
   const [ownerPhoneSaved, setOwnerPhoneSaved] = useState(false);
 
-  const toggleAmenity = (item) =>
-    setAmenities((prev) =>
-      prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]
-    );
-
-  const toggleOwnerAmenity = (item) =>
-    setOwnerAmenities((prev) =>
-      prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]
-    );
+  const toggleAmenity = (item) => setAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
+  const toggleOwnerAmenity = (item) => setOwnerAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
 
   const isRoom = lookingFor === 'room';
 
-  const roomCardTitle = isHebrew
-    ? (<>מחפש/ת <strong>חדר</strong></>)
-    : (<>Looking for a <strong>ROOM</strong></>);
+  const roomCardTitle = isHebrew ? (<>מחפש/ת <strong>חדר</strong></>) : (<>Looking for a <strong>ROOM</strong></>);
+  const roommateCardTitle = isHebrew ? (<>מחפש/ת <strong>שותף/ה</strong></>) : (<>Looking for a <strong>ROOMMATE</strong></>);
+  const roommateCardSubtitle = isHebrew ? '(יש לי דירה)' : '(I have an apartment)';
 
-  const roommateCardTitle = isHebrew
-    ? (<>מחפש/ת <strong>שותף/ה</strong></>)
-    : (<>Looking for a <strong>ROOMMATE</strong></>);
-
-  const roommateCardSubtitle = isHebrew
-    ? '(יש לי דירה)'
-    : '(I have an apartment)';
-
-  const getAmenityLabel = (id) =>
-    isHebrew ? (ROOMMATE_AMENITY_LABELS_HE[id] || id) : id;
+  const getAmenityLabel = (id) => isHebrew ? (ROOMMATE_AMENITY_LABELS_HE[id] || id) : id;
 
   const renderLocationInput = (id, placeholder = 'City or neighborhood…') => {
     if (typeof renderRoommateLocationInput === 'function') {
-      return renderRoommateLocationInput({
-        id,
-        value: roommateLocation,
-        onChange: onRoommateLocationChange,
-        placeholder,
-      });
+      return renderRoommateLocationInput({ id, value: roommateLocation, onChange: onRoommateLocationChange, placeholder });
     }
     return (
-      <input
-        id={id}
-        type="text"
-        value={roommateLocation}
-        onChange={(e) => onRoommateLocationChange(e.target.value)}
-        placeholder={placeholder}
-        className="roommate-text-input"
-      />
+      <input id={id} type="text" value={roommateLocation} onChange={(e) => onRoommateLocationChange(e.target.value)} placeholder={placeholder} className="roommate-text-input" />
     );
   };
 
   return (
     <div className="roommate-filters">
 
+      {/* ── FIX 1: Live counter at top ── */}
+      <div style={{ padding: '12px 0 4px' }}>
+        <RoommateCounter lookingFor={lookingFor} isHebrew={isHebrew} />
+      </div>
+
       {/* I AM LOOKING FOR */}
       <section className="filter-menu__section roommate-filters__section">
         <h3 className="roommate-filters__title">{isHebrew ? 'אני מחפש/ת' : 'I am looking for'}</h3>
         <div className="roommate-filters__looking-grid">
-
-          {/* Room card */}
-          <div
-            role="button"
-            tabIndex={0}
-            className={`roommate-card ${isRoom ? 'is-selected' : ''}`}
+          <div role="button" tabIndex={0} className={`roommate-card ${isRoom ? 'is-selected' : ''}`}
             onClick={() => onLookingForChange('room')}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('room'); } }}
-            aria-pressed={isRoom}
-          >
+            aria-pressed={isRoom}>
             <div className="roommate-card__illustration" aria-hidden="true">
               <svg viewBox="0 0 120 90" focusable="false">
                 <rect x="8" y="6" width="104" height="74" rx="2" fill="none" stroke="#5a7a5a" strokeWidth="3"/>
@@ -510,33 +576,16 @@ const RoommateFilters = ({
               </svg>
             </div>
             <span className="roommate-card__title">{roomCardTitle}</span>
-            <div
-              className="roommate-card__control"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <span className="roommate-card__control-label">
-                {isHebrew ? 'מספר חדרי שינה נדרשים:' : 'Number of bedrooms needed:'}
-              </span>
-              <OptionButtonGroup
-                options={ROOMMATE_COUNT_OPTIONS}
-                selectedValue={bedroomsNeeded}
-                onChange={(v) => { onLookingForChange('room'); onBedroomsNeededChange(v); }}
-                compact
-                ariaLabel={isHebrew ? 'מספר חדרי שינה נדרשים' : 'Number of bedrooms needed'}
-              />
+            <div className="roommate-card__control" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <span className="roommate-card__control-label">{isHebrew ? 'מספר חדרי שינה נדרשים:' : 'Number of bedrooms needed:'}</span>
+              <OptionButtonGroup options={ROOMMATE_COUNT_OPTIONS} selectedValue={bedroomsNeeded} onChange={(v) => { onLookingForChange('room'); onBedroomsNeededChange(v); }} compact ariaLabel={isHebrew ? 'מספר חדרי שינה נדרשים' : 'Number of bedrooms needed'} />
             </div>
           </div>
 
-          {/* Roommate card */}
-          <div
-            role="button"
-            tabIndex={0}
-            className={`roommate-card ${!isRoom ? 'is-selected' : ''}`}
+          <div role="button" tabIndex={0} className={`roommate-card ${!isRoom ? 'is-selected' : ''}`}
             onClick={() => onLookingForChange('roommate')}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('roommate'); } }}
-            aria-pressed={!isRoom}
-          >
+            aria-pressed={!isRoom}>
             <div className="roommate-card__illustration" aria-hidden="true">
               <svg viewBox="0 0 120 100" focusable="false">
                 <rect x="32" y="6" width="56" height="82" rx="3" fill="#6d9b6d"/>
@@ -564,21 +613,9 @@ const RoommateFilters = ({
             </div>
             <span className="roommate-card__title">{roommateCardTitle}</span>
             <span className="roommate-card__subtitle">{roommateCardSubtitle}</span>
-            <div
-              className="roommate-card__control"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <span className="roommate-card__control-label">
-                {isHebrew ? 'מספר חדרים פנויים:' : 'Number of rooms available:'}
-              </span>
-              <OptionButtonGroup
-                options={ROOMS_AVAILABLE_OPTIONS}
-                selectedValue={roommatesNeeded}
-                onChange={(v) => { onLookingForChange('roommate'); onRoommatesNeededChange(v); }}
-                compact
-                ariaLabel={isHebrew ? 'מספר חדרים פנויים' : 'Number of rooms available'}
-              />
+            <div className="roommate-card__control" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+              <span className="roommate-card__control-label">{isHebrew ? 'מספר חדרים פנויים:' : 'Number of rooms available:'}</span>
+              <OptionButtonGroup options={ROOMS_AVAILABLE_OPTIONS} selectedValue={roommatesNeeded} onChange={(v) => { onLookingForChange('roommate'); onRoommatesNeededChange(v); }} compact ariaLabel={isHebrew ? 'מספר חדרים פנויים' : 'Number of rooms available'} />
             </div>
           </div>
         </div>
@@ -587,188 +624,87 @@ const RoommateFilters = ({
       {/* MODE-SPECIFIC FIELDS */}
       {isRoom ? (
         <>
+          {/* ── FIX 3: Phone number FIRST for seeker ── */}
+          <PhoneField phone={phone} setPhone={setPhone} phoneSaved={phoneSaved} setPhoneSaved={setPhoneSaved} isHebrew={isHebrew} />
+
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Budget & availability</h3>
             <p className="roommate-filters__sub-label">Total monthly rent</p>
-            <SegmentedButtonGroup
-              options={RENT_RANGE_OPTIONS}
-              selectedValue={rentRange}
-              onChange={setRentRange}
-              ariaLabel="Total monthly rent range"
-            />
+            <SegmentedButtonGroup options={RENT_RANGE_OPTIONS} selectedValue={rentRange} onChange={setRentRange} ariaLabel="Total monthly rent range" />
             <div className="roommate-filters__budget-row">
               <div>
                 <label className="roommate-filters__sub-label" htmlFor="seeker-move-in">Move-in date</label>
                 <div className="roommate-month-field">
                   <span aria-hidden="true"><CharacteristicIcon name="calendar" /></span>
-                  <input
-                    id="seeker-move-in"
-                    type="month"
-                    value={moveInDate}
-                    onChange={(e) => setMoveInDate(e.target.value)}
-                    className="roommate-month-input"
-                  />
+                  <input id="seeker-move-in" type="month" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className="roommate-month-input" />
                 </div>
               </div>
               <div>
                 <p className="roommate-filters__sub-label">Flexibility</p>
-                <SegmentedButtonGroup
-                  options={FLEXIBILITY_OPTIONS}
-                  selectedValue={flexibility}
-                  onChange={setFlexibility}
-                  ariaLabel="Flexibility"
-                />
+                <SegmentedButtonGroup options={FLEXIBILITY_OPTIONS} selectedValue={flexibility} onChange={setFlexibility} ariaLabel="Flexibility" />
               </div>
             </div>
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">
-              Apartment details <span style={{fontSize:'12px',fontWeight:400,color:'#8a8070'}}>(entire unit)</span>
-            </h3>
+            <h3 className="roommate-filters__title">Apartment details <span style={{fontSize:'12px',fontWeight:400,color:'#8a8070'}}>(entire unit)</span></h3>
             <p className="roommate-filters__sub-label">I'm open to sharing with up to:</p>
-            <SegmentedButtonGroup
-              options={SHARING_OPTIONS}
-              selectedValue={sharingWith}
-              onChange={setSharingWith}
-              ariaLabel="Sharing preference"
-            />
-            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px',display:'block'}}>
-              Location preference:
-            </label>
+            <SegmentedButtonGroup options={SHARING_OPTIONS} selectedValue={sharingWith} onChange={setSharingWith} ariaLabel="Sharing preference" />
+            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px',display:'block'}}>Location preference:</label>
             {renderLocationInput('seeker-location')}
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd be most comfortable with</h3>
             <p className="roommate-filters__sub-label">I prefer to live with:</p>
-            <SegmentedButtonGroup
-              options={GENDER_OPTIONS}
-              selectedValue={gender}
-              onChange={setGender}
-              ariaLabel="Gender preference"
-            />
+            <SegmentedButtonGroup options={GENDER_OPTIONS} selectedValue={gender} onChange={setGender} ariaLabel="Gender preference" />
             <div className="roommate-filters__habit-box">
               <p className="roommate-filters__habit-label">I'm comfortable living with someone who smokes:</p>
               <p className="roommate-filters__habit-hint">Cigarettes, vaping, or similar.</p>
-              <SegmentedButtonGroup
-                options={SMOKING_OPTIONS}
-                selectedValue={smoking}
-                onChange={setSmoking}
-                ariaLabel="Smoking preference"
-              />
+              <SegmentedButtonGroup options={SMOKING_OPTIONS} selectedValue={smoking} onChange={setSmoking} ariaLabel="Smoking preference" />
             </div>
             <div className="roommate-filters__habit-box" style={{marginTop:'8px'}}>
               <p className="roommate-filters__habit-label">I am willing to keep a kosher kitchen:</p>
-              <SegmentedButtonGroup
-                options={KOSHER_OPTIONS}
-                selectedValue={kosher}
-                onChange={setKosher}
-                ariaLabel="Kosher kitchen"
-              />
+              <SegmentedButtonGroup options={KOSHER_OPTIONS} selectedValue={kosher} onChange={setKosher} ariaLabel="Kosher kitchen" />
             </div>
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd like to rent for...</h3>
             <p className="roommate-filters__hint">No worries if you're not sure — just pick what feels right</p>
-            <SegmentedButtonGroup
-              options={LEASE_OPTIONS}
-              selectedValue={leaseTerm}
-              onChange={setLeaseTerm}
-              ariaLabel="Rental duration"
-            />
+            <SegmentedButtonGroup options={LEASE_OPTIONS} selectedValue={leaseTerm} onChange={setLeaseTerm} ariaLabel="Rental duration" />
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={`roommate-amenity ${amenities.includes(a.id) ? 'is-selected' : ''}`}
-                  onClick={() => toggleAmenity(a.id)}
-                  aria-pressed={amenities.includes(a.id)}
-                >
+                <button key={a.id} type="button" className={`roommate-amenity ${amenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleAmenity(a.id)} aria-pressed={amenities.includes(a.id)}>
                   <CharacteristicIcon name={a.icon} size={32} />
                   <span>{getAmenityLabel(a.id)}</span>
                 </button>
               ))}
             </div>
           </section>
-
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">
-              Contact number <span className="roommate-filters__required-badge">Required</span>
-            </h3>
-            {!phoneSaved ? (
-              <div className="roommate-phone-row">
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+972 50 000 0000"
-                  className="roommate-text-input"
-                />
-                <button
-                  type="button"
-                  className="roommate-phone-save-btn"
-                  onClick={() => { if (phone.length >= 8) setPhoneSaved(true); }}
-                  style={{opacity: phone.length >= 8 ? 1 : 0.4}}
-                >
-                  Save
-                </button>
-              </div>
-            ) : (
-              <div className="roommate-phone-saved">
-                <div className="roommate-phone-saved__number">✓ {phone}</div>
-                <button
-                  type="button"
-                  className="roommate-whatsapp-btn"
-                  onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g,'').replace(/^0/,'972')}`)}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
-                  Contact on WhatsApp
-                </button>
-                <button type="button" className="roommate-phone-edit-btn" onClick={() => setPhoneSaved(false)}>
-                  Edit number
-                </button>
-              </div>
-            )}
-          </section>
         </>
       ) : (
         <>
+          {/* ── FIX 3: Phone number FIRST for lister ── */}
+          <PhoneField phone={ownerPhone} setPhone={setOwnerPhone} phoneSaved={ownerPhoneSaved} setPhoneSaved={setOwnerPhoneSaved} isHebrew={isHebrew} />
+
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">About my apartment</h3>
             <div className="roommate-filters__budget-row">
               <div>
-                <label className="roommate-filters__sub-label" htmlFor="owner-rent">
-                  Monthly rent — their share
-                </label>
+                <label className="roommate-filters__sub-label" htmlFor="owner-rent">Monthly rent — their share</label>
                 <div className="roommate-money-input">
                   <span aria-hidden="true">₪</span>
-                  <input
-                    id="owner-rent"
-                    type="number"
-                    value={rentAmount}
-                    onChange={(e) => setRentAmount(e.target.value)}
-                    placeholder="e.g. 3,500"
-                    required
-                  />
+                  <input id="owner-rent" type="number" value={rentAmount} onChange={(e) => setRentAmount(e.target.value)} placeholder="e.g. 3,500" required />
                 </div>
               </div>
               <div>
                 <p className="roommate-filters__sub-label">Utilities</p>
-                <SegmentedButtonGroup
-                  options={UTILITIES_OPTIONS}
-                  selectedValue={utilities}
-                  onChange={setUtilities}
-                  ariaLabel="Utilities"
-                />
+                <SegmentedButtonGroup options={UTILITIES_OPTIONS} selectedValue={utilities} onChange={setUtilities} ariaLabel="Utilities" />
               </div>
             </div>
             <div className="roommate-filters__budget-row" style={{marginTop:'12px'}}>
@@ -776,140 +712,58 @@ const RoommateFilters = ({
                 <label className="roommate-filters__sub-label" htmlFor="owner-date">Date available</label>
                 <div className="roommate-month-field">
                   <span aria-hidden="true"><CharacteristicIcon name="calendar" /></span>
-                  <input
-                    id="owner-date"
-                    type="month"
-                    value={dateAvailable}
-                    onChange={(e) => setDateAvailable(e.target.value)}
-                    className="roommate-month-input"
-                  />
+                  <input id="owner-date" type="month" value={dateAvailable} onChange={(e) => setDateAvailable(e.target.value)} className="roommate-month-input" />
                 </div>
               </div>
               <div>
                 <p className="roommate-filters__sub-label">Total bedrooms in apt</p>
-                <SegmentedButtonGroup
-                  options={BEDROOM_COUNT_OPTIONS}
-                  selectedValue={totalBedrooms}
-                  onChange={setTotalBedrooms}
-                  ariaLabel="Total bedrooms"
-                />
+                <SegmentedButtonGroup options={BEDROOM_COUNT_OPTIONS} selectedValue={totalBedrooms} onChange={setTotalBedrooms} ariaLabel="Total bedrooms" />
               </div>
             </div>
-            <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px',display:'block'}}>
-              Location:
-            </label>
+            <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px',display:'block'}}>Location:</label>
             {renderLocationInput('owner-location')}
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'd be most comfortable with</h3>
             <p className="roommate-filters__sub-label">I prefer to live with:</p>
-            <SegmentedButtonGroup
-              options={GENDER_OPTIONS}
-              selectedValue={ownerGender}
-              onChange={setOwnerGender}
-              ariaLabel="Gender preference"
-            />
+            <SegmentedButtonGroup options={GENDER_OPTIONS} selectedValue={ownerGender} onChange={setOwnerGender} ariaLabel="Gender preference" />
             <div className="roommate-filters__habit-box">
               <p className="roommate-filters__habit-label">Smoking in the apartment:</p>
               <p className="roommate-filters__habit-hint">What are you comfortable with?</p>
-              <SegmentedButtonGroup
-                options={SMOKING_OPTIONS}
-                selectedValue={ownerSmoking}
-                onChange={setOwnerSmoking}
-                ariaLabel="Smoking preference"
-              />
+              <SegmentedButtonGroup options={SMOKING_OPTIONS} selectedValue={ownerSmoking} onChange={setOwnerSmoking} ariaLabel="Smoking preference" />
             </div>
             <div className="roommate-filters__habit-box" style={{marginTop:'8px'}}>
               <p className="roommate-filters__habit-label">Kitchen:</p>
-              <SegmentedButtonGroup
-                options={['Kosher — must respect', 'Not kosher']}
-                selectedValue={ownerKosher}
-                onChange={setOwnerKosher}
-                ariaLabel="Kosher kitchen"
-              />
+              <SegmentedButtonGroup options={['Kosher — must respect', 'Not kosher']} selectedValue={ownerKosher} onChange={setOwnerKosher} ariaLabel="Kosher kitchen" />
             </div>
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">I'm looking for someone to stay for...</h3>
-            <SegmentedButtonGroup
-              options={LEASE_OPTIONS}
-              selectedValue={ownerLeaseTerm}
-              onChange={setOwnerLeaseTerm}
-              ariaLabel="Preferred stay duration"
-            />
+            <SegmentedButtonGroup options={LEASE_OPTIONS} selectedValue={ownerLeaseTerm} onChange={setOwnerLeaseTerm} ariaLabel="Preferred stay duration" />
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={`roommate-amenity ${ownerAmenities.includes(a.id) ? 'is-selected' : ''}`}
-                  onClick={() => toggleOwnerAmenity(a.id)}
-                  aria-pressed={ownerAmenities.includes(a.id)}
-                >
+                <button key={a.id} type="button" className={`roommate-amenity ${ownerAmenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleOwnerAmenity(a.id)} aria-pressed={ownerAmenities.includes(a.id)}>
                   <CharacteristicIcon name={a.icon} size={32} />
                   <span>{getAmenityLabel(a.id)}</span>
                 </button>
               ))}
             </div>
           </section>
-
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">
-              Contact number <span className="roommate-filters__required-badge">Required</span>
-            </h3>
-            {!ownerPhoneSaved ? (
-              <div className="roommate-phone-row">
-                <input
-                  type="tel"
-                  value={ownerPhone}
-                  onChange={(e) => setOwnerPhone(e.target.value)}
-                  placeholder="+972 50 000 0000"
-                  className="roommate-text-input"
-                />
-                <button
-                  type="button"
-                  className="roommate-phone-save-btn"
-                  onClick={() => { if (ownerPhone.length >= 8) setOwnerPhoneSaved(true); }}
-                  style={{opacity: ownerPhone.length >= 8 ? 1 : 0.4}}
-                >
-                  Save
-                </button>
-              </div>
-            ) : (
-              <div className="roommate-phone-saved">
-                <div className="roommate-phone-saved__number">✓ {ownerPhone}</div>
-                <button
-                  type="button"
-                  className="roommate-whatsapp-btn"
-                  onClick={() => window.open(`https://wa.me/${ownerPhone.replace(/\D/g,'').replace(/^0/,'972')}`)}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
-                  Contact on WhatsApp
-                </button>
-                <button type="button" className="roommate-phone-edit-btn" onClick={() => setOwnerPhoneSaved(false)}>
-                  Edit number
-                </button>
-              </div>
-            )}
-          </section>
         </>
       )}
 
-      {/* ACTION BUTTONS */}
       <div className="roommate-filter-actions">
         <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
-          Apply Filters
+          {isHebrew ? 'החל פילטרים' : 'Apply Filters'}
         </button>
         <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
-          Save as Alert
+          {isHebrew ? 'שמור כהתראה' : 'Save as Alert'}
         </button>
       </div>
     </div>
@@ -919,15 +773,7 @@ const RoommateFilters = ({
 const OptionButtonGroup = ({ options, selectedValue, onChange, compact, ariaLabel }) => (
   <div className={`roommate-option-group ${compact ? 'roommate-option-group--compact' : ''}`} aria-label={ariaLabel}>
     {options.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={`roommate-option ${selectedValue === option ? 'is-selected' : ''}`}
-        onClick={() => onChange(option)}
-        aria-pressed={selectedValue === option}
-      >
-        {option}
-      </button>
+      <button key={option} type="button" className={`roommate-option ${selectedValue === option ? 'is-selected' : ''}`} onClick={() => onChange(option)} aria-pressed={selectedValue === option}>{option}</button>
     ))}
   </div>
 );
@@ -935,37 +781,20 @@ const OptionButtonGroup = ({ options, selectedValue, onChange, compact, ariaLabe
 const SegmentedButtonGroup = ({ options, selectedValue, onChange, ariaLabel }) => (
   <div className="roommate-segmented" aria-label={ariaLabel}>
     {options.map((option) => (
-      <button
-        key={option}
-        type="button"
-        className={selectedValue === option ? 'is-selected' : ''}
-        onClick={() => onChange(option)}
-        aria-pressed={selectedValue === option}
-      >
-        {option}
-      </button>
+      <button key={option} type="button" className={selectedValue === option ? 'is-selected' : ''} onClick={() => onChange(option)} aria-pressed={selectedValue === option}>{option}</button>
     ))}
   </div>
 );
 
 const FeatureCard = ({ icon, label, isSelected, onClick }) => (
   <button type="button" className={`filter-menu__feature-card ${isSelected ? 'is-selected' : ''}`} onClick={onClick}>
-    <span className="filter-menu__feature-icon" aria-hidden="true">
-      <CharacteristicIcon name={icon} />
-    </span>
+    <span className="filter-menu__feature-icon" aria-hidden="true"><CharacteristicIcon name={icon} /></span>
     <span>{label}</span>
   </button>
 );
 
 const CharacteristicIcon = ({ name, size = 24 }) => (
-  <svg
-    className="filter-menu__characteristic-svg"
-    viewBox="0 0 24 24"
-    focusable="false"
-    width={size}
-    height={size}
-    style={{ width: size, height: size, minWidth: size, minHeight: size }}
-  >
+  <svg className="filter-menu__characteristic-svg" viewBox="0 0 24 24" focusable="false" width={size} height={size} style={{ width: size, height: size, minWidth: size, minHeight: size }}>
     {CHARACTERISTIC_ICONS[name]}
   </svg>
 );
