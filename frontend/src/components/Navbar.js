@@ -937,6 +937,7 @@ const Navbar = () => {
   const handleCityBlur = useCallback((event) => applySearch({ nextCity: event.target.value }), [applySearch]);
 
   return (
+    <>
     <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
       <div className="premium-header__inner">
 
@@ -1266,6 +1267,8 @@ const Navbar = () => {
         </Link>
       </div>
 
+    </nav>
+
       {/* ── ROOMMATES GATEWAY MODAL ── */}
       {roommatesGatewayOpen && (
         <div
@@ -1353,8 +1356,7 @@ const Navbar = () => {
           </div>
         </div>
       )}
-
-    </nav>
+    </>
   );
 };
 
