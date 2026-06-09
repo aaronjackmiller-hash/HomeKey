@@ -8468,3 +8468,126 @@ html[dir="rtl"] .filter-menu {
 .hero-banner-overlay {
   display: none !important;
 }
+/* ══════════════════════════════════════════════════════
+   MODE SWITCHER — Rent | Sale | Roommates
+   Append these rules to the very bottom of index.css
+   ══════════════════════════════════════════════════════ */
+
+/* Expand the top bar grid to 3 columns: brand | tabs | actions */
+.premium-header__inner {
+  grid-template-columns: auto 1fr auto !important;
+  grid-template-rows: 58px auto !important;
+}
+
+/* Place brand in col 1, row 1 */
+.premium-header__brand-cell {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+/* Place actions in col 3, row 1 */
+.premium-header__actions-cell {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+}
+
+/* Search bar stays full width in row 2 */
+.premium-header__search-cell {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+}
+
+/* ── Mode switcher: col 2, row 1, centered ── */
+.premium-header__mode-switcher {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  gap: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  position: static !important;
+  transform: none !important;
+  left: auto !important;
+}
+
+/* ── Tab buttons — Airbnb underline style ── */
+.premium-header__mode-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 100% !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #717171 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.01em !important;
+  transition: color 0.15s, border-color 0.15s !important;
+  position: relative !important;
+  top: 1px !important; /* align underline flush with nav bottom border */
+}
+
+.premium-header__mode-btn:hover {
+  color: #1a1a1a !important;
+  border-bottom-color: #d0cdc9 !important;
+}
+
+/* Active: Rent or Sale — dark underline */
+.premium-header__mode-btn.is-active {
+  color: #1a1a1a !important;
+  font-weight: 700 !important;
+  border-bottom-color: #1a1a1a !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Active: Roommates — teal underline */
+.premium-header__mode-btn--roommates.is-active {
+  color: #2d6b5e !important;
+  font-weight: 700 !important;
+  border-bottom-color: #2d6b5e !important;
+  background: transparent !important;
+}
+
+/* Icon inside the Roommates button */
+.premium-header__mode-btn .premium-header__icon {
+  width: 15px !important;
+  height: 15px !important;
+  opacity: 0.65 !important;
+  flex-shrink: 0 !important;
+}
+
+.premium-header__mode-btn.is-active .premium-header__icon {
+  opacity: 1 !important;
+}
+
+/* ── Hide on mobile ── */
+@media (max-width: 767px) {
+  .premium-header__mode-switcher {
+    display: none !important;
+  }
+
+  /* Restore 2-col grid on mobile */
+  .premium-header__inner {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 54px auto auto !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .premium-header__mode-btn {
+    padding: 0 14px !important;
+    font-size: 13px !important;
+  }
+}
