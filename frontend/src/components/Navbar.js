@@ -51,7 +51,6 @@ const SAVE_SEARCH_AFTER_AUTH_SESSION_KEY = 'homekey:save-search-after-auth';
 const RECENT_SEARCHES_KEY = 'homekey:recent-searches';
 const MAX_RECENT_SEARCHES = 5;
 
-// ── Recent searches helpers ──
 const getRecentSearches = () => {
   if (typeof window === 'undefined') return [];
   try {
@@ -69,23 +68,18 @@ const saveRecentSearch = (term) => {
   } catch { /* ignore */ }
 };
 
-// ── Location autocomplete logic ──
 const buildLocationSuggestions = (query, language) => {
   const q = query.trim().toLowerCase();
   if (!q) return { cities: [], neighborhoods: [] };
-
   const cities = [];
   const neighborhoods = [];
-
   ISRAEL_LOCATIONS.forEach(({ city, neighborhoods: hoods }) => {
     const cityEn = city.en.toLowerCase();
     const cityHe = city.he;
     const cityMatches = cityEn.includes(q) || cityHe.includes(q);
-
     if (cityMatches) {
       cities.push({ label: language === 'he' ? city.he : city.en, value: city.en });
     }
-
     hoods.forEach((hood) => {
       const hoodEn = hood.en.toLowerCase();
       const hoodHe = hood.he;
@@ -98,7 +92,6 @@ const buildLocationSuggestions = (query, language) => {
       }
     });
   });
-
   return { cities: cities.slice(0, 5), neighborhoods: neighborhoods.slice(0, 5) };
 };
 
@@ -326,7 +319,6 @@ const buildSearchQuery = ({ city, rooms, baths, listingType, propertyCategory, f
   return serialized ? `?${serialized}` : '';
 };
 
-// ── Location Autocomplete Dropdown Component ──
 const LocationAutocomplete = ({
   value,
   onChange,
@@ -511,6 +503,11 @@ const Navbar = () => {
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [voiceSearchStatus, setVoiceSearchStatus] = useState('');
   const [isAiSearchInterpreting, setIsAiSearchInterpreting] = useState(false);
+
+  // ── NEW: Roommates gateway state ──
+  const [roommatesGatewayOpen, setRoommatesGatewayOpen] = useState(false);
+  const [roommatesSubMode, setRoommatesSubMode] = useState(null); // null | 'seeker' | 'lister'
+
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
   const propertyTypeRef = useRef(null);
@@ -645,11 +642,19 @@ const Navbar = () => {
     return () => window.removeEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
   }, []);
 
-  const applySearch = ({ nextCity = city, nextRooms = rooms, nextBaths = baths, nextListingType = listingType, nextPropertyCategory = propertyCategory, nextFeatureFilters = featureFilters, nextMinPriceInput = minPriceInput, nextMaxPriceInput = maxPriceInput, nextLikedOnly = likedOnly } = {}) => {
+  // ── Close gateway on Escape ──
+  useEffect(() => {
+    if (!roommatesGatewayOpen) return undefined;
+    const handleKeyDown = (event) => { if (event.key === 'Escape') setRoommatesGatewayOpen(false); };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [roommatesGatewayOpen]);
+
+  const applySearch = useCallback(({ nextCity = city, nextRooms = rooms, nextBaths = baths, nextListingType = listingType, nextPropertyCategory = propertyCategory, nextFeatureFilters = featureFilters, nextMinPriceInput = minPriceInput, nextMaxPriceInput = maxPriceInput, nextLikedOnly = likedOnly } = {}) => {
     const nextSearch = buildSearchQuery({ city: nextCity, rooms: nextRooms, baths: nextBaths, listingType: nextListingType, propertyCategory: nextPropertyCategory, featureFilters: nextFeatureFilters, minPriceInput: nextMinPriceInput, maxPriceInput: nextMaxPriceInput, likedOnly: nextLikedOnly });
     if (location.pathname === '/' && location.search === nextSearch) return;
     history.replace({ pathname: '/', search: nextSearch });
-  };
+  }, [city, rooms, baths, listingType, propertyCategory, featureFilters, minPriceInput, maxPriceInput, likedOnly, location.pathname, location.search, history]);
 
   const applyFilterMenuSearch = (nextSearchOptions) => { keepFilterSheetOpenRef.current = true; applySearch(nextSearchOptions); };
 
@@ -786,8 +791,35 @@ const Navbar = () => {
     applyFilterMenuSearch({ nextListingType: normalizedListingType });
   };
 
+  // ── UPDATED: Roommates nav click now shows gateway on first visit ──
   const handleRoommatesNavClick = () => {
-    setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false);
+    setPriceExpanded(false);
+    setRoomsBathsExpanded(false);
+    setPropertyTypeExpanded(false);
+    setFiltersExpanded(false);
+    // If already in roommates mode, re-open filter panel directly
+    if (isRoommatesActive) {
+      setFiltersExpanded(true);
+      return;
+    }
+    // First entry — show the gateway modal
+    setRoommatesGatewayOpen(true);
+  };
+
+  // ── NEW: Gateway handler — user picks seeker or lister ──
+  const handleGatewaySelect = (subMode) => {
+    setRoommatesSubMode(subMode);
+    setRoommatesGatewayOpen(false);
+    setListingType('roommates');
+    setRoommateLocationDraft(city);
+    applySearch({ nextListingType: 'roommates' });
+    setFiltersExpanded(true);
+  };
+
+  // ── NEW: Gateway dismiss — "Just browse" skips the choice ──
+  const handleGatewayDismiss = () => {
+    setRoommatesSubMode('seeker');
+    setRoommatesGatewayOpen(false);
     setListingType('roommates');
     setRoommateLocationDraft(city);
     applySearch({ nextListingType: 'roommates' });
@@ -813,6 +845,7 @@ const Navbar = () => {
     setMinPriceInput(PRICE_SLIDER_MIN); setMaxPriceInput(PRICE_SLIDER_MAX);
     minPriceDraftRef.current = PRICE_SLIDER_MIN; maxPriceDraftRef.current = PRICE_SLIDER_MAX;
     setFiltersExpanded(false); setPropertyTypeExpanded(false);
+    setRoommatesSubMode(null);
     applySearch({ nextRooms: '', nextBaths: '', nextListingType: 'all', nextPropertyCategory: '', nextFeatureFilters: [], nextMinPriceInput: PRICE_SLIDER_MIN, nextMaxPriceInput: PRICE_SLIDER_MAX });
   };
 
@@ -906,6 +939,8 @@ const Navbar = () => {
   return (
     <nav className="premium-header" aria-label={t('navbar.propertySearchAriaLabel')}>
       <div className="premium-header__inner">
+
+        {/* ── BRAND ── */}
         <div className="premium-header__brand-cell">
           <Link to="/" className="premium-header__brand" aria-label={t('navbar.homeAriaLabel', { brand: homeKeyBrand })}>
             <img className="premium-header__brand-image" src={hKeyholeLogo} alt="" aria-hidden="true" />
@@ -913,11 +948,57 @@ const Navbar = () => {
           </Link>
         </div>
 
+        {/* ── MODE SWITCHER: Rent | Sale | Roommates ── */}
+        {isListingsRoute && (
+          <div
+            className="premium-header__mode-switcher"
+            role="tablist"
+            aria-label={isHebrew ? 'סוג חיפוש' : 'Listing mode'}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={listingType === 'rental' || listingType === 'all'}
+              className={`premium-header__mode-btn ${listingType === 'rental' || listingType === 'all' ? 'is-active' : ''}`}
+              onClick={() => {
+                setListingType('rental');
+                setRoommatesSubMode(null);
+                applySearch({ nextListingType: 'rental' });
+              }}
+            >
+              {t('filterMenu.rental') || 'Rent'}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={listingType === 'sale'}
+              className={`premium-header__mode-btn ${listingType === 'sale' ? 'is-active' : ''}`}
+              onClick={() => {
+                setListingType('sale');
+                setRoommatesSubMode(null);
+                applySearch({ nextListingType: 'sale' });
+              }}
+            >
+              {t('filterMenu.sale') || 'Sale'}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isRoommatesActive}
+              className={`premium-header__mode-btn premium-header__mode-btn--roommates ${isRoommatesActive ? 'is-active' : ''}`}
+              onClick={handleRoommatesNavClick}
+            >
+              <HeaderIcon name="roommates" />
+              {t('filterMenu.roommates') || 'Roommates'}
+            </button>
+          </div>
+        )}
+
+        {/* ── SEARCH FORM ── */}
         <div className="premium-header__search-cell">
           <form className="premium-header__search-form" onSubmit={handleHeaderSearchSubmit}>
             <div className="premium-header__search-pill" role="group" aria-label={t('navbar.propertySearchAriaLabel')}>
 
-              {/* ── LOCATION with Autocomplete ── */}
               <div className="premium-header__search-segment premium-header__search-segment--location">
                 <HeaderIcon name="location" />
                 <LocationAutocomplete
@@ -1057,7 +1138,7 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* ── ROOMMATES ── */}
+              {/* ── ROOMMATES chip (kept for users who prefer the filter bar) ── */}
               <div className="premium-header__search-segment premium-header__search-segment--roommates">
                 <button type="button" className={`premium-header__roommates-toggle ${isRoommatesActive ? 'is-active' : ''}`}
                   onClick={handleRoommatesNavClick} aria-pressed={isRoommatesActive}>
@@ -1079,15 +1160,30 @@ const Navbar = () => {
                   className={`premium-header__filters-panel ${isRoommatesActive ? 'premium-header__filters-panel--roommates' : ''} ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
                   style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isHebrew ? { left: 0, right: 'auto' } : { right: 0, left: 'auto' }) }}>
                   <FilterMenu
-                    onClearAllFilters={handleClearAllFilters} listingType={listingType} roomOptions={roomOptions}
-                    bathOptions={bathOptions} rooms={rooms} baths={baths} minPrice={minPriceInput} maxPrice={maxPriceInput}
-                    propertyCategory={propertyCategory} selectedFeatures={featureFilters}
-                    onListingTypeChange={handleFilterMenuListingTypeChange} onRoomsChange={handleFilterMenuRoomsChange}
-                    onBathsChange={handleFilterMenuBathsChange} onMinPriceChange={handleFilterMenuMinPriceChange}
-                    onMaxPriceChange={handleFilterMenuMaxPriceChange} onTogglePropertyCategory={handleTogglePropertyCategory}
-                    onToggleFeature={handleToggleFeatureFilter} onApplyFilters={handleApplyFilterMenu} onSaveFilters={handleSaveFilterMenu}
-                    roommateLocation={roommateLocationDraft} onRoommateLocationChange={handleRoommateLocationChange}
-                    renderRoommateLocationInput={renderRoommateLocationInput} />
+                    onClearAllFilters={handleClearAllFilters}
+                    listingType={listingType}
+                    roomOptions={roomOptions}
+                    bathOptions={bathOptions}
+                    rooms={rooms}
+                    baths={baths}
+                    minPrice={minPriceInput}
+                    maxPrice={maxPriceInput}
+                    propertyCategory={propertyCategory}
+                    selectedFeatures={featureFilters}
+                    onListingTypeChange={handleFilterMenuListingTypeChange}
+                    onRoomsChange={handleFilterMenuRoomsChange}
+                    onBathsChange={handleFilterMenuBathsChange}
+                    onMinPriceChange={handleFilterMenuMinPriceChange}
+                    onMaxPriceChange={handleFilterMenuMaxPriceChange}
+                    onTogglePropertyCategory={handleTogglePropertyCategory}
+                    onToggleFeature={handleToggleFeatureFilter}
+                    onApplyFilters={handleApplyFilterMenu}
+                    onSaveFilters={handleSaveFilterMenu}
+                    roommateLocation={roommateLocationDraft}
+                    onRoommateLocationChange={handleRoommateLocationChange}
+                    renderRoommateLocationInput={renderRoommateLocationInput}
+                    initialLookingFor={roommatesSubMode === 'lister' ? 'roommate' : 'room'}
+                  />
                   <button type="button" className="mobile-filter-sheet-close-btn" onClick={() => setFiltersExpanded(false)}>
                     {t('navbar.showResults')}
                   </button>
@@ -1105,6 +1201,7 @@ const Navbar = () => {
           </form>
         </div>
 
+        {/* ── TOP-RIGHT ACTIONS ── */}
         <div className={`premium-header__actions premium-header__actions-cell${isHebrew ? ' premium-header__actions--hebrew' : ''}`}>
           {isHebrew ? (
             <>
@@ -1168,6 +1265,95 @@ const Navbar = () => {
           {t('navbar.listProperty')}
         </Link>
       </div>
+
+      {/* ── ROOMMATES GATEWAY MODAL ── */}
+      {roommatesGatewayOpen && (
+        <div
+          className="roommates-gateway-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label={isHebrew ? 'בחר מצב שותפים' : 'Choose Roommates mode'}
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) setRoommatesGatewayOpen(false);
+          }}
+        >
+          <div className="roommates-gateway-card">
+            <h2 className="roommates-gateway-card__title">
+              {isHebrew ? 'ברוכים הבאים לשותפים' : 'Welcome to Roommates'}
+            </h2>
+            <p className="roommates-gateway-card__subtitle">
+              {isHebrew
+                ? 'אתם מחפשים חדר בדירה משותפת, או שיש לכם חדר פנוי לשותף/ה?'
+                : 'Are you looking for a room in a shared apartment, or do you have a room available for a new roommate?'}
+            </p>
+
+            <div className="roommates-gateway-card__options">
+
+              {/* SEEKER */}
+              <button
+                type="button"
+                className={`roommates-gateway-option ${roommatesSubMode === 'seeker' ? 'is-selected' : ''}`}
+                onClick={() => handleGatewaySelect('seeker')}
+              >
+                <span className="roommates-gateway-option__icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true">
+                    <circle cx="27" cy="27" r="16" fill="#e8f4f0" stroke="#2d6b5e" strokeWidth="3"/>
+                    <line x1="39" y1="39" x2="54" y2="54" stroke="#2d6b5e" strokeWidth="4" strokeLinecap="round"/>
+                    <circle cx="27" cy="27" r="8" fill="#2d6b5e" opacity="0.15"/>
+                  </svg>
+                </span>
+                <span className="roommates-gateway-option__title">
+                  {isHebrew ? 'אני מחפש/ת חדר' : "I'm looking for a room"}
+                </span>
+                <span className="roommates-gateway-option__desc">
+                  {isHebrew
+                    ? 'עיינו בדירות שיתופיות עם תמונות ומיקום על המפה'
+                    : 'Browse shared apartments with photos and map pins. Filter by location, rent, and move-in date.'}
+                </span>
+                <span className="roommates-gateway-option__badge">
+                  {isHebrew ? 'חיפוש דירה' : 'Search listings'}
+                </span>
+              </button>
+
+              {/* LISTER */}
+              <button
+                type="button"
+                className={`roommates-gateway-option roommates-gateway-option--lister ${roommatesSubMode === 'lister' ? 'is-selected' : ''}`}
+                onClick={() => handleGatewaySelect('lister')}
+              >
+                <span className="roommates-gateway-option__icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true">
+                    <polygon points="32,8 56,30 52,30 52,56 38,56 38,40 26,40 26,56 12,56 12,30 8,30"
+                      fill="#e8f4f0" stroke="#2d6b5e" strokeWidth="3" strokeLinejoin="round"/>
+                    <rect x="26" y="40" width="12" height="16" fill="#2d6b5e" opacity="0.3"/>
+                  </svg>
+                </span>
+                <span className="roommates-gateway-option__title">
+                  {isHebrew ? 'יש לי חדר להציע' : 'I have a room to offer'}
+                </span>
+                <span className="roommates-gateway-option__desc">
+                  {isHebrew
+                    ? 'פרסמו את הדירה, הוסיפו תמונות והגדירו העדפות למציאת שותף/ה מתאים/ה'
+                    : 'List your apartment, add photos, set your preferences, and find a compatible roommate.'}
+                </span>
+                <span className="roommates-gateway-option__badge roommates-gateway-option__badge--lister">
+                  {isHebrew ? 'פרסום חדר' : 'List your room'}
+                </span>
+              </button>
+
+            </div>
+
+            <button
+              type="button"
+              className="roommates-gateway-card__dismiss"
+              onClick={handleGatewayDismiss}
+            >
+              {isHebrew ? 'פשוט עיין בכל החדרים' : 'Just browse all room listings'}
+            </button>
+          </div>
+        </div>
+      )}
+
     </nav>
   );
 };
