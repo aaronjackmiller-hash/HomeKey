@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { createProperty } from '../services/api';
 import { Step0ProfileType } from './addListingSteps/Step0ProfileType';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
@@ -41,8 +41,8 @@ import './addListingSteps/addListingWizard.css';
  */
 
 /** @returns {ListingData} */
-const createInitialListingData = () => ({
-    profileType: '',
+const createInitialListingData = (preselectedProfileType = '') => ({
+    profileType: preselectedProfileType || '',
     propertyType: '',
     listingType: '',
     lookingForRoommates: null,
@@ -83,8 +83,17 @@ const initialEnterpriseListings = [
 
 const AddListing = () => {
     const history = useHistory();
-    const [step, setStep] = useState(0);
-    const [data, setData] = useState(createInitialListingData);
+    const location = useLocation();
+
+    // If navigated here from the Roommates "List my room" button,
+    // location.state.preselectedProfileType will be 'renter-roommates'.
+    // Pre-populate it so Step0 has the card already selected,
+    // and skip straight to step 1 so the user doesn't have to click Continue.
+    const preselectedProfileType = location?.state?.preselectedProfileType || '';
+    const initialStep = preselectedProfileType ? 1 : 0;
+
+    const [step, setStep] = useState(initialStep);
+    const [data, setData] = useState(() => createInitialListingData(preselectedProfileType));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [enterpriseOnboardingMethod, setEnterpriseOnboardingMethod] = useState('');
