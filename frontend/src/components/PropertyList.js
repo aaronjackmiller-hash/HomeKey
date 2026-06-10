@@ -7,6 +7,8 @@ import {
   saveMyCurrentSearchAlert,
 } from '../services/api';
 import GoogleListingsMap from './GoogleListingsMap';
+import RoommatesView from './RoommatesView';
+import './RoommatesView.css';
 import SAMPLE_PROPERTIES from '../data/sampleProperties';
 import {
   getInterestSummary,
@@ -1210,6 +1212,7 @@ const PropertyList = () => {
     ? t('propertyList.loadingHomes')
     : t('propertyList.homesCount', { count: displayProperties.length.toLocaleString(locale) });
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
+  const isRoommatesView = filter === 'roommates';
 
   const openMobileFilters = () => {
     if (typeof window === 'undefined') return;
@@ -1248,8 +1251,6 @@ const PropertyList = () => {
       return nextSelection;
     });
   }, []);
-
-  const isRoommatesView = filter === 'roommates';
 
   const renderResults = () => {
     if (loading) {
@@ -1570,57 +1571,78 @@ const PropertyList = () => {
               {t('propertyList.filters')}
             </button>
           </section>
-          <div className="homepage-hero-shell">
-            <section className="hero-banner">
-              <img
-                className="hero-banner-background-image"
-                src={HERO_BACKGROUND_IMAGE}
-                alt=""
-                aria-hidden="true"
-              />
-              <div className="hero-banner-overlay" aria-hidden="true" />
-              <div className="hero-banner-grid">
-                <div className="hero-banner-copy">
-                  <div className="hero-banner-copy-text">
-                    <h1>{t('propertyList.heroTitle')}</h1>
+
+          {/* Hero banner and interest toolbar are hidden in roommates mode */}
+          {!isRoommatesView && (
+            <>
+              <div className="homepage-hero-shell">
+                <section className="hero-banner">
+                  <img
+                    className="hero-banner-background-image"
+                    src={HERO_BACKGROUND_IMAGE}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <div className="hero-banner-overlay" aria-hidden="true" />
+                  <div className="hero-banner-grid">
+                    <div className="hero-banner-copy">
+                      <div className="hero-banner-copy-text">
+                        <h1>{t('propertyList.heroTitle')}</h1>
+                      </div>
+                      <div className="hero-banner-logo" aria-hidden="true" />
+                    </div>
                   </div>
-                  <div className="hero-banner-logo" aria-hidden="true" />
+                </section>
+              </div>
+              <div className="property-interest-toolbar">
+                <button
+                  type="button"
+                  className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
+                  onClick={() => {
+                    const params = new URLSearchParams(location.search);
+                    const nextFavoritesOnly = !favoritesOnly;
+                    if (nextFavoritesOnly) {
+                      params.set('liked', '1');
+                    } else {
+                      params.delete('liked');
+                    }
+                    const nextSearch = params.toString();
+                    history.replace({
+                      pathname: '/',
+                      search: nextSearch ? `?${nextSearch}` : '',
+                    });
+                  }}
+                >
+                  {favoritesOnly ? t('propertyList.showAllListings') : t('propertyList.showFavoritesOnly')}
+                </button>
+              </div>
+              <div className="property-interest-summary" aria-live="polite">
+                <div className="property-interest-summary-counts">
+                  <span>{t('propertyList.favorites')}: {favoritesCount}</span>
+                  <span>{t('propertyList.savedFile')}: {savedCount}</span>
                 </div>
               </div>
-            </section>
-          </div>
-          <div className="property-interest-toolbar">
-            <button
-              type="button"
-              className={`secondary-btn ${favoritesOnly ? 'active-interest-filter' : ''}`}
-              onClick={() => {
-                const params = new URLSearchParams(location.search);
-                const nextFavoritesOnly = !favoritesOnly;
-                if (nextFavoritesOnly) {
-                  params.set('liked', '1');
-                } else {
-                  params.delete('liked');
-                }
-                const nextSearch = params.toString();
-                history.replace({
-                  pathname: '/',
-                  search: nextSearch ? `?${nextSearch}` : '',
-                });
-              }}
-            >
-              {favoritesOnly ? t('propertyList.showAllListings') : t('propertyList.showFavoritesOnly')}
-            </button>
-          </div>
-          <div className="property-interest-summary" aria-live="polite">
-            <div className="property-interest-summary-counts">
-              <span>{t('propertyList.favorites')}: {favoritesCount}</span>
-              <span>{t('propertyList.savedFile')}: {savedCount}</span>
-            </div>
-          </div>
+            </>
+          )}
+
           <div className="desktop-discovery-list-scroll">
-            {renderResults()}
+            {isRoommatesView ? (
+              <RoommatesView
+                displayProperties={displayProperties}
+                favoriteIdSet={favoriteIdSet}
+                isMobileViewport={isMobileViewport}
+                language={language}
+                locale={locale}
+                loading={loading}
+                onFavoriteToggle={() => setInterestVersion((v) => v + 1)}
+                t={t}
+              />
+            ) : (
+              renderResults()
+            )}
           </div>
         </div>
+
         <div className="desktop-discovery-map-column">
           <section className="google-listings-map-card" aria-label={t('propertyList.apartmentLocationMap')}>
             <GoogleListingsMap
