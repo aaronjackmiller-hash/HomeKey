@@ -1139,15 +1139,6 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* ── ROOMMATES chip (kept for users who prefer the filter bar) ── */}
-              <div className="premium-header__search-segment premium-header__search-segment--roommates">
-                <button type="button" className={`premium-header__roommates-toggle ${isRoommatesActive ? 'is-active' : ''}`}
-                  onClick={handleRoommatesNavClick} aria-pressed={isRoommatesActive}>
-                  <HeaderIcon name="roommates" />
-                  <span>{t('filterMenu.roommates')}</span>
-                </button>
-              </div>
-
               {/* ── ALL FILTERS ── */}
               <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                 <button id="header-search-filter-toggle" type="button"
