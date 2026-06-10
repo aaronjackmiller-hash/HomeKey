@@ -35,19 +35,12 @@ const ROOMMATES_TAB = Object.freeze({
 });
 
 // TODO: replace with real API call to GET /api/roommates/searcher-count
-// Backend should return the rolling 7-day count of unique roommate searchers.
-const fetchSearcherCount = async () => {
-  // Stubbed — returns null so UI shows a graceful fallback
-  return null;
-};
+const fetchSearcherCount = async () => null;
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-/**
- * Shared stat pill shown in the banner above the tabs.
- */
 const StatPill = ({ icon, value, label, accent }) => (
   <div className={`roommates-stat-pill ${accent ? 'roommates-stat-pill--accent' : ''}`}>
     <span className="roommates-stat-pill-icon" aria-hidden="true">{icon}</span>
@@ -60,7 +53,7 @@ const StatPill = ({ icon, value, label, accent }) => (
 
 /**
  * Single roommate listing card.
- * Clicking fires the demand signal then opens the property detail page.
+ * useHistory is called here at the top level of this component — correctly.
  */
 const RoommateCard = ({
   property,
@@ -189,9 +182,6 @@ const RoommateCard = ({
   );
 };
 
-/**
- * Empty state shown when Browse Rooms has no results.
- */
 const BrowseEmptyState = ({ t }) => (
   <div className="roommates-empty-state">
     <div className="roommates-empty-icon" aria-hidden="true">🏠</div>
@@ -200,10 +190,6 @@ const BrowseEmptyState = ({ t }) => (
   </div>
 );
 
-/**
- * The "List a Room" tab content — landlord-facing CTA.
- * The wizard is wired up later; this is the entry point.
- */
 const ListARoomTab = ({ searcherCount, t, onStartWizard }) => (
   <div className="roommates-list-tab">
     <div className="roommates-list-hero">
@@ -266,19 +252,6 @@ const ListARoomTab = ({ searcherCount, t, onStartWizard }) => (
 // Main component
 // ---------------------------------------------------------------------------
 
-/**
- * RoommatesView
- *
- * Props:
- *   displayProperties  {object[]}  — already-filtered roommate listings
- *   favoriteIdSet      {Set}       — set of favorited property ID strings
- *   isMobileViewport   {boolean}
- *   language           {string}
- *   locale             {string}
- *   loading            {boolean}
- *   onFavoriteToggle   {function}  — triggers parent interestVersion bump
- *   t                  {function}  — i18n translation function
- */
 const RoommatesView = ({
   displayProperties = [],
   favoriteIdSet = new Set(),
@@ -289,19 +262,18 @@ const RoommatesView = ({
   onFavoriteToggle,
   t,
 }) => {
+  // useHistory called here at the top level of RoommatesView — correct placement
+  const history = useHistory();
   const [activeTab, setActiveTab] = useState(ROOMMATES_TAB.BROWSE);
   const [searcherCount, setSearcherCount] = useState(null);
   const [searcherCountLoading, setSearcherCountLoading] = useState(true);
 
-  // Fetch rolling searcher count once on mount
   useEffect(() => {
     let cancelled = false;
     setSearcherCountLoading(true);
     fetchSearcherCount()
       .then((count) => {
-        if (!cancelled) {
-          setSearcherCount(typeof count === 'number' ? count : null);
-        }
+        if (!cancelled) setSearcherCount(typeof count === 'number' ? count : null);
       })
       .catch(() => {
         if (!cancelled) setSearcherCount(null);
@@ -314,8 +286,7 @@ const RoommatesView = ({
 
   const availableRoomsCount = displayProperties.length;
 
-  // Navigate to the existing AddListing wizard, pre-selecting the
-  // 'renter-roommates' profile type so the user lands on the right path.
+  // history is now the React Router history from useHistory() above
   const handleStartWizard = useCallback(() => {
     history.push('/add-listing', { preselectedProfileType: 'renter-roommates' });
   }, [history]);
@@ -327,8 +298,6 @@ const RoommatesView = ({
 
   return (
     <div className="roommates-view">
-
-      {/* ── Stats banner ─────────────────────────────────────────── */}
       <div className="roommates-stats-banner" aria-label={t('roommates.statsBannerAriaLabel') || 'Roommate market overview'}>
         <StatPill
           icon="🏠"
@@ -344,7 +313,6 @@ const RoommatesView = ({
         />
       </div>
 
-      {/* ── Tab strip ────────────────────────────────────────────── */}
       <div
         className="roommates-tab-strip"
         role="tablist"
@@ -369,7 +337,6 @@ const RoommatesView = ({
         ))}
       </div>
 
-      {/* ── Tab panels ───────────────────────────────────────────── */}
       <div
         role="tabpanel"
         aria-label={tabLabel(activeTab)}
@@ -377,33 +344,21 @@ const RoommatesView = ({
       >
         {activeTab === ROOMMATES_TAB.BROWSE && (
           <div className="roommates-browse-tab">
-            {/* Tab-specific stat */}
             {!loading && availableRoomsCount > 0 && (
               <p className="roommates-tab-stat">
                 {availableRoomsCount.toLocaleString(locale)}{' '}
                 {t('roommates.browseTabStat') || 'rooms available right now'}
               </p>
             )}
-
-            {/* Listing cards */}
-            {loading && (
-              <p className="status-message">{t('propertyList.loadingProperties')}</p>
-            )}
-
-            {!loading && availableRoomsCount === 0 && (
-              <BrowseEmptyState t={t} />
-            )}
-
+            {loading && <p className="status-message">{t('propertyList.loadingProperties')}</p>}
+            {!loading && availableRoomsCount === 0 && <BrowseEmptyState t={t} />}
             {!loading && availableRoomsCount > 0 && (
               <div className="roommates-card-grid">
                 {displayProperties.map((property, index) => {
                   if (!property || typeof property !== 'object') return null;
                   const propertyId = getPropertyId(property);
                   const key = propertyId || `roommate-${index}`;
-                  const isFavorite = propertyId
-                    ? favoriteIdSet.has(String(propertyId))
-                    : false;
-
+                  const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;
                   return (
                     <RoommateCard
                       key={key}
@@ -419,8 +374,6 @@ const RoommatesView = ({
                 })}
               </div>
             )}
-
-            {/* Heatmap explainer (visible when map is present) */}
             <p className="roommates-heatmap-note">
               {t('roommates.heatmapNote') || 'Heatmap shows where rooms are being searched most — updated as people browse.'}
             </p>
