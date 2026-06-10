@@ -17,7 +17,7 @@
  *   - "Y people searching" → TODO: wire to GET /api/roommates/searcher-count
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
@@ -314,12 +314,11 @@ const RoommatesView = ({
 
   const availableRoomsCount = displayProperties.length;
 
-  // TODO: wire to wizard entry point when wizard is built
+  // Navigate to the existing AddListing wizard, pre-selecting the
+  // 'renter-roommates' profile type so the user lands on the right path.
   const handleStartWizard = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('homekey:open-list-room-wizard'));
-    }
-  }, []);
+    history.push('/add-listing', { preselectedProfileType: 'renter-roommates' });
+  }, [history]);
 
   const tabLabel = (tab) =>
     tab === ROOMMATES_TAB.BROWSE
@@ -441,4 +440,3 @@ const RoommatesView = ({
 };
 
 export default RoommatesView;
-
