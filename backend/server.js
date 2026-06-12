@@ -452,6 +452,7 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/agents', require('./routes/agents'));
 app.use('/api/alerts', require('./routes/alerts'));
+app.use('/api/roommates', require('./routes/roommateListings'));
 
 // Admin seed endpoint — manually trigger seeding when auto-seed fails or is skipped.
 // Protected by ADMIN_SECRET env var. If ADMIN_SECRET is not set, the endpoint is disabled.
