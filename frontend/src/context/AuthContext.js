@@ -9,6 +9,14 @@ const AuthContext = createContext({
   isAuthenticated: false,
 });
 
+const REMEMBERED_LOGIN_EMAIL_STORAGE_KEY = 'homekey:remembered-login-email';
+
+const rememberLoginEmail = (nextUser) => {
+  const email = String(nextUser?.email || '').trim();
+  if (!email) return;
+  localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, email);
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -34,11 +42,13 @@ export const AuthProvider = ({ children }) => {
   const login = (responseData) => {
     localStorage.setItem('token', responseData.token);
     localStorage.setItem('user', JSON.stringify(responseData.data));
+    rememberLoginEmail(responseData.data);
     setToken(responseData.token);
     setUser(responseData.data);
   };
 
   const logout = () => {
+    rememberLoginEmail(user);
     clearSession();
   };
 

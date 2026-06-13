@@ -30,6 +30,11 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const isStaleDemoLoginEmail = (value) => STALE_DEMO_LOGIN_EMAILS.has(normalizeEmail(value));
 
+const clearRememberedLoginPassword = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY);
+};
+
 const clearRememberedLoginCredentials = () => {
   if (typeof window === 'undefined') return;
   window.localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY);
@@ -41,8 +46,12 @@ const getRememberedLoginCredentials = () => {
   if (typeof window === 'undefined') return emptyCredentials;
   const rememberedEmail = String(window.localStorage.getItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY) || '').trim();
   const rememberedPassword = String(window.localStorage.getItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY) || '');
-  if (isStaleDemoLoginEmail(rememberedEmail) || !rememberedEmail || !rememberedPassword) {
-    clearRememberedLoginCredentials();
+  if (isStaleDemoLoginEmail(rememberedEmail)) {
+    clearRememberedLoginPassword();
+    return { email: rememberedEmail, password: '' };
+  }
+  if (!rememberedEmail) {
+    clearRememberedLoginPassword();
     return emptyCredentials;
   }
   return { email: rememberedEmail, password: rememberedPassword };
@@ -142,7 +151,7 @@ const Login = () => {
 
   useEffect(() => {
     if (rememberPassword) return;
-    clearRememberedLoginCredentials();
+    clearRememberedLoginPassword();
   }, [rememberPassword]);
 
   useEffect(() => {
@@ -153,12 +162,17 @@ const Login = () => {
     if (typeof window === 'undefined') return;
     const normalizedEmail = String(email || '').trim();
     const rawPassword = String(password || '');
-    if (rememberPassword && normalizedEmail && rawPassword && !isStaleDemoLoginEmail(normalizedEmail)) {
-      window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
+    if (!normalizedEmail) {
+      clearRememberedLoginCredentials();
+      return;
+    }
+
+    window.localStorage.setItem(REMEMBERED_LOGIN_EMAIL_STORAGE_KEY, normalizedEmail);
+    if (rememberPassword && rawPassword && !isStaleDemoLoginEmail(normalizedEmail)) {
       window.localStorage.setItem(REMEMBERED_LOGIN_PASSWORD_STORAGE_KEY, rawPassword);
       return;
     }
-    clearRememberedLoginCredentials();
+    clearRememberedLoginPassword();
   };
 
   const finishAuthAndRedirect = useCallback(() => {
@@ -365,7 +379,7 @@ const Login = () => {
         credential,
       });
       if (!rememberPassword) {
-        clearRememberedLoginCredentials();
+        clearRememberedLoginPassword();
       }
       login(data);
       finishAuthAndRedirect();
