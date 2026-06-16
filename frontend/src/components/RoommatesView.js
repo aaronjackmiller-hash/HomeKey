@@ -24,6 +24,7 @@ import { getLocalizedAddress } from '../utils/addressLocalization';
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
+import { getRoommateStats } from '../services/api';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,8 +35,15 @@ const ROOMMATES_TAB = Object.freeze({
   LIST: 'list',
 });
 
-// TODO: replace with real API call to GET /api/roommates/searcher-count
-const fetchSearcherCount = async () => null;
+// Fetches live stats from GET /api/roommates/stats
+const fetchSearcherCount = async () => {
+  try {
+    const data = await getRoommateStats();
+    return typeof data.searcherCount === 'number' ? data.searcherCount : null;
+  } catch (_err) {
+    return null;
+  }
+};
 
 // ---------------------------------------------------------------------------
 // Sub-components
