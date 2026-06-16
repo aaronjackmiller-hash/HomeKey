@@ -25,6 +25,7 @@ import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
 import { getRoommateStats } from '../services/api';
+import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -275,6 +276,7 @@ const RoommatesView = ({
   const [activeTab, setActiveTab] = useState(ROOMMATES_TAB.BROWSE);
   const [searcherCount, setSearcherCount] = useState(null);
   const [searcherCountLoading, setSearcherCountLoading] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -294,10 +296,13 @@ const RoommatesView = ({
 
   const availableRoomsCount = displayProperties.length;
 
-  // history is now the React Router history from useHistory() above
   const handleStartWizard = useCallback(() => {
-    history.push('/add-listing', { preselectedProfileType: 'renter-roommates' });
-  }, [history]);
+    setWizardOpen(true);
+  }, []);
+
+  const handleCloseWizard = useCallback(() => {
+    setWizardOpen(false);
+  }, []);
 
   const tabLabel = (tab) =>
     tab === ROOMMATES_TAB.BROWSE
@@ -306,6 +311,7 @@ const RoommatesView = ({
 
   return (
     <div className="roommates-view">
+      {wizardOpen && <RoommateWizard onClose={handleCloseWizard} />}
       <div className="roommates-stats-banner" aria-label={t('roommates.statsBannerAriaLabel') || 'Roommate market overview'}>
         <StatPill
           icon="🏠"
