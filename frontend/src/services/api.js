@@ -305,4 +305,91 @@ export const getAgents = async () => {
   return response.data;
 };
 
+// ── Roommate Listings ─────────────────────────────────────────────────────────
+
+/**
+ * Browse active roommate listings with optional filters.
+ * Public — no auth required.
+ */
+export const getRoommateListings = async (params) => {
+  const response = await api.get('/roommates', { params });
+  return response.data;
+};
+
+/**
+ * Get a single roommate listing by ID.
+ * Public — no auth required.
+ */
+export const getRoommateListing = async (id) => {
+  const response = await api.get(`/roommates/${id}`);
+  return response.data;
+};
+
+/**
+ * Get stats for the stats banner — availableRooms + searcherCount.
+ * Public — no auth required.
+ */
+export const getRoommateStats = async () => {
+  const response = await api.get('/roommates/stats');
+  return response.data;
+};
+
+/**
+ * Get heatmap data — aggregated demand click counts by neighborhood/city.
+ * Public — no auth required.
+ */
+export const getRoommateHeatmap = async () => {
+  const response = await api.get('/roommates/heatmap');
+  return response.data;
+};
+
+/**
+ * Create a new roommate listing.
+ * Public — anonymous users allowed. Logged-in users get owner ID attached automatically.
+ *
+ * @param {object} listing - The roommate listing payload
+ * @param {object} listing.contact - { phone, email, preferredMethod }
+ * @param {object} listing.address - { street, city, neighborhood, ... }
+ * @param {number} listing.rentShare - Monthly rent share
+ * @param {number} listing.totalBedrooms
+ * @param {string} listing.dateAvailable - ISO date string
+ * @param {string[]} listing.images - Up to 3 image URLs
+ * @param {string} listing.genderPreference - 'men' | 'women' | 'no-preference'
+ * @param {object} listing.lifestyle - { smoking, pets, kosherKitchen, vibe }
+ */
+export const createRoommateListing = async (listing) => {
+  const response = await api.post('/roommates', listing, { skipSessionExpiryLogout: true });
+  return response.data;
+};
+
+/**
+ * Update an existing roommate listing.
+ * Authenticated — owner or admin only.
+ */
+export const updateRoommateListing = async (id, updates) => {
+  const response = await api.patch(`/roommates/${id}`, updates);
+  return response.data;
+};
+
+/**
+ * Delete a roommate listing.
+ * Authenticated — owner or admin only.
+ */
+export const deleteRoommateListing = async (id) => {
+  const response = await api.delete(`/roommates/${id}`);
+  return response.data;
+};
+
+/**
+ * Log a demand signal when a searcher clicks a roommate listing card.
+ * Fire-and-forget — never throws, never blocks UI.
+ */
+export const logRoommateListingDemand = async (propertyId, city, neighborhood) => {
+  try {
+    await api.post('/roommates/demand', { propertyId, city, neighborhood });
+  } catch (_err) {
+    // Silently swallow — demand logging is best-effort only
+  }
+};
+
 export default api;
