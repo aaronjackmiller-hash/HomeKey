@@ -94,9 +94,8 @@ const AppRoutes = () => {
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/blueprint-inquiry" component={PropertyInquiryCard} />
-          <PrivateRoute path="/add-listing">
-            <AddListing />
-          </PrivateRoute>
+{/* Public route — anonymous users can list a room */}
+<Route path="/add-listing" component={AddListing} />
           <PrivateRoute path="/edit-listing/:id">
             <EditListing />
           </PrivateRoute>
