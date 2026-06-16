@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { createProperty } from '../services/api';
+import { createProperty, createRoommateListing } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Step0ProfileType } from './addListingSteps/Step0ProfileType';
 import { Step1AddListing } from './addListingSteps/Step1AddListing';
 import { Step2EnterpriseModel } from './addListingSteps/Step2EnterpriseModel';
@@ -249,9 +250,59 @@ const AddListing = () => {
         };
     };
 
-    const onPublishFinished = async () => {
+    const onPublishFinished = async (contactOverride = {}) => {
         setError('');
-        const payload = buildPayloadFromListingData();
+        const isRoommatesListing = data.profileType === 'renter-roommates';
+
+        if (isRoommatesListing) {
+            // Route to the separate roommate listings collection
+            const phone = contactOverride.anonPhone || '';
+            const email = contactOverride.anonEmail || '';
+            if (!phone && !isAuthenticated) {
+                setError('Please enter a phone number so renters can reach you.');
+                return;
+            }
+            const roommatePayload = {
+                contact: {
+                    phone: phone || undefined,
+                    email: email || undefined,
+                    preferredMethod: 'phone',
+                },
+                address: {
+                    street: data.address.street.trim(),
+                    streetNumber: data.address.number.trim(),
+                    city: data.address.city.trim(),
+                    country: 'Israel',
+                },
+                rentShare: parseNumber(data.price),
+                totalBedrooms: parseNumber(data.bedrooms),
+                sizeSqm: data.sizeSqm ? parseNumber(data.sizeSqm) : undefined,
+                dateAvailable: data.dateAvailable || new Date().toISOString(),
+                minLeaseMonths: data.leaseLength ? parseNumber(data.leaseLength) : 6,
+                description: data.description?.trim() || undefined,
+                images: [],
+                genderPreference: 'no-preference',
+                lifestyle: {
+                    smoking: 'not-allowed',
+                    pets: 'not-allowed',
+                    kosherKitchen: 'no',
+                },
+            };
+            setLoading(true);
+            try {
+                const result = await createRoommateListing(roommatePayload);
+                // After publishing, go back to roommates browse view
+                history.push('/?type=roommates');
+            } catch (err) {
+                setError(err.response?.data?.message || 'Failed to publish room listing.');
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        // Standard property listing (rental / sale)
+        const payload = buildPayloadFromListingData(contactOverride);
         if (!payload) {
             setError('Please complete address, price, bedrooms, bathrooms, and size before publishing.');
             setStep(createListingStep);
