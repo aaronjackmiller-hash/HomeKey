@@ -63,11 +63,27 @@ const CONTACT_METHODS = [
   { value: 'email', label: 'Email' },
 ];
 
+// Most common country codes for HomeKey's user base —
+// Israeli locals + Anglo expat community (SA, UK, US, AU, CA, FR, DE)
+const COUNTRY_CODES = [
+  { code: '+972', flag: '🇮🇱', label: 'IL', placeholder: '050 000 0000' },
+  { code: '+1',   flag: '🇺🇸', label: 'US', placeholder: '212 000 0000' },
+  { code: '+44',  flag: '🇬🇧', label: 'UK', placeholder: '7700 000000' },
+  { code: '+27',  flag: '🇿🇦', label: 'ZA', placeholder: '82 000 0000' },
+  { code: '+61',  flag: '🇦🇺', label: 'AU', placeholder: '400 000 000' },
+  { code: '+1',   flag: '🇨🇦', label: 'CA', placeholder: '416 000 0000' },
+  { code: '+33',  flag: '🇫🇷', label: 'FR', placeholder: '6 00 00 00 00' },
+  { code: '+49',  flag: '🇩🇪', label: 'DE', placeholder: '151 00000000' },
+  { code: '+55',  flag: '🇧🇷', label: 'BR', placeholder: '11 90000 0000' },
+  { code: '+7',   flag: '🇷🇺', label: 'RU', placeholder: '900 000 0000' },
+];
+
 // ── Initial state ─────────────────────────────────────────────────────────────
 
 const createInitialData = () => ({
   // Step 1 — Contact
   phone: '',
+  countryCode: '+972',
   email: '',
   preferredMethod: 'whatsapp',
 
@@ -165,10 +181,14 @@ const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Ba
 const Step1Contact = ({ data, onChange, onNext, onClose }) => {
   const [errors, setErrors] = useState({});
 
+  const selectedCountry = COUNTRY_CODES.find((c) => c.code === data.countryCode && c.label === (data.countryLabel || 'IL'))
+    || COUNTRY_CODES[0];
+
   const validate = () => {
     const next = {};
-    if (!data.phone.trim()) next.phone = 'Phone number is required';
-    else if (!/^[\d\s\+\-\(\)]{7,20}$/.test(data.phone.trim())) {
+    if (!data.phone.trim()) {
+      next.phone = 'Phone number is required';
+    } else if (!/^[\d\s\-\(\)]{5,15}$/.test(data.phone.trim())) {
       next.phone = 'Please enter a valid phone number';
     }
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
@@ -182,6 +202,9 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
     if (validate()) onNext();
   };
 
+  // Build the full phone number for storage: countryCode + local number
+  const fullPhone = `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`;
+
   return (
     <div className="rw-step-card">
       <ProgressBar step={1} />
@@ -191,14 +214,42 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
       </p>
 
       <Field label="Phone number" required error={errors.phone}>
-        <input
-          type="tel"
-          className={`rw-input ${errors.phone ? 'rw-input--error' : ''}`}
-          placeholder="+972 50 000 0000"
-          value={data.phone}
-          onChange={(e) => onChange('phone', e.target.value)}
-          autoFocus
-        />
+        <div className="rw-phone-row">
+          {/* Country code selector */}
+          <div className="rw-country-select-wrap">
+            <select
+              className="rw-country-select"
+              value={`${data.countryCode}|${data.countryLabel || 'IL'}`}
+              onChange={(e) => {
+                const [code, label] = e.target.value.split('|');
+                onChange('countryCode', code);
+                onChange('countryLabel', label);
+                onChange('phone', '');
+              }}
+              aria-label="Country code"
+            >
+              {COUNTRY_CODES.map((c) => (
+                <option key={`${c.code}-${c.label}`} value={`${c.code}|${c.label}`}>
+                  {c.flag} {c.code} {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* Local number input */}
+          <input
+            type="tel"
+            className={`rw-input rw-phone-input ${errors.phone ? 'rw-input--error' : ''}`}
+            placeholder={selectedCountry.placeholder}
+            value={data.phone}
+            onChange={(e) => onChange('phone', e.target.value)}
+            autoFocus
+          />
+        </div>
+        {data.phone.trim() && (
+          <p className="rw-phone-preview">
+            Full number: <strong>{fullPhone}</strong>
+          </p>
+        )}
       </Field>
 
       <Field label="Email" hint="Optional — add if you prefer email contact" error={errors.email}>
@@ -702,7 +753,7 @@ const RoommateWizard = ({ onClose }) => {
       // For now we submit the listing without images and add URL support later.
       const payload = {
         contact: {
-          phone: data.phone.trim(),
+          phone: `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`,
           email: data.email.trim() || undefined,
           preferredMethod: data.preferredMethod,
         },
