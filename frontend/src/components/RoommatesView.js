@@ -91,12 +91,14 @@ const RoommateCard = ({
       property.externalSource || property.sourceType
     ) || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
 
-  const price = Number(property.price);
+  // Roommate listings store price as 'rentShare', not 'price' —
+  // a separate schema from the Property collection.
+  const price = Number(property.rentShare ?? property.price);
   const displayPrice = Number.isNaN(price)
     ? t('propertyList.priceUnavailable')
     : `₪${price.toLocaleString(locale)}`;
 
-  const bedrooms = property.bedrooms ?? property.rooms ?? null;
+  const bedrooms = property.totalBedrooms ?? property.bedrooms ?? property.rooms ?? null;
   const bathrooms = property.bathrooms ?? property.baths ?? null;
 
   const handleCardClick = useCallback(() => {
