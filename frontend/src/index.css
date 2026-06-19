@@ -8762,3 +8762,86 @@ html[dir="rtl"] .filter-menu {
   width: 100% !important;
   height: 110px !important;
 }
+/* ==========================================================================
+   Roommate listing detail page — additional styles
+   Append these to index.css. Everything else reuses existing
+   .detail-hero-card / .detail-section-card / .detail-template-* classes.
+   ========================================================================== */
+
+.detail-hero-image--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  background: var(--color-background-secondary, #f1efe8);
+  height: 100%;
+  width: 100%;
+}
+
+.roommate-detail-pref-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.roommate-detail-pref-tag {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.85rem;
+  background: var(--color-background-secondary, #f1efe8);
+  border-radius: 999px;
+  color: var(--color-text-secondary, #5f5e5a);
+  font-weight: 500;
+}
+
+.roommate-detail-vibe {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #5f5e5a);
+  font-style: italic;
+  margin: 0.5rem 0 0;
+}
+
+.roommate-detail-contact-card h2 {
+  margin-bottom: 1rem;
+}
+
+.roommate-detail-contact-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.roommate-detail-contact-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--border-radius-md, 8px);
+  border: 1.5px solid var(--color-border-secondary, #b4b2a9);
+  background: var(--color-background-primary, #fff);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--color-text-primary, #2c2c2a);
+}
+
+.roommate-detail-contact-btn:hover {
+  border-color: var(--color-border-primary, #888780);
+}
+
+.roommate-detail-contact-btn.is-preferred {
+  background: var(--color-text-primary, #2c2c2a);
+  color: var(--color-background-primary, #fff);
+  border-color: var(--color-text-primary, #2c2c2a);
+}
+
+.roommate-detail-contact-btn--whatsapp.is-preferred {
+  background: #1d9e75;
+  border-color: #1d9e75;
+}
+
+.roommate-detail-listed-note {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary, #888780);
+  margin: 0.85rem 0 0;
+}
