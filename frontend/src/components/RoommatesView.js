@@ -24,7 +24,7 @@ import { getLocalizedAddress } from '../utils/addressLocalization';
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
-import { getRoommateStats } from '../services/api';
+import { getRoommateStats, getRoommateListings } from '../services/api';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -262,12 +262,10 @@ const ListARoomTab = ({ searcherCount, t, onStartWizard }) => (
 // ---------------------------------------------------------------------------
 
 const RoommatesView = ({
-  displayProperties = [],
   favoriteIdSet = new Set(),
   isMobileViewport = false,
   language = 'en',
   locale = 'en-US',
-  loading = false,
   onFavoriteToggle,
   t,
 }) => {
@@ -277,6 +275,34 @@ const RoommatesView = ({
   const [searcherCount, setSearcherCount] = useState(null);
   const [searcherCountLoading, setSearcherCountLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Roommate listings now come from the dedicated /api/roommates collection —
+  // NOT from the Property collection used by Rent/Sale. This fixes the bug
+  // where Browse Rooms always showed "0" even after listings were published.
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refreshListings = useCallback(() => {
+    let cancelled = false;
+    setLoading(true);
+    getRoommateListings()
+      .then((data) => {
+        if (cancelled) return;
+        setListings(Array.isArray(data?.data) ? data.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setListings([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = refreshListings();
+    return cleanup;
+  }, [refreshListings]);
 
   useEffect(() => {
     let cancelled = false;
@@ -294,6 +320,7 @@ const RoommatesView = ({
     return () => { cancelled = true; };
   }, []);
 
+  const displayProperties = listings;
   const availableRoomsCount = displayProperties.length;
 
   const handleStartWizard = useCallback(() => {
@@ -302,7 +329,13 @@ const RoommatesView = ({
 
   const handleCloseWizard = useCallback(() => {
     setWizardOpen(false);
-  }, []);
+    // Refresh listings and stats in case a new one was just published
+    refreshListings();
+    fetchSearcherCount().then((count) => {
+      setSearcherCount(typeof count === 'number' ? count : null);
+    });
+    setActiveTab(ROOMMATES_TAB.BROWSE);
+  }, [refreshListings]);
 
   const tabLabel = (tab) =>
     tab === ROOMMATES_TAB.BROWSE
