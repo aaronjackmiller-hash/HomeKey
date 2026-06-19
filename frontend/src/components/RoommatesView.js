@@ -104,7 +104,7 @@ const RoommateCard = ({
   const handleCardClick = useCallback(() => {
     if (!canOpen) return;
     logRoommateDemandSignal(property);
-    history.push(`/properties/${propertyId}`, { previewProperty: property });
+    history.push(`/roommates/${propertyId}`);
   }, [canOpen, property, propertyId, history]);
 
   return (
