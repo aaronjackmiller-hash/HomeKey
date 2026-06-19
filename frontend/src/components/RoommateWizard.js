@@ -783,7 +783,8 @@ const RoommateWizard = ({ onClose }) => {
 
       await createRoommateListing(payload);
 
-      // Success — go to Browse Rooms to see the new listing
+      // Success — close the wizard, then navigate to Browse Rooms to see the new listing
+      onClose?.();
       history.push('/?type=roommates');
     } catch (err) {
       setPublishError(err?.response?.data?.message || 'Failed to publish listing. Please try again.');
