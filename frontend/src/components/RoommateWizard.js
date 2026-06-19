@@ -569,7 +569,7 @@ const Step3Photos = ({ data, onChange, onNext, onBack }) => {
             <span className="rw-photo-add-icon" aria-hidden="true">+</span>
             <span>{data.photoFiles.length === 0 ? 'Add photos' : 'Add another'}</span>
             <span className="rw-photo-add-count">
-              {data.photoFiles.length}/{MAX_PHOTOS}
+              {data.photoFiles.length + 1}/{MAX_PHOTOS}
             </span>
           </button>
         )}
