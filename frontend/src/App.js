@@ -14,6 +14,7 @@ import Navbar from './components/Navbar';
 import PropertyList from './components/PropertyList';
 import PropertyDetail from './components/PropertyDetail';
 import AddListing from './components/AddListing';
+import RoommateListingDetail from './components/RoommateListingDetail';
 import EditListing from './components/EditListing';
 import PropertyEngagement from './components/PropertyEngagement';
 import AdminYad2Import from './components/AdminYad2Import';
@@ -86,6 +87,7 @@ const AppRoutes = () => {
         <Switch>
           <Route exact path="/" component={ListingsWithAlertsOverlay} />
           <Route path="/properties/:id" component={PropertyDetail} />
+          <Route path="/roommates/:id" component={RoommateListingDetail} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <PrivateRoute path="/account">
@@ -94,8 +96,11 @@ const AppRoutes = () => {
           <Route path="/forgot-password" component={ForgotPassword} />
           <Route path="/reset-password" component={ResetPassword} />
           <Route path="/blueprint-inquiry" component={PropertyInquiryCard} />
-{/* Public route — anonymous users can list a room */}
-<Route path="/add-listing" component={AddListing} />
+
+          {/* Public route — anonymous users can list a room.
+              Auth is captured at the end of the wizard, not at the door. */}
+          <Route path="/add-listing" component={AddListing} />
+
           <PrivateRoute path="/edit-listing/:id">
             <EditListing />
           </PrivateRoute>
