@@ -1628,12 +1628,10 @@ const PropertyList = () => {
           <div className="desktop-discovery-list-scroll">
             {isRoommatesView ? (
               <RoommatesView
-                displayProperties={displayProperties}
                 favoriteIdSet={favoriteIdSet}
                 isMobileViewport={isMobileViewport}
                 language={language}
                 locale={locale}
-                loading={loading}
                 onFavoriteToggle={() => setInterestVersion((v) => v + 1)}
                 t={t}
               />
