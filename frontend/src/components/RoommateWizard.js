@@ -21,6 +21,47 @@ import { useHistory } from 'react-router-dom';
 import { createRoommateListing } from '../services/api';
 import './RoommateWizard.css';
 
+// ── Cloudinary config ───────────────────────────────────────────────────────
+// Unsigned upload preset — safe to expose in frontend code, scoped to the
+// homekey/roommates folder only. No API secret involved.
+const CLOUDINARY_CLOUD_NAME = 'dxz5neie0';
+const CLOUDINARY_UPLOAD_PRESET = 'txkn4ah1';
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+/**
+ * Uploads a single File to Cloudinary using the unsigned upload preset.
+ * Returns the secure_url string on success, or null on failure.
+ */
+const uploadPhotoToCloudinary = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Photo upload failed (${response.status})`);
+  }
+
+  const result = await response.json();
+  return result.secure_url || null;
+};
+
+/**
+ * Uploads multiple photo Files to Cloudinary in parallel.
+ * Returns an array of secure_url strings, skipping any that failed.
+ */
+const uploadPhotosToCloudinary = async (files = []) => {
+  if (!files.length) return [];
+  const results = await Promise.allSettled(files.map((file) => uploadPhotoToCloudinary(file)));
+  return results
+    .filter((result) => result.status === 'fulfilled' && result.value)
+    .map((result) => result.value);
+};
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const TOTAL_STEPS = 5; // 4 input steps + 1 preview step
@@ -158,7 +199,7 @@ const ToggleGroup = ({ options, value, onChange }) => (
   </div>
 );
 
-const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Back', nextDisabled = false, isLoading = false }) => (
+const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Back', nextDisabled = false, isLoading = false, loadingLabel = 'Publishing...' }) => (
   <div className="rw-actions">
     {onBack && (
       <button type="button" className="rw-btn rw-btn--ghost" onClick={onBack}>
@@ -171,7 +212,7 @@ const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Ba
       onClick={onNext}
       disabled={nextDisabled || isLoading}
     >
-      {isLoading ? 'Publishing...' : nextLabel}
+      {isLoading ? loadingLabel : nextLabel}
     </button>
   </div>
 );
@@ -625,7 +666,7 @@ const Step4Preferences = ({ data, onChange, onNext, onBack }) => (
 
 // ── Step 5: Preview ───────────────────────────────────────────────────────────
 
-const Step5Preview = ({ data, onBack, onPublish, isLoading, error }) => {
+const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, error }) => {
   const formatPrice = (value) => {
     const n = Number(value);
     return Number.isFinite(n) && n > 0 ? `₪${n.toLocaleString()}` : '—';
@@ -719,6 +760,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, error }) => {
         nextLabel="🚀 Go Live!"
         backLabel="Edit listing"
         isLoading={isLoading}
+        loadingLabel={uploadingPhotos ? 'Uploading photos...' : 'Publishing...'}
       />
 
       <p className="rw-publish-note">
@@ -735,6 +777,7 @@ const RoommateWizard = ({ onClose }) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState(createInitialData);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [publishError, setPublishError] = useState('');
 
   const onChange = useCallback((field, value) => {
@@ -749,8 +792,21 @@ const RoommateWizard = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      // Note: photo upload to cloud storage is a future enhancement.
-      // For now we submit the listing without images and add URL support later.
+      // Upload selected photos to Cloudinary first — payload needs the
+      // resulting URLs, not the local File objects.
+      let uploadedImageUrls = [];
+      if (data.photoFiles.length > 0) {
+        setUploadingPhotos(true);
+        try {
+          uploadedImageUrls = await uploadPhotosToCloudinary(data.photoFiles);
+        } catch (uploadErr) {
+          setPublishError('Some photos failed to upload. Publishing without them — you can add photos later.');
+          uploadedImageUrls = [];
+        } finally {
+          setUploadingPhotos(false);
+        }
+      }
+
       const payload = {
         contact: {
           phone: `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`,
@@ -771,7 +827,7 @@ const RoommateWizard = ({ onClose }) => {
         dateAvailable: data.dateAvailable,
         minLeaseMonths: Number(data.minLeaseMonths),
         description: data.description.trim() || undefined,
-        images: [], // TODO: upload files to cloud storage, then pass URLs here
+        images: uploadedImageUrls,
         genderPreference: data.genderPreference,
         lifestyle: {
           smoking: data.smoking,
@@ -814,6 +870,7 @@ const RoommateWizard = ({ onClose }) => {
             onBack={prevStep}
             onPublish={handlePublish}
             isLoading={isLoading}
+            uploadingPhotos={uploadingPhotos}
             error={publishError}
           />
         )}
