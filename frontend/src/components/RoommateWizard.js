@@ -52,14 +52,30 @@ const uploadPhotoToCloudinary = async (file) => {
 
 /**
  * Uploads multiple photo Files to Cloudinary in parallel.
- * Returns an array of secure_url strings, skipping any that failed.
+ * Returns { urls, failedCount } — urls for successful uploads,
+ * failedCount so the caller can tell the user if some/all photos
+ * failed instead of silently publishing without them.
  */
 const uploadPhotosToCloudinary = async (files = []) => {
-  if (!files.length) return [];
+  if (!files.length) return { urls: [], failedCount: 0 };
   const results = await Promise.allSettled(files.map((file) => uploadPhotoToCloudinary(file)));
-  return results
-    .filter((result) => result.status === 'fulfilled' && result.value)
-    .map((result) => result.value);
+
+  const urls = [];
+  let failedCount = 0;
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled' && result.value) {
+      urls.push(result.value);
+    } else {
+      failedCount += 1;
+      // eslint-disable-next-line no-console
+      console.error(
+        `[RoommateWizard] Photo ${index + 1} failed to upload to Cloudinary:`,
+        result.status === 'rejected' ? result.reason : 'No URL returned'
+      );
+    }
+  });
+
+  return { urls, failedCount };
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -385,11 +401,18 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
     }
   };
 
+  // Guards against a race condition where an earlier (slower) geocode
+  // request resolves after a later one and overwrites a correct result
+  // with a stale one.
+  const geocodeRequestIdRef = useRef(0);
+
   // Auto-derive neighborhood from street + city using Google Geocoding,
   // since israelLocations.js only maps city -> neighborhoods list, not
-  // street-level data. Triggered on blur of street/city so we don't
-  // fire a request on every keystroke. Lister can still edit the
-  // result manually if Google got it wrong.
+  // street-level data. Triggered ONLY on blur of the Number field — the
+  // last and most specific piece of the address — so we don't fire
+  // multiple competing requests as the lister fills in City, then
+  // Street, then Number. Lister can still edit the result manually if
+  // Google got it wrong.
   const tryAutoFillNeighborhood = async () => {
     const street = data.street.trim();
     const city = data.city.trim();
@@ -398,6 +421,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
     // unless it was the one we auto-filled before.
     if (data.neighborhood.trim() && !neighborhoodAutoFilled) return;
 
+    const requestId = ++geocodeRequestIdRef.current;
     setGeocoding(true);
     try {
       const result = await geocodeAddress({
@@ -405,6 +429,9 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
         streetNumber: data.streetNumber.trim(),
         city,
       });
+      // If a newer request has started since this one was sent, discard
+      // this result — it's stale.
+      if (requestId !== geocodeRequestIdRef.current) return;
       if (result?.neighborhood) {
         onChange('neighborhood', result.neighborhood);
         setNeighborhoodAutoFilled(true);
@@ -438,7 +465,6 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
           placeholder="Tel Aviv-Yafo"
           value={data.city}
           onChange={(e) => handleFieldChange('city', e.target.value)}
-          onBlur={tryAutoFillNeighborhood}
           autoFocus
         />
       </Field>
@@ -451,7 +477,12 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             placeholder="Rothschild Blvd"
             value={data.street}
             onChange={(e) => onChange('street', e.target.value)}
-            onBlur={tryAutoFillNeighborhood}
+            onBlur={() => {
+              // Fallback for addresses with no street number — geocode
+              // right away rather than waiting on a Number field the
+              // lister may never fill in.
+              if (!data.streetNumber.trim()) tryAutoFillNeighborhood();
+            }}
           />
         </Field>
         <Field label="Number">
@@ -897,12 +928,21 @@ const RoommateWizard = ({ onClose }) => {
       // Upload selected photos to Cloudinary first — payload needs the
       // resulting URLs, not the local File objects.
       let uploadedImageUrls = [];
+      let photoUploadWarning = '';
       if (data.photoFiles.length > 0) {
         setUploadingPhotos(true);
         try {
-          uploadedImageUrls = await uploadPhotosToCloudinary(data.photoFiles);
+          const { urls, failedCount } = await uploadPhotosToCloudinary(data.photoFiles);
+          uploadedImageUrls = urls;
+          if (failedCount > 0 && urls.length > 0) {
+            photoUploadWarning = `${failedCount} of ${data.photoFiles.length} photos failed to upload. Publishing with the ${urls.length} that succeeded.`;
+          } else if (failedCount > 0 && urls.length === 0) {
+            photoUploadWarning = 'All photos failed to upload. Publishing without photos — you can add them later by editing your listing.';
+          }
         } catch (uploadErr) {
-          setPublishError('Some photos failed to upload. Publishing without them — you can add photos later.');
+          // eslint-disable-next-line no-console
+          console.error('[RoommateWizard] Unexpected photo upload error:', uploadErr);
+          photoUploadWarning = 'Photos failed to upload. Publishing without them — you can add photos later.';
           uploadedImageUrls = [];
         } finally {
           setUploadingPhotos(false);
@@ -944,7 +984,13 @@ const RoommateWizard = ({ onClose }) => {
 
       await retryWithBackoff(() => createRoommateListing(payload));
 
-      // Success — close the wizard, then navigate to Browse Rooms to see the new listing
+      // Success — surface any photo upload warning before the wizard
+      // unmounts and navigates away, since there's no other UI left
+      // to display it once we leave this screen.
+      if (photoUploadWarning && typeof window !== 'undefined') {
+        window.alert(photoUploadWarning);
+      }
+
       setPublishStage('');
       onClose?.();
       history.push('/?type=roommates');
