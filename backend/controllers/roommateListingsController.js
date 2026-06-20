@@ -38,6 +38,9 @@ exports.getListings = async (req, res) => {
             minRent,
             maxRent,
             bedrooms,
+            bathrooms,
+            amenities,
+            availableFrom,
             smoking,
             pets,
             kosher,
@@ -70,6 +73,32 @@ exports.getListings = async (req, res) => {
         if (bedrooms) {
             const bedroomsNum = parsePositiveInt(bedrooms, null);
             if (bedroomsNum !== null) filter.totalBedrooms = bedroomsNum;
+        }
+
+        if (bathrooms) {
+            const bathroomsNum = parsePositiveInt(bathrooms, null);
+            if (bathroomsNum !== null) filter.totalBathrooms = bathroomsNum;
+        }
+
+        // Amenities — searcher can request listings that have ALL specified
+        // amenities (comma-separated list, e.g. "elevator,parking").
+        if (amenities && typeof amenities === 'string' && amenities.trim()) {
+            const requestedAmenities = amenities
+                .split(',')
+                .map((value) => value.trim().toLowerCase())
+                .filter(Boolean);
+            if (requestedAmenities.length > 0) {
+                filter.amenities = { $all: requestedAmenities };
+            }
+        }
+
+        // Available from — only show rooms available on or before the
+        // searcher's desired move-in date.
+        if (availableFrom) {
+            const parsedDate = new Date(availableFrom);
+            if (!Number.isNaN(parsedDate.getTime())) {
+                filter.dateAvailable = { $lte: parsedDate };
+            }
         }
 
         if (smoking && ALLOWED_SMOKING.includes(smoking)) {
@@ -165,11 +194,13 @@ exports.createListing = async (req, res) => {
             rentShare,
             utilitiesEstimate,
             totalBedrooms,
+            totalBathrooms,
             sizeSqm,
             dateAvailable,
             minLeaseMonths,
             description,
             images,
+            amenities,
             genderPreference,
             lifestyle,
         } = req.body;
@@ -196,6 +227,17 @@ exports.createListing = async (req, res) => {
             return res.status(400).json({ message: 'Maximum 3 photos allowed' });
         }
 
+        const ALLOWED_AMENITIES = [
+            'elevator', 'parking', 'pets', 'disabled-access', 'renovated',
+            'furnished', 'mamad', 'oven', 'balcony', 'stovetop',
+            'laundry-facilities', 'in-unit-washer-dryer',
+        ];
+        const sanitizedAmenities = Array.isArray(amenities)
+            ? amenities
+                .map((value) => String(value || '').trim().toLowerCase())
+                .filter((value) => ALLOWED_AMENITIES.includes(value))
+            : [];
+
         const listing = new RoommateListing({
             contact: {
                 phone: contact.phone.trim(),
@@ -208,11 +250,13 @@ exports.createListing = async (req, res) => {
             rentShare: parsePositiveNumber(rentShare),
             utilitiesEstimate: parsePositiveNumber(utilitiesEstimate) ?? 0,
             totalBedrooms: parsePositiveInt(totalBedrooms, 1),
+            totalBathrooms: totalBathrooms ? parsePositiveInt(totalBathrooms, 1) : 1,
             sizeSqm: sizeSqm ? parsePositiveNumber(sizeSqm) : undefined,
             dateAvailable: new Date(dateAvailable),
             minLeaseMonths: minLeaseMonths ? parsePositiveInt(minLeaseMonths, 6) : 6,
             description: description?.trim() || undefined,
             images: Array.isArray(images) ? images.slice(0, 3) : [],
+            amenities: sanitizedAmenities,
             genderPreference: ALLOWED_GENDER_PREFS.includes(genderPreference)
                 ? genderPreference
                 : 'no-preference',
@@ -262,8 +306,8 @@ exports.updateListing = async (req, res) => {
 
         const allowedUpdates = [
             'contact', 'address', 'rentShare', 'utilitiesEstimate',
-            'totalBedrooms', 'sizeSqm', 'dateAvailable', 'minLeaseMonths',
-            'description', 'images', 'genderPreference', 'lifestyle', 'status',
+            'totalBedrooms', 'totalBathrooms', 'sizeSqm', 'dateAvailable', 'minLeaseMonths',
+            'description', 'images', 'amenities', 'genderPreference', 'lifestyle', 'status',
         ];
 
         allowedUpdates.forEach((field) => {
