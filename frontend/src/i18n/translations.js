@@ -191,6 +191,8 @@ export const translations = {
       listDisclaimer: 'Free to list. No account required to get started.',
       demandNoteTitle: 'Where demand is highest',
       demandNoteBody: 'The heatmap shows where searchers are most actively looking. Darker areas = more demand.',
+      availableNow: 'Available now',
+      perMonthShort: 'mo',
     },
     propertyDetail: {
       amenitiesHeading: 'Amenities',
@@ -462,6 +464,8 @@ export const translations = {
       listDisclaimer: 'פרסום חינמי. לא נדרש חשבון כדי להתחיל.',
       demandNoteTitle: 'היכן הביקוש הגבוה ביותר',
       demandNoteBody: 'המפה החמה מציגה היכן המחפשים הכי פעילים. אזורים כהים יותר = ביקוש גבוה יותר.',
+      availableNow: 'פנוי כעת',
+      perMonthShort: 'לחודש',
     },
     propertyDetail: {
       amenitiesHeading: 'שירותים',
