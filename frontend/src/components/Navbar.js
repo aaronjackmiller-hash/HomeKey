@@ -271,6 +271,7 @@ const HeaderIcon = ({ name }) => {
     user: (<><circle cx="12" cy="8" r="3.2" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></>),
     roommates: (<><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><circle cx="17" cy="8" r="2.5" /><path d="M14 20c0-2.8 1.8-5 4-5.5" /></>),
     clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>),
+    calendar: (<><path d="M7 3.5V6" /><path d="M17 3.5V6" /><path d="M5 8h14" /><path d="M6 5h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" /></>),
   };
   return <svg {...iconProps}>{paths[name]}</svg>;
 };
@@ -295,10 +296,12 @@ const parseSearchFromLocation = (search = '') => {
     const midpoint = Math.round((minPriceInput + maxPriceInput) / 2 / PRICE_SLIDER_STEP) * PRICE_SLIDER_STEP;
     minPriceInput = midpoint; maxPriceInput = midpoint;
   }
-  return { city, rooms, baths, listingType, propertyCategory: normalizedPropertyCategory, featureFilters, minPriceInput, maxPriceInput, likedOnly: params.get('liked') === '1' };
+  const rawAvailableFrom = String(params.get('availableFrom') || '').trim();
+  const availableFrom = /^\d{4}-\d{2}-\d{2}$/.test(rawAvailableFrom) ? rawAvailableFrom : '';
+  return { city, rooms, baths, listingType, propertyCategory: normalizedPropertyCategory, featureFilters, minPriceInput, maxPriceInput, availableFrom, likedOnly: params.get('liked') === '1' };
 };
 
-const buildSearchQuery = ({ city, rooms, baths, listingType, propertyCategory, featureFilters, minPriceInput, maxPriceInput, likedOnly }) => {
+const buildSearchQuery = ({ city, rooms, baths, listingType, propertyCategory, featureFilters, minPriceInput, maxPriceInput, availableFrom, likedOnly }) => {
   const params = new URLSearchParams();
   const trimmedCity = String(city || '').trim();
   if (trimmedCity) params.set('q', trimmedCity);
@@ -314,6 +317,8 @@ const buildSearchQuery = ({ city, rooms, baths, listingType, propertyCategory, f
   if (normalizedFeatureFilters.length > 0) params.set('features', normalizedFeatureFilters.join(','));
   if (Number(minPriceInput) > PRICE_SLIDER_MIN) params.set('minPrice', String(minPriceInput));
   if (Number(maxPriceInput) < PRICE_SLIDER_MAX) params.set('maxPrice', String(maxPriceInput));
+  const trimmedAvailableFrom = String(availableFrom || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedAvailableFrom)) params.set('availableFrom', trimmedAvailableFrom);
   if (likedOnly) params.set('liked', '1');
   const serialized = params.toString();
   return serialized ? `?${serialized}` : '';
@@ -488,6 +493,8 @@ const Navbar = () => {
   const [roommateLocationDraft, setRoommateLocationDraft] = useState(parsedFromLocation.city);
   const [minPriceInput, setMinPriceInput] = useState(parsedFromLocation.minPriceInput);
   const [maxPriceInput, setMaxPriceInput] = useState(parsedFromLocation.maxPriceInput);
+  const [availableFrom, setAvailableFrom] = useState(parsedFromLocation.availableFrom);
+  const [availableFromExpanded, setAvailableFromExpanded] = useState(false);
   const [isPriceDragging, setIsPriceDragging] = useState(false);
   const [activePriceHandle, setActivePriceHandle] = useState('');
   const [priceExpanded, setPriceExpanded] = useState(false);
@@ -506,6 +513,7 @@ const Navbar = () => {
 
   const priceRef = useRef(null);
   const roomsBathsRef = useRef(null);
+  const availableFromRef = useRef(null);
   const propertyTypeRef = useRef(null);
   const filtersRef = useRef(null);
   const filtersPanelRef = useRef(null);
@@ -531,6 +539,7 @@ const Navbar = () => {
     setRoommateLocationDraft(parsedFromLocation.city);
     setMinPriceInput(parsedFromLocation.minPriceInput);
     setMaxPriceInput(parsedFromLocation.maxPriceInput);
+    setAvailableFrom(parsedFromLocation.availableFrom);
     minPriceDraftRef.current = parsedFromLocation.minPriceInput;
     maxPriceDraftRef.current = parsedFromLocation.maxPriceInput;
     setIsPriceDragging(false);
@@ -594,6 +603,16 @@ const Navbar = () => {
   }, [roomsBathsExpanded]);
 
   useEffect(() => {
+    if (!availableFromExpanded) return undefined;
+    const handlePointerDown = (event) => { if (availableFromRef.current && !availableFromRef.current.contains(event.target)) setAvailableFromExpanded(false); };
+    const handleKeyDown = (event) => { if (event.key === 'Escape') setAvailableFromExpanded(false); };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('mousedown', handlePointerDown); document.removeEventListener('touchstart', handlePointerDown); document.removeEventListener('keydown', handleKeyDown); };
+  }, [availableFromExpanded]);
+
+  useEffect(() => {
     if (!propertyTypeExpanded) return undefined;
     const handlePointerDown = (event) => { if (propertyTypeRef.current && !propertyTypeRef.current.contains(event.target)) setPropertyTypeExpanded(false); };
     const handleKeyDown = (event) => { if (event.key === 'Escape') setPropertyTypeExpanded(false); };
@@ -638,11 +657,11 @@ const Navbar = () => {
     return () => window.removeEventListener('homekey:open-mobile-filters', handleOpenMobileFilters);
   }, []);
 
-  const applySearch = useCallback(({ nextCity = city, nextRooms = rooms, nextBaths = baths, nextListingType = listingType, nextPropertyCategory = propertyCategory, nextFeatureFilters = featureFilters, nextMinPriceInput = minPriceInput, nextMaxPriceInput = maxPriceInput, nextLikedOnly = likedOnly } = {}) => {
-    const nextSearch = buildSearchQuery({ city: nextCity, rooms: nextRooms, baths: nextBaths, listingType: nextListingType, propertyCategory: nextPropertyCategory, featureFilters: nextFeatureFilters, minPriceInput: nextMinPriceInput, maxPriceInput: nextMaxPriceInput, likedOnly: nextLikedOnly });
+  const applySearch = useCallback(({ nextCity = city, nextRooms = rooms, nextBaths = baths, nextListingType = listingType, nextPropertyCategory = propertyCategory, nextFeatureFilters = featureFilters, nextMinPriceInput = minPriceInput, nextMaxPriceInput = maxPriceInput, nextAvailableFrom = availableFrom, nextLikedOnly = likedOnly } = {}) => {
+    const nextSearch = buildSearchQuery({ city: nextCity, rooms: nextRooms, baths: nextBaths, listingType: nextListingType, propertyCategory: nextPropertyCategory, featureFilters: nextFeatureFilters, minPriceInput: nextMinPriceInput, maxPriceInput: nextMaxPriceInput, availableFrom: nextAvailableFrom, likedOnly: nextLikedOnly });
     if (location.pathname === '/' && location.search === nextSearch) return;
     history.replace({ pathname: '/', search: nextSearch });
-  }, [city, rooms, baths, listingType, propertyCategory, featureFilters, minPriceInput, maxPriceInput, likedOnly, location.pathname, location.search, history]);
+  }, [city, rooms, baths, listingType, propertyCategory, featureFilters, minPriceInput, maxPriceInput, availableFrom, likedOnly, location.pathname, location.search, history]);
 
   const applyFilterMenuSearch = (nextSearchOptions) => { keepFilterSheetOpenRef.current = true; applySearch(nextSearchOptions); };
 
@@ -809,8 +828,9 @@ const Navbar = () => {
     setRoommateLocationDraft('');
     setMinPriceInput(PRICE_SLIDER_MIN); setMaxPriceInput(PRICE_SLIDER_MAX);
     minPriceDraftRef.current = PRICE_SLIDER_MIN; maxPriceDraftRef.current = PRICE_SLIDER_MAX;
-    setFiltersExpanded(false); setPropertyTypeExpanded(false);
-    applySearch({ nextRooms: '', nextBaths: '', nextListingType: 'all', nextPropertyCategory: '', nextFeatureFilters: [], nextMinPriceInput: PRICE_SLIDER_MIN, nextMaxPriceInput: PRICE_SLIDER_MAX });
+    setAvailableFrom('');
+    setFiltersExpanded(false); setPropertyTypeExpanded(false); setAvailableFromExpanded(false);
+    applySearch({ nextRooms: '', nextBaths: '', nextListingType: 'all', nextPropertyCategory: '', nextFeatureFilters: [], nextMinPriceInput: PRICE_SLIDER_MIN, nextMaxPriceInput: PRICE_SLIDER_MAX, nextAvailableFrom: '' });
   };
 
   const handleApplyFilterMenu = () => {
@@ -1021,6 +1041,42 @@ const Navbar = () => {
                 </div>
               </div>
 
+              <div className="premium-header__search-segment premium-header__search-segment--available-from" ref={availableFromRef}>
+                <button id="header-search-available-from-toggle" type="button"
+                  className={`premium-header__price-toggle ${availableFrom ? 'is-active' : ''}`}
+                  aria-expanded={availableFromExpanded} aria-controls="header-available-from-panel"
+                  onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false); setFiltersExpanded(false); setAvailableFromExpanded((isExpanded) => !isExpanded); }}>
+                  <HeaderIcon name="calendar" />
+                  <span>
+                    {availableFrom
+                      ? new Date(availableFrom).toLocaleDateString(locale, { day: 'numeric', month: 'short' })
+                      : (isHebrew ? 'תאריך פינוי' : 'Available From')}
+                  </span>
+                </button>
+                <div id="header-available-from-panel" className={`premium-header__price-panel ${availableFromExpanded ? 'is-open' : ''}`}>
+                  <p className="premium-header__rooms-section-title">
+                    {isHebrew ? 'הצג רק נכסים פנויים עד תאריך זה' : 'Only show listings available by this date'}
+                  </p>
+                  <input
+                    type="date"
+                    className="premium-header__chip-btn"
+                    style={{ width: '100%', textAlign: 'center', cursor: 'pointer' }}
+                    value={availableFrom}
+                    onChange={(e) => {
+                      const nextValue = e.target.value;
+                      setAvailableFrom(nextValue);
+                      applySearch({ nextAvailableFrom: nextValue });
+                    }}
+                  />
+                  {availableFrom && (
+                    <button type="button" className="premium-header__rooms-clear-btn" style={{ marginTop: '10px' }}
+                      onClick={() => { setAvailableFrom(''); applySearch({ nextAvailableFrom: '' }); setAvailableFromExpanded(false); }}>
+                      {t('navbar.clearSelections')}
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="premium-header__search-segment premium-header__search-segment--rooms" ref={roomsBathsRef}>
                 <button id="header-search-rooms-toggle" type="button"
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
@@ -1063,42 +1119,44 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* PROPERTY TYPE */}
-              <div className="premium-header__search-segment premium-header__search-segment--property-type" ref={propertyTypeRef}>
-                <button id="header-search-property-type-toggle" type="button"
-                  className={`premium-header__property-type-toggle ${listingType !== 'all' && listingType !== 'roommates' || propertyCategory ? 'is-active' : ''}`}
-                  onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setFiltersExpanded(false); setPropertyTypeExpanded((value) => !value); }}
-                  aria-expanded={propertyTypeExpanded} aria-controls="header-property-type-panel">
-                  <HeaderIcon name="building" />
-                  <span>{propertyTypeSummary}</span>
-                </button>
-                <div id="header-property-type-panel" className={`premium-header__property-type-panel ${propertyTypeExpanded ? 'is-open' : ''}`}>
-                  <div className="premium-header__property-type-section">
-                    <p className="premium-header__rooms-section-title">{t('filterMenu.listingType')}</p>
-                    <div className="premium-header__rooms-options-grid">
-                      {LISTING_TYPE_OPTIONS.map((typeOption) => (
-                        <button key={typeOption} type="button"
-                          className={`premium-header__chip-btn ${listingType === typeOption ? 'is-selected' : ''}`}
-                          onClick={() => handleFilterMenuListingTypeChange(typeOption)}>
-                          {t(`filterMenu.${typeOption}`)}
-                        </button>
-                      ))}
+              {/* PROPERTY TYPE — hidden in Roommates mode; not relevant when listing a spare room */}
+              {!isRoommatesActive && (
+                <div className="premium-header__search-segment premium-header__search-segment--property-type" ref={propertyTypeRef}>
+                  <button id="header-search-property-type-toggle" type="button"
+                    className={`premium-header__property-type-toggle ${listingType !== 'all' && listingType !== 'roommates' || propertyCategory ? 'is-active' : ''}`}
+                    onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setFiltersExpanded(false); setPropertyTypeExpanded((value) => !value); }}
+                    aria-expanded={propertyTypeExpanded} aria-controls="header-property-type-panel">
+                    <HeaderIcon name="building" />
+                    <span>{propertyTypeSummary}</span>
+                  </button>
+                  <div id="header-property-type-panel" className={`premium-header__property-type-panel ${propertyTypeExpanded ? 'is-open' : ''}`}>
+                    <div className="premium-header__property-type-section">
+                      <p className="premium-header__rooms-section-title">{t('filterMenu.listingType')}</p>
+                      <div className="premium-header__rooms-options-grid">
+                        {LISTING_TYPE_OPTIONS.map((typeOption) => (
+                          <button key={typeOption} type="button"
+                            className={`premium-header__chip-btn ${listingType === typeOption ? 'is-selected' : ''}`}
+                            onClick={() => handleFilterMenuListingTypeChange(typeOption)}>
+                            {t(`filterMenu.${typeOption}`)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="premium-header__property-type-section">
-                    <p className="premium-header__rooms-section-title">{t('filterMenu.propertyTypes')}</p>
-                    <div className="premium-header__rooms-options-grid">
-                      {PROPERTY_CATEGORY_OPTIONS.map((categoryOption) => (
-                        <button key={categoryOption} type="button"
-                          className={`premium-header__chip-btn ${propertyCategory === categoryOption ? 'is-selected' : ''}`}
-                          onClick={() => handleTogglePropertyCategory(categoryOption)}>
-                          {t(`filterMenu.${categoryOption}`)}
-                        </button>
-                      ))}
+                    <div className="premium-header__property-type-section">
+                      <p className="premium-header__rooms-section-title">{t('filterMenu.propertyTypes')}</p>
+                      <div className="premium-header__rooms-options-grid">
+                        {PROPERTY_CATEGORY_OPTIONS.map((categoryOption) => (
+                          <button key={categoryOption} type="button"
+                            className={`premium-header__chip-btn ${propertyCategory === categoryOption ? 'is-selected' : ''}`}
+                            onClick={() => handleTogglePropertyCategory(categoryOption)}>
+                            {t(`filterMenu.${categoryOption}`)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* ALL FILTERS — hidden in Roommates mode; RoommatesView has its own UI */}
               {!isRoommatesActive && (
