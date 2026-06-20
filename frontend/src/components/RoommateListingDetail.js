@@ -75,6 +75,21 @@ const KOSHER_LABELS = {
     'open-to-it': 'Open to it',
 };
 
+const AMENITY_LABELS = {
+    elevator: { icon: '🛗', label: 'Elevator' },
+    parking: { icon: '🚗', label: 'Parking' },
+    pets: { icon: '🐾', label: 'Pets OK' },
+    'disabled-access': { icon: '♿', label: 'Accessible' },
+    renovated: { icon: '🔨', label: 'Renovated' },
+    furnished: { icon: '🛋️', label: 'Furnished' },
+    mamad: { icon: '🛡️', label: 'Mamad' },
+    oven: { icon: '🍳', label: 'Oven' },
+    balcony: { icon: '🌇', label: 'Balcony' },
+    stovetop: { icon: '🔥', label: 'Stovetop' },
+    'laundry-facilities': { icon: '🧺', label: 'Laundry' },
+    'in-unit-washer-dryer': { icon: '🌀', label: 'Washer/Dryer' },
+};
+
 const daysUntil = (isoDate) => {
     if (!isoDate) return null;
     const target = new Date(isoDate).getTime();
@@ -320,6 +335,23 @@ const RoommateListingDetail = () => {
                     <section className="detail-section-card">
                         <h2>About the apartment</h2>
                         <p className="detail-description">{description}</p>
+                    </section>
+                )}
+
+                {Array.isArray(listing.amenities) && listing.amenities.length > 0 && (
+                    <section className="detail-section-card">
+                        <h2>Amenities</h2>
+                        <div className="roommate-detail-amenity-grid">
+                            {listing.amenities.map((value) => {
+                                const info = AMENITY_LABELS[value];
+                                return (
+                                    <div key={value} className="roommate-detail-amenity-row">
+                                        <span className="roommate-detail-pref-icon" aria-hidden="true">{info?.icon || '✓'}</span>
+                                        <span className="roommate-detail-pref-text">{info?.label || value}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </section>
                 )}
 
