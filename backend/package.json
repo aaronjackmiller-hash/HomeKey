@@ -9,7 +9,7 @@
     "postinstall": "node scripts/renderPostinstall.js",
     "seed": "node seed.js",
     "yad2:backfill": "node services/yad2BackfillService.js",
-    "render-build": "npm ci --prefix ../frontend && NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=384\" CI=false npm run build --prefix ../frontend && test -f ../frontend/build/index.html && npm ci"
+    "render-build": "npm ci --prefix ../frontend && NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=384\" CI=false npm run build --prefix ../frontend && test -f ../frontend/build/index.html && npm install"
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.3.0",
