@@ -110,6 +110,13 @@ const RoommateListingSchema = new mongoose.Schema(
             min: [1, 'Must have at least 1 bedroom'],
         },
 
+        // Total bathrooms in the apartment
+        totalBathrooms: {
+            type: Number,
+            min: [1, 'Must have at least 1 bathroom'],
+            default: 1,
+        },
+
         // Apartment size in square meters
         sizeSqm: {
             type: Number,
@@ -134,6 +141,22 @@ const RoommateListingSchema = new mongoose.Schema(
             type: String,
             trim: true,
             maxlength: [1000, 'Description cannot exceed 1000 characters'],
+        },
+
+        // ── Amenities ────────────────────────────────────────────────────────
+        // Same vocabulary as Property listings, so the searcher can filter
+        // and the listing detail page can display them consistently.
+        amenities: {
+            type: [{
+                type: String,
+                trim: true,
+                enum: [
+                    'elevator', 'parking', 'pets', 'disabled-access', 'renovated',
+                    'furnished', 'mamad', 'oven', 'balcony', 'stovetop',
+                    'laundry-facilities', 'in-unit-washer-dryer',
+                ],
+            }],
+            default: [],
         },
 
         // ── Photos ───────────────────────────────────────────────────────────
