@@ -284,7 +284,7 @@ const RoommateListingDetail = () => {
                                     {Number(listing.rentShare || 0).toLocaleString()}
                                     {Number(listing.utilitiesEstimate) > 0 && (
                                         <span className="detail-template-price-suffix">
-                                            {' '}+ {formatPrice(listing.utilitiesEstimate)} utilities
+                                            {' '}+ {formatPrice(listing.utilitiesEstimate)} Estimated Additional Monthly Expenses
                                         </span>
                                     )}
                                 </strong>
@@ -325,11 +325,23 @@ const RoommateListingDetail = () => {
 
                 <section className="detail-section-card">
                     <h2>Looking for a roommate who...</h2>
-                    <div className="roommate-detail-pref-tags">
-                        <span className="roommate-detail-pref-tag">👥 {genderLabel}</span>
-                        <span className="roommate-detail-pref-tag">🚬 Smoking: {smokingLabel}</span>
-                        <span className="roommate-detail-pref-tag">🐾 Pets: {petsLabel}</span>
-                        <span className="roommate-detail-pref-tag">✡️ Kosher kitchen: {kosherLabel}</span>
+                    <div className="roommate-detail-pref-grid">
+                        <div className="roommate-detail-pref-row">
+                            <span className="roommate-detail-pref-icon" aria-hidden="true">👥</span>
+                            <span className="roommate-detail-pref-text">{genderLabel}</span>
+                        </div>
+                        <div className="roommate-detail-pref-row">
+                            <span className="roommate-detail-pref-icon" aria-hidden="true">🚬</span>
+                            <span className="roommate-detail-pref-text">Smoking: {smokingLabel}</span>
+                        </div>
+                        <div className="roommate-detail-pref-row">
+                            <span className="roommate-detail-pref-icon" aria-hidden="true">🐾</span>
+                            <span className="roommate-detail-pref-text">Pets: {petsLabel}</span>
+                        </div>
+                        <div className="roommate-detail-pref-row">
+                            <span className="roommate-detail-pref-icon" aria-hidden="true">✡️</span>
+                            <span className="roommate-detail-pref-text">Kosher kitchen: {kosherLabel}</span>
+                        </div>
                     </div>
                     {vibe && <p className="roommate-detail-vibe">💬 "{vibe}"</p>}
                 </section>
