@@ -8,6 +8,7 @@
  */
 
 const RoommateListing = require('../models/RoommateListing');
+const { sendListingPublishedSms } = require('../services/smsService');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -275,6 +276,17 @@ exports.createListing = async (req, res) => {
         });
 
         await listing.save();
+
+        // Fire-and-forget SMS confirmation — never delays or fails the
+        // publish response. Errors are logged inside smsService itself.
+        sendListingPublishedSms({
+            toPhone: listing.contact.phone,
+            city: listing.address?.city,
+            neighborhood: listing.address?.neighborhood,
+        }).catch(() => {
+            // sendListingPublishedSms already catches internally and
+            // never rejects, but guard here too in case that changes.
+        });
 
         return res.status(201).json({ success: true, data: listing });
     } catch (err) {
