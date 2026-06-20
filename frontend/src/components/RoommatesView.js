@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
@@ -81,13 +81,20 @@ const RoommateCard = ({
   const city = String(localizedAddress.city || '').trim();
   const neighborhood = String(localizedAddress.neighborhood || '').trim();
   const street = String(localizedAddress.street || '').trim();
+  const streetNumber = String(localizedAddress.streetNumber || '').trim();
 
-  const locationLine = [neighborhood, city].filter(Boolean).join(', ');
-  const displayTitle = street || locationLine || t('propertyList.propertyListingFallback');
+  // Neighborhood is the primary heading — searchers think in neighborhoods
+  // first ("I want Florentin"), not street addresses.
+  const primaryHeading = neighborhood
+    ? [neighborhood, city].filter(Boolean).join(', ')
+    : (city || t('propertyList.propertyListingFallback'));
+  const streetLine = [street, streetNumber].filter(Boolean).join(' ');
 
+  const images = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
+  const hasMultiplePhotos = images.length > 1;
   const imageSrc =
     buildYad2TopCroppedImageUrl(
-      Array.isArray(property.images) ? property.images[0] : '',
+      images[0] || '',
       property.externalSource || property.sourceType
     ) || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
 
@@ -99,7 +106,34 @@ const RoommateCard = ({
     : `₪${price.toLocaleString(locale)}`;
 
   const bedrooms = property.totalBedrooms ?? property.bedrooms ?? property.rooms ?? null;
-  const bathrooms = property.bathrooms ?? property.baths ?? null;
+
+  // "Available now" — true if the listing's available-from date is today or in the past.
+  const isAvailableNow = (() => {
+    if (!property.dateAvailable) return false;
+    const parsed = new Date(property.dateAvailable);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return parsed.getTime() <= Date.now();
+  })();
+
+  // Quick preference tags shown directly on the card so searchers can
+  // filter compatibility before clicking in.
+  const genderLabel = {
+    'no-preference': 'No pref.',
+    men: 'Men only',
+    women: 'Women only',
+  }[property.genderPreference] || 'No pref.';
+  const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking' : null;
+  const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 1) : [];
+  const AMENITY_LABELS = {
+    elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', 'disabled-access': 'Accessible',
+    renovated: 'Renovated', furnished: 'Furnished', mamad: 'Mamad', oven: 'Oven',
+    balcony: 'Balcony', stovetop: 'Stovetop', 'laundry-facilities': 'Laundry', 'in-unit-washer-dryer': 'W/D',
+  };
+  const quickTags = [
+    genderLabel,
+    smokingTag,
+    ...amenityTags.map((a) => AMENITY_LABELS[a] || a),
+  ].filter(Boolean).slice(0, 3);
 
   const handleCardClick = useCallback(() => {
     if (!canOpen) return;
@@ -117,8 +151,23 @@ const RoommateCard = ({
         <img
           className="roommate-card-image"
           src={imageSrc}
-          alt={displayTitle}
+          alt={primaryHeading}
         />
+
+        {isAvailableNow && (
+          <span className="roommate-card-available-badge">
+            {t('roommates.availableNow') || 'Available now'}
+          </span>
+        )}
+
+        {hasMultiplePhotos && (
+          <span className="roommate-card-photo-dots" aria-hidden="true">
+            {images.slice(0, 5).map((_, idx) => (
+              <span key={idx} className={`roommate-card-photo-dot ${idx === 0 ? 'is-active' : ''}`} />
+            ))}
+          </span>
+        )}
+
         <button
           type="button"
           className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
@@ -144,38 +193,30 @@ const RoommateCard = ({
       </div>
 
       <div className="roommate-card-body">
-        <p className="roommate-card-price" dir="ltr">{displayPrice}</p>
-        <h3 className="roommate-card-title">{displayTitle}</h3>
-        {locationLine && locationLine !== displayTitle && (
-          <p className="roommate-card-location">{locationLine}</p>
-        )}
-
-        <div className="roommate-card-stats">
+        <div className="roommate-card-price-row">
+          <p className="roommate-card-price" dir="ltr">
+            {displayPrice}<span className="roommate-card-price-suffix">/{t('roommates.perMonthShort') || 'mo'}</span>
+          </p>
           {bedrooms != null && (
-            <span className="roommate-card-stat">
+            <span className="roommate-card-bed-pill">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M3.5 12v5M20.5 12v5M3.5 14.5h17M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
               </svg>
-              {bedrooms} {t('propertyList.beds')}
-            </span>
-          )}
-          {bathrooms != null && (
-            <span className="roommate-card-stat">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M5 12h14v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3zM8 12V9.5A2.5 2.5 0 0 1 10.5 7h2A1.5 1.5 0 0 1 14 8.5v0A1.5 1.5 0 0 1 12.5 10H11M7.5 19v1.5M16.5 19v1.5" />
-              </svg>
-              {bathrooms} {t('propertyList.baths')}
-            </span>
-          )}
-          {property.size != null && (
-            <span className="roommate-card-stat">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M5 5h5v2H7v3H5zM14 5h5v5h-2V7h-3zM5 14h2v3h3v2H5zM17 17v-3h2v5h-5v-2z" />
-              </svg>
-              {property.size} {t('propertyList.sqm')}
+              {bedrooms}
             </span>
           )}
         </div>
+
+        <h3 className="roommate-card-title">{primaryHeading}</h3>
+        {streetLine && <p className="roommate-card-location">{streetLine}</p>}
+
+        {quickTags.length > 0 && (
+          <div className="roommate-card-quick-tags">
+            {quickTags.map((tag) => (
+              <span key={tag} className="roommate-card-quick-tag">{tag}</span>
+            ))}
+          </div>
+        )}
 
         <button
           type="button"
@@ -186,7 +227,7 @@ const RoommateCard = ({
           }}
           disabled={!canOpen}
         >
-          {t('propertyList.viewDetails')}
+          {t('propertyList.viewDetails')} →
         </button>
       </div>
     </div>
@@ -273,6 +314,7 @@ const RoommatesView = ({
 }) => {
   // useHistory called here at the top level of RoommatesView — correct placement
   const history = useHistory();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState(ROOMMATES_TAB.BROWSE);
   const [searcherCount, setSearcherCount] = useState(null);
   const [searcherCountLoading, setSearcherCountLoading] = useState(true);
@@ -287,7 +329,33 @@ const RoommatesView = ({
   const refreshListings = useCallback(() => {
     let cancelled = false;
     setLoading(true);
-    getRoommateListings()
+
+    // Read the same filter params the Navbar writes for Roommates mode —
+    // city (q), rooms (-> bedrooms), baths (-> bathrooms), availableFrom.
+    const params = new URLSearchParams(location.search);
+    const city = String(params.get('q') || '').trim();
+    const roomsParam = String(params.get('rooms') || '').trim();
+    const bathsParam = String(params.get('baths') || '').trim();
+    const availableFromParam = String(params.get('availableFrom') || '').trim();
+
+    // "4+" style values mean "at least N" — the backend filter does an
+    // exact match, so for now we send the leading digit. A future
+    // enhancement could add $gte support server-side for "+" values.
+    const toExactCount = (value) => {
+      const digitsOnly = value.replace(/\+$/, '');
+      const parsed = Number(digitsOnly);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+    };
+
+    const apiParams = {};
+    if (city) apiParams.city = city;
+    const bedroomsCount = toExactCount(roomsParam);
+    if (bedroomsCount !== undefined) apiParams.bedrooms = bedroomsCount;
+    const bathroomsCount = toExactCount(bathsParam);
+    if (bathroomsCount !== undefined) apiParams.bathrooms = bathroomsCount;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(availableFromParam)) apiParams.availableFrom = availableFromParam;
+
+    getRoommateListings(apiParams)
       .then((data) => {
         if (cancelled) return;
         setListings(Array.isArray(data?.data) ? data.data : []);
@@ -299,7 +367,7 @@ const RoommatesView = ({
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     const cleanup = refreshListings();
