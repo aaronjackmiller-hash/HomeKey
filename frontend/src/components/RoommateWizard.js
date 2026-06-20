@@ -18,7 +18,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { createRoommateListing } from '../services/api';
+import { createRoommateListing, geocodeAddress } from '../services/api';
 import './RoommateWizard.css';
 
 // ── Cloudinary config ───────────────────────────────────────────────────────
@@ -133,6 +133,8 @@ const createInitialData = () => ({
   street: '',
   streetNumber: '',
   neighborhood: '',
+  lat: null,
+  lng: null,
   rentShare: '',
   utilitiesEstimate: '',
   totalBedrooms: '1',
@@ -232,7 +234,9 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
     } else if (!/^[\d\s\-\(\)]{5,15}$/.test(data.phone.trim())) {
       next.phone = 'Please enter a valid phone number';
     }
-    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    if (data.preferredMethod === 'email' && !data.email.trim()) {
+      next.email = 'Email is required since you selected it as your preferred contact method';
+    } else if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
       next.email = 'Please enter a valid email address';
     }
     setErrors(next);
@@ -293,13 +297,23 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
         )}
       </Field>
 
-      <Field label="Email" hint="Optional — add if you prefer email contact" error={errors.email}>
+      <Field
+        label="Email"
+        required={data.preferredMethod === 'email'}
+        hint={data.preferredMethod === 'email'
+          ? "Required since you selected Email as your preferred contact method"
+          : "Optional — add if you prefer email contact"}
+        error={errors.email}
+      >
         <input
           type="email"
           className={`rw-input ${errors.email ? 'rw-input--error' : ''}`}
           placeholder="you@example.com"
           value={data.email}
-          onChange={(e) => onChange('email', e.target.value)}
+          onChange={(e) => {
+            onChange('email', e.target.value);
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+          }}
         />
       </Field>
 
@@ -307,7 +321,10 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
         <ToggleGroup
           options={CONTACT_METHODS}
           value={data.preferredMethod}
-          onChange={(val) => onChange('preferredMethod', val)}
+          onChange={(val) => {
+            onChange('preferredMethod', val);
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+          }}
         />
       </Field>
 
@@ -337,6 +354,8 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
 
 const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
   const [errors, setErrors] = useState({});
+  const [geocoding, setGeocoding] = useState(false);
+  const [neighborhoodAutoFilled, setNeighborhoodAutoFilled] = useState(false);
 
   const validate = () => {
     const next = {};
@@ -347,9 +366,58 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
     if (!data.totalBedrooms || Number(data.totalBedrooms) < 1) {
       next.totalBedrooms = 'Please select the number of bedrooms';
     }
-    if (!data.dateAvailable) next.dateAvailable = 'Please select an available from date';
+    if (!data.dateAvailable) next.dateAvailable = 'Please select an availability date';
     setErrors(next);
     return Object.keys(next).length === 0;
+  };
+
+  // Clears a single field's error as soon as the user changes it,
+  // instead of leaving a stale error message visible until the next
+  // "Continue" click re-runs full validation.
+  const handleFieldChange = (field, value) => {
+    onChange(field, value);
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  // Auto-derive neighborhood from street + city using Google Geocoding,
+  // since israelLocations.js only maps city -> neighborhoods list, not
+  // street-level data. Triggered on blur of street/city so we don't
+  // fire a request on every keystroke. Lister can still edit the
+  // result manually if Google got it wrong.
+  const tryAutoFillNeighborhood = async () => {
+    const street = data.street.trim();
+    const city = data.city.trim();
+    if (!street || !city) return;
+    // Don't overwrite a neighborhood the lister already typed manually
+    // unless it was the one we auto-filled before.
+    if (data.neighborhood.trim() && !neighborhoodAutoFilled) return;
+
+    setGeocoding(true);
+    try {
+      const result = await geocodeAddress({
+        street,
+        streetNumber: data.streetNumber.trim(),
+        city,
+      });
+      if (result?.neighborhood) {
+        onChange('neighborhood', result.neighborhood);
+        setNeighborhoodAutoFilled(true);
+      }
+      if (typeof result?.lat === 'number' && typeof result?.lng === 'number') {
+        onChange('lat', result.lat);
+        onChange('lng', result.lng);
+      }
+    } catch (_err) {
+      // Silently ignore — lister can still type the neighborhood manually.
+    } finally {
+      setGeocoding(false);
+    }
   };
 
   const handleNext = () => {
@@ -363,27 +431,17 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
       <ProgressBar step={2} />
       <StepHeader step={2} title="Tell us about your apartment" />
 
-      <div className="rw-field-row">
-        <Field label="City" required error={errors.city}>
-          <input
-            type="text"
-            className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
-            placeholder="Tel Aviv-Yafo"
-            value={data.city}
-            onChange={(e) => onChange('city', e.target.value)}
-            autoFocus
-          />
-        </Field>
-        <Field label="Neighborhood">
-          <input
-            type="text"
-            className="rw-input"
-            placeholder="Florentin"
-            value={data.neighborhood}
-            onChange={(e) => onChange('neighborhood', e.target.value)}
-          />
-        </Field>
-      </div>
+      <Field label="City" required error={errors.city}>
+        <input
+          type="text"
+          className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
+          placeholder="Tel Aviv-Yafo"
+          value={data.city}
+          onChange={(e) => handleFieldChange('city', e.target.value)}
+          onBlur={tryAutoFillNeighborhood}
+          autoFocus
+        />
+      </Field>
 
       <div className="rw-field-row">
         <Field label="Street">
@@ -393,6 +451,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             placeholder="Rothschild Blvd"
             value={data.street}
             onChange={(e) => onChange('street', e.target.value)}
+            onBlur={tryAutoFillNeighborhood}
           />
         </Field>
         <Field label="Number">
@@ -402,9 +461,31 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             placeholder="42"
             value={data.streetNumber}
             onChange={(e) => onChange('streetNumber', e.target.value)}
+            onBlur={tryAutoFillNeighborhood}
           />
         </Field>
       </div>
+
+      <Field
+        label="Neighborhood"
+        hint={geocoding
+          ? 'Detecting from your address...'
+          : (neighborhoodAutoFilled
+            ? 'Auto-detected from your address — edit if this looks wrong'
+            : 'Filled in automatically once you enter your street above')}
+      >
+        <input
+          type="text"
+          className="rw-input"
+          placeholder="Florentin"
+          value={data.neighborhood}
+          onChange={(e) => {
+            onChange('neighborhood', e.target.value);
+            setNeighborhoodAutoFilled(false);
+          }}
+        />
+      </Field>
+
 
       <div className="rw-field-row">
         <Field label="Monthly rent share (₪)" required error={errors.rentShare}
@@ -415,7 +496,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             placeholder="3500"
             min="0"
             value={data.rentShare}
-            onChange={(e) => onChange('rentShare', e.target.value)}
+            onChange={(e) => handleFieldChange('rentShare', e.target.value)}
           />
         </Field>
         <Field label="Utilities estimate (₪/month)"
@@ -436,7 +517,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
           <select
             className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
             value={data.totalBedrooms}
-            onChange={(e) => onChange('totalBedrooms', e.target.value)}
+            onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}
           >
             {[1,2,3,4,5,6].map((n) => (
               <option key={n} value={String(n)}>{n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
@@ -462,7 +543,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
             min={today}
             value={data.dateAvailable}
-            onChange={(e) => onChange('dateAvailable', e.target.value)}
+            onChange={(e) => handleFieldChange('dateAvailable', e.target.value)}
           />
         </Field>
         <Field label="Minimum lease">
@@ -819,6 +900,9 @@ const RoommateWizard = ({ onClose }) => {
           neighborhood: data.neighborhood.trim(),
           city: data.city.trim(),
           country: 'Israel',
+          ...(typeof data.lat === 'number' && typeof data.lng === 'number'
+            ? { lat: data.lat, lng: data.lng }
+            : {}),
         },
         rentShare: Number(data.rentShare),
         utilitiesEstimate: data.utilitiesEstimate ? Number(data.utilitiesEstimate) : 0,
