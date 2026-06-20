@@ -392,4 +392,14 @@ export const logRoommateListingDemand = async (propertyId, city, neighborhood) =
   }
 };
 
+/**
+ * Geocode a street + city to auto-derive neighborhood + coordinates.
+ * Used by the roommate wizard so listers don't have to manually type
+ * their neighborhood.
+ */
+export const geocodeAddress = async ({ street, streetNumber, city, country = 'Israel' }) => {
+  const response = await api.post('/geocode', { street, streetNumber, city, country });
+  return response.data;
+};
+
 export default api;
