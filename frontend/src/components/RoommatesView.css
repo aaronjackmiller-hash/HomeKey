@@ -1,459 +1,485 @@
-/* ==========================================================================
-   RoommatesView.css
-   Scoped styles for the roommates experience.
-   Slots into the existing PropertyList layout — the map column is untouched.
-   ========================================================================== */
+/**
+ * RoommatesView.js
+ *
+ * The full roommates experience, rendered inside PropertyList when
+ * `isRoommatesView` is true (i.e. /?type=roommates is active).
+ *
+ * Designed for future extraction to /roommates as a standalone route.
+ * When that day comes: move this file to RoommatesPage.js, wrap it in
+ * a <Route path="/roommates">, and delete the conditional in PropertyList.
+ *
+ * Tabs:
+ *   - Browse Rooms  → searcher view: listing cards + demand heatmap
+ *   - List a Room   → landlord view: CTA for wizard + demand heatmap
+ *
+ * Stats banner (above tabs):
+ *   - "X rooms available"  → derived from filtered roommate listings
+ *   - "Y people searching" → TODO: wire to GET /api/roommates/searcher-count
+ */
 
-/* ── View shell ─────────────────────────────────────────────────────────── */
+import React, { useState, useEffect, useCallback } from 'react';
+import { useHistory } from 'react-router-dom';
+import { getPropertyId } from '../utils/propertyIdentity';
+import { getLocalizedAddress } from '../utils/addressLocalization';
+import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
+import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
+import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
+import { getRoommateStats, getRoommateListings } from '../services/api';
+import RoommateWizard from './RoommateWizard';
 
-.roommates-view {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  width: 100%;
-  padding-bottom: 2rem;
-}
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
-/* ── Stats banner ───────────────────────────────────────────────────────── */
+const ROOMMATES_TAB = Object.freeze({
+  BROWSE: 'browse',
+  LIST: 'list',
+});
 
-.roommates-stats-banner {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 1.25rem 1.5rem;
-  background: var(--color-surface, #fff);
-  border-bottom: 1px solid var(--color-border, #e5e7eb);
-}
-
-.roommates-stats-divider {
-  width: 1px;
-  height: 2rem;
-  background: var(--color-border, #e5e7eb);
-  margin: 0 1.25rem;
-  flex-shrink: 0;
-}
-
-.roommates-stat-pill {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.roommates-stat-pill-icon {
-  font-size: 1rem;
-  line-height: 1;
-}
-
-.roommates-stat-pill-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #111827);
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.roommates-stat-pill--accent .roommates-stat-pill-value {
-  color: var(--color-accent, #2563eb);
-}
-
-.roommates-stat-pill-label {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #6b7280);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-/* ── Tab strip ──────────────────────────────────────────────────────────── */
-
-.roommates-tab-strip {
-  display: flex;
-  border-bottom: 2px solid var(--color-border, #e5e7eb);
-  background: var(--color-surface, #fff);
-  padding: 0 1.5rem;
-  gap: 0;
-}
-
-.roommates-tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.25rem;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-secondary, #6b7280);
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-}
-
-.roommates-tab-btn:hover {
-  color: var(--color-text-primary, #111827);
-}
-
-.roommates-tab-btn.is-active {
-  color: var(--color-accent, #2563eb);
-  border-bottom-color: var(--color-accent, #2563eb);
-}
-
-.roommates-tab-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.375rem;
-  height: 1.375rem;
-  padding: 0 0.3rem;
-  background: var(--color-accent, #2563eb);
-  color: #fff;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/* ── Tab panel ──────────────────────────────────────────────────────────── */
-
-.roommates-tab-panel {
-  flex: 1;
-  padding: 1.25rem 1.5rem 0;
-}
-
-.roommates-tab-stat {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0 0 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ── Browse tab: card grid ──────────────────────────────────────────────── */
-
-.roommates-browse-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.roommates-card-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ── Roommate card ──────────────────────────────────────────────────────── */
-
-.roommate-card {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 0;
-  background: var(--color-surface, #fff);
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.roommate-card.is-clickable:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-color: var(--color-accent, #2563eb);
-}
-
-.roommate-card-image-wrap {
-  position: relative;
-  width: 120px;
-  flex-shrink: 0;
-}
-
-.roommate-card-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.roommate-card-body {
-  padding: 0.75rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.roommate-card-price {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #111827);
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.roommate-card-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-primary, #111827);
-  margin: 0;
-  line-height: 1.3;
-  /* Truncate long titles */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.roommate-card-location {
-  font-size: 0.78rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0;
-}
-
-.roommate-card-stats {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.roommate-card-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.78rem;
-  color: var(--color-text-secondary, #6b7280);
-}
-
-.roommate-card-stat svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
-}
-
-.roommate-card-cta {
-  margin-top: auto;
-  padding-top: 0.5rem;
-  align-self: flex-start;
-  background: none;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 6px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-accent, #2563eb);
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.roommate-card-cta:hover {
-  background: var(--color-accent-subtle, #eff6ff);
-}
-
-.roommate-card-cta:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-/* ── Empty state ────────────────────────────────────────────────────────── */
-
-.roommates-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 3rem 1rem;
-  gap: 0.75rem;
-}
-
-.roommates-empty-icon {
-  font-size: 2.5rem;
-  line-height: 1;
-}
-
-.roommates-empty-state h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #111827);
-  margin: 0;
-}
-
-.roommates-empty-state p {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0;
-  max-width: 28ch;
-}
-
-/* ── Heatmap note ───────────────────────────────────────────────────────── */
-
-.roommates-heatmap-note {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary, #9ca3af);
-  margin: 0.5rem 0 0;
-  font-style: italic;
-}
-
-/* ── List a Room tab ────────────────────────────────────────────────────── */
-
-.roommates-list-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.roommates-list-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.roommates-list-hero-title {
-  font-size: 1.375rem;
-  font-weight: 800;
-  color: var(--color-text-primary, #111827);
-  margin: 0;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.roommates-list-hero-body {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0;
-  line-height: 1.6;
-}
-
-.roommates-list-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: var(--color-surface-subtle, #f9fafb);
-  border-radius: 10px;
-  border: 1px solid var(--color-border, #e5e7eb);
-}
-
-.roommates-list-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-}
-
-.roommates-list-step-num {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: var(--color-accent, #2563eb);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 800;
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.roommates-list-step strong {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #111827);
-  margin-bottom: 0.2rem;
-}
-
-.roommates-list-step p {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.roommates-list-cta-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 0.875rem 1.5rem;
-  background: var(--color-accent, #2563eb);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-  letter-spacing: -0.01em;
-}
-
-.roommates-list-cta-btn:hover {
-  background: var(--color-accent-dark, #1d4ed8);
-}
-
-.roommates-list-cta-btn:active {
-  transform: scale(0.98);
-}
-
-.roommates-list-disclaimer {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary, #9ca3af);
-  margin: -0.5rem 0 0;
-  text-align: center;
-}
-
-.roommates-list-demand-note {
-  padding: 1rem 1.25rem;
-  background: var(--color-surface-subtle, #f9fafb);
-  border-radius: 10px;
-  border: 1px solid var(--color-border, #e5e7eb);
-}
-
-.roommates-list-demand-note h3 {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--color-text-primary, #111827);
-  margin: 0 0 0.35rem;
-}
-
-.roommates-list-demand-note p {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #6b7280);
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* ── Responsive ─────────────────────────────────────────────────────────── */
-
-@media (max-width: 767px) {
-  .roommates-stats-banner {
-    padding: 1rem;
+// Fetches live stats from GET /api/roommates/stats
+const fetchSearcherCount = async () => {
+  try {
+    const data = await getRoommateStats();
+    return typeof data.searcherCount === 'number' ? data.searcherCount : null;
+  } catch (_err) {
+    return null;
   }
+};
 
-  .roommates-stat-pill-value {
-    font-size: 1.25rem;
-  }
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
-  .roommates-tab-strip {
-    padding: 0 1rem;
-  }
+const StatPill = ({ icon, value, label, accent }) => (
+  <div className={`roommates-stat-pill ${accent ? 'roommates-stat-pill--accent' : ''}`}>
+    <span className="roommates-stat-pill-icon" aria-hidden="true">{icon}</span>
+    <span className="roommates-stat-pill-value">
+      {value != null ? value.toLocaleString() : '—'}
+    </span>
+    <span className="roommates-stat-pill-label">{label}</span>
+  </div>
+);
 
-  .roommates-tab-panel {
-    padding: 1rem 1rem 0;
-  }
+/**
+ * Single roommate listing card.
+ * useHistory is called here at the top level of this component — correctly.
+ */
+const RoommateCard = ({
+  property,
+  isFavorite,
+  isMobile,
+  language,
+  locale,
+  onFavoriteToggle,
+  t,
+}) => {
+  const history = useHistory();
+  const propertyId = getPropertyId(property);
+  const canOpen = Boolean(propertyId) && !property.isHistoricalMatch;
 
-  .roommate-card {
-    grid-template-columns: 100px 1fr;
-  }
+  const localizedAddress = getLocalizedAddress(property?.address, language);
+  const city = String(localizedAddress.city || '').trim();
+  const neighborhood = String(localizedAddress.neighborhood || '').trim();
+  const street = String(localizedAddress.street || '').trim();
+  const streetNumber = String(localizedAddress.streetNumber || '').trim();
 
-  .roommate-card-image-wrap {
-    width: 100px;
-  }
-}
+  // Neighborhood is the primary heading — searchers think in neighborhoods
+  // first ("I want Florentin"), not street addresses.
+  const primaryHeading = neighborhood
+    ? [neighborhood, city].filter(Boolean).join(', ')
+    : (city || t('propertyList.propertyListingFallback'));
+  const streetLine = [street, streetNumber].filter(Boolean).join(' ');
 
+  const images = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
+  const hasMultiplePhotos = images.length > 1;
+  const imageSrc =
+    buildYad2TopCroppedImageUrl(
+      images[0] || '',
+      property.externalSource || property.sourceType
+    ) || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
+
+  // Roommate listings store price as 'rentShare', not 'price' —
+  // a separate schema from the Property collection.
+  const price = Number(property.rentShare ?? property.price);
+  const displayPrice = Number.isNaN(price)
+    ? t('propertyList.priceUnavailable')
+    : `₪${price.toLocaleString(locale)}`;
+
+  const bedrooms = property.totalBedrooms ?? property.bedrooms ?? property.rooms ?? null;
+
+  // "Available now" — true if the listing's available-from date is today or in the past.
+  const isAvailableNow = (() => {
+    if (!property.dateAvailable) return false;
+    const parsed = new Date(property.dateAvailable);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return parsed.getTime() <= Date.now();
+  })();
+
+  // Quick preference tags shown directly on the card so searchers can
+  // filter compatibility before clicking in.
+  const genderLabel = {
+    'no-preference': 'No pref.',
+    men: 'Men only',
+    women: 'Women only',
+  }[property.genderPreference] || 'No pref.';
+  const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking' : null;
+  const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 1) : [];
+  const AMENITY_LABELS = {
+    elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', 'disabled-access': 'Accessible',
+    renovated: 'Renovated', furnished: 'Furnished', mamad: 'Mamad', oven: 'Oven',
+    balcony: 'Balcony', stovetop: 'Stovetop', 'laundry-facilities': 'Laundry', 'in-unit-washer-dryer': 'W/D',
+  };
+  const quickTags = [
+    genderLabel,
+    smokingTag,
+    ...amenityTags.map((a) => AMENITY_LABELS[a] || a),
+  ].filter(Boolean).slice(0, 3);
+
+  const handleCardClick = useCallback(() => {
+    if (!canOpen) return;
+    logRoommateDemandSignal(property);
+    history.push(`/roommates/${propertyId}`);
+  }, [canOpen, property, propertyId, history]);
+
+  return (
+    <div
+      className={`roommate-card ${canOpen ? 'is-clickable' : ''}`}
+      onClick={handleCardClick}
+      style={{ cursor: canOpen ? 'pointer' : 'default' }}
+    >
+      <div className="roommate-card-image-wrap">
+        <img
+          className="roommate-card-image"
+          src={imageSrc}
+          alt={primaryHeading}
+        />
+
+        {isAvailableNow && (
+          <span className="roommate-card-available-badge">
+            {t('roommates.availableNow') || 'Available now'}
+          </span>
+        )}
+
+        {hasMultiplePhotos && (
+          <span className="roommate-card-photo-dots" aria-hidden="true">
+            {images.slice(0, 5).map((_, idx) => (
+              <span key={idx} className={`roommate-card-photo-dot ${idx === 0 ? 'is-active' : ''}`} />
+            ))}
+          </span>
+        )}
+
+        <button
+          type="button"
+          className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
+          aria-label={isFavorite
+            ? t('propertyList.removeFavoriteFromListing')
+            : t('propertyList.addFavoriteToListing')}
+          aria-pressed={isFavorite}
+          disabled={!propertyId}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!propertyId) return;
+            toggleFavoriteProperty(String(propertyId));
+            incrementHeartClickCount();
+            onFavoriteToggle?.();
+          }}
+        >
+          <span className="property-heart-icon-wrap" aria-hidden="true">
+            <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
+              <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      <div className="roommate-card-body">
+        <div className="roommate-card-price-row">
+          <p className="roommate-card-price" dir="ltr">
+            {displayPrice}<span className="roommate-card-price-suffix">/{t('roommates.perMonthShort') || 'mo'}</span>
+          </p>
+          {bedrooms != null && (
+            <span className="roommate-card-bed-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3.5 12v5M20.5 12v5M3.5 14.5h17M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
+              </svg>
+              {bedrooms}
+            </span>
+          )}
+        </div>
+
+        <h3 className="roommate-card-title">{primaryHeading}</h3>
+        {streetLine && <p className="roommate-card-location">{streetLine}</p>}
+
+        {quickTags.length > 0 && (
+          <div className="roommate-card-quick-tags">
+            {quickTags.map((tag) => (
+              <span key={tag} className="roommate-card-quick-tag">{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="roommate-card-cta"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick();
+          }}
+          disabled={!canOpen}
+        >
+          {t('propertyList.viewDetails')} →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const BrowseEmptyState = ({ t }) => (
+  <div className="roommates-empty-state">
+    <div className="roommates-empty-icon" aria-hidden="true">🏠</div>
+    <h3>{t('roommates.noRoomsTitle') || 'No rooms found'}</h3>
+    <p>{t('roommates.noRoomsBody') || 'Try adjusting your filters or check back soon — new listings are added daily.'}</p>
+  </div>
+);
+
+const ListARoomTab = ({ searcherCount, t, onStartWizard }) => (
+  <div className="roommates-list-tab">
+    <div className="roommates-list-hero">
+      <div className="roommates-list-hero-copy">
+        <h2 className="roommates-list-hero-title">
+          {t('roommates.listHeroTitle') || 'Your room, their home.'}
+        </h2>
+        <p className="roommates-list-hero-body">
+          {searcherCount != null
+            ? (t('roommates.listHeroBodyWithCount') || `${searcherCount.toLocaleString()} people are actively looking for a room right now.`).replace('{count}', searcherCount.toLocaleString())
+            : t('roommates.listHeroBody') || 'Thousands of people are actively looking for a room. List yours in minutes.'}
+        </p>
+      </div>
+
+      <div className="roommates-list-steps">
+        <div className="roommates-list-step">
+          <span className="roommates-list-step-num" aria-hidden="true">1</span>
+          <div>
+            <strong>{t('roommates.step1Title') || 'Describe your space'}</strong>
+            <p>{t('roommates.step1Body') || 'Room size, amenities, house rules — we guide you through it.'}</p>
+          </div>
+        </div>
+        <div className="roommates-list-step">
+          <span className="roommates-list-step-num" aria-hidden="true">2</span>
+          <div>
+            <strong>{t('roommates.step2Title') || 'Set your price'}</strong>
+            <p>{t('roommates.step2Body') || 'See what similar rooms nearby are charging.'}</p>
+          </div>
+        </div>
+        <div className="roommates-list-step">
+          <span className="roommates-list-step-num" aria-hidden="true">3</span>
+          <div>
+            <strong>{t('roommates.step3Title') || 'Get matched'}</strong>
+            <p>{t('roommates.step3Body') || 'Searchers in your area see your listing immediately.'}</p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="roommates-list-cta-btn"
+        onClick={onStartWizard}
+      >
+        {t('roommates.listCtaButton') || 'List my room'}
+      </button>
+
+      <p className="roommates-list-disclaimer">
+        {t('roommates.listDisclaimer') || 'Free to list. No account required to get started.'}
+      </p>
+    </div>
+
+    <div className="roommates-list-demand-note">
+      <h3>{t('roommates.demandNoteTitle') || 'Where demand is highest'}</h3>
+      <p>{t('roommates.demandNoteBody') || 'The heatmap shows where searchers are most actively looking. Darker areas = more demand.'}</p>
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+const RoommatesView = ({
+  favoriteIdSet = new Set(),
+  isMobileViewport = false,
+  language = 'en',
+  locale = 'en-US',
+  onFavoriteToggle,
+  t,
+}) => {
+  // useHistory called here at the top level of RoommatesView — correct placement
+  const history = useHistory();
+  const [activeTab, setActiveTab] = useState(ROOMMATES_TAB.BROWSE);
+  const [searcherCount, setSearcherCount] = useState(null);
+  const [searcherCountLoading, setSearcherCountLoading] = useState(true);
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Roommate listings now come from the dedicated /api/roommates collection —
+  // NOT from the Property collection used by Rent/Sale. This fixes the bug
+  // where Browse Rooms always showed "0" even after listings were published.
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const refreshListings = useCallback(() => {
+    let cancelled = false;
+    setLoading(true);
+    getRoommateListings()
+      .then((data) => {
+        if (cancelled) return;
+        setListings(Array.isArray(data?.data) ? data.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setListings([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = refreshListings();
+    return cleanup;
+  }, [refreshListings]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSearcherCountLoading(true);
+    fetchSearcherCount()
+      .then((count) => {
+        if (!cancelled) setSearcherCount(typeof count === 'number' ? count : null);
+      })
+      .catch(() => {
+        if (!cancelled) setSearcherCount(null);
+      })
+      .finally(() => {
+        if (!cancelled) setSearcherCountLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const displayProperties = listings;
+  const availableRoomsCount = displayProperties.length;
+
+  const handleStartWizard = useCallback(() => {
+    setWizardOpen(true);
+  }, []);
+
+  const handleCloseWizard = useCallback(() => {
+    setWizardOpen(false);
+    // Refresh listings and stats in case a new one was just published
+    refreshListings();
+    fetchSearcherCount().then((count) => {
+      setSearcherCount(typeof count === 'number' ? count : null);
+    });
+    setActiveTab(ROOMMATES_TAB.BROWSE);
+  }, [refreshListings]);
+
+  const tabLabel = (tab) =>
+    tab === ROOMMATES_TAB.BROWSE
+      ? (t('roommates.tabBrowse') || 'Browse Rooms')
+      : (t('roommates.tabList') || 'List a Room');
+
+  return (
+    <div className="roommates-view">
+      {wizardOpen && <RoommateWizard onClose={handleCloseWizard} />}
+      <div className="roommates-stats-banner" aria-label={t('roommates.statsBannerAriaLabel') || 'Roommate market overview'}>
+        <StatPill
+          icon="🏠"
+          value={loading ? null : availableRoomsCount}
+          label={t('roommates.statRoomsAvailable') || 'rooms available'}
+        />
+        <div className="roommates-stats-divider" aria-hidden="true" />
+        <StatPill
+          icon="🔍"
+          value={searcherCountLoading ? null : searcherCount}
+          label={t('roommates.statPeopleSearching') || 'people searching'}
+          accent
+        />
+      </div>
+
+      <div
+        className="roommates-tab-strip"
+        role="tablist"
+        aria-label={t('roommates.tabStripAriaLabel') || 'Roommate sections'}
+      >
+        {[ROOMMATES_TAB.BROWSE, ROOMMATES_TAB.LIST].map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={`roommates-tab-btn ${activeTab === tab ? 'is-active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tabLabel(tab)}
+            {tab === ROOMMATES_TAB.BROWSE && !loading && availableRoomsCount > 0 && (
+              <span className="roommates-tab-count" aria-label={`${availableRoomsCount} rooms`}>
+                {availableRoomsCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div
+        role="tabpanel"
+        aria-label={tabLabel(activeTab)}
+        className="roommates-tab-panel"
+      >
+        {activeTab === ROOMMATES_TAB.BROWSE && (
+          <div className="roommates-browse-tab">
+            {!loading && availableRoomsCount > 0 && (
+              <p className="roommates-tab-stat">
+                {availableRoomsCount.toLocaleString(locale)}{' '}
+                {t('roommates.browseTabStat') || 'rooms available right now'}
+              </p>
+            )}
+            {loading && <p className="status-message">{t('propertyList.loadingProperties')}</p>}
+            {!loading && availableRoomsCount === 0 && <BrowseEmptyState t={t} />}
+            {!loading && availableRoomsCount > 0 && (
+              <div className="roommates-card-grid">
+                {displayProperties.map((property, index) => {
+                  if (!property || typeof property !== 'object') return null;
+                  const propertyId = getPropertyId(property);
+                  const key = propertyId || `roommate-${index}`;
+                  const isFavorite = propertyId ? favoriteIdSet.has(String(propertyId)) : false;
+                  return (
+                    <RoommateCard
+                      key={key}
+                      property={property}
+                      isFavorite={isFavorite}
+                      isMobile={isMobileViewport}
+                      language={language}
+                      locale={locale}
+                      onFavoriteToggle={onFavoriteToggle}
+                      t={t}
+                    />
+                  );
+                })}
+              </div>
+            )}
+            <p className="roommates-heatmap-note">
+              {t('roommates.heatmapNote') || 'Heatmap shows where rooms are being searched most — updated as people browse.'}
+            </p>
+          </div>
+        )}
+
+        {activeTab === ROOMMATES_TAB.LIST && (
+          <ListARoomTab
+            searcherCount={searcherCount}
+            t={t}
+            onStartWizard={handleStartWizard}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default RoommatesView;
