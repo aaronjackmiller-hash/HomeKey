@@ -530,8 +530,8 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             onChange={(e) => handleFieldChange('rentShare', e.target.value)}
           />
         </Field>
-        <Field label="Utilities estimate (₪/month)"
-          hint="Electricity, water, internet, vaad">
+        <Field label="Estimated Additional Monthly Expenses (₪)"
+          hint="Utilities — electricity, water, internet, VAAD">
           <input
             type="number"
             className="rw-input"
@@ -833,7 +833,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
             <span>/month</span>
             {data.utilitiesEstimate && Number(data.utilitiesEstimate) > 0 && (
               <span className="rw-preview-utilities">
-                {' '}+ {formatPrice(data.utilitiesEstimate)} utilities
+                {' '}+ {formatPrice(data.utilitiesEstimate)} Estimated Additional Monthly Expenses
               </span>
             )}
           </p>
