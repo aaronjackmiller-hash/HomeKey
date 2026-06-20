@@ -114,6 +114,23 @@ const LEASE_OPTIONS = [
   { value: '24', label: '24 months' },
 ];
 
+// Same vocabulary as the backend RoommateListing model's amenities enum,
+// so a value picked here saves cleanly without server-side rejection.
+const AMENITY_OPTIONS = [
+  { value: 'elevator', label: 'Elevator', icon: '🛗' },
+  { value: 'parking', label: 'Parking', icon: '🚗' },
+  { value: 'pets', label: 'Pets OK', icon: '🐾' },
+  { value: 'disabled-access', label: 'Accessible', icon: '♿' },
+  { value: 'renovated', label: 'Renovated', icon: '🔨' },
+  { value: 'furnished', label: 'Furnished', icon: '🛋️' },
+  { value: 'mamad', label: 'Mamad', icon: '🛡️' },
+  { value: 'oven', label: 'Oven', icon: '🍳' },
+  { value: 'balcony', label: 'Balcony', icon: '🌇' },
+  { value: 'stovetop', label: 'Stovetop', icon: '🔥' },
+  { value: 'laundry-facilities', label: 'Laundry', icon: '🧺' },
+  { value: 'in-unit-washer-dryer', label: 'Washer/Dryer', icon: '🌀' },
+];
+
 const CONTACT_METHODS = [
   { value: 'phone', label: 'Phone call' },
   { value: 'whatsapp', label: 'WhatsApp' },
@@ -154,10 +171,12 @@ const createInitialData = () => ({
   rentShare: '',
   utilitiesEstimate: '',
   totalBedrooms: '1',
+  totalBathrooms: '1',
   sizeSqm: '',
   dateAvailable: '',
   minLeaseMonths: '6',
   description: '',
+  amenities: [],
 
   // Step 3 — Photos
   photoFiles: [],
@@ -555,6 +574,20 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             ))}
           </select>
         </Field>
+        <Field label="Total bathrooms in apartment">
+          <select
+            className="rw-select"
+            value={data.totalBathrooms}
+            onChange={(e) => onChange('totalBathrooms', e.target.value)}
+          >
+            {[1,2,3,4].map((n) => (
+              <option key={n} value={String(n)}>{n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <div className="rw-field-row">
         <Field label="Apartment size (sqm)">
           <input
             type="number"
@@ -589,6 +622,31 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
           </select>
         </Field>
       </div>
+
+      <Field label="Apartment amenities" hint="Select everything that applies — optional but helps you get better matches">
+        <div className="rw-amenity-grid">
+          {AMENITY_OPTIONS.map((amenity) => {
+            const isSelected = data.amenities.includes(amenity.value);
+            return (
+              <button
+                key={amenity.value}
+                type="button"
+                className={`rw-amenity-btn ${isSelected ? 'is-active' : ''}`}
+                onClick={() => {
+                  const next = isSelected
+                    ? data.amenities.filter((value) => value !== amenity.value)
+                    : [...data.amenities, amenity.value];
+                  onChange('amenities', next);
+                }}
+                aria-pressed={isSelected}
+              >
+                <span aria-hidden="true">{amenity.icon}</span>
+                <span>{amenity.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
 
       <Field
         label="About the apartment"
@@ -842,6 +900,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
 
           <div className="rw-preview-specs">
             <span>🛏 {data.totalBedrooms} bed</span>
+            <span>🚿 {data.totalBathrooms} bath</span>
             {data.sizeSqm && <span>📐 {data.sizeSqm} sqm</span>}
             <span>📅 Available {formatDate(data.dateAvailable)}</span>
             <span>⏳ Min {data.minLeaseMonths} months</span>
@@ -849,6 +908,19 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
 
           {data.description && (
             <p className="rw-preview-description">{data.description}</p>
+          )}
+
+          {data.amenities.length > 0 && (
+            <div className="rw-preview-prefs">
+              {data.amenities.map((value) => {
+                const option = AMENITY_OPTIONS.find((a) => a.value === value);
+                return (
+                  <span key={value} className="rw-preview-pref-tag">
+                    {option?.icon} {option?.label || value}
+                  </span>
+                );
+              })}
+            </div>
           )}
 
           <div className="rw-preview-prefs">
@@ -968,11 +1040,13 @@ const RoommateWizard = ({ onClose }) => {
         rentShare: Number(data.rentShare),
         utilitiesEstimate: data.utilitiesEstimate ? Number(data.utilitiesEstimate) : 0,
         totalBedrooms: Number(data.totalBedrooms),
+        totalBathrooms: Number(data.totalBathrooms),
         sizeSqm: data.sizeSqm ? Number(data.sizeSqm) : undefined,
         dateAvailable: data.dateAvailable,
         minLeaseMonths: Number(data.minLeaseMonths),
         description: data.description.trim() || undefined,
         images: uploadedImageUrls,
+        amenities: data.amenities,
         genderPreference: data.genderPreference,
         lifestyle: {
           smoking: data.smoking,
