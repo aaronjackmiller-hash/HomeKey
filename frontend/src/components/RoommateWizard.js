@@ -747,7 +747,7 @@ const Step4Preferences = ({ data, onChange, onNext, onBack }) => (
 
 // ── Step 5: Preview ───────────────────────────────────────────────────────────
 
-const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, error }) => {
+const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, publishStage, error }) => {
   const formatPrice = (value) => {
     const n = Number(value);
     return Number.isFinite(n) && n > 0 ? `₪${n.toLocaleString()}` : '—';
@@ -841,7 +841,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, err
         nextLabel="🚀 Go Live!"
         backLabel="Edit listing"
         isLoading={isLoading}
-        loadingLabel={uploadingPhotos ? 'Uploading photos...' : 'Publishing...'}
+        loadingLabel={publishStage || (uploadingPhotos ? 'Uploading photos...' : 'Publishing...')}
       />
 
       <p className="rw-publish-note">
@@ -860,6 +860,7 @@ const RoommateWizard = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [publishError, setPublishError] = useState('');
+  const [publishStage, setPublishStage] = useState('');
 
   const onChange = useCallback((field, value) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -867,6 +868,26 @@ const RoommateWizard = ({ onClose }) => {
 
   const nextStep = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS)), []);
   const prevStep = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
+
+  // Render's free tier spins the backend down after ~15 min of inactivity.
+  // The first request after idle time can time out or get dropped before
+  // the server finishes waking up. Retrying silently means the user almost
+  // never sees a failure that would have resolved itself in a few seconds.
+  const retryWithBackoff = async (fn, { retries = 2, delayMs = 2000 } = {}) => {
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        const isLastAttempt = attempt === retries;
+        if (isLastAttempt) throw err;
+        if (attempt === 0) setPublishStage('Server is waking up — retrying...');
+        await new Promise((resolve) => setTimeout(resolve, delayMs * (attempt + 1)));
+      }
+    }
+    throw lastError;
+  };
 
   const handlePublish = async () => {
     setPublishError('');
@@ -921,12 +942,14 @@ const RoommateWizard = ({ onClose }) => {
         },
       };
 
-      await createRoommateListing(payload);
+      await retryWithBackoff(() => createRoommateListing(payload));
 
       // Success — close the wizard, then navigate to Browse Rooms to see the new listing
+      setPublishStage('');
       onClose?.();
       history.push('/?type=roommates');
     } catch (err) {
+      setPublishStage('');
       setPublishError(err?.response?.data?.message || 'Failed to publish listing. Please try again.');
     } finally {
       setIsLoading(false);
@@ -955,6 +978,7 @@ const RoommateWizard = ({ onClose }) => {
             onPublish={handlePublish}
             isLoading={isLoading}
             uploadingPhotos={uploadingPhotos}
+            publishStage={publishStage}
             error={publishError}
           />
         )}
