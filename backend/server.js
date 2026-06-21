@@ -15,6 +15,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
 const app = express();
+app.set('trust proxy', 1);
 
 const PUBLIC_RUNTIME_CONFIG_ENTRIES = [
     ['REACT_APP_GOOGLE_MAPS_API_KEY', ['REACT_APP_GOOGLE_MAPS_API_KEY', 'GOOGLE_MAPS_API_KEY']],
@@ -61,6 +62,11 @@ const apiLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many requests, please try again later.' },
+    // Render's health check hits this repeatedly; without this it shares the
+    // same budget as real traffic and eventually gets rate-limited itself —
+    // which Render reports as "HTTP health check failed with status code 429"
+    // and responds to by restarting the instance.
+    skip: (req) => req.path === '/health',
 });
 app.use('/api/', apiLimiter);
 
