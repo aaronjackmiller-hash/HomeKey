@@ -261,6 +261,101 @@
   cursor: default;
 }
 
+/* ── Price row (price + bed count pill) ────────────────────────────────── */
+
+.roommate-card-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.roommate-card-price-suffix {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.roommate-card-bed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--color-surface-subtle, #f9fafb);
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+}
+
+.roommate-card-bed-pill svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* ── Available-now badge (image overlay) ───────────────────────────────── */
+
+.roommate-card-available-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-accent, #2563eb);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+/* ── Photo dots (image overlay, multi-photo indicator) ─────────────────── */
+
+.roommate-card-photo-dots {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.roommate-card-photo-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.roommate-card-photo-dot.is-active {
+  background: #fff;
+}
+
+/* ── Quick preference tags ──────────────────────────────────────────────── */
+
+.roommate-card-quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.roommate-card-quick-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-surface-subtle, #f9fafb);
+  border-radius: 99px;
+  padding: 0.2rem 0.55rem;
+}
+
 /* ── Empty state ────────────────────────────────────────────────────────── */
 
 .roommates-empty-state {
