@@ -755,7 +755,7 @@ width: min(90vw, 520px);
   gap: 12px;
 }
 
-.roommate-card {
+.looking-for-card {
   width: 100%;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -770,7 +770,7 @@ width: min(90vw, 520px);
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.roommate-card.is-selected {
+.looking-for-card.is-selected {
   background: #e2f0d9;
   border-color: rgba(45, 90, 39, 0.34);
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
@@ -7782,7 +7782,7 @@ html[dir="rtl"] .premium-header__property-type-panel {
   margin-bottom: 8px;
 }
 
-.roommate-card {
+.looking-for-card {
   border: 2px solid #d4c9b0;
   border-radius: 12px;
   background: #fff;
@@ -7793,7 +7793,7 @@ html[dir="rtl"] .premium-header__property-type-panel {
   opacity: 0.6;
 }
 
-.roommate-card.is-selected {
+.looking-for-card.is-selected {
   border-color: #5a7a5a;
   background: #edf3ed;
   opacity: 1;
