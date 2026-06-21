@@ -83,15 +83,25 @@ exports.geocodeAddress = async (req, res) => {
         const data = await response.json();
 
         if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) {
-            // Not an error — just no match. Frontend falls back to manual entry.
-            return res.json({
-                success: true,
-                neighborhood: null,
-                lat: null,
-                lng: null,
-                formattedAddress: null,
-            });
-        }
+    // Google's status field explains exactly why (ZERO_RESULTS, REQUEST_DENIED,
+    // OVER_QUERY_LIMIT, INVALID_REQUEST...). Logging it server-side instead of
+    // discarding it — REQUEST_DENIED (e.g. an API key restricted to browser
+    // referrers being rejected for this server-to-server call) and a genuine
+    // zero-result lookup look identical to the frontend otherwise.
+    if (data.status !== 'ZERO_RESULTS') {
+        console.error(
+            `[geocode] Google Geocoding API returned "${data.status}" for query "${addressQuery}":`,
+            data.error_message || '(no error_message provided)'
+        );
+    }
+    return res.json({
+        success: true,
+        neighborhood: null,
+        lat: null,
+        lng: null,
+        formattedAddress: null,
+    });
+}
 
         const topResult = data.results[0];
         const neighborhood = extractNeighborhood(topResult.address_components || []);
