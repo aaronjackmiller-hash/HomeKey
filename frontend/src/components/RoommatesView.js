@@ -21,7 +21,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
-import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
 import { getRoommateStats, getRoommateListings } from '../services/api';
@@ -92,11 +91,11 @@ const RoommateCard = ({
 
   const images = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
   const hasMultiplePhotos = images.length > 1;
-  const imageSrc =
-    buildYad2TopCroppedImageUrl(
-      images[0] || '',
-      property.externalSource || property.sourceType
-    ) || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
+  // Roommate photos are uploaded directly to Cloudinary by RoommateWizard —
+  // they're never Yad2-sourced, so there's no cropping utility to run them
+  // through. Use the URL as-is; only fall back to a placeholder when a
+  // listing genuinely has no photos.
+  const imageSrc = images[0] || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
 
   // Roommate listings store price as 'rentShare', not 'price' —
   // a separate schema from the Property collection.
@@ -120,10 +119,10 @@ const RoommateCard = ({
   // Quick preference tags shown directly on the card so searchers can
   // filter compatibility before clicking in.
   const genderLabel = {
-    'no-preference': 'No pref.',
+    'no-preference': 'No gender preference',
     men: 'Men only',
     women: 'Women only',
-  }[property.genderPreference] || 'No pref.';
+  }[property.genderPreference] || 'No gender preference';
   const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking' : null;
   const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 2) : [];
   const AMENITY_LABELS = {
