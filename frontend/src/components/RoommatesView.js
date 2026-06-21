@@ -125,7 +125,7 @@ const RoommateCard = ({
     women: 'Women only',
   }[property.genderPreference] || 'No pref.';
   const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking' : null;
-  const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 1) : [];
+  const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 2) : [];
   const AMENITY_LABELS = {
     elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', 'disabled-access': 'Accessible',
     renovated: 'Renovated', furnished: 'Furnished', mamad: 'Mamad', oven: 'Oven',
@@ -135,7 +135,7 @@ const RoommateCard = ({
     genderLabel,
     smokingTag,
     ...amenityTags.map((a) => AMENITY_LABELS[a] || a),
-  ].filter(Boolean).slice(0, 3);
+  ].filter(Boolean).slice(0, 4);
 
   const handleCardClick = useCallback(() => {
     if (!canOpen) return;
