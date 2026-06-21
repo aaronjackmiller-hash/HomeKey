@@ -552,7 +552,7 @@ const RoommateFilters = ({
       <section className="filter-menu__section roommate-filters__section">
         <h3 className="roommate-filters__title">{isHebrew ? 'אני מחפש/ת' : 'I am looking for'}</h3>
         <div className="roommate-filters__looking-grid">
-          <div role="button" tabIndex={0} className={`roommate-card ${isRoom ? 'is-selected' : ''}`}
+          <div role="button" tabIndex={0} className={`looking-for-card ${isRoom ? 'is-selected' : ''}`}
             onClick={() => onLookingForChange('room')}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('room'); } }}
             aria-pressed={isRoom}>
@@ -582,7 +582,7 @@ const RoommateFilters = ({
             </div>
           </div>
 
-          <div role="button" tabIndex={0} className={`roommate-card ${!isRoom ? 'is-selected' : ''}`}
+          <div role="button" tabIndex={0} className={`looking-for-card ${!isRoom ? 'is-selected' : ''}`}
             onClick={() => onLookingForChange('roommate')}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('roommate'); } }}
             aria-pressed={!isRoom}>
