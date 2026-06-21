@@ -242,6 +242,77 @@
   color: #fff;
 }
 
+/* ── Amenities ───────────────────────────────────────────────────────────── */
+
+.rw-amenity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+.rw-amenity-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.rw-amenity-btn span:first-child {
+  font-size: 1.05rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.rw-amenity-btn:hover {
+  border-color: var(--color-accent, #2563eb);
+  color: var(--color-accent, #2563eb);
+}
+
+.rw-amenity-btn.is-active {
+  background: var(--color-accent, #2563eb);
+  border-color: var(--color-accent, #2563eb);
+  color: #fff;
+}
+
+/* ── Itemized utilities ──────────────────────────────────────────────────── */
+
+.rw-utilities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.rw-utility-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.rw-utility-label {
+  font-size: 0.74rem;
+  color: var(--color-text-secondary, #6b7280);
+  font-weight: 500;
+}
+
+.rw-utilities-total {
+  font-size: 0.85rem;
+  color: var(--color-text-primary, #111827);
+  margin: 0.6rem 0 0;
+}
+
+.rw-utilities-total strong {
+  font-weight: 700;
+}
+
 /* ── Photos ──────────────────────────────────────────────────────────────── */
 
 .rw-photo-grid {
@@ -646,6 +717,14 @@
 
   .rw-photo-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .rw-amenity-grid {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  }
+
+  .rw-utilities-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .rw-actions {
