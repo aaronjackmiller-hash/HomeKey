@@ -434,3 +434,35 @@ exports.getHeatmap = async (req, res) => {
         return res.status(500).json({ message: 'Failed to load heatmap data' });
     }
 };
+
+// ── TEMPORARY DIAGNOSTIC ENDPOINT ───────────────────────────────────────────
+// Inspects expiresAt values directly via browser, no MongoDB Atlas needed.
+// REMOVE this once the bug is found and fixed — it's not meant to be permanent.
+
+exports.debugExpiresAt = async (req, res) => {
+    try {
+        const listings = await RoommateListing.find({})
+            .select('createdAt expiresAt status address.city rentShare')
+            .lean();
+
+        const now = new Date();
+
+        const summary = listings.map((listing) => ({
+            id: listing._id,
+            city: listing.address?.city,
+            createdAt: listing.createdAt,
+            expiresAt: listing.expiresAt,
+            isExpired: listing.expiresAt ? new Date(listing.expiresAt) <= now : 'NO EXPIRES_AT FIELD',
+            status: listing.status,
+        }));
+
+        return res.json({
+            success: true,
+            currentServerTime: now,
+            totalListings: listings.length,
+            listings: summary,
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
