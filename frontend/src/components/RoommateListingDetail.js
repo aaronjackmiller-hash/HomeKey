@@ -88,6 +88,7 @@ const AMENITY_LABELS = {
     stovetop: { icon: '🔥', label: 'Stovetop' },
     'laundry-facilities': { icon: '🧺', label: 'Laundry' },
     'in-unit-washer-dryer': { icon: '🌀', label: 'Washer/Dryer' },
+    dishwasher: { icon: '🍽️', label: 'Dishwasher' },
 };
 
 const daysUntil = (isoDate) => {
@@ -264,6 +265,13 @@ const RoommateListingDetail = () => {
                             <p className="detail-template-location">{city ? city.toUpperCase() : 'ISRAEL'}</p>
                         </div>
                         <div className="detail-template-metrics">
+                            <div className="detail-template-metric">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M12 21s-6-5.1-6-10.2A6 6 0 0 1 18 10.8C18 15.9 12 21 12 21Z" />
+                                    <circle cx="12" cy="10.5" r="2.2" />
+                                </svg>
+                                <span>{neighborhood || '—'}</span>
+                            </div>
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                     <path d="M3 12.5V8.8a1.8 1.8 0 0 1 1.8-1.8h14.4A1.8 1.8 0 0 1 21 8.8v3.7" />
