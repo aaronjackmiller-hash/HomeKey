@@ -47,6 +47,7 @@ const optionalAuth = (req, res, next) => {
 // stats, heatmap, and demand must be defined BEFORE /:id to avoid conflicts
 
 router.get('/stats', ctrl.getStats);
+router.get('/debug-expires', ctrl.debugExpiresAt); // TEMPORARY — remove after diagnosing
 router.get('/heatmap', ctrl.getHeatmap);
 router.post('/demand', ctrl.logDemand);
 
