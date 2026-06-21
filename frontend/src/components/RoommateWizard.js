@@ -129,7 +129,23 @@ const AMENITY_OPTIONS = [
   { value: 'stovetop', label: 'Stovetop', icon: '🔥' },
   { value: 'laundry-facilities', label: 'Laundry', icon: '🧺' },
   { value: 'in-unit-washer-dryer', label: 'Washer/Dryer', icon: '🌀' },
+  { value: 'dishwasher', label: 'Dishwasher', icon: '🍽️' },
 ];
+
+// The four components that make up "Estimated Additional Monthly Expenses".
+// Stored as separate fields so the lister can itemize them; the wizard sums
+// these automatically rather than asking for one opaque lump number.
+const UTILITY_ITEMS = [
+  { key: 'utilityElectricity', label: 'Electricity' },
+  { key: 'utilityWater', label: 'Water' },
+  { key: 'utilityInternet', label: 'Internet' },
+  { key: 'utilityVaad', label: 'VAAD (building fee)' },
+];
+
+const sumUtilities = (data) =>
+  UTILITY_ITEMS.reduce((sum, item) => sum + (Number(data[item.key]) || 0), 0);
+
+const MIN_DESCRIPTION_LENGTH = 15;
 
 const CONTACT_METHODS = [
   { value: 'phone', label: 'Phone call' },
@@ -169,7 +185,10 @@ const createInitialData = () => ({
   lat: null,
   lng: null,
   rentShare: '',
-  utilitiesEstimate: '',
+  utilityElectricity: '',
+  utilityWater: '',
+  utilityInternet: '',
+  utilityVaad: '',
   totalBedrooms: '1',
   totalBathrooms: '1',
   sizeSqm: '',
@@ -402,6 +421,12 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
       next.totalBedrooms = 'Please select the number of bedrooms';
     }
     if (!data.dateAvailable) next.dateAvailable = 'Please select an availability date';
+    const trimmedDescription = data.description.trim();
+    if (!trimmedDescription) {
+      next.description = 'Please describe the apartment';
+    } else if (trimmedDescription.length < MIN_DESCRIPTION_LENGTH) {
+      next.description = `Please write at least ${MIN_DESCRIPTION_LENGTH} characters (${trimmedDescription.length}/${MIN_DESCRIPTION_LENGTH})`;
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -451,16 +476,30 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
       // If a newer request has started since this one was sent, discard
       // this result — it's stale.
       if (requestId !== geocodeRequestIdRef.current) return;
-      if (result?.neighborhood) {
-        onChange('neighborhood', result.neighborhood);
+      // Every other endpoint in this app wraps its JSON body as
+      // { data: ... } (see getRoommateListing, getRoommateListings) and
+      // geocodeAddress() is implemented identically — it just returns
+      // response.data straight through. So the real payload is most
+      // likely under result.data, not on result directly. This was the
+      // actual bug: checking result?.neighborhood silently found nothing
+      // and no-opped every time, with no error to even log. Handling
+      // both shapes here so it works regardless of which one the
+      // backend actually sends.
+      const geocoded = result?.data ?? result;
+      if (geocoded?.neighborhood) {
+        onChange('neighborhood', geocoded.neighborhood);
         setNeighborhoodAutoFilled(true);
       }
-      if (typeof result?.lat === 'number' && typeof result?.lng === 'number') {
-        onChange('lat', result.lat);
-        onChange('lng', result.lng);
+      if (typeof geocoded?.lat === 'number' && typeof geocoded?.lng === 'number') {
+        onChange('lat', geocoded.lat);
+        onChange('lng', geocoded.lng);
       }
-    } catch (_err) {
-      // Silently ignore — lister can still type the neighborhood manually.
+    } catch (err) {
+      // Surface this in the console — silently swallowing it made the
+      // "neighborhood never fills in" bug impossible to diagnose. The
+      // lister can still type the neighborhood manually either way.
+      // eslint-disable-next-line no-console
+      console.error('[RoommateWizard] Neighborhood geocode lookup failed:', err);
     } finally {
       setGeocoding(false);
     }
@@ -549,18 +588,32 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             onChange={(e) => handleFieldChange('rentShare', e.target.value)}
           />
         </Field>
-        <Field label="Estimated Additional Monthly Expenses (₪)"
-          hint="Utilities — electricity, water, internet, VAAD">
-          <input
-            type="number"
-            className="rw-input"
-            placeholder="400"
-            min="0"
-            value={data.utilitiesEstimate}
-            onChange={(e) => onChange('utilitiesEstimate', e.target.value)}
-          />
-        </Field>
       </div>
+
+      <Field
+        label="Estimated Additional Monthly Expenses (₪)"
+        hint="Itemized — electricity, water, internet, VAAD. Leave any blank if not yet known."
+      >
+        <div className="rw-utilities-grid">
+          {UTILITY_ITEMS.map((item) => (
+            <div key={item.key} className="rw-utility-item">
+              <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
+              <input
+                id={`rw-${item.key}`}
+                type="number"
+                className="rw-input"
+                placeholder="0"
+                min="0"
+                value={data[item.key]}
+                onChange={(e) => onChange(item.key, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="rw-utilities-total">
+          Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month
+        </p>
+      </Field>
 
       <div className="rw-field-row">
         <Field label="Total bedrooms in apartment" required error={errors.totalBedrooms}>
@@ -650,17 +703,24 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
 
       <Field
         label="About the apartment"
-        hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc. (optional)"
+        required
+        hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc."
+        error={errors.description}
       >
         <textarea
-          className="rw-textarea"
+          className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
           placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
           rows={4}
           maxLength={300}
           value={data.description}
-          onChange={(e) => onChange('description', e.target.value)}
+          onChange={(e) => handleFieldChange('description', e.target.value)}
         />
-        <p className="rw-char-count">{data.description.length}/300</p>
+        <p className="rw-char-count">
+          {data.description.length}/300
+          {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
+            <span> — minimum {MIN_DESCRIPTION_LENGTH} characters</span>
+          )}
+        </p>
       </Field>
 
       <WizardActions
@@ -889,9 +949,9 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
           <p className="rw-preview-price">
             {formatPrice(data.rentShare)}
             <span>/month</span>
-            {data.utilitiesEstimate && Number(data.utilitiesEstimate) > 0 && (
+            {sumUtilities(data) > 0 && (
               <span className="rw-preview-utilities">
-                {' '}+ {formatPrice(data.utilitiesEstimate)} Estimated Additional Monthly Expenses
+                {' '}+ {formatPrice(sumUtilities(data))} Estimated Additional Monthly Expenses
               </span>
             )}
           </p>
@@ -1038,7 +1098,7 @@ const RoommateWizard = ({ onClose }) => {
             : {}),
         },
         rentShare: Number(data.rentShare),
-        utilitiesEstimate: data.utilitiesEstimate ? Number(data.utilitiesEstimate) : 0,
+        utilitiesEstimate: sumUtilities(data),
         totalBedrooms: Number(data.totalBedrooms),
         totalBathrooms: Number(data.totalBathrooms),
         sizeSqm: data.sizeSqm ? Number(data.sizeSqm) : undefined,
