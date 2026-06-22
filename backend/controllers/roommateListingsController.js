@@ -204,7 +204,19 @@ exports.createListing = async (req, res) => {
             amenities,
             genderPreference,
             lifestyle,
+            cityMatchedKnownList,
         } = req.body;
+
+        // Tracks real demand for cities outside israelLocations.js's current
+        // 20-city neighborhood-dropdown coverage, so that list can grow based
+        // on actual usage instead of guessing. cityMatchedKnownList is
+        // computed on the frontend (RoommateWizard.js's findCityEntry) and
+        // just passed through here — no need to duplicate that matching
+        // logic server-side, and the frontend file isn't even reachable from
+        // this backend's runtime anyway.
+        if (cityMatchedKnownList === false && address?.city) {
+            console.log(`[roommate-listing] Unmatched city (outside israelLocations.js coverage): "${address.city}"`);
+        }
 
         // Validate required fields
         if (!contact?.phone?.trim()) {
