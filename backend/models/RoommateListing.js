@@ -96,11 +96,27 @@ const RoommateListingSchema = new mongoose.Schema(
             min: [0, 'Rent share must be >= 0'],
         },
 
-        // Monthly utilities estimate (electricity, water, internet, vaad)
+        // Monthly utilities estimate (electricity, water, internet, vaad) —
+        // single combined total. Kept for backward compatibility with any
+        // existing filtering/display logic that just wants one number, and
+        // as a fallback display for listings created before the itemized
+        // breakdown below existed.
         utilitiesEstimate: {
             type: Number,
             min: [0, 'Utilities estimate must be >= 0'],
             default: 0,
+        },
+
+        // Itemized breakdown of the above — shown on the listing detail page
+        // so renters can see exactly what's included instead of one opaque
+        // number. Listings created before this field existed simply won't
+        // have it populated; the detail page falls back to utilitiesEstimate
+        // in that case.
+        utilities: {
+            electricity: { type: Number, min: [0, 'Electricity estimate must be >= 0'], default: 0 },
+            water: { type: Number, min: [0, 'Water estimate must be >= 0'], default: 0 },
+            internet: { type: Number, min: [0, 'Internet estimate must be >= 0'], default: 0 },
+            vaad: { type: Number, min: [0, 'VAAD estimate must be >= 0'], default: 0 },
         },
 
         // Total bedrooms in the apartment
