@@ -2582,6 +2582,52 @@ width: min(90vw, 520px);
   overflow: hidden;
 }
 
+.detail-hero-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.detail-hero-nav:hover {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.detail-hero-nav.prev {
+  left: 12px;
+}
+
+.detail-hero-nav.next {
+  right: 12px;
+}
+
+.detail-hero-image-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 8;
+  background: rgba(15, 23, 42, 0.6);
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
 .yad2-logo-mask {
   position: absolute;
   top: 0;
@@ -3039,7 +3085,7 @@ width: min(90vw, 520px);
   display: inline-flex;
   align-items: baseline;
   margin: 6px 0 0;
-  font-size: clamp(2.45rem, 4.2vw, 3.5rem);
+  font-size: clamp(1.3rem, 2vw, 1.75rem);
   font-weight: 800;
   letter-spacing: 0.01em;
   color: #f8fafc;
@@ -3058,6 +3104,41 @@ width: min(90vw, 520px);
   font-weight: 600;
   margin-left: 8px;
   color: #d4def3;
+}
+
+.detail-template-utilities {
+  margin-top: 6px;
+}
+
+.detail-template-utilities-label {
+  margin: 0;
+  color: #e8efff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.detail-template-utilities-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.detail-template-utilities-list li {
+  font-size: 0.78rem;
+  color: #d4def3;
+  font-weight: 600;
+}
+
+.detail-template-utilities-legacy {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: #d4def3;
+  font-weight: 600;
 }
 
 .hero-contact-strip {
@@ -4915,7 +4996,7 @@ legend {
   }
 
   .detail-template-price-copy strong {
-    font-size: clamp(1.75rem, 3.5vw, 2.2rem);
+    font-size: clamp(1.35rem, 2.6vw, 1.7rem);
   }
 
   .hero-banner-with-reference {
@@ -5041,7 +5122,7 @@ legend {
   }
 
   .detail-template-price-copy strong {
-    font-size: clamp(1.4rem, 8vw, 1.82rem);
+    font-size: clamp(1.1rem, 6vw, 1.4rem);
   }
 
   .homekey-logo-badge.homekey-logo-lockup {
