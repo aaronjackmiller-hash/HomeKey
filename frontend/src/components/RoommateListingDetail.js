@@ -115,6 +115,7 @@ const RoommateListingDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+    const [heroImageIndex, setHeroImageIndex] = useState(0);
     const [, setInterestVersion] = useState(0);
 
     useEffect(() => {
@@ -182,6 +183,18 @@ const RoommateListingDetail = () => {
     const emailHref = buildEmailHref(email, locationLine);
 
     const lifestyle = listing.lifestyle || {};
+    // Itemized breakdown (new listings). Falls back to the single combined
+    // utilitiesEstimate for listings created before this field existed —
+    // and shows nothing at all if there are genuinely no additional fees.
+    const utilities = listing.utilities || {};
+    const itemizedUtilities = [
+        { label: 'Electricity', amount: Number(utilities.electricity) || 0 },
+        { label: 'Water', amount: Number(utilities.water) || 0 },
+        { label: 'Internet', amount: Number(utilities.internet) || 0 },
+        { label: 'VAAD', amount: Number(utilities.vaad) || 0 },
+    ].filter((item) => item.amount > 0);
+    const hasItemizedUtilities = itemizedUtilities.length > 0;
+    const legacyUtilitiesEstimate = Number(listing.utilitiesEstimate) || 0;
     const genderLabel = GENDER_LABELS[listing.genderPreference] || GENDER_LABELS['no-preference'];
     const smokingLabel = SMOKING_LABELS[lifestyle.smoking] || SMOKING_LABELS['not-allowed'];
     const petsLabel = PETS_LABELS[lifestyle.pets] || PETS_LABELS['not-allowed'];
@@ -207,6 +220,20 @@ const RoommateListingDetail = () => {
         setSelectedImageIndex((selectedImageIndex + 1) % allImages.length);
     };
 
+    // Lets the lister click directly through photos on the hero image itself,
+    // without opening the full lightbox — separate state from the lightbox's
+    // own selectedImageIndex since the two serve different views.
+    const showPrevHeroImage = (e) => {
+        e.stopPropagation();
+        if (allImages.length <= 1) return;
+        setHeroImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+    };
+    const showNextHeroImage = (e) => {
+        e.stopPropagation();
+        if (allImages.length <= 1) return;
+        setHeroImageIndex((prev) => (prev + 1) % allImages.length);
+    };
+
     const handleContactClick = (href) => {
         if (!href || typeof window === 'undefined') return;
         logRoommateDemandSignal(listing);
@@ -223,20 +250,45 @@ const RoommateListingDetail = () => {
                 <section className="detail-hero-card">
                     <div className="detail-hero-image-wrap">
                         {hasImages ? (
-                            <img
-                                className="detail-hero-image"
-                                src={allImages[0]}
-                                alt={locationLine || 'Room listing'}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => openImageViewer(0)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openImageViewer(0);
-                                    }
-                                }}
-                            />
+                            <>
+                                <img
+                                    className="detail-hero-image"
+                                    src={allImages[heroImageIndex]}
+                                    alt={locationLine || 'Room listing'}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => openImageViewer(heroImageIndex)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            openImageViewer(heroImageIndex);
+                                        }
+                                    }}
+                                />
+                                {allImages.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="detail-hero-nav prev"
+                                            onClick={showPrevHeroImage}
+                                            aria-label="Previous photo"
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="detail-hero-nav next"
+                                            onClick={showNextHeroImage}
+                                            aria-label="Next photo"
+                                        >
+                                            ›
+                                        </button>
+                                        <span className="detail-hero-image-counter">
+                                            {heroImageIndex + 1} / {allImages.length}
+                                        </span>
+                                    </>
+                                )}
+                            </>
                         ) : (
                             <div className="detail-hero-image detail-hero-image--empty" aria-hidden="true">
                                 <span>🏠</span>
@@ -305,12 +357,25 @@ const RoommateListingDetail = () => {
                                 <strong>
                                     <span className="detail-template-price-currency">₪</span>
                                     {Number(listing.rentShare || 0).toLocaleString()}
-                                    {Number(listing.utilitiesEstimate) > 0 && (
-                                        <span className="detail-template-price-suffix">
-                                            {' '}+ {formatPrice(listing.utilitiesEstimate)} Estimated Additional Monthly Expenses
-                                        </span>
-                                    )}
                                 </strong>
+                                {hasItemizedUtilities ? (
+                                    <div className="detail-template-utilities">
+                                        <p className="detail-template-utilities-label">
+                                            + Estimated Additional Monthly Expenses
+                                        </p>
+                                        <ul className="detail-template-utilities-list">
+                                            {itemizedUtilities.map((item) => (
+                                                <li key={item.label}>
+                                                    {item.label} ₪{item.amount.toLocaleString()}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ) : legacyUtilitiesEstimate > 0 && (
+                                    <p className="detail-template-utilities-legacy">
+                                        + {formatPrice(legacyUtilitiesEstimate)} Estimated Additional Monthly Expenses
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
