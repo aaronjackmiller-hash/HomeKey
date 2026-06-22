@@ -40,18 +40,24 @@ const extractCoordinates = (geometry) => {
 // Many Israeli street addresses don't include sublocality/neighborhood in
 // their forward-geocode address_components at all — Google's data for the
 // specific street_address match just doesn't tag it, even when Google does
-// have that data available. Reverse-geocoding the same coordinates and
-// explicitly asking for sublocality/neighborhood result types reliably
-// surfaces it instead.
+// have that data available. Reverse-geocoding the same coordinates returns
+// multiple nested results (street address, route, various political
+// boundaries, locality...); scanning all of them for any usable component
+// is more robust than filtering by result_type, since a strict type filter
+// returns nothing at all if this location isn't tagged with that exact type.
 const fetchNeighborhoodViaReverseGeocode = async (lat, lng, apiKey) => {
     if (typeof lat !== 'number' || typeof lng !== 'number') return null;
     try {
-        const url = `${GEOCODE_API_URL}?latlng=${lat},${lng}&result_type=sublocality|neighborhood&key=${apiKey}`;
+        const url = `${GEOCODE_API_URL}?latlng=${lat},${lng}&key=${apiKey}`;
         const response = await fetch(url);
         if (!response.ok) return null;
         const data = await response.json();
-        if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) return null;
-        return extractNeighborhood(data.results[0].address_components || []);
+        if (data.status !== 'OK' || !Array.isArray(data.results)) return null;
+        for (const result of data.results) {
+            const found = extractNeighborhood(result.address_components || []);
+            if (found) return found;
+        }
+        return null;
     } catch (err) {
         console.error('[geocode] Reverse geocode (sublocality) lookup failed:', err);
         return null;
