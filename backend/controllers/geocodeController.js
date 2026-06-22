@@ -43,13 +43,29 @@ const extractCoordinates = (geometry) => {
 
 exports.geocodeAddress = async (req, res) => {
     try {
-        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+        // GOOGLE_MAPS_API_KEY is the browser-facing key embedded in the
+        // frontend for the Maps JavaScript API widget — it's restricted to
+        // HTTP referrers, which Google explicitly rejects for server-to-server
+        // calls like this one ("API keys with referer restrictions cannot be
+        // used with this API"). GOOGLE_GEOCODING_API_KEY is a separate,
+        // unrestricted-by-referrer key scoped to only the Geocoding API,
+        // meant for exactly this kind of backend call. Falling back to the
+        // old key only as a safety net for environments where the dedicated
+        // key hasn't been configured yet.
+        const apiKey = process.env.GOOGLE_GEOCODING_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
         if (!apiKey) {
             return res.status(503).json({
                 success: false,
-                message: 'Geocoding is temporarily unavailable. Server is missing GOOGLE_MAPS_API_KEY.',
+                message: 'Geocoding is temporarily unavailable. Server is missing GOOGLE_GEOCODING_API_KEY.',
             });
         }
+        // Temporary diagnostic logging — every isolated test of this exact
+        // logic has succeeded, yet live requests through the actual wizard
+        // still fail. Logging exactly what this specific request used (which
+        // env var, and a masked preview of the key) so the next failure shows
+        // ground truth instead of another reconstruction attempt.
+        const apiKeySource = process.env.GOOGLE_GEOCODING_API_KEY ? 'GOOGLE_GEOCODING_API_KEY' : 'GOOGLE_MAPS_API_KEY (fallback)';
+        const apiKeyPreview = `${apiKey.slice(0, 6)}...${apiKey.slice(-4)} (len=${apiKey.length})`;
 
         const { street, streetNumber, city, country = 'Israel' } = req.body || {};
         const trimmedStreet = String(street || '').trim();
@@ -72,6 +88,11 @@ exports.geocodeAddress = async (req, res) => {
 
         const url = `${GEOCODE_API_URL}?address=${encodeURIComponent(addressQuery)}&key=${apiKey}`;
 
+        console.log(
+            `[geocode] Request: query="${addressQuery}" keySource=${apiKeySource} keyPreview=${apiKeyPreview} ` +
+            `nodeVersion=${process.version} pid=${process.pid}`
+        );
+
         const response = await fetch(url);
         if (!response.ok) {
             return res.status(502).json({
@@ -83,25 +104,26 @@ exports.geocodeAddress = async (req, res) => {
         const data = await response.json();
 
         if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) {
-    // Google's status field explains exactly why (ZERO_RESULTS, REQUEST_DENIED,
-    // OVER_QUERY_LIMIT, INVALID_REQUEST...). Logging it server-side instead of
-    // discarding it — REQUEST_DENIED (e.g. an API key restricted to browser
-    // referrers being rejected for this server-to-server call) and a genuine
-    // zero-result lookup look identical to the frontend otherwise.
-    if (data.status !== 'ZERO_RESULTS') {
-        console.error(
-            `[geocode] Google Geocoding API returned "${data.status}" for query "${addressQuery}":`,
-            data.error_message || '(no error_message provided)'
-        );
-    }
-    return res.json({
-        success: true,
-        neighborhood: null,
-        lat: null,
-        lng: null,
-        formattedAddress: null,
-    });
-}
+            // Google's status field explains exactly why (ZERO_RESULTS,
+            // REQUEST_DENIED, OVER_QUERY_LIMIT, INVALID_REQUEST...). Logging it
+            // server-side instead of discarding it — a real rejection
+            // (REQUEST_DENIED, OVER_QUERY_LIMIT) and a genuine zero-result
+            // lookup used to look identical to the frontend, which is exactly
+            // how this referrer-restriction bug stayed invisible.
+            if (data.status !== 'ZERO_RESULTS') {
+                console.error(
+                    `[geocode] Google Geocoding API returned "${data.status}" for query "${addressQuery}":`,
+                    data.error_message || '(no error_message provided)'
+                );
+            }
+            return res.json({
+                success: true,
+                neighborhood: null,
+                lat: null,
+                lng: null,
+                formattedAddress: null,
+            });
+        }
 
         const topResult = data.results[0];
         const neighborhood = extractNeighborhood(topResult.address_components || []);
