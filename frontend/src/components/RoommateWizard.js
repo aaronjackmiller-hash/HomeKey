@@ -1132,6 +1132,12 @@ const RoommateWizard = ({ onClose }) => {
         cityMatchedKnownList: Boolean(findCityEntry(data.city)),
         rentShare: Number(data.rentShare),
         utilitiesEstimate: sumUtilities(data),
+        utilities: {
+          electricity: Number(data.utilityElectricity) || 0,
+          water: Number(data.utilityWater) || 0,
+          internet: Number(data.utilityInternet) || 0,
+          vaad: Number(data.utilityVaad) || 0,
+        },
         totalBedrooms: Number(data.totalBedrooms),
         totalBathrooms: Number(data.totalBathrooms),
         sizeSqm: data.sizeSqm ? Number(data.sizeSqm) : undefined,
