@@ -19,6 +19,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createRoommateListing, geocodeAddress } from '../services/api';
+import ISRAEL_LOCATIONS from '../israelLocations';
 import './RoommateWizard.css';
 
 // ── Cloudinary config ───────────────────────────────────────────────────────
@@ -146,6 +147,25 @@ const sumUtilities = (data) =>
   UTILITY_ITEMS.reduce((sum, item) => sum + (Number(data[item.key]) || 0), 0);
 
 const MIN_DESCRIPTION_LENGTH = 15;
+
+// Matches freely-typed city input (e.g. "Tel Aviv-Yafo", "tel aviv") against
+// israelLocations.js's city names, since the City field is a plain text
+// input, not constrained to this list's exact spelling.
+const normalizeCityName = (value) =>
+    String(value || '').trim().toLowerCase().replace(/[-–—].*$/, '').trim();
+
+const findCityEntry = (cityInput) => {
+    const normalizedInput = normalizeCityName(cityInput);
+    if (!normalizedInput) return null;
+    return ISRAEL_LOCATIONS.find((entry) => {
+        const normalizedEntryCity = normalizeCityName(entry.city.en);
+        return (
+            normalizedEntryCity === normalizedInput
+            || normalizedInput.startsWith(normalizedEntryCity)
+            || normalizedEntryCity.startsWith(normalizedInput)
+        );
+    }) || null;
+};
 
 const CONTACT_METHODS = [
   { value: 'phone', label: 'Phone call' },
@@ -408,12 +428,12 @@ const Step1Contact = ({ data, onChange, onNext, onClose }) => {
 
 const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
   const [errors, setErrors] = useState({});
-  const [geocoding, setGeocoding] = useState(false);
-  const [neighborhoodAutoFilled, setNeighborhoodAutoFilled] = useState(false);
 
   const validate = () => {
     const next = {};
     if (!data.city.trim()) next.city = 'City is required';
+    if (!data.street.trim()) next.street = 'Street is required';
+    if (!data.neighborhood.trim()) next.neighborhood = 'Please select or enter your neighborhood';
     if (!data.rentShare || isNaN(Number(data.rentShare)) || Number(data.rentShare) <= 0) {
       next.rentShare = 'Please enter a valid monthly rent';
     }
@@ -450,23 +470,24 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
   // with a stale one.
   const geocodeRequestIdRef = useRef(0);
 
-  // Auto-derive neighborhood from street + city using Google Geocoding,
-  // since israelLocations.js only maps city -> neighborhoods list, not
-  // street-level data. Triggered ONLY on blur of the Number field — the
-  // last and most specific piece of the address — so we don't fire
-  // multiple competing requests as the lister fills in City, then
-  // Street, then Number. Lister can still edit the result manually if
-  // Google got it wrong.
-  const tryAutoFillNeighborhood = async () => {
+  // Derives lat/lng from street + city using Google Geocoding, for use on
+  // the map. Triggered ONLY on blur of the Number field — the last and most
+  // specific piece of the address — so we don't fire multiple competing
+  // requests as the lister fills in City, then Street, then Number.
+  //
+  // NOTE: this used to also try to auto-fill Neighborhood from Google's
+  // response, but extensive testing (forward geocode, restricted reverse
+  // geocode, and an unrestricted reverse geocode scanning every result)
+  // confirmed Google's Geocoding API simply doesn't carry neighborhood-level
+  // data for many Israeli addresses — only city-level. Neighborhood is now
+  // sourced from israelLocations.js instead (see cityEntry/the Neighborhood
+  // field below), which is far more reliable for the cities it covers.
+  const tryAutoFillCoordinates = async () => {
     const street = data.street.trim();
     const city = data.city.trim();
     if (!street || !city) return;
-    // Don't overwrite a neighborhood the lister already typed manually
-    // unless it was the one we auto-filled before.
-    if (data.neighborhood.trim() && !neighborhoodAutoFilled) return;
 
     const requestId = ++geocodeRequestIdRef.current;
-    setGeocoding(true);
     try {
       const result = await geocodeAddress({
         street,
@@ -479,35 +500,32 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
       // Every other endpoint in this app wraps its JSON body as
       // { data: ... } (see getRoommateListing, getRoommateListings) and
       // geocodeAddress() is implemented identically — it just returns
-      // response.data straight through. So the real payload is most
-      // likely under result.data, not on result directly. This was the
-      // actual bug: checking result?.neighborhood silently found nothing
-      // and no-opped every time, with no error to even log. Handling
-      // both shapes here so it works regardless of which one the
-      // backend actually sends.
+      // response.data straight through. Handling both shapes here so it
+      // works regardless of which one the backend actually sends.
       const geocoded = result?.data ?? result;
-      if (geocoded?.neighborhood) {
-        onChange('neighborhood', geocoded.neighborhood);
-        setNeighborhoodAutoFilled(true);
-      }
       if (typeof geocoded?.lat === 'number' && typeof geocoded?.lng === 'number') {
         onChange('lat', geocoded.lat);
         onChange('lng', geocoded.lng);
       }
     } catch (err) {
-      // Surface this in the console — silently swallowing it made the
-      // "neighborhood never fills in" bug impossible to diagnose. The
-      // lister can still type the neighborhood manually either way.
       // eslint-disable-next-line no-console
-      console.error('[RoommateWizard] Neighborhood geocode lookup failed:', err);
-    } finally {
-      setGeocoding(false);
+      console.error('[RoommateWizard] Coordinate geocode lookup failed:', err);
     }
   };
 
   const handleNext = () => {
     if (validate()) onNext();
   };
+
+  // Changing the city invalidates whatever neighborhood was previously
+  // selected/typed — a leftover "Florentin" doesn't make sense once the
+  // city changes to Jerusalem.
+  const handleCityChange = (value) => {
+    handleFieldChange('city', value);
+    onChange('neighborhood', '');
+  };
+
+  const cityEntry = findCityEntry(data.city);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -522,24 +540,24 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
           className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
           placeholder="Tel Aviv-Yafo"
           value={data.city}
-          onChange={(e) => handleFieldChange('city', e.target.value)}
+          onChange={(e) => handleCityChange(e.target.value)}
           autoFocus
         />
       </Field>
 
       <div className="rw-field-row">
-        <Field label="Street">
+        <Field label="Street" required error={errors.street}>
           <input
             type="text"
-            className="rw-input"
+            className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
             placeholder="Rothschild Blvd"
             value={data.street}
-            onChange={(e) => onChange('street', e.target.value)}
+            onChange={(e) => handleFieldChange('street', e.target.value)}
             onBlur={() => {
               // Fallback for addresses with no street number — geocode
               // right away rather than waiting on a Number field the
               // lister may never fill in.
-              if (!data.streetNumber.trim()) tryAutoFillNeighborhood();
+              if (!data.streetNumber.trim()) tryAutoFillCoordinates();
             }}
           />
         </Field>
@@ -550,29 +568,39 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
             placeholder="42"
             value={data.streetNumber}
             onChange={(e) => onChange('streetNumber', e.target.value)}
-            onBlur={tryAutoFillNeighborhood}
+            onBlur={tryAutoFillCoordinates}
           />
         </Field>
       </div>
 
       <Field
         label="Neighborhood"
-        hint={geocoding
-          ? 'Detecting from your address...'
-          : (neighborhoodAutoFilled
-            ? 'Auto-detected from your address — edit if this looks wrong'
-            : 'Filled in automatically once you enter your street above')}
+        required
+        error={errors.neighborhood}
+        hint={cityEntry
+          ? 'Select the neighborhood that best matches your address'
+          : 'Type your neighborhood'}
       >
-        <input
-          type="text"
-          className="rw-input"
-          placeholder="Florentin"
-          value={data.neighborhood}
-          onChange={(e) => {
-            onChange('neighborhood', e.target.value);
-            setNeighborhoodAutoFilled(false);
-          }}
-        />
+        {cityEntry ? (
+          <select
+            className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
+            value={data.neighborhood}
+            onChange={(e) => handleFieldChange('neighborhood', e.target.value)}
+          >
+            <option value="">Select a neighborhood…</option>
+            {cityEntry.neighborhoods.map((n) => (
+              <option key={n.en} value={n.en}>{n.en}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
+            placeholder="Florentin"
+            value={data.neighborhood}
+            onChange={(e) => handleFieldChange('neighborhood', e.target.value)}
+          />
+        )}
       </Field>
 
 
@@ -1097,6 +1125,11 @@ const RoommateWizard = ({ onClose }) => {
             ? { lat: data.lat, lng: data.lng }
             : {}),
         },
+        // Lets the backend log when listers are typing cities outside
+        // israelLocations.js's 20-city coverage, so the list can grow based
+        // on real demand instead of guessing. Computed here rather than
+        // duplicating findCityEntry's matching logic server-side.
+        cityMatchedKnownList: Boolean(findCityEntry(data.city)),
         rentShare: Number(data.rentShare),
         utilitiesEstimate: sumUtilities(data),
         totalBedrooms: Number(data.totalBedrooms),
