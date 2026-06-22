@@ -37,6 +37,27 @@ const extractCoordinates = (geometry) => {
     return { lat: location.lat, lng: location.lng };
 };
 
+// Many Israeli street addresses don't include sublocality/neighborhood in
+// their forward-geocode address_components at all — Google's data for the
+// specific street_address match just doesn't tag it, even when Google does
+// have that data available. Reverse-geocoding the same coordinates and
+// explicitly asking for sublocality/neighborhood result types reliably
+// surfaces it instead.
+const fetchNeighborhoodViaReverseGeocode = async (lat, lng, apiKey) => {
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    try {
+        const url = `${GEOCODE_API_URL}?latlng=${lat},${lng}&result_type=sublocality|neighborhood&key=${apiKey}`;
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) return null;
+        return extractNeighborhood(data.results[0].address_components || []);
+    } catch (err) {
+        console.error('[geocode] Reverse geocode (sublocality) lookup failed:', err);
+        return null;
+    }
+};
+
 // ── POST /api/geocode ──────────────────────────────────────────────────────────
 // Public. Body: { street, city, country }
 // Returns: { neighborhood, lat, lng, formattedAddress }
@@ -126,8 +147,16 @@ exports.geocodeAddress = async (req, res) => {
         }
 
         const topResult = data.results[0];
-        const neighborhood = extractNeighborhood(topResult.address_components || []);
+        let neighborhood = extractNeighborhood(topResult.address_components || []);
         const { lat, lng } = extractCoordinates(topResult.geometry);
+
+        if (!neighborhood && typeof lat === 'number' && typeof lng === 'number') {
+            neighborhood = await fetchNeighborhoodViaReverseGeocode(lat, lng, apiKey);
+            console.log(
+                `[geocode] Forward geocode had no neighborhood; reverse-geocode fallback ` +
+                `${neighborhood ? `found "${neighborhood}"` : 'also found nothing'}.`
+            );
+        }
 
         return res.json({
             success: true,
