@@ -1,3 +1,18 @@
+/**
+ * Navbar.js
+ * path: frontend/src/components/Navbar.js
+ *
+ * Changes vs original:
+ * - Mode switcher: added .premium-header__mode-switcher-inner wrapper div
+ *   so the pill-in-pill CSS container actually applies (CSS targets this class).
+ * - propertyTypeSummary: removed the redundant "Rent"/"Sale" fallback label —
+ *   the mode switcher already communicates that. Segment now always shows
+ *   "Property type" until the user selects Apartments or Houses.
+ * - Filter bar: no structural changes here — hiding of --rooms and
+ *   --available-from segments is handled in index.css (display:none on desktop)
+ *   so the dropdowns still exist and work, they're just not shown in the top bar.
+ */
+
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import hKeyholeLogo from '../assets/h-letter-logo-transparent-fixed.png';
@@ -345,9 +360,7 @@ const LocationAutocomplete = ({
   const wrapperClassNames = ['location-autocomplete', wrapperClassName].filter(Boolean).join(' ');
   const resolvedInputClassName = inputClassName || (value.trim() ? 'is-active' : '');
 
-  useEffect(() => {
-    setRecentSearches(getRecentSearches());
-  }, []);
+  useEffect(() => { setRecentSearches(getRecentSearches()); }, []);
 
   useEffect(() => {
     if (value.trim().length > 0) {
@@ -391,18 +404,10 @@ const LocationAutocomplete = ({
 
   const handleKeyDown = (e) => {
     if (!isOpen) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(i => Math.min(i + 1, selectableItems.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(i => Math.max(i - 1, -1));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      handleSelect(selectableItems[activeIndex]);
-    } else if (e.key === 'Escape') {
-      setIsOpen(false);
-    }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, selectableItems.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, -1)); }
+    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); handleSelect(selectableItems[activeIndex]); }
+    else if (e.key === 'Escape') { setIsOpen(false); }
   };
 
   const showDropdown = isOpen && (allSuggestions.length > 0 || (value.trim() === '' && recentSearches.length > 0));
@@ -419,10 +424,7 @@ const LocationAutocomplete = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsOpen(true)}
-        onBlur={(e) => {
-          setTimeout(() => setIsOpen(false), 150);
-          onBlur(e);
-        }}
+        onBlur={(e) => { setTimeout(() => setIsOpen(false), 150); onBlur(e); }}
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
@@ -430,44 +432,24 @@ const LocationAutocomplete = ({
         <div className="location-autocomplete__dropdown">
           {showRecent && (
             <>
-              <div className="location-autocomplete__section-header">
-                {isHebrew ? 'חיפושים אחרונים' : 'RECENT SEARCHES'}
-              </div>
+              <div className="location-autocomplete__section-header">{isHebrew ? 'חיפושים אחרונים' : 'RECENT SEARCHES'}</div>
               {recentSearches.map((term, i) => (
-                <button
-                  key={`recent-${i}`}
-                  type="button"
-                  className="location-autocomplete__item location-autocomplete__item--recent"
-                  onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}
-                >
-                  <span className="location-autocomplete__item-icon">
-                    <HeaderIcon name="clock" />
-                  </span>
+                <button key={`recent-${i}`} type="button" className="location-autocomplete__item location-autocomplete__item--recent"
+                  onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}>
+                  <span className="location-autocomplete__item-icon"><HeaderIcon name="clock" /></span>
                   <span>{term}</span>
                 </button>
               ))}
             </>
           )}
           {allSuggestions.map((item, i) => {
-            if (item.type === 'header') {
-              return (
-                <div key={`header-${i}`} className="location-autocomplete__section-header">
-                  {item.label}
-                </div>
-              );
-            }
+            if (item.type === 'header') return <div key={`header-${i}`} className="location-autocomplete__section-header">{item.label}</div>;
             const selectableIndex = selectableItems.indexOf(item);
             const isActive = selectableIndex === activeIndex;
             return (
-              <button
-                key={`suggestion-${i}`}
-                type="button"
-                className={`location-autocomplete__item ${isActive ? 'is-active' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-              >
-                <span className="location-autocomplete__item-icon">
-                  <HeaderIcon name="location" />
-                </span>
+              <button key={`suggestion-${i}`} type="button" className={`location-autocomplete__item ${isActive ? 'is-active' : ''}`}
+                onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}>
+                <span className="location-autocomplete__item-icon"><HeaderIcon name="location" /></span>
                 <span>{item.label}</span>
               </button>
             );
@@ -798,9 +780,6 @@ const Navbar = () => {
     applyFilterMenuSearch({ nextListingType: normalizedListingType });
   };
 
-  // Roommates nav click — simply switches mode. No gateway modal, no
-  // auto-opened filter panel. RoommatesView (rendered by PropertyList when
-  // isRoommatesView is true) handles the entire experience from here.
   const handleRoommatesNavClick = () => {
     setPriceExpanded(false);
     setRoomsBathsExpanded(false);
@@ -898,7 +877,13 @@ const Navbar = () => {
   const homeKeyBrand = t('brand.homeKey');
   const hasAdvancedFilters = featureFilters.length > 0;
   const isRoommatesActive = listingType === 'roommates';
-  const propertyTypeSummary = propertyCategory ? t(`filterMenu.${propertyCategory}`) : (listingType !== 'all' && listingType !== 'roommates' ? t(`filterMenu.${listingType}`) : t('navbar.propertyType'));
+
+  // Property type segment label — shows selected category (Apartments/Houses) or
+  // a neutral "Property type" placeholder. Does NOT echo the listing type (Rent/Sale)
+  // since the mode switcher already communicates that clearly.
+  const propertyTypeSummary = propertyCategory
+    ? t(`filterMenu.${propertyCategory}`)
+    : t('navbar.propertyType');
 
   const handleCityChange = useCallback((val) => setCity(val), []);
   const handleRoommateLocationChange = useCallback((val) => setRoommateLocationDraft(val), []);
@@ -932,47 +917,43 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* MODE SWITCHER: Rent | Sale | Roommates */}
+        {/* MODE SWITCHER — pill-in-pill container so the CSS border/shadow actually applies */}
         {isListingsRoute && (
           <div
             className="premium-header__mode-switcher"
             role="tablist"
             aria-label={isHebrew ? 'סוג חיפוש' : 'Listing mode'}
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={listingType === 'rental' || listingType === 'all'}
-              className={`premium-header__mode-btn ${listingType === 'rental' || listingType === 'all' ? 'is-active' : ''}`}
-              onClick={() => {
-                setListingType('rental');
-                applySearch({ nextListingType: 'rental' });
-              }}
-            >
-              {t('filterMenu.rental') || 'Rent'}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={listingType === 'sale'}
-              className={`premium-header__mode-btn ${listingType === 'sale' ? 'is-active' : ''}`}
-              onClick={() => {
-                setListingType('sale');
-                applySearch({ nextListingType: 'sale' });
-              }}
-            >
-              {t('filterMenu.sale') || 'Sale'}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={isRoommatesActive}
-              className={`premium-header__mode-btn premium-header__mode-btn--roommates ${isRoommatesActive ? 'is-active' : ''}`}
-              onClick={handleRoommatesNavClick}
-            >
-              <HeaderIcon name="roommates" />
-              {t('filterMenu.roommates') || 'Roommates'}
-            </button>
+            <div className="premium-header__mode-switcher-inner">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={listingType === 'rental' || listingType === 'all'}
+                className={`premium-header__mode-btn ${listingType === 'rental' || listingType === 'all' ? 'is-active' : ''}`}
+                onClick={() => { setListingType('rental'); applySearch({ nextListingType: 'rental' }); }}
+              >
+                {t('filterMenu.rental') || 'Rent'}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={listingType === 'sale'}
+                className={`premium-header__mode-btn ${listingType === 'sale' ? 'is-active' : ''}`}
+                onClick={() => { setListingType('sale'); applySearch({ nextListingType: 'sale' }); }}
+              >
+                {t('filterMenu.sale') || 'Sale'}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isRoommatesActive}
+                className={`premium-header__mode-btn premium-header__mode-btn--roommates ${isRoommatesActive ? 'is-active' : ''}`}
+                onClick={handleRoommatesNavClick}
+              >
+                <HeaderIcon name="roommates" />
+                {t('filterMenu.roommates') || 'Roommates'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -981,6 +962,7 @@ const Navbar = () => {
           <form className="premium-header__search-form" onSubmit={handleHeaderSearchSubmit}>
             <div className="premium-header__search-pill" role="group" aria-label={t('navbar.propertySearchAriaLabel')}>
 
+              {/* LOCATION */}
               <div className="premium-header__search-segment premium-header__search-segment--location">
                 <HeaderIcon name="location" />
                 <LocationAutocomplete
@@ -1010,6 +992,7 @@ const Navbar = () => {
                 </button>
               </div>
 
+              {/* PRICE RANGE */}
               <div className="premium-header__search-segment premium-header__search-segment--price" ref={priceRef}>
                 <button id="header-search-price-toggle" type="button"
                   className={`premium-header__price-toggle ${hasCustomPrice ? 'is-active' : ''}`}
@@ -1041,6 +1024,7 @@ const Navbar = () => {
                 </div>
               </div>
 
+              {/* AVAILABLE FROM — hidden on desktop via CSS; accessible from All Filters */}
               <div className="premium-header__search-segment premium-header__search-segment--available-from" ref={availableFromRef}>
                 <button id="header-search-available-from-toggle" type="button"
                   className={`premium-header__price-toggle ${availableFrom ? 'is-active' : ''}`}
@@ -1057,17 +1041,10 @@ const Navbar = () => {
                   <p className="premium-header__rooms-section-title">
                     {isHebrew ? 'הצג רק נכסים פנויים עד תאריך זה' : 'Only show listings available by this date'}
                   </p>
-                  <input
-                    type="date"
-                    className="premium-header__chip-btn"
+                  <input type="date" className="premium-header__chip-btn"
                     style={{ width: '100%', textAlign: 'center', cursor: 'pointer' }}
                     value={availableFrom}
-                    onChange={(e) => {
-                      const nextValue = e.target.value;
-                      setAvailableFrom(nextValue);
-                      applySearch({ nextAvailableFrom: nextValue });
-                    }}
-                  />
+                    onChange={(e) => { const nextValue = e.target.value; setAvailableFrom(nextValue); applySearch({ nextAvailableFrom: nextValue }); }} />
                   {availableFrom && (
                     <button type="button" className="premium-header__rooms-clear-btn" style={{ marginTop: '10px' }}
                       onClick={() => { setAvailableFrom(''); applySearch({ nextAvailableFrom: '' }); setAvailableFromExpanded(false); }}>
@@ -1077,6 +1054,7 @@ const Navbar = () => {
                 </div>
               </div>
 
+              {/* BEDS / BATHS — hidden on desktop via CSS; accessible from All Filters */}
               <div className="premium-header__search-segment premium-header__search-segment--rooms" ref={roomsBathsRef}>
                 <button id="header-search-rooms-toggle" type="button"
                   className={`premium-header__rooms-toggle ${rooms || baths ? 'is-active' : ''}`}
@@ -1119,11 +1097,11 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* PROPERTY TYPE — hidden in Roommates mode; not relevant when listing a spare room */}
+              {/* PROPERTY TYPE — hidden in Roommates mode */}
               {!isRoommatesActive && (
                 <div className="premium-header__search-segment premium-header__search-segment--property-type" ref={propertyTypeRef}>
                   <button id="header-search-property-type-toggle" type="button"
-                    className={`premium-header__property-type-toggle ${listingType !== 'all' && listingType !== 'roommates' || propertyCategory ? 'is-active' : ''}`}
+                    className={`premium-header__property-type-toggle ${propertyCategory ? 'is-active' : ''}`}
                     onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setFiltersExpanded(false); setPropertyTypeExpanded((value) => !value); }}
                     aria-expanded={propertyTypeExpanded} aria-controls="header-property-type-panel">
                     <HeaderIcon name="building" />
@@ -1158,7 +1136,7 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* ALL FILTERS — hidden in Roommates mode; RoommatesView has its own UI */}
+              {/* ALL FILTERS — hidden in Roommates mode */}
               {!isRoommatesActive && (
                 <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
                   <button id="header-search-filter-toggle" type="button"
@@ -1277,7 +1255,6 @@ const Navbar = () => {
           {t('navbar.listProperty')}
         </Link>
       </div>
-
     </nav>
   );
 };
