@@ -261,7 +261,7 @@
   cursor: default;
 }
 
-/* ── Price row (price + bed count pill) ────────────────────────────────── */
+/* ── Price row ──────────────────────────────────────────────────────────── */
 
 .roommate-card-price-row {
   display: flex;
@@ -274,30 +274,6 @@
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--color-text-secondary, #6b7280);
-}
-
-.roommate-card-bed-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.5rem;
-  background: var(--color-surface-subtle, #f9fafb);
-  border-radius: 99px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary, #6b7280);
-  flex-shrink: 0;
-}
-
-.roommate-card-bed-pill svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
 }
 
 /* ── Available-now badge (image overlay) ───────────────────────────────── */
@@ -552,7 +528,7 @@
   }
 }
 
-/* ── Specs line (bath/sqm) on redesigned card ─────────────────────────────── */
+/* ── Specs line (bed/bath/sqm) on redesigned card ─────────────────────────── */
 
 .roommate-card-specs-line {
   font-size: 0.75rem;

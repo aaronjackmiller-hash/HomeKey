@@ -198,24 +198,18 @@ const RoommateCard = ({
           <p className="roommate-card-price" dir="ltr">
             {displayPrice}<span className="roommate-card-price-suffix">/{t('roommates.perMonthShort') || 'mo'}</span>
           </p>
-          {bedrooms != null && (
-            <span className="roommate-card-bed-pill">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M3.5 12v5M20.5 12v5M3.5 14.5h17M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
-              </svg>
-              {bedrooms}
-            </span>
-          )}
         </div>
 
         <h3 className="roommate-card-title">{primaryHeading}</h3>
         {streetLine && <p className="roommate-card-location">{streetLine}</p>}
 
-        {(bathrooms != null || sizeSqm != null) && (
+        {(bedrooms != null || bathrooms != null || sizeSqm != null) && (
           <p className="roommate-card-specs-line">
-            {bathrooms != null && `${bathrooms} bath`}
-            {bathrooms != null && sizeSqm != null && ' · '}
-            {sizeSqm != null && `${sizeSqm} sqm`}
+            {[
+              bedrooms != null ? `${bedrooms} bed` : null,
+              bathrooms != null ? `${bathrooms} bath` : null,
+              sizeSqm != null ? `${sizeSqm} sqm` : null,
+            ].filter(Boolean).join(' · ')}
           </p>
         )}
 

@@ -44,13 +44,6 @@ const formatPrice = (value) => {
     return Number.isFinite(n) && n > 0 ? `₪ ${n.toLocaleString()}` : '—';
 };
 
-const formatDate = (value) => {
-    if (!value) return '—';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '—';
-    return parsed.toLocaleDateString('en-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-};
-
 const GENDER_LABELS = {
     'no-preference': 'No preference',
     men: 'Men only',
@@ -233,6 +226,9 @@ const RoommateListingDetail = () => {
     const kosherLabel = KOSHER_LABELS[lifestyle.kosherKitchen] || KOSHER_LABELS.no;
     const vibe = safeText(lifestyle.vibe);
     const description = safeText(listing.description);
+    const totalBedrooms = listing.totalBedrooms ?? listing.bedrooms ?? listing.rooms ?? null;
+    const totalBathrooms = listing.totalBathrooms ?? listing.bathrooms ?? null;
+    const sizeSqm = listing.sizeSqm ?? listing.size ?? null;
 
     const listedDaysAgo = daysSince(listing.createdAt);
     const expiresInDays = daysUntil(listing.expiresAt);
@@ -351,20 +347,22 @@ const RoommateListingDetail = () => {
                         <div className="detail-template-metrics">
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M12 21s-6-5.1-6-10.2A6 6 0 0 1 18 10.8C18 15.9 12 21 12 21Z" />
-                                    <circle cx="12" cy="10.5" r="2.2" />
-                                </svg>
-                                <span>{neighborhood || '—'}</span>
-                            </div>
-                            <div className="detail-template-metric">
-                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                     <path d="M3 12.5V8.8a1.8 1.8 0 0 1 1.8-1.8h14.4A1.8 1.8 0 0 1 21 8.8v3.7" />
                                     <path d="M3 12.5h18V17H3z" />
                                     <path d="M6 9.5h4.8V12H6z" />
                                     <path d="M13.2 9.5H18V12h-4.8z" />
                                     <path d="M4 17v2M20 17v2" />
                                 </svg>
-                                <span>{listing.totalBedrooms ?? '—'} BED</span>
+                                <span>{totalBedrooms ?? '—'} BED</span>
+                            </div>
+                            <div className="detail-template-metric">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M5 12h14v4.4A3.6 3.6 0 0 1 15.4 20H8.6A3.6 3.6 0 0 1 5 16.4V12Z" />
+                                    <path d="M8 12V8.8A2.8 2.8 0 0 1 10.8 6h1.5a1.7 1.7 0 1 1 0 3.4h-1" />
+                                    <path d="M7 20v1.5M17 20v1.5" />
+                                    <path d="M16.8 9.2l1.7 1.7M18.5 9.2l-1.7 1.7" />
+                                </svg>
+                                <span>{totalBathrooms ?? '—'} BATH</span>
                             </div>
                             <div className="detail-template-metric">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -373,14 +371,7 @@ const RoommateListingDetail = () => {
                                     <path d="M10 16v-3h4" />
                                     <path d="M6.2 9.4h2M6.2 12h2" />
                                 </svg>
-                                <span>{listing.sizeSqm ? `${listing.sizeSqm} SQM` : '— SQM'}</span>
-                            </div>
-                            <div className="detail-template-metric">
-                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <rect x="3" y="4" width="18" height="17" rx="2" />
-                                    <path d="M3 9h18M8 2v4M16 2v4" />
-                                </svg>
-                                <span>{formatDate(listing.dateAvailable)}</span>
+                                <span>{sizeSqm ? `${sizeSqm} SQM` : '— SQM'}</span>
                             </div>
                         </div>
                         <div className="detail-template-price detail-template-price--roommate">
