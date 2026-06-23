@@ -33,6 +33,7 @@ import RoommateWizard from './RoommateWizard';
 const ROOMMATES_TAB = Object.freeze({
   BROWSE: 'browse',
   LIST: 'list',
+  LOOKING: 'looking',
 });
 
 // Fetches live stats from GET /api/roommates/stats
@@ -198,18 +199,24 @@ const RoommateCard = ({
           <p className="roommate-card-price" dir="ltr">
             {displayPrice}<span className="roommate-card-price-suffix">/{t('roommates.perMonthShort') || 'mo'}</span>
           </p>
+          {bedrooms != null && (
+            <span className="roommate-card-bed-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3.5 12v5M20.5 12v5M3.5 14.5h17M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
+              </svg>
+              {bedrooms}
+            </span>
+          )}
         </div>
 
         <h3 className="roommate-card-title">{primaryHeading}</h3>
         {streetLine && <p className="roommate-card-location">{streetLine}</p>}
 
-        {(bedrooms != null || bathrooms != null || sizeSqm != null) && (
+        {(bathrooms != null || sizeSqm != null) && (
           <p className="roommate-card-specs-line">
-            {[
-              bedrooms != null ? `${bedrooms} bed` : null,
-              bathrooms != null ? `${bathrooms} bath` : null,
-              sizeSqm != null ? `${sizeSqm} sqm` : null,
-            ].filter(Boolean).join(' · ')}
+            {bathrooms != null && `${bathrooms} bath`}
+            {bathrooms != null && sizeSqm != null && ' · '}
+            {sizeSqm != null && `${sizeSqm} sqm`}
           </p>
         )}
 
@@ -233,6 +240,71 @@ const RoommateCard = ({
           {t('propertyList.viewDetails')} →
         </button>
       </div>
+    </div>
+  );
+};
+
+// ── SeekerCard — displays one person looking for a room ─────────────────────
+const SeekerCard = ({ profile }) => {
+  const budgetParts = [];
+  if (profile.budgetMin > 0) budgetParts.push(`₪${profile.budgetMin.toLocaleString()}`);
+  if (profile.budgetMax) budgetParts.push(`₪${profile.budgetMax.toLocaleString()}`);
+  const budgetDisplay = budgetParts.length === 2
+    ? `${budgetParts[0]} – ${budgetParts[1]}/mo`
+    : budgetParts.length === 1
+      ? `Up to ${budgetParts[0]}/mo`
+      : 'Flexible budget';
+
+  const location = [
+    profile.locationPreference?.neighborhood,
+    profile.locationPreference?.city,
+  ].filter(Boolean).join(', ') || 'Anywhere in Israel';
+
+  const moveIn = profile.moveInDate
+    ? new Date(profile.moveInDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    : 'Flexible';
+
+  const tags = [
+    profile.bedroomsNeeded ? `${profile.bedroomsNeeded} bed` : null,
+    profile.genderPreference === 'women' ? 'Women only' : profile.genderPreference === 'men' ? 'Men only' : null,
+    profile.lifestyle?.smoking === 'anywhere' ? 'Smoking ok' : profile.lifestyle?.smoking === 'outside-only' ? 'Smoking outside' : null,
+    profile.lifestyle?.kosherKitchen === 'yes' ? 'Kosher kitchen' : null,
+  ].filter(Boolean);
+
+  const avatarLetter = (profile.firstName || '?')[0].toUpperCase();
+
+  return (
+    <div className="seeker-card">
+      <div className="seeker-card__header">
+        <div className="seeker-card__avatar">{avatarLetter}</div>
+        <div className="seeker-card__identity">
+          <h3 className="seeker-card__name">{profile.firstName || 'Anonymous'}</h3>
+          <p className="seeker-card__location">{location}</p>
+        </div>
+      </div>
+
+      <p className="seeker-card__budget">{budgetDisplay}</p>
+      <p className="seeker-card__movein">Available from {moveIn}</p>
+
+      {tags.length > 0 && (
+        <div className="seeker-card__tags">
+          {tags.map((tag) => (
+            <span key={tag} className="seeker-card__tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {profile.whatsappHref && (
+        <a
+          href={profile.whatsappHref}
+          className="seeker-card__cta"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Contact on WhatsApp
+        </a>
+      )}
     </div>
   );
 };
@@ -324,11 +396,13 @@ const RoommatesView = ({
   const [searcherCountLoading, setSearcherCountLoading] = useState(true);
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  // Roommate listings now come from the dedicated /api/roommates collection —
-  // NOT from the Property collection used by Rent/Sale. This fixes the bug
-  // where Browse Rooms always showed "0" even after listings were published.
+  // Roommate listings (rooms available)
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Seeker profiles (people looking for a room) — loaded when LOOKING tab is opened
+  const [seekerProfiles, setSeekerProfiles] = useState([]);
+  const [seekerProfilesLoading, setSeekerProfilesLoading] = useState(false);
 
   const refreshListings = useCallback(() => {
     let cancelled = false;
@@ -399,6 +473,21 @@ const RoommatesView = ({
   const displayProperties = listings;
   const availableRoomsCount = displayProperties.length;
 
+  // Fetch seeker profiles when the "People Looking" tab is activated
+  useEffect(() => {
+    if (activeTab !== ROOMMATES_TAB.LOOKING) return;
+    let cancelled = false;
+    setSeekerProfilesLoading(true);
+    fetch('/api/seekers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setSeekerProfiles(Array.isArray(data?.data) ? data.data : []);
+      })
+      .catch(() => { if (!cancelled) setSeekerProfiles([]); })
+      .finally(() => { if (!cancelled) setSeekerProfilesLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeTab]);
+
   const handleStartWizard = useCallback(() => {
     setWizardOpen(true);
   }, []);
@@ -413,10 +502,11 @@ const RoommatesView = ({
     setActiveTab(ROOMMATES_TAB.BROWSE);
   }, [refreshListings]);
 
-  const tabLabel = (tab) =>
-    tab === ROOMMATES_TAB.BROWSE
-      ? (t('roommates.tabBrowse') || 'Browse Rooms')
-      : (t('roommates.tabList') || 'List a Room');
+  const tabLabel = (tab) => {
+    if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
+    if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room';
+    return t('roommates.tabLooking') || 'People Looking';
+  };
 
   return (
     <div className="roommates-view">
@@ -441,7 +531,7 @@ const RoommatesView = ({
         role="tablist"
         aria-label={t('roommates.tabStripAriaLabel') || 'Roommate sections'}
       >
-        {[ROOMMATES_TAB.BROWSE, ROOMMATES_TAB.LIST].map((tab) => (
+        {[ROOMMATES_TAB.BROWSE, ROOMMATES_TAB.LIST, ROOMMATES_TAB.LOOKING].map((tab) => (
           <button
             key={tab}
             type="button"
@@ -509,6 +599,35 @@ const RoommatesView = ({
             t={t}
             onStartWizard={handleStartWizard}
           />
+        )}
+
+        {activeTab === ROOMMATES_TAB.LOOKING && (
+          <div className="roommates-browse-tab roommates-looking-tab">
+            <p className="roommates-tab-stat">
+              {seekerProfilesLoading
+                ? 'Loading…'
+                : seekerProfiles.length > 0
+                  ? `${seekerProfiles.length} ${seekerProfiles.length === 1 ? 'person' : 'people'} looking for a room right now`
+                  : 'No active seekers yet — check back soon'}
+            </p>
+            {seekerProfilesLoading && (
+              <p className="status-message">{t('propertyList.loadingProperties')}</p>
+            )}
+            {!seekerProfilesLoading && seekerProfiles.length === 0 && (
+              <div className="roommates-empty-state">
+                <div className="roommates-empty-icon" aria-hidden="true">🔍</div>
+                <h3>No seekers listed yet</h3>
+                <p>People looking for rooms will appear here. Share HomeKey so seekers can publish their profiles!</p>
+              </div>
+            )}
+            {!seekerProfilesLoading && seekerProfiles.length > 0 && (
+              <div className="seeker-card-grid">
+                {seekerProfiles.map((profile) => (
+                  <SeekerCard key={profile._id} profile={profile} />
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
