@@ -3168,7 +3168,7 @@ width: min(90vw, 520px);
   margin-top: 6px;
 }
 
-.detail-template-utilities-label {
+.detail-template-price-copy .detail-template-utilities-label {
   margin: 0;
   color: #e8efff;
   font-size: clamp(0.76rem, 1.1vw, 0.9rem);

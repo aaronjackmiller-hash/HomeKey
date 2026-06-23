@@ -395,13 +395,6 @@ const RoommateListingDetail = () => {
                                         <p className="detail-template-utilities-label">
                                             + {formatPrice(itemizedUtilitiesEstimate)} Estimated Additional Monthly Expenses
                                         </p>
-                                        <ul className="detail-template-utilities-list">
-                                            {itemizedUtilities.map((item) => (
-                                                <li key={item.label}>
-                                                    {item.label} ₪{item.amount.toLocaleString()}
-                                                </li>
-                                            ))}
-                                        </ul>
                                     </div>
                                 ) : legacyUtilitiesEstimate > 0 && (
                                     <p className="detail-template-utilities-legacy">
