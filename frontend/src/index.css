@@ -3086,12 +3086,6 @@ width: min(90vw, 520px);
   min-height: 94px;
 }
 
-.detail-template-price--roommate {
-  display: grid;
-  grid-template-columns: 88px 1fr;
-  min-height: 108px;
-}
-
 .detail-template-price-mark {
   margin: 0;
   border-right: 1px solid rgba(226, 232, 240, 0.28);
@@ -3117,41 +3111,11 @@ width: min(90vw, 520px);
   transform: scale(1.08);
 }
 
-.detail-template-price-mark--roommate {
-  padding: 3px;
-  box-sizing: border-box;
-}
-
-.detail-template-price-logo.detail-template-price-logo--roommate.homekey-logo-lockup {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  background: transparent;
-  overflow: visible;
-}
-
-.detail-template-price-logo.detail-template-price-logo--roommate.homekey-logo-lockup .homekey-logo-lockup-image {
-  object-fit: contain;
-  transform: scale(1.04);
-}
-
 .detail-template-price-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
   padding: 0 18px;
-  min-width: 0;
-}
-
-.detail-template-price--roommate .detail-template-price-copy {
-  width: 100%;
-  padding: 14px 20px;
-}
-
-.detail-template-price--roommate .detail-template-utilities-label,
-.detail-template-price--roommate .detail-template-utilities-legacy {
-  white-space: normal;
-  line-height: 1.15;
 }
 
 .detail-template-price-copy p {
@@ -3193,14 +3157,13 @@ width: min(90vw, 520px);
   margin-top: 6px;
 }
 
-.detail-template-price-copy .detail-template-utilities-label {
+.detail-template-utilities-label {
   margin: 0;
   color: #e8efff;
-  font-size: clamp(0.76rem, 1.1vw, 0.9rem);
+  font-size: 0.7rem;
   font-weight: 700;
-  text-transform: none;
-  letter-spacing: normal;
-  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .detail-template-utilities-list {
@@ -3220,12 +3183,11 @@ width: min(90vw, 520px);
 
 .detail-template-utilities-legacy {
   margin: 6px 0 0;
-  font-size: clamp(0.76rem, 1.1vw, 0.9rem);
+  font-size: 0.78rem;
   color: #d4def3;
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
-  white-space: nowrap;
 }
 
 .hero-contact-strip {
@@ -5266,25 +5228,10 @@ legend {
     grid-template-columns: 74px 1fr;
   }
 
-  .detail-template-price--roommate {
-    grid-template-columns: 74px 1fr;
-    min-height: 96px;
-  }
-
   .detail-template-price-logo.homekey-logo-lockup {
     width: 24px;
     height: 18px;
     min-height: 18px;
-  }
-
-  .detail-template-price-mark--roommate {
-    padding: 3px;
-  }
-
-  .detail-template-price-logo.detail-template-price-logo--roommate.homekey-logo-lockup {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
   }
 
   .detail-template-price-copy strong {
@@ -5357,12 +5304,14 @@ legend {
 
 .property-list-page .hero-banner {
   position: relative;
-  min-height: 242px;
+  min-height: 88px;
   border-radius: var(--hk-radius-container);
   border: 1px solid #d6dbe5;
   margin: 0 0 10px;
-  padding: 16px;
+  padding: 0 20px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
 }
 
 .property-list-page .hero-banner-background-image {
@@ -5406,13 +5355,21 @@ legend {
 }
 
 .property-list-page .hero-banner h1 {
-  margin: 54px 0 0;
+  margin: 0;
   color: #ffffff;
   font-family: "Inter", "Roboto", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: clamp(2rem, 2.6vw, 3rem);
-  line-height: 1.05;
+  font-size: clamp(1.4rem, 1.8vw, 1.9rem);
+  line-height: 1.1;
   font-weight: 700;
-  text-shadow: 0 8px 24px rgba(2, 6, 23, 0.65);
+  text-shadow: 0 4px 14px rgba(2, 6, 23, 0.7);
+}
+
+.property-list-page .hero-banner-subtitle {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.5);
 }
 
 .property-list-page .hero-banner-logo {
@@ -6597,7 +6554,7 @@ legend {
   }
 
   .property-list-page .hero-banner {
-    min-height: 226px;
+    min-height: 88px;
   }
 
   .property-list-page .search-form {
@@ -7067,7 +7024,7 @@ legend {
   }
 
   .property-list-page .hero-banner {
-    min-height: 166px;
+    min-height: 88px;
     margin-bottom: 8px;
     padding: 12px;
   }
@@ -7364,7 +7321,7 @@ legend {
   }
 
   .property-list-page .hero-banner {
-    min-height: 178px;
+    min-height: 88px;
   }
 
   .property-list-page .property-card-price {
@@ -8741,14 +8698,14 @@ html[dir="rtl"] .filter-menu {
     grid-row: 2 !important;
   }
   
-  /* ── Switcher container: centered in column 2 ── */
+  /* ── Switcher container: pill-in-pill, more prominent ── */
   .premium-header__mode-switcher {
     grid-column: 2 !important;
     grid-row: 1 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
+    gap: 0 !important;
     height: 100% !important;
     background: transparent !important;
     padding: 0 !important;
@@ -8756,78 +8713,94 @@ html[dir="rtl"] .filter-menu {
     transform: none !important;
     left: auto !important;
   }
-  
+
+  /* Pill-in-pill container wrapping all three buttons */
+  .premium-header__mode-switcher-inner {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #f0ede8 !important;
+    border: 1.5px solid #ddd8d0 !important;
+    border-radius: 999px !important;
+    padding: 4px !important;
+    gap: 2px !important;
+  }
+
   /* ── Base pill button ── */
   .premium-header__mode-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 7px !important;
-    height: 38px !important;
-    padding: 0 22px !important;
-    font-size: 14px !important;
+    height: 40px !important;
+    padding: 0 26px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
-    color: #555 !important;
-    background: #f0ede8 !important;
-    border: 1.5px solid #ddd8d0 !important;
+    color: #666 !important;
+    background: transparent !important;
+    border: none !important;
     border-radius: 999px !important;
     box-shadow: none !important;
     cursor: pointer !important;
     white-space: nowrap !important;
     letter-spacing: 0 !important;
-    transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s !important;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s !important;
     position: static !important;
     top: auto !important;
   }
-  
+
   .premium-header__mode-btn:hover {
     background: #e4e0d8 !important;
     color: #1a1a1a !important;
-    border-color: #c4beb4 !important;
+    border: none !important;
   }
-  
-  /* Active: Rent or Sale — black pill */
+
+  /* Active: Rent or Sale — solid black pill */
   .premium-header__mode-btn.is-active {
     background: #1a1a1a !important;
     color: #ffffff !important;
-    border-color: #1a1a1a !important;
-    box-shadow: 0 2px 8px rgba(26, 26, 26, 0.25) !important;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(26, 26, 26, 0.3) !important;
   }
-  
-  /* Active: Roommates — teal pill */
+
+  /* Active: Roommates — teal pill, visually distinct */
   .premium-header__mode-btn--roommates.is-active {
     background: #2d6b5e !important;
     color: #ffffff !important;
-    border-color: #2d6b5e !important;
-    box-shadow: 0 2px 8px rgba(45, 107, 94, 0.3) !important;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(45, 107, 94, 0.35) !important;
   }
-  
+
+  /* Inactive Roommates gets a subtle teal hint so it reads as different */
+  .premium-header__mode-btn--roommates:not(.is-active) {
+    color: #2d6b5e !important;
+  }
+
   /* Icon size inside buttons */
   .premium-header__mode-btn .premium-header__icon {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
     flex-shrink: 0 !important;
-    opacity: 0.8 !important;
+    opacity: 0.75 !important;
   }
-  
+
   .premium-header__mode-btn.is-active .premium-header__icon {
     opacity: 1 !important;
   }
-  
+
   /* ── Responsive ── */
   @media (max-width: 900px) {
     .premium-header__mode-btn {
-      padding: 0 14px !important;
+      padding: 0 16px !important;
       font-size: 13px !important;
-      height: 34px !important;
+      height: 36px !important;
     }
   }
-  
+
   @media (max-width: 767px) {
     .premium-header__mode-switcher {
       display: none !important;
     }
-  
+
     .premium-header__inner {
       grid-template-columns: minmax(0, 1fr) auto !important;
       grid-template-rows: 54px auto auto !important;
@@ -9217,5 +9190,241 @@ html[dir="rtl"] .filter-menu {
   .roommate-detail-amenity-grid {
     grid-template-columns: 1fr;
     gap: 0.85rem;
+  }
+}
+
+/* ==========================================================================
+   HOMEPAGE IMPROVEMENTS — appended block
+   Covers: slimmer hero banner, mode switcher prominence, filter bar cleanup
+   ========================================================================== */
+
+/* ── 1. Slimmer hero banner — exciting but no longer pushes listings off-screen ── */
+.property-list-page .hero-banner {
+  min-height: 116px !important;
+}
+
+.property-list-page .hero-banner h1 {
+  margin: 22px 0 0 !important;
+  font-size: clamp(1.35rem, 2vw, 1.9rem) !important;
+  text-shadow: 0 6px 18px rgba(2, 6, 23, 0.6) !important;
+}
+
+.hero-banner-subtitle {
+  margin: 5px 0 0;
+  color: rgba(248, 250, 252, 0.82);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 980px) {
+  .property-list-page .hero-banner {
+    min-height: 100px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .property-list-page .hero-banner {
+    min-height: 92px !important;
+  }
+  .property-list-page .hero-banner h1 {
+    margin: 18px 0 0 !important;
+    font-size: clamp(1.05rem, 5vw, 1.35rem) !important;
+  }
+}
+
+/* ── 2. Mode switcher — more prominent pill container ── */
+.premium-header__mode-switcher-inner {
+  border: 2px solid #c6bfb5 !important;
+  box-shadow: 0 2px 8px rgba(26, 26, 26, 0.12) !important;
+}
+
+/* Inactive buttons get a slightly more legible muted color */
+.premium-header__mode-btn:not(.is-active) {
+  color: #555 !important;
+  font-weight: 500 !important;
+}
+
+/* Inactive Roommates retains its teal hint */
+.premium-header__mode-btn--roommates:not(.is-active) {
+  color: #2d6b5e !important;
+  font-weight: 600 !important;
+}
+
+/* ── 3. Filter bar — trim to Location | Price | Property Type | All Filters ── */
+@media (min-width: 768px) {
+  /* Move BEDS/BATHS and AVAILABLE FROM behind All Filters panel only */
+  .premium-header__search-segment--rooms,
+  .premium-header__search-segment--available-from {
+    display: none !important;
+  }
+
+  /* 4-column grid: location, price, property-type, all-filters */
+  .premium-header__search-pill {
+    grid-template-columns: minmax(150px, 2fr) minmax(140px, 1fr) minmax(140px, 1fr) minmax(128px, 0.85fr) !important;
+  }
+}
+
+/* ==========================================================================
+   SEEKER PROFILE — "People Looking" tab cards + publish flow
+   ========================================================================== */
+
+/* Card grid */
+.seeker-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+/* Individual seeker card */
+.seeker-card {
+  background: var(--color-background-primary, #fff);
+  border: 1px solid rgba(30, 41, 59, 0.12);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s;
+}
+.seeker-card:hover {
+  box-shadow: 0 4px 18px rgba(30, 41, 59, 0.1);
+}
+
+.seeker-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.seeker-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #2d6b5e;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.seeker-card__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+}
+.seeker-card__location {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+}
+.seeker-card__budget {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.seeker-card__movein {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+}
+.seeker-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.seeker-card__tag {
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.seeker-card__cta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.seeker-card__cta:hover {
+  background: #1da851;
+  color: #fff;
+}
+
+/* Publish flow in FilterMenu */
+.roommate-filter-actions__publish {
+  width: 100%;
+  padding: 13px;
+  background: #2d6b5e;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.roommate-filter-actions__publish:hover:not(:disabled) {
+  background: #1f4f44;
+}
+.roommate-filter-actions__publish:disabled {
+  cursor: not-allowed;
+}
+
+.seeker-publish-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #e8f4f0;
+  border: 1px solid #b8d8d0;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.seeker-publish-success span {
+  font-size: 22px;
+  color: #2d6b5e;
+}
+.seeker-publish-success strong {
+  display: block;
+  font-size: 14px;
+  color: #1a4a3e;
+}
+.seeker-publish-success p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #4a8070;
+}
+
+.seeker-publish-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 4px 0 0;
+  text-align: center;
+}
+.seeker-publish-hint {
+  color: #92400e;
+  font-size: 11px;
+  margin: 4px 0 0;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .seeker-card-grid {
+    grid-template-columns: 1fr;
   }
 }
