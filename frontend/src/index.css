@@ -3118,7 +3118,7 @@ width: min(90vw, 520px);
 }
 
 .detail-template-price-mark--roommate {
-  padding: 4px;
+  padding: 6px;
   box-sizing: border-box;
 }
 
@@ -3132,7 +3132,7 @@ width: min(90vw, 520px);
 
 .detail-template-price-logo.detail-template-price-logo--roommate.homekey-logo-lockup .homekey-logo-lockup-image {
   object-fit: contain;
-  transform: scale(1);
+  transform: scale(0.94);
 }
 
 .detail-template-price-copy {
@@ -5278,7 +5278,7 @@ legend {
   }
 
   .detail-template-price-mark--roommate {
-    padding: 4px;
+    padding: 5px;
   }
 
   .detail-template-price-logo.detail-template-price-logo--roommate.homekey-logo-lockup {
