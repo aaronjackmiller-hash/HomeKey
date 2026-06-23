@@ -505,6 +505,8 @@ const RoommateFilters = ({
   // ── FIX 3: Phone moved to top — seeker ──
   const [phone, setPhone] = useState('');
   const [phoneSaved, setPhoneSaved] = useState(false);
+  const [seekerSubmitStatus, setSeekerSubmitStatus] = useState('idle'); // idle | submitting | success | error
+  const [seekerProfileId, setSeekerProfileId] = useState(null);
 
   const [rentAmount, setRentAmount] = useState('');
   const [utilities, setUtilities] = useState('Included');
@@ -522,6 +524,38 @@ const RoommateFilters = ({
 
   const toggleAmenity = (item) => setAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
   const toggleOwnerAmenity = (item) => setOwnerAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
+
+  // Publish seeker profile to backend so room listers can discover this person
+  const handlePublishSeekerProfile = async () => {
+    if (!phoneSaved || !phone) return;
+    setSeekerSubmitStatus('submitting');
+    try {
+      const res = await fetch('/api/seekers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          budgetRange: rentRange,
+          moveInDate: moveInDate ? `${moveInDate}-01` : undefined,
+          flexibility,
+          sharingWith,
+          genderPreference: gender,
+          smoking,
+          kosher,
+          leaseTerm,
+          amenities,
+          bedroomsNeeded: bedroomsNeeded || 1,
+          city: roommateLocation,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to publish');
+      setSeekerProfileId(data.data?._id || null);
+      setSeekerSubmitStatus('success');
+    } catch (_err) {
+      setSeekerSubmitStatus('error');
+    }
+  };
 
   const isRoom = lookingFor === 'room';
 
@@ -758,14 +792,53 @@ const RoommateFilters = ({
         </>
       )}
 
-      <div className="roommate-filter-actions">
-        <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
-          {isHebrew ? 'החל פילטרים' : 'Apply Filters'}
-        </button>
-        <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
-          {isHebrew ? 'שמור כהתראה' : 'Save as Alert'}
-        </button>
-      </div>
+      {/* ── SEEKER: Publish Profile button ── */}
+      {isRoom && seekerSubmitStatus === 'success' ? (
+        <div className="roommate-filter-actions">
+          <div className="seeker-publish-success">
+            <span>✓</span>
+            <div>
+              <strong>{isHebrew ? 'הפרופיל שלך פורסם!' : 'Your profile is live!'}</strong>
+              <p>{isHebrew ? 'בעלי דירות יכולים עכשיו לפנות אליך בוואטסאפ.' : 'Room listers can now contact you on WhatsApp.'}</p>
+            </div>
+          </div>
+          <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
+            {isHebrew ? 'הצג חדרים זמינים' : 'Browse available rooms'}
+          </button>
+        </div>
+      ) : isRoom ? (
+        <div className="roommate-filter-actions">
+          <button
+            type="button"
+            className="roommate-filter-actions__publish"
+            onClick={handlePublishSeekerProfile}
+            disabled={!phoneSaved || seekerSubmitStatus === 'submitting'}
+            style={{ opacity: phoneSaved ? 1 : 0.45 }}
+          >
+            {seekerSubmitStatus === 'submitting'
+              ? (isHebrew ? 'מפרסם...' : 'Publishing…')
+              : (isHebrew ? 'פרסם את הפרופיל שלי' : 'Publish my profile')}
+          </button>
+          {seekerSubmitStatus === 'error' && (
+            <p className="seeker-publish-error">{isHebrew ? 'שגיאה — נסה שוב' : 'Something went wrong — try again'}</p>
+          )}
+          {!phoneSaved && (
+            <p className="seeker-publish-hint">{isHebrew ? 'שמור מספר טלפון תחילה' : 'Save your phone number above to publish'}</p>
+          )}
+          <button type="button" className="roommate-filter-actions__save" onClick={onApplyFilters}>
+            {isHebrew ? 'גלה חדרים קודם' : 'Browse rooms first'}
+          </button>
+        </div>
+      ) : (
+        <div className="roommate-filter-actions">
+          <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
+            {isHebrew ? 'החל פילטרים' : 'Apply Filters'}
+          </button>
+          <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
+            {isHebrew ? 'שמור כהתראה' : 'Save as Alert'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
