@@ -385,8 +385,8 @@ const RoommateListingDetail = () => {
                             </div>
                         </div>
                         <div className="detail-template-price detail-template-price--roommate">
-                            <div className="detail-template-price-mark">
-                                <HomeKeyLogoBadge compact className="detail-template-price-logo detail-template-price-logo--inset" />
+                            <div className="detail-template-price-mark detail-template-price-mark--roommate">
+                                <HomeKeyLogoBadge compact className="detail-template-price-logo detail-template-price-logo--roommate" />
                             </div>
                             <div className="detail-template-price-copy">
                                 <p>MONTHLY RENT SHARE</p>
