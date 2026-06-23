@@ -319,6 +319,7 @@ const RoommatesView = ({
   language = 'en',
   locale = 'en-US',
   onFavoriteToggle,
+  onListingsChange,
   t,
 }) => {
   // useHistory called here at the top level of RoommatesView — correct placement
@@ -367,7 +368,9 @@ const RoommatesView = ({
     getRoommateListings(apiParams)
       .then((data) => {
         if (cancelled) return;
-        setListings(Array.isArray(data?.data) ? data.data : []);
+        const nextListings = Array.isArray(data?.data) ? data.data : [];
+        setListings(nextListings);
+        if (typeof onListingsChange === 'function') onListingsChange(nextListings);
       })
       .catch(() => {
         if (!cancelled) setListings([]);
