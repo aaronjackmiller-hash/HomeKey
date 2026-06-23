@@ -542,11 +542,13 @@ const GoogleListingsMap = ({
 
   // Roommate listings already have lat/lng from the wizard geocoding step —
   // skip live geocoding for them. Rent/Sale properties geocode from address.
+  // RoommateListing stores coordinates at address.lat / address.lng (nested),
+  // so we check both that location and the top level for safety.
   const propertiesWithAddress = useMemo(() => {
     if (isRoommatesMode) {
       return properties.map((property) => {
-        const lat = Number(property?.lat);
-        const lng = Number(property?.lng);
+        const lat = Number(property?.address?.lat ?? property?.lat);
+        const lng = Number(property?.address?.lng ?? property?.lng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
         return { property, propertyId: getPropertyId(property), coords: { lat, lng } };
       }).filter((item) => item && item.propertyId);
