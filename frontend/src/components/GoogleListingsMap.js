@@ -1,3 +1,19 @@
+/**
+ * GoogleListingsMap.js
+ * Map component — path: frontend/src/components/GoogleListingsMap.js
+ *
+ * Changes vs. original:
+ * - Added `isRoommatesMode` prop (default false).
+ * - In roommates mode, listings arrive with lat/lng already attached
+ *   (saved by the wizard via geocodeController) so the live-geocode path
+ *   is skipped entirely — no redundant API calls, pins appear instantly.
+ * - Roommate pins render in teal (#2d6b5e) so searchers can distinguish
+ *   them from black Rent/Sale pins at a glance.
+ * - Popup card link points to /roommates/:id instead of /properties/:id.
+ * - Pin title built from address fields (roommate listings have no .title).
+ * - rentShare field checked first for price (roommate schema), then price.
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import MapAreaControls from './MapAreaControls';
 import { getPropertyId } from '../utils/propertyIdentity';
@@ -8,7 +24,7 @@ import { getPublicConfigValue } from '../utils/publicConfig';
 const MAP_SCRIPT_ID = 'homekey-google-maps-platform-script';
 const MAP_AUTH_FAILURE_EVENT = 'homekey-google-maps-auth-failure';
 const GEO_CACHE_KEY = 'homekey:google-geocode-cache:v1';
-const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 }; // Tel Aviv
+const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 };
 const MAX_MARKERS = 40;
 const MIN_CIRCLE_RADIUS_METERS = 80;
 const TOUCH_MIN_CIRCLE_RADIUS_METERS = 650;
@@ -18,146 +34,55 @@ const BRAND_CHARCOAL = '#1A1A1A';
 const MOBILE_OVERLAY_QUERY = '(max-width: 767px)';
 const DESKTOP_MARKER_HOVER_SCALE = 1.12;
 const ASPIRATIONAL_MUTED_MAP_STYLE = [
-  {
-    elementType: 'geometry',
-    stylers: [{ color: '#f3efe7' }],
-  },
-  {
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#6f6a61' }],
-  },
-  {
-    elementType: 'labels.text.stroke',
-    stylers: [{ color: '#f8f5ef' }],
-  },
-  {
-    featureType: 'administrative',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#d7d0c4' }],
-  },
-  {
-    featureType: 'administrative.land_parcel',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'landscape.natural',
-    elementType: 'geometry',
-    stylers: [{ color: '#eee6d8' }],
-  },
-  {
-    featureType: 'poi',
-    elementType: 'geometry',
-    stylers: [{ color: '#e8dfcf' }],
-  },
-  {
-    featureType: 'poi.business',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'geometry.fill',
-    stylers: [{ color: '#dce6d8' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [{ color: '#ffffff' }],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#ded7cc' }],
-  },
-  {
-    featureType: 'road.arterial',
-    elementType: 'geometry',
-    stylers: [{ color: '#f6f2eb' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [{ color: '#e5dac9' }],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry.stroke',
-    stylers: [{ color: '#cfc4b3' }],
-  },
-  {
-    featureType: 'road.local',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#8f877c' }],
-  },
-  {
-    featureType: 'transit',
-    stylers: [{ visibility: 'off' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry.fill',
-    stylers: [{ color: '#c9d7d9' }],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.fill',
-    stylers: [{ color: '#71868a' }],
-  },
+  { elementType: 'geometry', stylers: [{ color: '#f3efe7' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6f6a61' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f8f5ef' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#d7d0c4' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#eee6d8' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#e8dfcf' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#dce6d8' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#ded7cc' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#f6f2eb' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#e5dac9' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#cfc4b3' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#8f877c' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#c9d7d9' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#71868a' }] },
 ];
+
 const FAVORITE_PRICE_PIN_STYLE = {
-  pinColor: '#FF0000',
-  pinStrokeColor: '#000000',
-  strokeWidth: 0.9,
-  textColor: '#FFFFFF',
-  fontWeight: 700,
+  pinColor: '#FF0000', pinStrokeColor: '#000000', strokeWidth: 0.9,
+  textColor: '#FFFFFF', fontWeight: 700,
 };
+// Teal pins for roommate listings — visually distinct from black Rent/Sale pins.
+const ROOMMATE_PRICE_PIN_STYLE = {
+  pinColor: '#2d6b5e', pinStrokeColor: '#1f4f44', strokeWidth: 1,
+  textColor: '#ffffff', fontWeight: 700,
+};
+
 const MARKER_STYLE_PRESETS = {
   minimal: {
-    label: 'Minimal',
-    markerMode: 'pricePin',
-    minWidth: 46,
-    pinHeight: 21,
-    pointerHeight: 7,
-    horizontalPadding: 7,
-    fontSize: 10,
-    fontWeight: 600,
-    pinColor: BRAND_CHARCOAL,
-    pinStrokeColor: BRAND_CHARCOAL,
-    textColor: '#ffffff',
+    label: 'Minimal', markerMode: 'pricePin', minWidth: 46, pinHeight: 21,
+    pointerHeight: 7, horizontalPadding: 7, fontSize: 10, fontWeight: 600,
+    pinColor: BRAND_CHARCOAL, pinStrokeColor: BRAND_CHARCOAL, textColor: '#ffffff',
   },
   house: {
-    label: 'House Pins',
-    markerMode: 'house',
-    iconWidth: 19,
-    iconHeight: 27,
-    pinColor: '#2563eb',
-    pinStrokeColor: '#1d4ed8',
-    homeStrokeColor: '#ffffff',
+    label: 'House Pins', markerMode: 'house', iconWidth: 19, iconHeight: 27,
+    pinColor: '#2563eb', pinStrokeColor: '#1d4ed8', homeStrokeColor: '#ffffff',
   },
   medium: {
-    label: 'Medium',
-    markerMode: 'pricePin',
-    minWidth: 52,
-    pinHeight: 24,
-    pointerHeight: 9,
-    horizontalPadding: 8,
-    fontSize: 11,
-    fontWeight: 600,
-    pinColor: '#2b3440',
-    pinStrokeColor: '#2b3440',
-    textColor: '#ffffff',
+    label: 'Medium', markerMode: 'pricePin', minWidth: 52, pinHeight: 24,
+    pointerHeight: 9, horizontalPadding: 8, fontSize: 11, fontWeight: 600,
+    pinColor: '#2b3440', pinStrokeColor: '#2b3440', textColor: '#ffffff',
   },
   bold: {
-    label: 'Bold',
-    markerMode: 'pricePin',
-    minWidth: 56,
-    pinHeight: 26,
-    pointerHeight: 10,
-    horizontalPadding: 9,
-    fontSize: 11,
-    fontWeight: 700,
-    pinColor: BRAND_CHARCOAL,
-    pinStrokeColor: BRAND_CHARCOAL,
-    textColor: '#ffffff',
+    label: 'Bold', markerMode: 'pricePin', minWidth: 56, pinHeight: 26,
+    pointerHeight: 10, horizontalPadding: 9, fontSize: 11, fontWeight: 700,
+    pinColor: BRAND_CHARCOAL, pinStrokeColor: BRAND_CHARCOAL, textColor: '#ffffff',
   },
 };
 const DEFAULT_MARKER_PRESET_KEY = 'minimal';
@@ -171,11 +96,8 @@ let googleMapsAuthFailureHookInstalled = false;
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 const escapeHtml = (value) => String(value || '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 const readGeocodeCache = () => {
   if (typeof window === 'undefined' || !window.localStorage) return {};
@@ -183,19 +105,15 @@ const readGeocodeCache = () => {
     const raw = window.localStorage.getItem(GEO_CACHE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch (_err) {
-    return {};
-  }
+  } catch (_err) { return {}; }
 };
 
 const writeGeocodeCache = (cacheObj) => {
-  if (typeof window === 'undefined' || !window.localStorage || !cacheObj || typeof cacheObj !== 'object') return;
+  if (typeof window === 'undefined' || !window.localStorage || !cacheObj) return;
   try {
     const entries = Object.entries(cacheObj).slice(-500);
     window.localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(Object.fromEntries(entries)));
-  } catch (_err) {
-    // Ignore localStorage quota errors.
-  }
+  } catch (_err) {}
 };
 
 const resolveMapLanguage = (language) => (MAP_LANGUAGE_SET.has(language) ? language : DEFAULT_MAP_LANGUAGE);
@@ -207,15 +125,9 @@ const dispatchMapAuthFailureEvent = () => {
 
 const ensureGoogleMapsAuthFailureHook = () => {
   if (typeof window === 'undefined' || googleMapsAuthFailureHookInstalled) return;
-  const priorAuthFailureHandler = typeof window.gm_authFailure === 'function' ? window.gm_authFailure : null;
+  const prior = typeof window.gm_authFailure === 'function' ? window.gm_authFailure : null;
   window.gm_authFailure = (...args) => {
-    if (typeof priorAuthFailureHandler === 'function') {
-      try {
-        priorAuthFailureHandler(...args);
-      } catch (_err) {
-        // Ignore chained auth failure callback errors.
-      }
-    }
+    if (prior) { try { prior(...args); } catch (_err) {} }
     dispatchMapAuthFailureEvent();
   };
   googleMapsAuthFailureHookInstalled = true;
@@ -230,139 +142,90 @@ const loadGoogleMaps = (apiKey, requestedLanguage = DEFAULT_MAP_LANGUAGE) => {
     return Promise.resolve(window.google.maps);
   }
   if (googleMapsLoadPromise && googleMapsRequestedLanguage === mapLanguage) return googleMapsLoadPromise;
-
   if (googleMapsLoadedLanguage && googleMapsLoadedLanguage !== mapLanguage) {
-    const existingScript = document.getElementById(MAP_SCRIPT_ID);
-    if (existingScript && existingScript.parentNode) {
-      existingScript.parentNode.removeChild(existingScript);
-    }
-    if (window.google) {
-      try {
-        delete window.google;
-      } catch (_err) {
-        window.google = undefined;
-      }
-    }
+    const existing = document.getElementById(MAP_SCRIPT_ID);
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    if (window.google) { try { delete window.google; } catch (_err) { window.google = undefined; } }
     googleMapsLoadedLanguage = null;
     googleMapsLoadPromise = undefined;
   }
-
   googleMapsLoadPromise = new Promise((resolve, reject) => {
     googleMapsRequestedLanguage = mapLanguage;
     const existingScript = document.getElementById(MAP_SCRIPT_ID);
     const desiredLanguageParam = `language=${encodeURIComponent(mapLanguage)}`;
-
     if (existingScript) {
-      const existingSrc = String(existingScript.getAttribute('src') || '');
-      const hasMatchingLanguage = existingSrc.includes(desiredLanguageParam);
-      if (hasMatchingLanguage) {
+      const src = String(existingScript.getAttribute('src') || '');
+      if (src.includes(desiredLanguageParam)) {
         if (window.google && window.google.maps) {
-          googleMapsLoadedLanguage = mapLanguage;
-          googleMapsRequestedLanguage = null;
-          resolve(window.google.maps);
-          return;
+          googleMapsLoadedLanguage = mapLanguage; googleMapsRequestedLanguage = null;
+          resolve(window.google.maps); return;
         }
-        existingScript.addEventListener('load', () => {
-          googleMapsLoadedLanguage = mapLanguage;
-          googleMapsRequestedLanguage = null;
-          resolve(window.google && window.google.maps);
-        });
-        existingScript.addEventListener('error', () => {
-          googleMapsRequestedLanguage = null;
-          reject(new Error('Failed to load Google Maps script.'));
-        });
+        existingScript.addEventListener('load', () => { googleMapsLoadedLanguage = mapLanguage; googleMapsRequestedLanguage = null; resolve(window.google && window.google.maps); });
+        existingScript.addEventListener('error', () => { googleMapsRequestedLanguage = null; reject(new Error('Failed to load Google Maps script.')); });
         return;
       }
       existingScript.remove();
     }
-
     const script = document.createElement('script');
-    script.id = MAP_SCRIPT_ID;
-    script.async = true;
-    script.defer = true;
+    script.id = MAP_SCRIPT_ID; script.async = true; script.defer = true;
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&language=${encodeURIComponent(mapLanguage)}&region=IL`;
-    script.onload = () => {
-      googleMapsLoadedLanguage = mapLanguage;
-      googleMapsRequestedLanguage = null;
-      resolve(window.google && window.google.maps);
-    };
-    script.onerror = () => {
-      googleMapsRequestedLanguage = null;
-      reject(new Error('Failed to load Google Maps script.'));
-    };
+    script.onload = () => { googleMapsLoadedLanguage = mapLanguage; googleMapsRequestedLanguage = null; resolve(window.google && window.google.maps); };
+    script.onerror = () => { googleMapsRequestedLanguage = null; reject(new Error('Failed to load Google Maps script.')); };
     document.head.appendChild(script);
   });
-
   return googleMapsLoadPromise;
 };
 
 const geocodeAddress = (geocoder, address) => new Promise((resolve) => {
   geocoder.geocode({ address }, (results, status) => {
-    if (status !== 'OK' || !results || !results[0] || !results[0].geometry || !results[0].geometry.location) {
-      resolve(null);
-      return;
-    }
-    const location = results[0].geometry.location;
-    resolve({ lat: location.lat(), lng: location.lng() });
+    if (status !== 'OK' || !results || !results[0] || !results[0].geometry || !results[0].geometry.location) { resolve(null); return; }
+    const loc = results[0].geometry.location;
+    resolve({ lat: loc.lat(), lng: loc.lng() });
   });
 });
 
 const toRadians = (value) => (Number(value) * Math.PI) / 180;
 
-const getDistanceMeters = (startPoint, endPoint) => {
-  if (!startPoint || !endPoint) return Infinity;
-  const lat1 = Number(startPoint.lat);
-  const lng1 = Number(startPoint.lng);
-  const lat2 = Number(endPoint.lat);
-  const lng2 = Number(endPoint.lng);
-  if ([lat1, lng1, lat2, lng2].some((value) => Number.isNaN(value))) return Infinity;
-  const dLat = toRadians(lat2 - lat1);
-  const dLng = toRadians(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
-  return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+const getDistanceMeters = (a, b) => {
+  if (!a || !b) return Infinity;
+  const lat1 = Number(a.lat); const lng1 = Number(a.lng);
+  const lat2 = Number(b.lat); const lng2 = Number(b.lng);
+  if ([lat1, lng1, lat2, lng2].some((v) => Number.isNaN(v))) return Infinity;
+  const dLat = toRadians(lat2 - lat1); const dLng = toRadians(lng2 - lng1);
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 };
 
 const getMarkerImageUrl = (property, propertyId) => {
-  const propertyImages = property && Array.isArray(property.images) ? property.images : [];
-  const imageCandidates = [
-    ...propertyImages,
-    property?.mainImage,
-    property?.image,
-    property?.imageUrl,
-    property?.thumbnail,
-  ];
-  const firstImage = imageCandidates.find((imageUrl) => typeof imageUrl === 'string' && imageUrl.trim());
-  if (firstImage) return firstImage.trim();
+  const imgs = property && Array.isArray(property.images) ? property.images : [];
+  const candidates = [...imgs, property?.mainImage, property?.image, property?.imageUrl, property?.thumbnail];
+  const first = candidates.find((u) => typeof u === 'string' && u.trim());
+  if (first) return first.trim();
   return `https://picsum.photos/seed/homekey-map-marker-${encodeURIComponent(String(propertyId || 'listing'))}/120/120`;
 };
 
-const getMarkerStylePreset = (presetKey) =>
-  MARKER_STYLE_PRESETS[presetKey] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
+const getMarkerStylePreset = (key) => MARKER_STYLE_PRESETS[key] || MARKER_STYLE_PRESETS[DEFAULT_MARKER_PRESET_KEY];
 
 const GoogleMapsUnavailableState = ({ title, message }) => (
   <div className="google-listings-map-shell google-listings-map-shell--unavailable">
     <div className="google-listings-map-unavailable-card" role="status" aria-live="polite">
       <div className="google-listings-map-unavailable-icon" aria-hidden="true">G</div>
-      <div>
-        <h2>{title}</h2>
-        <p>{message}</p>
-      </div>
+      <div><h2>{title}</h2><p>{message}</p></div>
     </div>
   </div>
 );
 
 const formatMarkerPrice = (price, locale = 'en-US', unavailableLabel = 'N/A') => {
-  const parsedPrice = Number(price);
-  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) return unavailableLabel;
-  return `₪${parsedPrice.toLocaleString(locale)}`;
+  const n = Number(price);
+  if (!Number.isFinite(n) || n <= 0) return unavailableLabel;
+  return `₪${n.toLocaleString(locale)}`;
 };
 
 const toMarkerRoomCount = (property = {}) => {
-  const candidates = [property.rooms, property.bedrooms, property.roomCount];
-  for (const candidate of candidates) {
-    const asNumber = Number(candidate);
-    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  const candidates = [property.totalBedrooms, property.rooms, property.bedrooms, property.roomCount];
+  for (const c of candidates) {
+    const n = Number(c);
+    if (Number.isFinite(n) && n > 0) return n;
   }
   return null;
 };
@@ -370,80 +233,64 @@ const toMarkerRoomCount = (property = {}) => {
 const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   const roomCount = toMarkerRoomCount(property);
   const roomLabel = roomCount ? `${roomCount} Rooms` : '';
-  const neighborhood = safeText(property?.address?.city || property?.neighborhood || addressQuery.split(',')[0]);
+  const neighborhood = safeText(property?.address?.city || property?.neighborhood || (addressQuery || '').split(',')[0]);
   const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
   return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
 };
 
-const buildMarkerPopupCardHtml = ({
-  href = '',
-  title = '',
-  price = '',
-  detailLine = '',
-  imageUrl = '',
-  ctaLabel = '',
-}) => {
-  const safeHref = escapeHtml(href || '#');
-  const safeTitle = escapeHtml(title || 'Listing');
-  const safePrice = escapeHtml(price || '');
-  const safeDetailLine = escapeHtml(detailLine || '');
-  const safeImageUrl = escapeHtml(imageUrl || '');
-  const safeCtaLabel = escapeHtml(ctaLabel || 'View full listing');
-  return `<a href="${safeHref}" style="display:block;width:252px;padding:12px;border:1px solid #dde3ea;border-radius:14px;background:#ffffff;color:#0f172a;text-decoration:none;font-family:Inter,Roboto,'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;box-shadow:0 12px 26px rgba(15,23,42,0.14);">
+// Roommate listings have no .title — build one from address fields instead.
+const getMarkerTitle = (property = {}, isRoommatesMode = false) => {
+  if (!isRoommatesMode) return safeText(property.title);
+  const addr = property.address && typeof property.address === 'object' ? property.address : {};
+  const street = [safeText(addr.street), safeText(addr.streetNumber)].filter(Boolean).join(' ');
+  const neighborhood = safeText(addr.neighborhood);
+  return [street, neighborhood].filter(Boolean).join(', ');
+};
+
+const buildMarkerPopupCardHtml = ({ href = '', title = '', price = '', detailLine = '', imageUrl = '', ctaLabel = '' }) => {
+  const h = escapeHtml;
+  return `<a href="${h(href || '#')}" style="display:block;width:252px;padding:12px;border:1px solid #dde3ea;border-radius:14px;background:#ffffff;color:#0f172a;text-decoration:none;font-family:Inter,Roboto,'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;box-shadow:0 12px 26px rgba(15,23,42,0.14);">
     <div style="display:flex;flex-direction:column;gap:4px;margin:0 0 10px;">
-      <p style="margin:0;font-size:15px;font-weight:800;line-height:1.2;color:#0f172a;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${safeTitle}</p>
-      <p style="margin:0;font-size:31px;font-weight:700;line-height:1;color:#111827;" dir="ltr">${safePrice}</p>
-      <p style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.01em;color:#334155;">${safeDetailLine}</p>
+      <p style="margin:0;font-size:15px;font-weight:800;line-height:1.2;color:#0f172a;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${h(title || 'Listing')}</p>
+      <p style="margin:0;font-size:31px;font-weight:700;line-height:1;color:#111827;" dir="ltr">${h(price || '')}</p>
+      <p style="margin:0;font-size:12px;font-weight:600;letter-spacing:0.01em;color:#334155;">${h(detailLine || '')}</p>
     </div>
     <div style="border:1px solid #111111;border-radius:12px;padding:2px;box-shadow:inset 0 0 0 1px rgba(15,23,42,0.2);background:#ffffff;overflow:hidden;">
-      <img src="${safeImageUrl}" alt="${safeTitle}" style="display:block;width:100%;height:128px;object-fit:cover;border-radius:9px;" />
+      <img src="${h(imageUrl || '')}" alt="${h(title || 'Listing')}" style="display:block;width:100%;height:128px;object-fit:cover;border-radius:9px;" />
     </div>
-    <div style="margin-top:10px;font-size:15px;font-weight:700;color:#0e8a88;">${safeCtaLabel} &#8250;</div>
+    <div style="margin-top:10px;font-size:15px;font-weight:700;color:#0e8a88;">${h(ctaLabel || 'View')} &#8250;</div>
   </a>`;
 };
 
 const createListingMarkerElement = (priceText, details = {}, isFavorite = false) => {
   if (typeof document === 'undefined') return null;
-  const markerDetails = details && typeof details === 'object' ? details : {};
-  const markerElement = document.createElement('div');
-  markerElement.className = 'map-listing-marker radar-container';
-  const markerPulseRing = document.createElement('span');
-  markerPulseRing.className = 'radar-pulse-ring faint-radar-rings';
-  markerElement.appendChild(markerPulseRing);
-  if (isFavorite) markerElement.classList.add('is-favorite');
-  const markerPin = document.createElement('span');
-  markerPin.className = 'map-listing-marker-pin';
-  markerPin.textContent = priceText;
-  markerElement.appendChild(markerPin);
-  const markerCaption = document.createElement('div');
-  markerCaption.className = 'map-hovered-listing-caption animate-fadeIn animate-luxury-card';
-  const markerCaptionTextCard = document.createElement('div');
-  markerCaptionTextCard.className = 'map-hovered-listing-caption__text-card';
-  const markerCaptionTitle = document.createElement('p');
-  markerCaptionTitle.className = 'map-hovered-listing-caption__title';
-  markerCaptionTitle.textContent = safeText(markerDetails.title) || 'Listing';
-  const markerCaptionPrice = document.createElement('p');
-  markerCaptionPrice.className = 'map-hovered-listing-caption__price';
-  markerCaptionPrice.textContent = safeText(markerDetails.priceLine) || priceText;
-  const markerCaptionMeta = document.createElement('p');
-  markerCaptionMeta.className = 'map-hovered-listing-caption__meta';
-  markerCaptionMeta.textContent = safeText(markerDetails.detailLine) || priceText;
-  markerCaptionTextCard.appendChild(markerCaptionTitle);
-  markerCaptionTextCard.appendChild(markerCaptionPrice);
-  markerCaptionTextCard.appendChild(markerCaptionMeta);
-  const markerCaptionImageCard = document.createElement('div');
-  markerCaptionImageCard.className = 'map-hovered-listing-caption__image-card';
-  const markerCaptionImage = document.createElement('img');
-  markerCaptionImage.className = 'map-hovered-listing-caption__image';
-  markerCaptionImage.src = safeText(markerDetails.imageUrl) || getMarkerImageUrl({}, markerDetails.title || 'listing');
-  markerCaptionImage.alt = safeText(markerDetails.imageAlt || markerDetails.title) || 'Listing';
-  markerCaptionImage.decoding = 'async';
-  markerCaptionImage.loading = 'lazy';
-  markerCaptionImageCard.appendChild(markerCaptionImage);
-  markerCaption.appendChild(markerCaptionTextCard);
-  markerCaption.appendChild(markerCaptionImageCard);
-  markerElement.appendChild(markerCaption);
-  return markerElement;
+  const d = details && typeof details === 'object' ? details : {};
+  const el = document.createElement('div');
+  el.className = 'map-listing-marker radar-container';
+  const pulse = document.createElement('span');
+  pulse.className = 'radar-pulse-ring faint-radar-rings';
+  el.appendChild(pulse);
+  if (isFavorite) el.classList.add('is-favorite');
+  const pin = document.createElement('span');
+  pin.className = 'map-listing-marker-pin';
+  pin.textContent = priceText;
+  el.appendChild(pin);
+  const caption = document.createElement('div');
+  caption.className = 'map-hovered-listing-caption animate-fadeIn animate-luxury-card';
+  const textCard = document.createElement('div');
+  textCard.className = 'map-hovered-listing-caption__text-card';
+  const titleEl = document.createElement('p'); titleEl.className = 'map-hovered-listing-caption__title'; titleEl.textContent = safeText(d.title) || 'Listing';
+  const priceEl = document.createElement('p'); priceEl.className = 'map-hovered-listing-caption__price'; priceEl.textContent = safeText(d.priceLine) || priceText;
+  const metaEl = document.createElement('p'); metaEl.className = 'map-hovered-listing-caption__meta'; metaEl.textContent = safeText(d.detailLine) || priceText;
+  textCard.appendChild(titleEl); textCard.appendChild(priceEl); textCard.appendChild(metaEl);
+  const imgCard = document.createElement('div'); imgCard.className = 'map-hovered-listing-caption__image-card';
+  const img = document.createElement('img'); img.className = 'map-hovered-listing-caption__image';
+  img.src = safeText(d.imageUrl) || getMarkerImageUrl({}, d.title || 'listing');
+  img.alt = safeText(d.imageAlt || d.title) || 'Listing'; img.decoding = 'async'; img.loading = 'lazy';
+  imgCard.appendChild(img);
+  caption.appendChild(textCard); caption.appendChild(imgCard);
+  el.appendChild(caption);
+  return el;
 };
 
 const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverrides = {}, options = {}) => {
@@ -452,114 +299,65 @@ const createPricePinIcon = (mapsApi, preset, priceText, scale = 1, styleOverride
   const horizontalPadding = Number(preset.horizontalPadding) || 10;
   const minWidth = Number(preset.minWidth) || 56;
   const fontSize = Number(preset.fontSize) || 12;
-  const resolvedStyleOverrides = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
-  const resolvedOptions = options && typeof options === 'object' ? options : {};
-  const showRadarPulse = Boolean(resolvedOptions.showRadarPulse);
-  const pulsePhase = Number(resolvedOptions.pulsePhase) || 0;
-  const fontWeight = Number(resolvedStyleOverrides.fontWeight) || Number(preset.fontWeight) || 700;
-  const pinColor = resolvedStyleOverrides.pinColor || preset.pinColor || '#2563eb';
-  const pinStrokeColor = resolvedStyleOverrides.pinStrokeColor || preset.pinStrokeColor || '#1d4ed8';
-  const strokeWidth = Number(resolvedStyleOverrides.strokeWidth) || 1;
-  const textColor = resolvedStyleOverrides.textColor || preset.textColor || '#ffffff';
-  const safePriceText = escapeHtml(priceText);
-
-  const estimatedTextWidth = Math.ceil(safePriceText.length * fontSize * 0.62);
+  const so = styleOverrides && typeof styleOverrides === 'object' ? styleOverrides : {};
+  const opts = options && typeof options === 'object' ? options : {};
+  const showRadarPulse = Boolean(opts.showRadarPulse);
+  const pulsePhase = Number(opts.pulsePhase) || 0;
+  const fontWeight = Number(so.fontWeight) || Number(preset.fontWeight) || 700;
+  const pinColor = so.pinColor || preset.pinColor || '#2563eb';
+  const pinStrokeColor = so.pinStrokeColor || preset.pinStrokeColor || '#1d4ed8';
+  const strokeWidth = Number(so.strokeWidth) || 1;
+  const textColor = so.textColor || preset.textColor || '#ffffff';
+  const safe = escapeHtml(priceText);
+  const estimatedTextWidth = Math.ceil(safe.length * fontSize * 0.62);
   const bubbleWidth = Math.max(minWidth, estimatedTextWidth + (horizontalPadding * 2));
   const totalHeight = pinHeight + pointerHeight;
   const radius = Math.round(pinHeight / 2);
   const centerX = bubbleWidth / 2;
   const pointerHalfWidth = Math.max(5, Math.round(bubbleWidth * 0.12));
   const textY = Math.round((pinHeight / 2) + (fontSize * 0.36));
-  const halfStroke = strokeWidth / 2;
-  const leftX = halfStroke;
-  const rightX = bubbleWidth - halfStroke;
-  const topY = halfStroke;
-  const bubbleBottomY = pinHeight - halfStroke;
-  const tipY = totalHeight - halfStroke;
-  const safeRadius = Math.max(1, radius - halfStroke);
-  const pointerLeftX = centerX - pointerHalfWidth;
-  const pointerRightX = centerX + pointerHalfWidth;
+  const hs = strokeWidth / 2;
+  const leftX = hs; const rightX = bubbleWidth - hs; const topY = hs;
+  const bubbleBottomY = pinHeight - hs; const tipY = totalHeight - hs;
+  const safeRadius = Math.max(1, radius - hs);
+  const pLeftX = centerX - pointerHalfWidth; const pRightX = centerX + pointerHalfWidth;
   const radarPadding = showRadarPulse ? 66 : 0;
   const iconWidth = bubbleWidth + (radarPadding * 2);
   const iconHeight = totalHeight + (radarPadding * 2);
-  const radarCenterX = centerX + radarPadding;
-  const radarCenterY = Math.round((pinHeight / 2) + radarPadding);
+  const rCX = centerX + radarPadding; const rCY = Math.round((pinHeight / 2) + radarPadding);
   const radarRadii = pulsePhase % 2 === 0 ? [22, 38, 54] : [26, 44, 62];
   const radarMarkup = showRadarPulse
-    ? radarRadii.map((radius) =>
-      `<circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgba(15, 23, 42, 0.38)" stroke-opacity="1" stroke-width="6" /><circle cx="${radarCenterX}" cy="${radarCenterY}" r="${radius}" fill="none" stroke="rgb(255, 255, 255)" stroke-opacity="1" stroke-width="4" />`
-    ).join('')
+    ? radarRadii.map((r) => `<circle cx="${rCX}" cy="${rCY}" r="${r}" fill="none" stroke="rgba(15,23,42,0.38)" stroke-width="6"/><circle cx="${rCX}" cy="${rCY}" r="${r}" fill="none" stroke="rgb(255,255,255)" stroke-width="4"/>`).join('')
     : '';
-  const pinPath = [
-    `M${leftX + safeRadius} ${topY}`,
-    `H${rightX - safeRadius}`,
-    `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`,
-    `V${bubbleBottomY - safeRadius}`,
-    `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`,
-    `Q${pointerRightX} ${bubbleBottomY} ${centerX} ${tipY}`,
-    `Q${pointerLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`,
-    `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`,
-    `V${topY + safeRadius}`,
-    `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`,
-    'Z',
-  ].join(' ');
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
-    ${radarMarkup}
-    <g transform="translate(${radarPadding}, ${radarPadding})">
-      <path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
-      <text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safePriceText}</text>
-    </g>
-  </svg>`;
-
+  const pinPath = [`M${leftX + safeRadius} ${topY}`, `H${rightX - safeRadius}`, `Q${rightX} ${topY} ${rightX} ${topY + safeRadius}`, `V${bubbleBottomY - safeRadius}`, `Q${rightX} ${bubbleBottomY} ${rightX - safeRadius} ${bubbleBottomY}`, `Q${pRightX} ${bubbleBottomY} ${centerX} ${tipY}`, `Q${pLeftX} ${bubbleBottomY} ${leftX + safeRadius} ${bubbleBottomY}`, `Q${leftX} ${bubbleBottomY} ${leftX} ${bubbleBottomY - safeRadius}`, `V${topY + safeRadius}`, `Q${leftX} ${topY} ${leftX + safeRadius} ${topY}`, 'Z'].join(' ');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">${radarMarkup}<g transform="translate(${radarPadding},${radarPadding})"><path d="${pinPath}" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="${strokeWidth}" stroke-linejoin="round"/><text x="${centerX}" y="${textY}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${fontSize}" font-weight="${fontWeight}" fill="${textColor}">${safe}</text></g></svg>`;
   const safeScale = Number(scale) > 0 ? Number(scale) : 1;
-  const scaledWidth = iconWidth * safeScale;
-  const scaledHeight = iconHeight * safeScale;
-
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new mapsApi.Size(scaledWidth, scaledHeight),
+    scaledSize: new mapsApi.Size(iconWidth * safeScale, iconHeight * safeScale),
     anchor: new mapsApi.Point((centerX + radarPadding) * safeScale, (totalHeight + radarPadding) * safeScale),
   };
 };
 
 const createHousePinIcon = (mapsApi, preset) => {
-  const iconWidth = Number(preset.iconWidth) || 19;
-  const iconHeight = Number(preset.iconHeight) || 27;
-  const pinColor = preset.pinColor || '#0e8a88';
-  const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
+  const iW = Number(preset.iconWidth) || 19; const iH = Number(preset.iconHeight) || 27;
+  const pinColor = preset.pinColor || '#0e8a88'; const pinStrokeColor = preset.pinStrokeColor || '#0f766e';
   const homeStrokeColor = preset.homeStrokeColor || '#ffffff';
-  const centerX = iconWidth / 2;
-  const roofTop = 1;
-  const eaveY = Math.round(iconHeight * 0.4);
-  const wallLeft = Math.round(iconWidth * 0.16);
-  const wallRight = Math.round(iconWidth * 0.84);
-  const doorW = Math.round(iconWidth * 0.32);
-  const doorH = Math.round(iconHeight * 0.3);
-  const doorX = Math.round(centerX - doorW / 2);
-  const doorY = iconHeight - doorH;
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iconWidth}" height="${iconHeight}" viewBox="0 0 ${iconWidth} ${iconHeight}" overflow="visible">
-    <path d="M${centerX} ${roofTop} L0 ${eaveY} H${wallLeft} V${iconHeight} H${wallRight} V${eaveY} H${iconWidth} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>
-    <rect x="${doorX}" y="${doorY}" width="${doorW}" height="${doorH}" fill="${homeStrokeColor}" rx="0.5"/>
-  </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new mapsApi.Size(iconWidth, iconHeight),
-    anchor: new mapsApi.Point(centerX, iconHeight),
-  };
+  const cX = iW / 2; const roofTop = 1; const eaveY = Math.round(iH * 0.4);
+  const wallLeft = Math.round(iW * 0.16); const wallRight = Math.round(iW * 0.84);
+  const doorW = Math.round(iW * 0.32); const doorH = Math.round(iH * 0.3);
+  const doorX = Math.round(cX - doorW / 2); const doorY = iH - doorH;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${iW}" height="${iH}" viewBox="0 0 ${iW} ${iH}" overflow="visible"><path d="M${cX} ${roofTop} L0 ${eaveY} H${wallLeft} V${iH} H${wallRight} V${eaveY} H${iW} Z" fill="${pinColor}" stroke="${pinStrokeColor}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/><rect x="${doorX}" y="${doorY}" width="${doorW}" height="${doorH}" fill="${homeStrokeColor}" rx="0.5"/></svg>`;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, scaledSize: new mapsApi.Size(iW, iH), anchor: new mapsApi.Point(cX, iH) };
 };
 
 const isCoarsePointerDevice = () => {
   if (typeof window === 'undefined') return false;
-  const supportsMatchMedia = typeof window.matchMedia === 'function';
-  const hasFinePointer = supportsMatchMedia && window.matchMedia('(any-pointer: fine)').matches;
-  const primaryCoarsePointer = supportsMatchMedia && window.matchMedia('(pointer: coarse)').matches;
-  if (hasFinePointer) return false;
-  if (primaryCoarsePointer) return true;
-  const touchPoints = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints) : 0;
-  const hasHoverPointer = supportsMatchMedia && window.matchMedia('(hover: hover)').matches;
-  return touchPoints > 0 && !hasHoverPointer;
+  const mm = typeof window.matchMedia === 'function';
+  if (mm && window.matchMedia('(any-pointer: fine)').matches) return false;
+  if (mm && window.matchMedia('(pointer: coarse)').matches) return true;
+  const tp = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints) : 0;
+  return tp > 0 && !(mm && window.matchMedia('(hover: hover)').matches);
 };
 
 const GoogleListingsMap = ({
@@ -571,1169 +369,529 @@ const GoogleListingsMap = ({
   onDrawModeChange,
   isVisible = true,
   hoveredListingId = null,
+  isRoommatesMode = false,
 }) => {
   const { t, locale, language } = useLanguage();
   const mapLanguage = language === 'he' ? 'he' : 'en';
   const apiKey = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_API_KEY');
   const configuredMapId = getPublicConfigValue('REACT_APP_GOOGLE_MAPS_MAP_ID');
   const canUseAdvancedMarkers = Boolean(configuredMapId);
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const geocoderRef = useRef(null);
-  const infoWindowRef = useRef(null);
-  const markerEntriesRef = useRef([]);
-  const activeMapHoverEntryRef = useRef(null);
-  const markerHydrationInProgressRef = useRef(false);
-  const expectedMarkerCountRef = useRef(0);
-  const hasInitializedViewportRef = useRef(false);
-  const geocodeCacheRef = useRef(readGeocodeCache());
-  const drawListenersRef = useRef([]);
-  const activeCircleRef = useRef(null);
-  const draftCircleRef = useRef(null);
-  const hoveredListingIdRef = useRef(hoveredListingId);
-  const drawStartRef = useRef(null);
-  const lastDraftPointerRef = useRef(null);
-  const lastCompletionTimestampRef = useRef(0);
-  const drawToggleSignalRef = useRef(drawModeToggleSignal);
+  const mapContainerRef = useRef(null); const mapRef = useRef(null);
+  const geocoderRef = useRef(null); const infoWindowRef = useRef(null);
+  const markerEntriesRef = useRef([]); const activeMapHoverEntryRef = useRef(null);
+  const markerHydrationInProgressRef = useRef(false); const expectedMarkerCountRef = useRef(0);
+  const hasInitializedViewportRef = useRef(false); const geocodeCacheRef = useRef(readGeocodeCache());
+  const drawListenersRef = useRef([]); const activeCircleRef = useRef(null);
+  const draftCircleRef = useRef(null); const hoveredListingIdRef = useRef(hoveredListingId);
+  const drawStartRef = useRef(null); const lastDraftPointerRef = useRef(null);
+  const lastCompletionTimestampRef = useRef(0); const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
-  const [mapError, setMapError] = useState('');
-  const [mapReady, setMapReady] = useState(false);
-  const [markerCount, setMarkerCount] = useState(0);
-  const [totalMarkerCount, setTotalMarkerCount] = useState(0);
-  const [drawMode, setDrawMode] = useState(false);
-  const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
+  const [mapError, setMapError] = useState(''); const [mapReady, setMapReady] = useState(false);
+  const [markerCount, setMarkerCount] = useState(0); const [totalMarkerCount, setTotalMarkerCount] = useState(0);
+  const [drawMode, setDrawMode] = useState(false); const [circleRadiusMeters, setCircleRadiusMeters] = useState(0);
   const [hoverPulsePhase, setHoverPulsePhase] = useState(0);
-  const markerPresetKey = DEFAULT_MARKER_PRESET_KEY;
   const [isMobileOverlay, setIsMobileOverlay] = useState(false);
-  const markerPreset = getMarkerStylePreset(markerPresetKey);
+  const markerPreset = getMarkerStylePreset(DEFAULT_MARKER_PRESET_KEY);
   const coarsePointerDevice = isCoarsePointerDevice();
   const touchLikeUiMode = isMobileOverlay || coarsePointerDevice;
-  const overlayCardStyle = useMemo(
-    () => ({
-      border: '1px solid rgba(30, 41, 59, 0.9)',
-      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-    }),
-    []
-  );
-  const favoritePropertyIdSet = useMemo(
-    () => new Set(favoritePropertyIds.map((id) => String(id))),
-    [favoritePropertyIds]
-  );
+  const overlayCardStyle = useMemo(() => ({ border: '1px solid rgba(30,41,59,0.9)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)' }), []);
+  const favoritePropertyIdSet = useMemo(() => new Set(favoritePropertyIds.map((id) => String(id))), [favoritePropertyIds]);
+
+  useEffect(() => { hoveredListingIdRef.current = hoveredListingId == null ? null : String(hoveredListingId); }, [hoveredListingId]);
   useEffect(() => {
-    hoveredListingIdRef.current = hoveredListingId == null ? null : String(hoveredListingId);
-  }, [hoveredListingId]);
-  useEffect(() => {
-    if (hoveredListingId == null || typeof window === 'undefined') {
-      setHoverPulsePhase(0);
-      return undefined;
-    }
-    const intervalId = window.setInterval(() => {
-      setHoverPulsePhase((phase) => (phase + 1) % 2);
-    }, 2200);
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    if (hoveredListingId == null || typeof window === 'undefined') { setHoverPulsePhase(0); return undefined; }
+    const id = window.setInterval(() => setHoverPulsePhase((p) => (p + 1) % 2), 2200);
+    return () => window.clearInterval(id);
   }, [hoveredListingId]);
 
   const applyMarkerHoverVisualState = (entry, pulsePhase = hoverPulsePhase) => {
     if (!entry || !entry.propertyId) return;
-    const isHoveredFromList = hoveredListingIdRef.current === entry.propertyId;
-    const isHoveredFromMap = Boolean(entry.isMapHovered);
-    const isHovered = isHoveredFromList || isHoveredFromMap;
-    const elevatedZIndex = isHoveredFromMap ? 120 : 100;
-
+    const fromList = hoveredListingIdRef.current === entry.propertyId;
+    const fromMap = Boolean(entry.isMapHovered);
+    const hovered = fromList || fromMap;
+    const elevZ = fromMap ? 120 : 100;
     if (entry.markerElement) {
-      entry.markerElement.classList.toggle('is-list-hovered', isHoveredFromList);
-      entry.markerElement.classList.toggle('is-map-hovered', isHoveredFromMap);
-      entry.markerElement.classList.toggle('is-hovered', isHovered);
+      entry.markerElement.classList.toggle('is-list-hovered', fromList);
+      entry.markerElement.classList.toggle('is-map-hovered', fromMap);
+      entry.markerElement.classList.toggle('is-hovered', hovered);
     }
-
-    if (entry.isAdvancedMarker) {
-      entry.marker.zIndex = isHovered ? elevatedZIndex : 2;
-      return;
-    }
-
-    if (typeof entry.marker.setZIndex === 'function') {
-      entry.marker.setZIndex(isHovered ? elevatedZIndex : 2);
-    }
-
+    if (entry.isAdvancedMarker) { entry.marker.zIndex = hovered ? elevZ : 2; return; }
+    if (typeof entry.marker.setZIndex === 'function') entry.marker.setZIndex(hovered ? elevZ : 2);
     if (!entry.markerIcon || typeof entry.marker.setIcon !== 'function') return;
-
     if (entry.frameMarker) {
-      if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
-        const iconIndex = isHoveredFromList && !isHoveredFromMap
-          ? pulsePhase % entry.markerHoverIcons.length
-          : 0;
-        entry.frameMarker.setIcon(entry.markerHoverIcons[iconIndex] || entry.markerHoverIcon);
-        entry.frameMarker.setZIndex(elevatedZIndex + 1);
-        entry.frameMarker.setMap(mapRef.current);
-      } else {
-        entry.frameMarker.setMap(null);
-      }
-      entry.marker.setIcon(entry.markerIcon);
-      return;
+      if (hovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+        const idx = fromList && !fromMap ? pulsePhase % entry.markerHoverIcons.length : 0;
+        entry.frameMarker.setIcon(entry.markerHoverIcons[idx] || entry.markerHoverIcon);
+        entry.frameMarker.setZIndex(elevZ + 1); entry.frameMarker.setMap(mapRef.current);
+      } else { entry.frameMarker.setMap(null); }
+      entry.marker.setIcon(entry.markerIcon); return;
     }
-
-    if (isHovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
-      const iconIndex = isHoveredFromList && !isHoveredFromMap
-        ? pulsePhase % entry.markerHoverIcons.length
-        : 0;
-      const hoverIcon = entry.markerHoverIcons[iconIndex];
-      entry.marker.setIcon(hoverIcon || entry.markerHoverIcon || entry.markerIcon);
-      return;
+    if (hovered && Array.isArray(entry.markerHoverIcons) && entry.markerHoverIcons.length > 0) {
+      const idx = fromList && !fromMap ? pulsePhase % entry.markerHoverIcons.length : 0;
+      entry.marker.setIcon(entry.markerHoverIcons[idx] || entry.markerHoverIcon || entry.markerIcon); return;
     }
-
-    if (isHovered && entry.markerHoverIcon) {
-      entry.marker.setIcon(entry.markerHoverIcon);
-      return;
-    }
-
+    if (hovered && entry.markerHoverIcon) { entry.marker.setIcon(entry.markerHoverIcon); return; }
     entry.marker.setIcon(entry.markerIcon);
   };
 
-  const setActiveMapHoverEntry = (nextEntry) => {
-    if (activeMapHoverEntryRef.current && activeMapHoverEntryRef.current !== nextEntry) {
+  const setActiveMapHoverEntry = (next) => {
+    if (activeMapHoverEntryRef.current && activeMapHoverEntryRef.current !== next) {
       activeMapHoverEntryRef.current.isMapHovered = false;
       applyMarkerHoverVisualState(activeMapHoverEntryRef.current);
     }
-
-    activeMapHoverEntryRef.current = nextEntry || null;
-    if (nextEntry) {
-      nextEntry.isMapHovered = true;
-      applyMarkerHoverVisualState(nextEntry);
-    }
+    activeMapHoverEntryRef.current = next || null;
+    if (next) { next.isMapHovered = true; applyMarkerHoverVisualState(next); }
   };
 
-  const emitCircleSelection = (nextSelection) => {
-    if (typeof onCircleSelectionChange === 'function') {
-      onCircleSelectionChange(nextSelection);
-    }
-  };
+  const emitCircleSelection = (sel) => { if (typeof onCircleSelectionChange === 'function') onCircleSelectionChange(sel); };
 
   const clearDrawListeners = () => {
-    drawListenersRef.current.forEach((listener) => {
-      if (!listener) return;
-      if (typeof listener.remove === 'function') listener.remove();
-      else if (window.google && window.google.maps && window.google.maps.event) {
-        window.google.maps.event.removeListener(listener);
-      }
+    drawListenersRef.current.forEach((l) => {
+      if (!l) return;
+      if (typeof l.remove === 'function') l.remove();
+      else if (window.google && window.google.maps && window.google.maps.event) window.google.maps.event.removeListener(l);
     });
     drawListenersRef.current = [];
   };
 
-  const getMinimumCircleRadius = (touchLikeMode = touchLikeUiMode) => (
-    touchLikeMode ? TOUCH_MIN_CIRCLE_RADIUS_METERS : MIN_CIRCLE_RADIUS_METERS
-  );
+  const getMinimumCircleRadius = (touchLike = touchLikeUiMode) => (touchLike ? TOUCH_MIN_CIRCLE_RADIUS_METERS : MIN_CIRCLE_RADIUS_METERS);
 
   const removeDraftCircle = () => {
-    if (draftCircleRef.current) {
-      draftCircleRef.current.setMap(null);
-      draftCircleRef.current = null;
-    }
-    drawStartRef.current = null;
-    lastDraftPointerRef.current = null;
+    if (draftCircleRef.current) { draftCircleRef.current.setMap(null); draftCircleRef.current = null; }
+    drawStartRef.current = null; lastDraftPointerRef.current = null;
   };
 
   const applyCircleFilter = () => {
-    const mapInstance = mapRef.current;
-    if (!mapInstance) return;
-    const activeCircle = activeCircleRef.current;
-    const center = activeCircle && activeCircle.getCenter ? activeCircle.getCenter() : null;
-    const radiusMeters = activeCircle && typeof activeCircle.getRadius === 'function'
-      ? Number(activeCircle.getRadius())
-      : 0;
-    const hasAreaFilter = Boolean(activeCircle && center && radiusMeters > 0);
-    const hydratedMarkerCount = markerEntriesRef.current.length;
-    const shouldDeferSelection = hasAreaFilter
-      && markerHydrationInProgressRef.current
-      && expectedMarkerCountRef.current > 0
-      && hydratedMarkerCount < expectedMarkerCountRef.current;
-    const effectiveAreaFilter = hasAreaFilter && !shouldDeferSelection;
-    const centerPoint = effectiveAreaFilter ? { lat: center.lat(), lng: center.lng() } : null;
-    const selectedPropertyIds = [];
-    let visibleMarkers = 0;
-
-    markerEntriesRef.current.forEach((entry) => {
-      const isVisible = !effectiveAreaFilter
-        || getDistanceMeters(entry.coords, centerPoint) <= radiusMeters;
-      if (entry.isAdvancedMarker) {
-        entry.marker.map = isVisible ? mapInstance : null;
-      } else if (typeof entry.marker.setVisible === 'function') {
-        entry.marker.setVisible(isVisible);
-      }
-      if (entry.frameMarker) entry.frameMarker.setVisible(isVisible);
-      if (isVisible) {
-        visibleMarkers += 1;
-        selectedPropertyIds.push(entry.propertyId);
-      }
+    const map = mapRef.current; if (!map) return;
+    const circ = activeCircleRef.current;
+    const center = circ && circ.getCenter ? circ.getCenter() : null;
+    const radiusM = circ && typeof circ.getRadius === 'function' ? Number(circ.getRadius()) : 0;
+    const hasArea = Boolean(circ && center && radiusM > 0);
+    const deferred = hasArea && markerHydrationInProgressRef.current && expectedMarkerCountRef.current > 0 && markerEntriesRef.current.length < expectedMarkerCountRef.current;
+    const effective = hasArea && !deferred;
+    const centerPt = effective ? { lat: center.lat(), lng: center.lng() } : null;
+    const ids = []; let visible = 0;
+    markerEntriesRef.current.forEach((e) => {
+      const show = !effective || getDistanceMeters(e.coords, centerPt) <= radiusM;
+      if (e.isAdvancedMarker) e.marker.map = show ? map : null;
+      else if (typeof e.marker.setVisible === 'function') e.marker.setVisible(show);
+      if (e.frameMarker) e.frameMarker.setVisible(show);
+      if (show) { visible += 1; ids.push(e.propertyId); }
     });
-
-    setMarkerCount(visibleMarkers);
-    setTotalMarkerCount(markerEntriesRef.current.length);
-    setCircleRadiusMeters(effectiveAreaFilter ? radiusMeters : 0);
-    emitCircleSelection({
-      active: effectiveAreaFilter,
-      propertyIds: selectedPropertyIds,
-      radiusMeters: effectiveAreaFilter ? radiusMeters : 0,
-      center: centerPoint,
-    });
+    setMarkerCount(visible); setTotalMarkerCount(markerEntriesRef.current.length);
+    setCircleRadiusMeters(effective ? radiusM : 0);
+    emitCircleSelection({ active: effective, propertyIds: ids, radiusMeters: effective ? radiusM : 0, center: centerPt });
   };
 
   const clearCircleFilter = () => {
     removeDraftCircle();
     if (activeCircleRef.current) {
-      if (window.google && window.google.maps && window.google.maps.event) {
-        window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
-      }
-      activeCircleRef.current.setMap(null);
-      activeCircleRef.current = null;
+      if (window.google && window.google.maps && window.google.maps.event) window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
+      activeCircleRef.current.setMap(null); activeCircleRef.current = null;
     }
     setDrawMode(false);
-    if (mapRef.current) {
-      mapRef.current.setOptions({
-        draggableCursor: null,
-        draggable: true,
-        gestureHandling: 'greedy',
-        disableDoubleClickZoom: false,
-      });
-    }
+    if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false });
     applyCircleFilter();
   };
 
-  const setActiveCircleInteractive = (interactive, touchLikeMode = touchLikeUiMode) => {
-    const activeCircle = activeCircleRef.current;
-    if (!activeCircle || typeof activeCircle.setOptions !== 'function') return;
-    activeCircle.setOptions({
-      clickable: interactive,
-      draggable: interactive,
-      editable: interactive && !touchLikeMode,
-    });
+  const setActiveCircleInteractive = (interactive, touchLike = touchLikeUiMode) => {
+    const circ = activeCircleRef.current;
+    if (!circ || typeof circ.setOptions !== 'function') return;
+    circ.setOptions({ clickable: interactive, draggable: interactive, editable: interactive && !touchLike });
   };
 
-  const propertiesWithAddress = useMemo(() => properties
-    .map((property) => ({
-      property,
-      propertyId: getPropertyId(property),
-      addressQuery: buildAddressQuery(property.address, language),
-    }))
-    .filter((item) => item.property && item.propertyId && item.addressQuery), [properties, language]);
-
-  useEffect(() => {
-    if (typeof onDrawModeChange === 'function') {
-      onDrawModeChange(drawMode);
+  // Roommate listings already have lat/lng from the wizard geocoding step —
+  // skip live geocoding for them. Rent/Sale properties geocode from address.
+  const propertiesWithAddress = useMemo(() => {
+    if (isRoommatesMode) {
+      return properties.map((property) => {
+        const lat = Number(property?.lat);
+        const lng = Number(property?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return { property, propertyId: getPropertyId(property), coords: { lat, lng } };
+      }).filter((item) => item && item.propertyId);
     }
-  }, [drawMode, onDrawModeChange]);
+    return properties.map((property) => ({
+      property, propertyId: getPropertyId(property), addressQuery: buildAddressQuery(property.address, language),
+    })).filter((item) => item.property && item.propertyId && item.addressQuery);
+  }, [properties, language, isRoommatesMode]);
 
+  useEffect(() => { if (typeof onDrawModeChange === 'function') onDrawModeChange(drawMode); }, [drawMode, onDrawModeChange]);
   useEffect(() => {
     if (drawModeToggleSignal === drawToggleSignalRef.current) return;
     drawToggleSignalRef.current = drawModeToggleSignal;
-    setDrawMode((value) => !value);
+    setDrawMode((v) => !v);
   }, [drawModeToggleSignal]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
-
-    const mediaQuery = window.matchMedia(MOBILE_OVERLAY_QUERY);
-    const syncOverlayMode = (eventLike) => {
-      const matches = Boolean(eventLike && eventLike.matches);
-      setIsMobileOverlay(matches);
-    };
-
-    syncOverlayMode(mediaQuery);
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', syncOverlayMode);
-      return () => mediaQuery.removeEventListener('change', syncOverlayMode);
-    }
-    mediaQuery.addListener(syncOverlayMode);
-    return () => mediaQuery.removeListener(syncOverlayMode);
+    const mq = window.matchMedia(MOBILE_OVERLAY_QUERY);
+    const sync = (e) => setIsMobileOverlay(Boolean(e && e.matches));
+    sync(mq);
+    if (typeof mq.addEventListener === 'function') { mq.addEventListener('change', sync); return () => mq.removeEventListener('change', sync); }
+    mq.addListener(sync); return () => mq.removeListener(sync);
   }, []);
 
-  useEffect(() => {
-    emitCircleSelection({
-      active: false,
-      propertyIds: [],
-      radiusMeters: 0,
-      center: null,
-    });
-  }, []);
+  useEffect(() => { emitCircleSelection({ active: false, propertyIds: [], radiusMeters: 0, center: null }); }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const handleMapAuthFailure = () => {
-      setMapReady(false);
-      setMapError(t('map.unableToLoadMap'));
-    };
-    window.addEventListener(MAP_AUTH_FAILURE_EVENT, handleMapAuthFailure);
-    return () => {
-      window.removeEventListener(MAP_AUTH_FAILURE_EVENT, handleMapAuthFailure);
-    };
+    const handle = () => { setMapReady(false); setMapError(t('map.unableToLoadMap')); };
+    window.addEventListener(MAP_AUTH_FAILURE_EVENT, handle);
+    return () => window.removeEventListener(MAP_AUTH_FAILURE_EVENT, handle);
   }, [t]);
 
   useEffect(() => {
     if (!apiKey) return;
     let cancelled = false;
-
-    loadGoogleMaps(apiKey, mapLanguage)
-      .then((mapsApi) => {
-        if (cancelled || !mapsApi || !mapContainerRef.current) return;
-        if (!mapRef.current) {
-          mapRef.current = new mapsApi.Map(mapContainerRef.current, {
-            center: DEFAULT_CENTER,
-            zoom: 10,
-            backgroundColor: '#f3efe7',
-            styles: ASPIRATIONAL_MUTED_MAP_STYLE,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            keyboardShortcuts: true,
-            gestureHandling: 'greedy',
-            cameraControl: false,
-            ...(canUseAdvancedMarkers ? { mapId: configuredMapId } : {}),
-          });
-          geocoderRef.current = new mapsApi.Geocoder();
-          infoWindowRef.current = new mapsApi.InfoWindow();
-        }
-        setMapError('');
-        setMapReady(true);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setMapReady(false);
-        setMapError(err.message || t('map.unableToLoadMap'));
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    loadGoogleMaps(apiKey, mapLanguage).then((mapsApi) => {
+      if (cancelled || !mapsApi || !mapContainerRef.current) return;
+      if (!mapRef.current) {
+        mapRef.current = new mapsApi.Map(mapContainerRef.current, {
+          center: DEFAULT_CENTER, zoom: 10, backgroundColor: '#f3efe7', styles: ASPIRATIONAL_MUTED_MAP_STYLE,
+          mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+          keyboardShortcuts: true, gestureHandling: 'greedy', cameraControl: false,
+          ...(canUseAdvancedMarkers ? { mapId: configuredMapId } : {}),
+        });
+        geocoderRef.current = new mapsApi.Geocoder();
+        infoWindowRef.current = new mapsApi.InfoWindow();
+      }
+      setMapError(''); setMapReady(true);
+    }).catch((err) => {
+      if (cancelled) return;
+      setMapReady(false); setMapError(err.message || t('map.unableToLoadMap'));
+    });
+    return () => { cancelled = true; };
   }, [apiKey, mapLanguage, t]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !geocoderRef.current || !window.google || !window.google.maps) return undefined;
-
     let cancelled = false;
-
     activeMapHoverEntryRef.current = null;
-    markerEntriesRef.current.forEach((entry) => {
-      if (typeof entry.cleanupHoverListeners === 'function') {
-        entry.cleanupHoverListeners();
-      }
-      if (entry.isAdvancedMarker) {
-        entry.marker.map = null;
-      } else if (typeof entry.marker.setMap === 'function') {
-        entry.marker.setMap(null);
-      }
-      if (entry.frameMarker) entry.frameMarker.setMap(null);
+    markerEntriesRef.current.forEach((e) => {
+      if (typeof e.cleanupHoverListeners === 'function') e.cleanupHoverListeners();
+      if (e.isAdvancedMarker) e.marker.map = null;
+      else if (typeof e.marker.setMap === 'function') e.marker.setMap(null);
+      if (e.frameMarker) e.frameMarker.setMap(null);
     });
-    markerEntriesRef.current = [];
-    setMarkerCount(0);
-    setTotalMarkerCount(0);
-
-    const mapsApi = window.google.maps;
-    const map = mapRef.current;
-    const geocoder = geocoderRef.current;
-    const infoWindow = infoWindowRef.current;
-    const markerInputs = propertiesWithAddress.slice(0, MAX_MARKERS);
-    markerHydrationInProgressRef.current = true;
-    expectedMarkerCountRef.current = markerInputs.length;
+    markerEntriesRef.current = []; setMarkerCount(0); setTotalMarkerCount(0);
+    const mapsApi = window.google.maps; const map = mapRef.current;
+    const geocoder = geocoderRef.current; const infoWindow = infoWindowRef.current;
+    const inputs = propertiesWithAddress.slice(0, MAX_MARKERS);
+    markerHydrationInProgressRef.current = true; expectedMarkerCountRef.current = inputs.length;
     applyCircleFilter();
 
     const updateMarkers = async () => {
-      const bounds = new mapsApi.LatLngBounds();
-      let placed = 0;
-      let cacheChanged = false;
+      const bounds = new mapsApi.LatLngBounds(); let placed = 0; let cacheChanged = false;
       let AdvancedMarkerElementCtor = null;
       if (canUseAdvancedMarkers && typeof mapsApi.importLibrary === 'function') {
-        try {
-          const markerLibrary = await mapsApi.importLibrary('marker');
-          if (markerLibrary && markerLibrary.AdvancedMarkerElement) {
-            AdvancedMarkerElementCtor = markerLibrary.AdvancedMarkerElement;
-          }
-        } catch (_err) {
-          AdvancedMarkerElementCtor = null;
-        }
+        try { const lib = await mapsApi.importLibrary('marker'); if (lib && lib.AdvancedMarkerElement) AdvancedMarkerElementCtor = lib.AdvancedMarkerElement; } catch (_e) {}
       }
 
-      for (const item of markerInputs) {
-        if (cancelled) {
-          markerHydrationInProgressRef.current = false;
-          return;
-        }
-        const cacheKey = item.addressQuery.toLowerCase();
-        let coords = geocodeCacheRef.current[cacheKey];
+      for (const item of inputs) {
+        if (cancelled) { markerHydrationInProgressRef.current = false; return; }
 
-        if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') {
-          coords = await geocodeAddress(geocoder, item.addressQuery);
-          if (!coords) continue;
-          geocodeCacheRef.current[cacheKey] = coords;
-          cacheChanged = true;
-          // Avoid query bursts when many listings are shown.
-          await new Promise((resolve) => setTimeout(resolve, 80));
+        // Roommate pins arrive with coords pre-attached; Rent/Sale need geocoding.
+        let coords = item.coords || null;
+        if (!coords) {
+          const cacheKey = item.addressQuery.toLowerCase();
+          coords = geocodeCacheRef.current[cacheKey];
+          if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') {
+            coords = await geocodeAddress(geocoder, item.addressQuery);
+            if (!coords) continue;
+            geocodeCacheRef.current[cacheKey] = coords; cacheChanged = true;
+            await new Promise((res) => setTimeout(res, 80));
+          }
         }
+        if (!coords) continue;
 
         const propertyId = String(item.propertyId);
-        const isFavoriteProperty = favoritePropertyIdSet.has(propertyId);
-        const markerStyleOverrides = isFavoriteProperty ? FAVORITE_PRICE_PIN_STYLE : {};
-        const markerPrice = formatMarkerPrice(item.property.price, locale, t('map.priceUnavailable'));
-        const markerListingTitle = safeText(item.property.title) || t('map.propertyListing');
-        const markerDetailLine = buildMarkerDetailLine(item.property, item.addressQuery);
-        const markerImageUrl = getMarkerImageUrl(item.property, item.propertyId);
+        const isFav = favoritePropertyIdSet.has(propertyId);
+        const markerStyleOverrides = isFav ? FAVORITE_PRICE_PIN_STYLE : (isRoommatesMode ? ROOMMATE_PRICE_PIN_STYLE : {});
+        const priceValue = isRoommatesMode ? (item.property.rentShare ?? item.property.price) : item.property.price;
+        const markerPrice = formatMarkerPrice(priceValue, locale, t('map.priceUnavailable'));
+        const markerTitle = getMarkerTitle(item.property, isRoommatesMode) || t('map.propertyListing');
+        const detailLine = buildMarkerDetailLine(item.property, item.addressQuery || '');
+        const imageUrl = getMarkerImageUrl(item.property, item.propertyId);
         const isHousePinPreset = markerPreset.markerMode === 'house';
         const isHoveredFromList = hoveredListingIdRef.current === propertyId;
-        const canUseAdvancedMarker = canUseAdvancedMarkers && Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
-        const markerIcon = isHousePinPreset
-          ? createHousePinIcon(mapsApi, markerPreset)
-          : createPricePinIcon(
-            mapsApi,
-            markerPreset,
-            markerPrice,
-            1,
-            markerStyleOverrides
-          );
-        const markerHoverIcons = !isHousePinPreset
-          ? [
-            createPricePinIcon(
-              mapsApi,
-              markerPreset,
-              markerPrice,
-              DESKTOP_MARKER_HOVER_SCALE,
-              markerStyleOverrides,
-              { showRadarPulse: true, pulsePhase: 0 }
-            ),
-            createPricePinIcon(
-              mapsApi,
-              markerPreset,
-              markerPrice,
-              DESKTOP_MARKER_HOVER_SCALE,
-              markerStyleOverrides,
-              { showRadarPulse: true, pulsePhase: 1 }
-            ),
-          ]
-          : [];
+        const useAdvanced = canUseAdvancedMarkers && Boolean(AdvancedMarkerElementCtor) && !isHousePinPreset;
+        const markerIcon = isHousePinPreset ? createHousePinIcon(mapsApi, markerPreset) : createPricePinIcon(mapsApi, markerPreset, markerPrice, 1, markerStyleOverrides);
+        const markerHoverIcons = !isHousePinPreset ? [
+          createPricePinIcon(mapsApi, markerPreset, markerPrice, DESKTOP_MARKER_HOVER_SCALE, markerStyleOverrides, { showRadarPulse: true, pulsePhase: 0 }),
+          createPricePinIcon(mapsApi, markerPreset, markerPrice, DESKTOP_MARKER_HOVER_SCALE, markerStyleOverrides, { showRadarPulse: true, pulsePhase: 1 }),
+        ] : [];
         const markerHoverIcon = markerHoverIcons[0] || null;
-        const markerElement = canUseAdvancedMarker
-          ? createListingMarkerElement(
-            markerPrice,
-            {
-              title: markerListingTitle,
-              priceLine: markerPrice,
-              detailLine: markerDetailLine,
-              imageUrl: markerImageUrl,
-              imageAlt: markerListingTitle,
-            },
-            isFavoriteProperty
-          )
-          : null;
-        const marker = canUseAdvancedMarker
-          ? new AdvancedMarkerElementCtor({
-            map,
-            position: coords,
-            title: safeText(item.property.title) || item.addressQuery,
-            content: markerElement || undefined,
-            zIndex: isHoveredFromList ? 100 : 2,
-          })
-          : new mapsApi.Marker({
-            map,
-            position: coords,
-            title: safeText(item.property.title) || item.addressQuery,
-            icon: isHoveredFromList && markerHoverIcon ? markerHoverIcon : markerIcon,
-            zIndex: isHoveredFromList ? 100 : 2,
-            optimized: true,
-          });
-        const frameMarker = !canUseAdvancedMarker && markerHoverIcon
-          ? new mapsApi.Marker({
-            map: null,
-            position: coords,
-            title: '',
-            icon: markerHoverIcon,
-            clickable: false,
-            optimized: false,
-            zIndex: 121,
-          })
-          : null;
+        const markerElement = useAdvanced ? createListingMarkerElement(markerPrice, { title: markerTitle, priceLine: markerPrice, detailLine, imageUrl, imageAlt: markerTitle }, isFav) : null;
+        const marker = useAdvanced
+          ? new AdvancedMarkerElementCtor({ map, position: coords, title: markerTitle, content: markerElement || undefined, zIndex: isHoveredFromList ? 100 : 2 })
+          : new mapsApi.Marker({ map, position: coords, title: markerTitle, icon: isHoveredFromList && markerHoverIcon ? markerHoverIcon : markerIcon, zIndex: isHoveredFromList ? 100 : 2, optimized: true });
+        const frameMarker = !useAdvanced && markerHoverIcon
+          ? new mapsApi.Marker({ map: null, position: coords, title: '', icon: markerHoverIcon, clickable: false, optimized: false, zIndex: 121 }) : null;
 
-        const title = safeText(item.property.title) || t('map.propertyListing');
-        const price = item.property.price != null
-          ? `₪${Number(item.property.price).toLocaleString(locale)}`
-          : t('map.priceUnavailable');
-        const listingHref = `${window.location.origin}/properties/${encodeURIComponent(String(item.propertyId || ''))}`;
-        const markerPopupHtml = buildMarkerPopupCardHtml({
-          href: listingHref,
-          title,
-          price,
-          detailLine: markerDetailLine || item.addressQuery,
-          imageUrl: markerImageUrl,
-          ctaLabel: t('map.infoWindowCta'),
-        });
-        const openMarkerSummary = () => {
-          infoWindow.setOptions({ maxWidth: 286 });
-          infoWindow.setContent(markerPopupHtml);
-          if (canUseAdvancedMarker) {
-            infoWindow.open({ map, anchor: marker });
-          } else {
-            infoWindow.open(map, marker);
-          }
+        // Popup card links to the correct route for each listing type.
+        const listingPath = isRoommatesMode ? 'roommates' : 'properties';
+        const listingHref = `${window.location.origin}/${listingPath}/${encodeURIComponent(String(item.propertyId || ''))}`;
+        const priceDisplay = priceValue != null ? `₪${Number(priceValue).toLocaleString(locale)}` : t('map.priceUnavailable');
+        const popupHtml = buildMarkerPopupCardHtml({ href: listingHref, title: markerTitle, price: priceDisplay, detailLine: detailLine || (item.addressQuery || ''), imageUrl, ctaLabel: t('map.infoWindowCta') });
+        const openSummary = () => {
+          infoWindow.setOptions({ maxWidth: 286 }); infoWindow.setContent(popupHtml);
+          if (useAdvanced) infoWindow.open({ map, anchor: marker }); else infoWindow.open(map, marker);
         };
-        marker.addListener('click', () => {
-          openMarkerSummary();
-        });
-        const markerEntry = {
-          marker,
-          frameMarker,
-          propertyId,
-          coords,
-          markerElement,
-          isAdvancedMarker: canUseAdvancedMarker,
-          markerIcon,
-          markerHoverIcon,
-          markerHoverIcons,
-          isMapHovered: false,
-          cleanupHoverListeners: null,
-          openMarkerSummary,
-        };
+        marker.addListener('click', openSummary);
+
+        const entry = { marker, frameMarker, propertyId, coords, markerElement, isAdvancedMarker: useAdvanced, markerIcon, markerHoverIcon, markerHoverIcons, isMapHovered: false, cleanupHoverListeners: null, openMarkerSummary: openSummary };
+
         if (markerElement) {
-          const handleMarkerMouseEnter = () => {
-            setActiveMapHoverEntry(markerEntry);
-            openMarkerSummary();
-          };
-          const handleMarkerMouseLeave = () => {
-            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
-            markerEntry.isMapHovered = false;
-            applyMarkerHoverVisualState(markerEntry);
-          };
-          markerElement.addEventListener('mouseenter', handleMarkerMouseEnter);
-          markerElement.addEventListener('mouseleave', handleMarkerMouseLeave);
-          markerElement.addEventListener('focusin', handleMarkerMouseEnter);
-          markerElement.addEventListener('focusout', handleMarkerMouseLeave);
-          markerEntry.cleanupHoverListeners = () => {
-            markerElement.removeEventListener('mouseenter', handleMarkerMouseEnter);
-            markerElement.removeEventListener('mouseleave', handleMarkerMouseLeave);
-            markerElement.removeEventListener('focusin', handleMarkerMouseEnter);
-            markerElement.removeEventListener('focusout', handleMarkerMouseLeave);
-          };
-        } else if (markerHoverIcon && !canUseAdvancedMarker) {
-          const mouseOverListener = marker.addListener('mouseover', () => {
-            setActiveMapHoverEntry(markerEntry);
-            openMarkerSummary();
-          });
-          const mouseOutListener = marker.addListener('mouseout', () => {
-            if (activeMapHoverEntryRef.current === markerEntry) activeMapHoverEntryRef.current = null;
-            markerEntry.isMapHovered = false;
-            applyMarkerHoverVisualState(markerEntry);
-          });
-          markerEntry.cleanupHoverListeners = () => {
-            if (mouseOverListener && typeof mouseOverListener.remove === 'function') {
-              mouseOverListener.remove();
-            }
-            if (mouseOutListener && typeof mouseOutListener.remove === 'function') {
-              mouseOutListener.remove();
-            }
-          };
+          const onEnter = () => { setActiveMapHoverEntry(entry); openSummary(); };
+          const onLeave = () => { if (activeMapHoverEntryRef.current === entry) activeMapHoverEntryRef.current = null; entry.isMapHovered = false; applyMarkerHoverVisualState(entry); };
+          markerElement.addEventListener('mouseenter', onEnter); markerElement.addEventListener('mouseleave', onLeave);
+          markerElement.addEventListener('focusin', onEnter); markerElement.addEventListener('focusout', onLeave);
+          entry.cleanupHoverListeners = () => { markerElement.removeEventListener('mouseenter', onEnter); markerElement.removeEventListener('mouseleave', onLeave); markerElement.removeEventListener('focusin', onEnter); markerElement.removeEventListener('focusout', onLeave); };
+        } else if (markerHoverIcon && !useAdvanced) {
+          const ov = marker.addListener('mouseover', () => { setActiveMapHoverEntry(entry); openSummary(); });
+          const ou = marker.addListener('mouseout', () => { if (activeMapHoverEntryRef.current === entry) activeMapHoverEntryRef.current = null; entry.isMapHovered = false; applyMarkerHoverVisualState(entry); });
+          entry.cleanupHoverListeners = () => { if (ov && typeof ov.remove === 'function') ov.remove(); if (ou && typeof ou.remove === 'function') ou.remove(); };
         }
 
-        markerEntriesRef.current.push(markerEntry);
-        applyMarkerHoverVisualState(markerEntry, hoverPulsePhase);
+        markerEntriesRef.current.push(entry);
+        applyMarkerHoverVisualState(entry, hoverPulsePhase);
         if (activeCircleRef.current) applyCircleFilter();
-        bounds.extend(coords);
-        placed += 1;
+        bounds.extend(coords); placed += 1;
       }
 
       if (cacheChanged) writeGeocodeCache(geocodeCacheRef.current);
-
       if (!hasInitializedViewportRef.current) {
-        if (placed === 1 && markerEntriesRef.current[0]) {
-          map.setCenter(markerEntriesRef.current[0].coords);
-          map.setZoom(13);
-        } else if (placed > 1) {
-          map.fitBounds(bounds, 42);
-        } else {
-          map.setCenter(DEFAULT_CENTER);
-          map.setZoom(10);
-        }
+        if (placed === 1 && markerEntriesRef.current[0]) { map.setCenter(markerEntriesRef.current[0].coords); map.setZoom(13); }
+        else if (placed > 1) map.fitBounds(bounds, 42);
+        else { map.setCenter(DEFAULT_CENTER); map.setZoom(10); }
         hasInitializedViewportRef.current = true;
       }
-
-      markerHydrationInProgressRef.current = false;
-      applyCircleFilter();
+      markerHydrationInProgressRef.current = false; applyCircleFilter();
     };
 
     updateMarkers();
-
     return () => {
-      cancelled = true;
-      activeMapHoverEntryRef.current = null;
-      markerEntriesRef.current.forEach((entry) => {
-        if (typeof entry.cleanupHoverListeners === 'function') {
-          entry.cleanupHoverListeners();
-        }
-        if (entry.isAdvancedMarker) {
-          entry.marker.map = null;
-        } else if (typeof entry.marker.setMap === 'function') {
-          entry.marker.setMap(null);
-        }
-        if (entry.frameMarker) entry.frameMarker.setMap(null);
+      cancelled = true; activeMapHoverEntryRef.current = null;
+      markerEntriesRef.current.forEach((e) => {
+        if (typeof e.cleanupHoverListeners === 'function') e.cleanupHoverListeners();
+        if (e.isAdvancedMarker) e.marker.map = null; else if (typeof e.marker.setMap === 'function') e.marker.setMap(null);
+        if (e.frameMarker) e.frameMarker.setMap(null);
       });
-      markerEntriesRef.current = [];
-      markerHydrationInProgressRef.current = false;
-      expectedMarkerCountRef.current = 0;
+      markerEntriesRef.current = []; markerHydrationInProgressRef.current = false; expectedMarkerCountRef.current = 0;
     };
-  }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t]);
+  }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t, isRoommatesMode]);
 
-  useEffect(() => {
-    markerEntriesRef.current.forEach((entry) => {
-      applyMarkerHoverVisualState(entry, hoverPulsePhase);
-    });
-  }, [hoveredListingId, hoverPulsePhase]);
+  useEffect(() => { markerEntriesRef.current.forEach((e) => applyMarkerHoverVisualState(e, hoverPulsePhase)); }, [hoveredListingId, hoverPulsePhase]);
 
   useEffect(() => {
     if (!isVisible || !mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     const mapsApi = window.google.maps;
     const rafId = window.requestAnimationFrame(() => {
-      const currentCenter = typeof mapRef.current.getCenter === 'function' ? mapRef.current.getCenter() : null;
-      const currentZoom = typeof mapRef.current.getZoom === 'function' ? mapRef.current.getZoom() : null;
+      const c = typeof mapRef.current.getCenter === 'function' ? mapRef.current.getCenter() : null;
+      const z = typeof mapRef.current.getZoom === 'function' ? mapRef.current.getZoom() : null;
       mapsApi.event.trigger(mapRef.current, 'resize');
-      if (currentCenter && Number.isFinite(currentZoom)) {
-        mapRef.current.setCenter(currentCenter);
-        mapRef.current.setZoom(currentZoom);
-      }
+      if (c && Number.isFinite(z)) { mapRef.current.setCenter(c); mapRef.current.setZoom(z); }
       applyCircleFilter();
     });
-    return () => {
-      if (typeof window.cancelAnimationFrame === 'function') {
-        window.cancelAnimationFrame(rafId);
-      }
-    };
+    return () => { if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(rafId); };
   }, [isVisible, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
-    const mapsApi = window.google.maps;
-    const touchLikeDrawMode = isMobileOverlay || isCoarsePointerDevice();
-    let isDraftDrawing = false;
-    clearDrawListeners();
+    const mapsApi = window.google.maps; const touchLike = isMobileOverlay || isCoarsePointerDevice();
+    let isDraft = false; clearDrawListeners();
     if (!drawMode) {
-      removeDraftCircle();
-      setActiveCircleInteractive(true, touchLikeDrawMode);
-      if (mapRef.current) {
-        mapRef.current.setOptions({
-          draggableCursor: null,
-          draggable: true,
-          gestureHandling: 'greedy',
-          disableDoubleClickZoom: false,
-        });
-      }
+      removeDraftCircle(); setActiveCircleInteractive(true, touchLike);
+      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false });
       return undefined;
     }
+    setActiveCircleInteractive(false, touchLike);
+    mapRef.current.setOptions({ draggableCursor: null, draggable: false, gestureHandling: touchLike ? 'greedy' : 'none', disableDoubleClickZoom: true });
 
-    setActiveCircleInteractive(false, touchLikeDrawMode);
-    mapRef.current.setOptions({
-      draggableCursor: null,
-      draggable: false,
-      gestureHandling: touchLikeDrawMode ? 'greedy' : 'none',
-      disableDoubleClickZoom: true,
-    });
-
-    const getEventPoint = (event) => {
-      if (!event) return null;
-      const latValue = event.latLng;
-      if (latValue) {
-        const lat = typeof latValue.lat === 'function' ? Number(latValue.lat()) : Number(latValue.lat);
-        const lng = typeof latValue.lng === 'function' ? Number(latValue.lng()) : Number(latValue.lng);
+    const getEventPoint = (ev) => {
+      if (!ev) return null;
+      const lv = ev.latLng;
+      if (lv) {
+        const lat = typeof lv.lat === 'function' ? Number(lv.lat()) : Number(lv.lat);
+        const lng = typeof lv.lng === 'function' ? Number(lv.lng()) : Number(lv.lng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        return { lat, lng, latLng: event.latLng };
+        return { lat, lng, latLng: ev.latLng };
       }
-      const domEvent = event.domEvent || event;
-      const touch = domEvent.touches && domEvent.touches[0]
-        ? domEvent.touches[0]
-        : domEvent.changedTouches && domEvent.changedTouches[0]
-          ? domEvent.changedTouches[0]
-          : null;
-      const clientX = touch ? touch.clientX : domEvent.clientX;
-      const clientY = touch ? touch.clientY : domEvent.clientY;
-      if (!Number.isFinite(clientX) || !Number.isFinite(clientY) || !mapContainerRef.current || !mapRef.current) return null;
+      const de = ev.domEvent || ev;
+      const touch = (de.touches && de.touches[0]) || (de.changedTouches && de.changedTouches[0]) || null;
+      const cx = touch ? touch.clientX : de.clientX; const cy = touch ? touch.clientY : de.clientY;
+      if (!Number.isFinite(cx) || !Number.isFinite(cy) || !mapContainerRef.current || !mapRef.current) return null;
       const bounds = typeof mapRef.current.getBounds === 'function' ? mapRef.current.getBounds() : null;
-      const northEast = bounds && typeof bounds.getNorthEast === 'function' ? bounds.getNorthEast() : null;
-      const southWest = bounds && typeof bounds.getSouthWest === 'function' ? bounds.getSouthWest() : null;
-      if (!northEast || !southWest) return null;
+      const ne = bounds && typeof bounds.getNorthEast === 'function' ? bounds.getNorthEast() : null;
+      const sw = bounds && typeof bounds.getSouthWest === 'function' ? bounds.getSouthWest() : null;
+      if (!ne || !sw) return null;
       const rect = mapContainerRef.current.getBoundingClientRect();
       if (!rect.width || !rect.height) return null;
-      const xRatio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-      const yRatio = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
-      const north = Number(northEast.lat());
-      const south = Number(southWest.lat());
-      const east = Number(northEast.lng());
-      const west = Number(southWest.lng());
-      const lat = north - ((north - south) * yRatio);
-      const lng = west + ((east - west) * xRatio);
+      const xR = Math.min(1, Math.max(0, (cx - rect.left) / rect.width));
+      const yR = Math.min(1, Math.max(0, (cy - rect.top) / rect.height));
+      const n = Number(ne.lat()); const s = Number(sw.lat()); const e = Number(ne.lng()); const w = Number(sw.lng());
+      const lat = n - ((n - s) * yR); const lng = w + ((e - w) * xR);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
       return { lat, lng, latLng: new mapsApi.LatLng(lat, lng) };
     };
-
-    const suppressTouchEvent = (event) => {
-      const domEvent = event && (event.domEvent || event);
-      if (!domEvent || typeof domEvent.type !== 'string' || !domEvent.type.startsWith('touch')) return;
-      if (typeof domEvent.preventDefault === 'function') domEvent.preventDefault();
-      if (typeof domEvent.stopPropagation === 'function') domEvent.stopPropagation();
+    const suppressTouch = (ev) => {
+      const de = ev && (ev.domEvent || ev);
+      if (!de || typeof de.type !== 'string' || !de.type.startsWith('touch')) return;
+      if (typeof de.preventDefault === 'function') de.preventDefault();
+      if (typeof de.stopPropagation === 'function') de.stopPropagation();
     };
-
-    const startDraftCircle = (point) => {
-      if (!point) return;
-      removeDraftCircle();
-      drawStartRef.current = { lat: point.lat, lng: point.lng };
-      lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
-      isDraftDrawing = true;
-      draftCircleRef.current = new mapsApi.Circle({
-        map: mapRef.current,
-        center: point.latLng || { lat: point.lat, lng: point.lng },
-        radius: getMinimumCircleRadius(touchLikeDrawMode),
-        strokeColor: '#0e8a88',
-        strokeOpacity: 0.9,
-        strokeWeight: 2,
-        fillColor: '#0e8a88',
-        fillOpacity: 0.12,
-        clickable: false,
-      });
+    const startDraft = (pt) => {
+      if (!pt) return; removeDraftCircle();
+      drawStartRef.current = { lat: pt.lat, lng: pt.lng }; lastDraftPointerRef.current = { lat: pt.lat, lng: pt.lng }; isDraft = true;
+      draftCircleRef.current = new mapsApi.Circle({ map: mapRef.current, center: pt.latLng || { lat: pt.lat, lng: pt.lng }, radius: getMinimumCircleRadius(touchLike), strokeColor: '#0e8a88', strokeOpacity: 0.9, strokeWeight: 2, fillColor: '#0e8a88', fillOpacity: 0.12, clickable: false });
     };
-
-    const updateDraftCircleRadius = (point) => {
-      if (!point || !drawStartRef.current || !draftCircleRef.current) return;
-      const radiusMeters = getDistanceMeters(drawStartRef.current, { lat: point.lat, lng: point.lng });
-      draftCircleRef.current.setRadius(Math.max(getMinimumCircleRadius(touchLikeDrawMode), radiusMeters));
-      lastDraftPointerRef.current = { lat: point.lat, lng: point.lng };
+    const updateDraft = (pt) => {
+      if (!pt || !drawStartRef.current || !draftCircleRef.current) return;
+      draftCircleRef.current.setRadius(Math.max(getMinimumCircleRadius(touchLike), getDistanceMeters(drawStartRef.current, { lat: pt.lat, lng: pt.lng })));
+      lastDraftPointerRef.current = { lat: pt.lat, lng: pt.lng };
     };
-
-    const completeDraftCircle = (event) => {
-      suppressTouchEvent(event);
-      const point = getEventPoint(event) || lastDraftPointerRef.current;
-      if (point) updateDraftCircleRadius(point);
-      if (!draftCircleRef.current) return;
-      isDraftDrawing = false;
-      if (activeCircleRef.current) {
-        mapsApi.event.clearInstanceListeners(activeCircleRef.current);
-        activeCircleRef.current.setMap(null);
-      }
-      activeCircleRef.current = draftCircleRef.current;
-      draftCircleRef.current = null;
-      drawStartRef.current = null;
-
-      activeCircleRef.current.setOptions({
-        clickable: true,
-        editable: !touchLikeDrawMode,
-        draggable: true,
-        fillOpacity: 0.16,
-      });
+    const completeDraft = (ev) => {
+      suppressTouch(ev); const pt = getEventPoint(ev) || lastDraftPointerRef.current;
+      if (pt) updateDraft(pt); if (!draftCircleRef.current) return; isDraft = false;
+      if (activeCircleRef.current) { mapsApi.event.clearInstanceListeners(activeCircleRef.current); activeCircleRef.current.setMap(null); }
+      activeCircleRef.current = draftCircleRef.current; draftCircleRef.current = null; drawStartRef.current = null;
+      activeCircleRef.current.setOptions({ clickable: true, editable: !touchLike, draggable: true, fillOpacity: 0.16 });
       mapsApi.event.addListener(activeCircleRef.current, 'radius_changed', applyCircleFilter);
       mapsApi.event.addListener(activeCircleRef.current, 'center_changed', applyCircleFilter);
-      const lockMapPanningForCircleDrag = () => {
-        if (!touchLikeDrawMode || !mapRef.current) return;
-        mapRef.current.setOptions({
-          draggable: false,
-          gestureHandling: 'none',
-          disableDoubleClickZoom: true,
-        });
-      };
-      const unlockMapPanningForCircleDrag = () => {
-        if (!touchLikeDrawMode || !mapRef.current) return;
-        mapRef.current.setOptions({
-          draggable: true,
-          gestureHandling: 'greedy',
-          disableDoubleClickZoom: false,
-        });
-      };
-      mapsApi.event.addListener(activeCircleRef.current, 'mousedown', lockMapPanningForCircleDrag);
-      mapsApi.event.addListener(activeCircleRef.current, 'dragstart', lockMapPanningForCircleDrag);
-      mapsApi.event.addListener(activeCircleRef.current, 'mouseup', unlockMapPanningForCircleDrag);
-      mapsApi.event.addListener(activeCircleRef.current, 'dragend', () => {
-        unlockMapPanningForCircleDrag();
-        applyCircleFilter();
-      });
-
+      const lock = () => { if (!touchLike || !mapRef.current) return; mapRef.current.setOptions({ draggable: false, gestureHandling: 'none', disableDoubleClickZoom: true }); };
+      const unlock = () => { if (!touchLike || !mapRef.current) return; mapRef.current.setOptions({ draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false }); };
+      mapsApi.event.addListener(activeCircleRef.current, 'mousedown', lock);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragstart', lock);
+      mapsApi.event.addListener(activeCircleRef.current, 'mouseup', unlock);
+      mapsApi.event.addListener(activeCircleRef.current, 'dragend', () => { unlock(); applyCircleFilter(); });
       setDrawMode(false);
-      mapRef.current.setOptions({
-        draggableCursor: null,
-        draggable: true,
-        gestureHandling: 'greedy',
-        disableDoubleClickZoom: false,
-      });
-      lastCompletionTimestampRef.current = Date.now();
-      applyCircleFilter();
+      mapRef.current.setOptions({ draggableCursor: null, draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false });
+      lastCompletionTimestampRef.current = Date.now(); applyCircleFilter();
     };
-
-    const handleTapFallback = (event) => {
+    const tapFallback = (ev) => {
       if (Date.now() - lastCompletionTimestampRef.current < 250) return;
-      const point = getEventPoint(event);
-      if (!point) return;
-      if (!drawStartRef.current || !draftCircleRef.current) {
-        startDraftCircle(point);
-        return;
-      }
-      completeDraftCircle(event);
+      const pt = getEventPoint(ev); if (!pt) return;
+      if (!drawStartRef.current || !draftCircleRef.current) { startDraft(pt); return; }
+      completeDraft(ev);
     };
-
-    const handlePointerDown = (event) => {
-      suppressTouchEvent(event);
-      const point = getEventPoint(event);
-      if (!point) return;
-      startDraftCircle(point);
-    };
-
-    const handlePointerMove = (event) => {
-      suppressTouchEvent(event);
-      const point = getEventPoint(event);
-      if (!point) return;
-      updateDraftCircleRadius(point);
-    };
-
-    const registerDrawListener = (eventName, handler) => {
-      try {
-        return mapsApi.event.addListener(mapRef.current, eventName, handler);
-      } catch (_err) {
-        return null;
-      }
-    };
-
-    const registerDomDrawListener = (eventName, handler) => {
+    const onDown = (ev) => { suppressTouch(ev); const pt = getEventPoint(ev); if (pt) startDraft(pt); };
+    const onMove = (ev) => { suppressTouch(ev); const pt = getEventPoint(ev); if (pt) updateDraft(pt); };
+    const reg = (name, fn) => { try { return mapsApi.event.addListener(mapRef.current, name, fn); } catch (_e) { return null; } };
+    const regDom = (name, fn) => {
       if (!mapContainerRef.current) return null;
-      mapContainerRef.current.addEventListener(eventName, handler, { passive: false, capture: true });
-      return {
-        remove: () => {
-          if (mapContainerRef.current) {
-            mapContainerRef.current.removeEventListener(eventName, handler, true);
-          }
-        },
-      };
+      mapContainerRef.current.addEventListener(name, fn, { passive: false, capture: true });
+      return { remove: () => { if (mapContainerRef.current) mapContainerRef.current.removeEventListener(name, fn, true); } };
     };
-
-    if (touchLikeDrawMode) {
-      // Touch users can drag in one gesture; click remains as a tap-to-set fallback.
-      const onTouchStart = registerDrawListener('touchstart', handlePointerDown);
-      const onTouchMove = registerDrawListener('touchmove', handlePointerMove);
-      const onTouchEnd = registerDrawListener('touchend', completeDraftCircle);
-      const onDomTouchStart = registerDomDrawListener('touchstart', handlePointerDown);
-      const onDomTouchMove = registerDomDrawListener('touchmove', handlePointerMove);
-      const onDomTouchEnd = registerDomDrawListener('touchend', completeDraftCircle);
-      const onDomTouchCancel = registerDomDrawListener('touchcancel', completeDraftCircle);
-      const onTapFallback = registerDrawListener('click', handleTapFallback);
-      const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
-      const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
-      const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
-      drawListenersRef.current = [
-        onTouchStart,
-        onTouchMove,
-        onTouchEnd,
-        onDomTouchStart,
-        onDomTouchMove,
-        onDomTouchEnd,
-        onDomTouchCancel,
-        onTapFallback,
-        onMouseDown,
-        onMouseMove,
-        onMouseUp,
-      ].filter(Boolean);
+    if (touchLike) {
+      drawListenersRef.current = [reg('touchstart', onDown), reg('touchmove', onMove), reg('touchend', completeDraft), regDom('touchstart', onDown), regDom('touchmove', onMove), regDom('touchend', completeDraft), regDom('touchcancel', completeDraft), reg('click', tapFallback), reg('mousedown', onDown), reg('mousemove', onMove), reg('mouseup', completeDraft)].filter(Boolean);
     } else {
-      const onMouseDown = registerDrawListener('mousedown', handlePointerDown);
-      const onMouseMove = registerDrawListener('mousemove', handlePointerMove);
-      const onMouseUp = registerDrawListener('mouseup', completeDraftCircle);
-      drawListenersRef.current = [onMouseDown, onMouseMove, onMouseUp].filter(Boolean);
+      drawListenersRef.current = [reg('mousedown', onDown), reg('mousemove', onMove), reg('mouseup', completeDraft)].filter(Boolean);
     }
-
-    const completeDraftFromWindow = () => {
-      if (!isDraftDrawing) return;
-      completeDraftCircle();
-    };
-    if (!touchLikeDrawMode) {
-      window.addEventListener('mouseup', completeDraftFromWindow, true);
-      window.addEventListener('pointerup', completeDraftFromWindow, true);
-      window.addEventListener('blur', completeDraftFromWindow);
-    }
-
+    const finishFromWindow = () => { if (!isDraft) return; completeDraft(); };
+    if (!touchLike) { window.addEventListener('mouseup', finishFromWindow, true); window.addEventListener('pointerup', finishFromWindow, true); window.addEventListener('blur', finishFromWindow); }
     return () => {
-      clearDrawListeners();
-      isDraftDrawing = false;
-      window.removeEventListener('mouseup', completeDraftFromWindow, true);
-      window.removeEventListener('pointerup', completeDraftFromWindow, true);
-      window.removeEventListener('blur', completeDraftFromWindow);
-      if (mapRef.current) {
-        mapRef.current.setOptions({
-          draggableCursor: null,
-          draggable: true,
-          gestureHandling: 'greedy',
-          disableDoubleClickZoom: false,
-        });
-      }
+      clearDrawListeners(); isDraft = false;
+      window.removeEventListener('mouseup', finishFromWindow, true); window.removeEventListener('pointerup', finishFromWindow, true); window.removeEventListener('blur', finishFromWindow);
+      if (mapRef.current) mapRef.current.setOptions({ draggableCursor: null, draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false });
     };
   }, [drawMode, isMobileOverlay, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapContainerRef.current) return undefined;
-    const onContextMenu = (event) => {
-      if (touchLikeUiMode) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-    const onDragStart = (event) => {
-      if (!touchLikeUiMode) return;
-      event.preventDefault();
-      event.stopPropagation();
-    };
-    mapContainerRef.current.addEventListener('contextmenu', onContextMenu, true);
-    mapContainerRef.current.addEventListener('dragstart', onDragStart, true);
-    return () => {
-      if (!mapContainerRef.current) return;
-      mapContainerRef.current.removeEventListener('contextmenu', onContextMenu, true);
-      mapContainerRef.current.removeEventListener('dragstart', onDragStart, true);
-    };
+    const onCtx = (ev) => { if (touchLikeUiMode) { ev.preventDefault(); ev.stopPropagation(); } };
+    const onDrag = (ev) => { if (!touchLikeUiMode) return; ev.preventDefault(); ev.stopPropagation(); };
+    mapContainerRef.current.addEventListener('contextmenu', onCtx, true);
+    mapContainerRef.current.addEventListener('dragstart', onDrag, true);
+    return () => { if (!mapContainerRef.current) return; mapContainerRef.current.removeEventListener('contextmenu', onCtx, true); mapContainerRef.current.removeEventListener('dragstart', onDrag, true); };
   }, [mapReady, touchLikeUiMode]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !window.google || !window.google.maps) return undefined;
     if (!touchLikeUiMode || drawMode || !activeCircleRef.current || circleRadiusMeters <= 0) return undefined;
-    const mapsApi = window.google.maps;
-    let draggingCircle = false;
-
-    const toLatLngPoint = (latLngLike) => {
-      if (!latLngLike) return null;
-      const lat = typeof latLngLike.lat === 'function'
-        ? Number(latLngLike.lat())
-        : Number(latLngLike.lat);
-      const lng = typeof latLngLike.lng === 'function'
-        ? Number(latLngLike.lng())
-        : Number(latLngLike.lng);
+    const mapsApi = window.google.maps; let dragging = false;
+    const toLLP = (ll) => {
+      if (!ll) return null;
+      const lat = typeof ll.lat === 'function' ? Number(ll.lat()) : Number(ll.lat);
+      const lng = typeof ll.lng === 'function' ? Number(ll.lng()) : Number(ll.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
       return { lat, lng };
     };
-
-    const isInsideActiveCircle = (latLngLike) => {
-      if (!activeCircleRef.current || !latLngLike) return false;
-      const centerPoint = toLatLngPoint(activeCircleRef.current.getCenter && activeCircleRef.current.getCenter());
-      const probePoint = toLatLngPoint(latLngLike);
-      const radiusMeters = Number(
-        activeCircleRef.current.getRadius && activeCircleRef.current.getRadius()
-      );
-      if (!centerPoint || !probePoint || !Number.isFinite(radiusMeters) || radiusMeters <= 0) return false;
-      return getDistanceMeters(centerPoint, probePoint) <= (radiusMeters + 90);
+    const inside = (ll) => {
+      if (!activeCircleRef.current || !ll) return false;
+      const cPt = toLLP(activeCircleRef.current.getCenter && activeCircleRef.current.getCenter());
+      const pPt = toLLP(ll); const r = Number(activeCircleRef.current.getRadius && activeCircleRef.current.getRadius());
+      if (!cPt || !pPt || !Number.isFinite(r) || r <= 0) return false;
+      return getDistanceMeters(cPt, pPt) <= (r + 90);
     };
-
-    const lockMapPanning = () => {
-      if (!mapRef.current) return;
-      mapRef.current.setOptions({
-        draggable: false,
-        gestureHandling: 'none',
-        disableDoubleClickZoom: true,
-      });
-    };
-
-    const unlockMapPanning = () => {
-      if (!mapRef.current) return;
-      mapRef.current.setOptions({
-        draggable: true,
-        gestureHandling: 'greedy',
-        disableDoubleClickZoom: false,
-      });
-    };
-
-    const beginCircleDrag = (event) => {
-      if (!event || !event.latLng || !activeCircleRef.current) return;
-      if (!isInsideActiveCircle(event.latLng)) return;
-      draggingCircle = true;
-      lockMapPanning();
-      activeCircleRef.current.setCenter(event.latLng);
-      applyCircleFilter();
-      if (event.domEvent) {
-        event.domEvent.preventDefault();
-        event.domEvent.stopPropagation();
-      }
-    };
-
-    const continueCircleDrag = (event) => {
-      if (!draggingCircle || !event || !event.latLng || !activeCircleRef.current) return;
-      activeCircleRef.current.setCenter(event.latLng);
-      applyCircleFilter();
-      if (event.domEvent) {
-        event.domEvent.preventDefault();
-        event.domEvent.stopPropagation();
-      }
-    };
-
-    const endCircleDrag = (event) => {
-      if (!draggingCircle) return;
-      draggingCircle = false;
-      unlockMapPanning();
-      applyCircleFilter();
-      if (event && event.domEvent) {
-        event.domEvent.preventDefault();
-        event.domEvent.stopPropagation();
-      }
-    };
-
-    const dragListeners = [
-      mapsApi.event.addListener(mapRef.current, 'mousedown', beginCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'touchstart', beginCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'mousemove', continueCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'touchmove', continueCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'mouseup', endCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'touchend', endCircleDrag),
-      mapsApi.event.addListener(mapRef.current, 'touchcancel', endCircleDrag),
-    ];
-
-    return () => {
-      dragListeners.forEach((listener) => {
-        if (!listener) return;
-        if (typeof listener.remove === 'function') listener.remove();
-        else mapsApi.event.removeListener(listener);
-      });
-      unlockMapPanning();
-    };
+    const lock = () => { if (mapRef.current) mapRef.current.setOptions({ draggable: false, gestureHandling: 'none', disableDoubleClickZoom: true }); };
+    const unlock = () => { if (mapRef.current) mapRef.current.setOptions({ draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false }); };
+    const begin = (ev) => { if (!ev || !ev.latLng || !activeCircleRef.current || !inside(ev.latLng)) return; dragging = true; lock(); activeCircleRef.current.setCenter(ev.latLng); applyCircleFilter(); if (ev.domEvent) { ev.domEvent.preventDefault(); ev.domEvent.stopPropagation(); } };
+    const cont = (ev) => { if (!dragging || !ev || !ev.latLng || !activeCircleRef.current) return; activeCircleRef.current.setCenter(ev.latLng); applyCircleFilter(); if (ev.domEvent) { ev.domEvent.preventDefault(); ev.domEvent.stopPropagation(); } };
+    const end = (ev) => { if (!dragging) return; dragging = false; unlock(); applyCircleFilter(); if (ev && ev.domEvent) { ev.domEvent.preventDefault(); ev.domEvent.stopPropagation(); } };
+    const ls = ['mousedown','touchstart','mousemove','touchmove','mouseup','touchend','touchcancel'].map((name, i) => mapsApi.event.addListener(mapRef.current, name, [begin, begin, cont, cont, end, end, end][i]));
+    return () => { ls.forEach((l) => { if (!l) return; if (typeof l.remove === 'function') l.remove(); else mapsApi.event.removeListener(l); }); unlock(); };
   }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return undefined;
     if (!touchLikeUiMode || drawMode || circleRadiusMeters <= 0) return undefined;
-    mapRef.current.setOptions({
-      draggable: false,
-      gestureHandling: 'none',
-      disableDoubleClickZoom: true,
-    });
-    return () => {
-      if (!mapRef.current) return;
-      mapRef.current.setOptions({
-        draggable: true,
-        gestureHandling: 'greedy',
-        disableDoubleClickZoom: false,
-      });
-    };
+    mapRef.current.setOptions({ draggable: false, gestureHandling: 'none', disableDoubleClickZoom: true });
+    return () => { if (mapRef.current) mapRef.current.setOptions({ draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false }); };
   }, [circleRadiusMeters, drawMode, mapReady, touchLikeUiMode]);
 
   useEffect(() => {
-    if (!clearSignalInitializedRef.current) {
-      clearSignalInitializedRef.current = true;
-      return;
-    }
+    if (!clearSignalInitializedRef.current) { clearSignalInitializedRef.current = true; return; }
     clearCircleFilter();
   }, [clearSignal]);
 
   useEffect(() => () => {
-    clearDrawListeners();
-    removeDraftCircle();
+    clearDrawListeners(); removeDraftCircle();
     if (activeCircleRef.current) {
-      if (window.google && window.google.maps && window.google.maps.event) {
-        window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
-      }
-      activeCircleRef.current.setMap(null);
-      activeCircleRef.current = null;
+      if (window.google && window.google.maps && window.google.maps.event) window.google.maps.event.clearInstanceListeners(activeCircleRef.current);
+      activeCircleRef.current.setMap(null); activeCircleRef.current = null;
     }
-    emitCircleSelection({
-      active: false,
-      propertyIds: [],
-      radiusMeters: 0,
-      center: null,
-    });
+    emitCircleSelection({ active: false, propertyIds: [], radiusMeters: 0, center: null });
   }, []);
 
-  if (!apiKey) {
-    return (
-      <GoogleMapsUnavailableState
-        title={t('map.googleMapsMissingKeyTitle')}
-        message={t('map.googleMapsMissingKeyMessage')}
-      />
-    );
-  }
-
-  if (mapError) {
-    return (
-      <GoogleMapsUnavailableState
-        title={t('map.googleMapsUnavailableTitle')}
-        message={t('map.googleMapsUnavailableMessage', { reason: mapError })}
-      />
-    );
-  }
+  if (!apiKey) return <GoogleMapsUnavailableState title={t('map.googleMapsMissingKeyTitle')} message={t('map.googleMapsMissingKeyMessage')} />;
+  if (mapError) return <GoogleMapsUnavailableState title={t('map.googleMapsUnavailableTitle')} message={t('map.googleMapsUnavailableMessage', { reason: mapError })} />;
 
   const toggleDrawMode = () => {
-    setDrawMode((value) => {
-      const nextValue = !value;
-      if (mapRef.current) {
-        mapRef.current.setOptions(nextValue
-          ? {
-            draggableCursor: null,
-            draggable: false,
-            gestureHandling: 'none',
-            disableDoubleClickZoom: true,
-          }
-          : {
-            draggableCursor: null,
-            draggable: true,
-            gestureHandling: 'greedy',
-            disableDoubleClickZoom: false,
-          });
-      }
-      return nextValue;
+    setDrawMode((v) => {
+      const next = !v;
+      if (mapRef.current) mapRef.current.setOptions(next ? { draggableCursor: null, draggable: false, gestureHandling: 'none', disableDoubleClickZoom: true } : { draggableCursor: null, draggable: true, gestureHandling: 'greedy', disableDoubleClickZoom: false });
+      return next;
     });
   };
-
   const adjustMapZoom = (delta) => {
     if (!mapRef.current || typeof mapRef.current.getZoom !== 'function') return;
-    const currentZoom = Number(mapRef.current.getZoom());
-    if (!Number.isFinite(currentZoom)) return;
-    mapRef.current.setZoom(currentZoom + delta);
+    const z = Number(mapRef.current.getZoom()); if (!Number.isFinite(z)) return;
+    mapRef.current.setZoom(z + delta);
   };
 
   return (
     <div className="google-listings-map-shell">
       <div className="google-listings-map-controls-layer">
-        <div
-          className="google-listings-map-overlay-info"
-          style={overlayCardStyle}
-        >
-          <MapAreaControls
-            drawMode={drawMode}
-            onToggleDrawMode={toggleDrawMode}
-            onClearArea={clearCircleFilter}
-            clearDisabled={!drawMode && circleRadiusMeters <= 0}
-            drawLabel={t('map.drawSearchArea')}
-            clearLabel={t('map.clearArea')}
-            toolbarLabel={t('map.areaControlsAriaLabel')}
-          />
+        <div className="google-listings-map-overlay-info" style={overlayCardStyle}>
+          <MapAreaControls drawMode={drawMode} onToggleDrawMode={toggleDrawMode} onClearArea={clearCircleFilter} clearDisabled={!drawMode && circleRadiusMeters <= 0} drawLabel={t('map.drawSearchArea')} clearLabel={t('map.clearArea')} toolbarLabel={t('map.areaControlsAriaLabel')} />
         </div>
       </div>
       <div className="google-listings-map-canvas-wrap">
-        <div
-          ref={mapContainerRef}
-          className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`}
-        />
+        <div ref={mapContainerRef} className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`} />
         <div className="google-listings-map-zoom-overlay" aria-label={t('map.zoomControlsAriaLabel')}>
           <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
           <div className="google-listings-map-zoom-controls">
-            <button
-              type="button"
-              className="google-listings-map-zoom-btn"
-              onClick={() => adjustMapZoom(ZOOM_STEP)}
-              aria-label={t('map.zoomInAriaLabel')}
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="google-listings-map-zoom-btn"
-              onClick={() => adjustMapZoom(-ZOOM_STEP)}
-              aria-label={t('map.zoomOutAriaLabel')}
-            >
-              -
-            </button>
+            <button type="button" className="google-listings-map-zoom-btn" onClick={() => adjustMapZoom(ZOOM_STEP)} aria-label={t('map.zoomInAriaLabel')}>+</button>
+            <button type="button" className="google-listings-map-zoom-btn" onClick={() => adjustMapZoom(-ZOOM_STEP)} aria-label={t('map.zoomOutAriaLabel')}>-</button>
           </div>
         </div>
       </div>
       <p className="google-listings-map-caption">
         {circleRadiusMeters > 0
-          ? t('map.showingInsideRadius', {
-            visible: markerCount,
-            total: totalMarkerCount,
-            radiusKm: (circleRadiusMeters / 1000).toFixed(2),
-          })
+          ? t('map.showingInsideRadius', { visible: markerCount, total: totalMarkerCount, radiusKm: (circleRadiusMeters / 1000).toFixed(2) })
           : markerCount > 0
-            ? t('map.showingMappedListings', {
-              visible: markerCount,
-              listingWord: markerCount > 1 ? t('map.listingWordPlural') : t('map.listingWordSingular'),
-            })
+            ? t('map.showingMappedListings', { visible: markerCount, listingWord: markerCount > 1 ? t('map.listingWordPlural') : t('map.listingWordSingular') })
             : t('map.mapReady')}
       </p>
     </div>
