@@ -6,6 +6,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
 import { useLanguage } from '../context/LanguageContext';
+import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
@@ -384,6 +385,9 @@ const RoommateListingDetail = () => {
                             </div>
                         </div>
                         <div className="detail-template-price detail-template-price--roommate">
+                            <div className="detail-template-price-mark">
+                                <HomeKeyLogoBadge compact className="detail-template-price-logo detail-template-price-logo--inset" />
+                            </div>
                             <div className="detail-template-price-copy">
                                 <p>MONTHLY RENT SHARE</p>
                                 <strong>
