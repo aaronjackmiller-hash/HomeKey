@@ -147,6 +147,31 @@ const RoommateListingDetail = () => {
         if (listing) logRoommateDemandSignal(listing);
     }, [listing]);
 
+    // Escape closes the lightbox; arrow keys browse it — lets people back
+    // out or move between photos without hunting for an on-screen button.
+    // This MUST stay above the early returns below — hooks have to run in
+    // the same order on every render, and placing this after a conditional
+    // `return` made it skip entirely on the first (loading) render but run
+    // on later ones, which is exactly what crashed the page with React
+    // error #310. Self-contained (reads `listing` directly) so it doesn't
+    // depend on anything computed further down, after those returns.
+    useEffect(() => {
+        if (selectedImageIndex == null) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setSelectedImageIndex(null);
+                return;
+            }
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const images = (Array.isArray(listing?.images) ? listing.images : []).filter(Boolean);
+            if (images.length <= 1) return;
+            const delta = e.key === 'ArrowLeft' ? -1 : 1;
+            setSelectedImageIndex((prev) => (prev == null ? prev : (prev + delta + images.length) % images.length));
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedImageIndex, listing]);
+
     if (loading) return <p className="status-message">Loading room details…</p>;
     if (error) return <p className="status-message status-message-error">{error}</p>;
     if (!listing) return null;
@@ -225,19 +250,6 @@ const RoommateListingDetail = () => {
         if (selectedImageIndex == null || allImages.length <= 1) return;
         setSelectedImageIndex((selectedImageIndex + 1) % allImages.length);
     };
-
-    // Escape closes the lightbox; arrow keys browse it — lets people back out
-    // or move between photos without hunting for an on-screen button.
-    useEffect(() => {
-        if (selectedImageIndex == null) return;
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') closeImageViewer();
-            else if (e.key === 'ArrowLeft') showPrevImage();
-            else if (e.key === 'ArrowRight') showNextImage();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedImageIndex, allImages.length]);
 
     // Lets the lister click directly through photos on the hero image itself,
     // without opening the full lightbox — separate state from the lightbox's
