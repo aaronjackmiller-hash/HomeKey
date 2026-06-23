@@ -41,7 +41,7 @@ const buildEmailHref = (email, title = 'this room') => {
 
 const formatPrice = (value) => {
     const n = Number(value);
-    return Number.isFinite(n) && n > 0 ? `₪${n.toLocaleString()}` : '—';
+    return Number.isFinite(n) && n > 0 ? `₪ ${n.toLocaleString()}` : '—';
 };
 
 const formatDate = (value) => {
