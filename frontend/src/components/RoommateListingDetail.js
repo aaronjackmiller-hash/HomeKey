@@ -162,6 +162,12 @@ const RoommateListingDetail = () => {
         neighborhood,
         city,
     ].filter(Boolean).join(', ');
+    // Title shows street + neighborhood only — city is already shown on its
+    // own line directly below, so including it here too just repeats it.
+    const titleLine = [
+        [street, streetNumber].filter(Boolean).join(' '),
+        neighborhood,
+    ].filter(Boolean).join(', ');
 
     const allImages = (Array.isArray(listing.images) ? listing.images : []).filter(Boolean);
     const hasImages = allImages.length > 0;
@@ -219,6 +225,20 @@ const RoommateListingDetail = () => {
         if (selectedImageIndex == null || allImages.length <= 1) return;
         setSelectedImageIndex((selectedImageIndex + 1) % allImages.length);
     };
+
+    // Escape closes the lightbox; arrow keys browse it — lets people back out
+    // or move between photos without hunting for an on-screen button.
+    useEffect(() => {
+        if (selectedImageIndex == null) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') closeImageViewer();
+            else if (e.key === 'ArrowLeft') showPrevImage();
+            else if (e.key === 'ArrowRight') showNextImage();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedImageIndex, allImages.length]);
 
     // Lets the lister click directly through photos on the hero image itself,
     // without opening the full lightbox — separate state from the lightbox's
@@ -312,7 +332,7 @@ const RoommateListingDetail = () => {
                         <div className="detail-template-head">
                             <span className="detail-template-type">Roommates</span>
                             <h1 className="detail-template-title" dir="auto">
-                                {locationLine || 'Room listing'}
+                                {titleLine || 'Room listing'}
                             </h1>
                             <p className="detail-template-location">{city ? city.toUpperCase() : 'ISRAEL'}</p>
                         </div>
@@ -379,28 +399,44 @@ const RoommateListingDetail = () => {
                             </div>
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        className="detail-hero-scroll-cue"
+                        onClick={() => window.scrollTo({ top: window.scrollY + 260, behavior: 'smooth' })}
+                        aria-label="Scroll down for apartment details"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
                 </section>
 
                 {allImages.length > 1 && (
                     <section className="detail-gallery-grid">
-                        {allImages.slice(1).map((image, index) => (
-                            <button
-                                key={index}
-                                type="button"
-                                className="detail-gallery-image-button"
-                                onClick={() => openImageViewer(index + 1)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openImageViewer(index + 1);
-                                    }
-                                }}
-                            >
-                                <span className="detail-gallery-image-media">
-                                    <img src={image} alt={`Room photo ${index + 2}`} />
-                                </span>
-                            </button>
-                        ))}
+                        {allImages.slice(1).map((image, index) => {
+                            const actualIndex = index + 1;
+                            const isActiveInHero = heroImageIndex === actualIndex;
+                            return (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    className={`detail-gallery-image-button detail-gallery-image-button--framed ${isActiveInHero ? 'is-active' : ''}`}
+                                    onClick={() => setHeroImageIndex(actualIndex)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setHeroImageIndex(actualIndex);
+                                        }
+                                    }}
+                                    aria-label={`Show photo ${actualIndex + 1} in the main view`}
+                                    aria-pressed={isActiveInHero}
+                                >
+                                    <span className="detail-gallery-image-media">
+                                        <img src={image} alt={`Room photo ${actualIndex + 1}`} />
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </section>
                 )}
 
@@ -526,6 +562,21 @@ const RoommateListingDetail = () => {
                                 </>
                             )}
                         </div>
+                        {allImages.length > 1 && (
+                            <div className="image-lightbox-filmstrip">
+                                {allImages.map((image, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        className={`image-lightbox-filmstrip-thumb ${index === selectedImageIndex ? 'is-active' : ''}`}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(index); }}
+                                        aria-label={`Go to photo ${index + 1}`}
+                                    >
+                                        <img src={image} alt="" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
