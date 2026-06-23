@@ -196,6 +196,41 @@ const getDistanceMeters = (a, b) => {
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 };
 
+// Cluster pins that are too close to read individually at a given zoom level.
+// At high zoom the threshold is 0 so every pin shows individually; at low
+// zoom nearby pins merge into a single count bubble.
+const CLUSTER_THRESHOLD_METERS = {
+  8: 18000, 9: 9000, 10: 4500, 11: 2200, 12: 1100,
+};
+const CLUSTER_ZOOM_THRESHOLD = 13; // zoom ≥ 13 → no clustering
+
+const clusterItems = (items, zoom) => {
+  if (zoom >= CLUSTER_ZOOM_THRESHOLD) return items.map((item) => ({ isCluster: false, item }));
+  const thresholdMeters = CLUSTER_THRESHOLD_METERS[zoom] || CLUSTER_THRESHOLD_METERS[10];
+  const used = new Set();
+  const result = [];
+  for (let i = 0; i < items.length; i++) {
+    if (used.has(i)) continue;
+    const group = [items[i]];
+    used.add(i);
+    for (let j = i + 1; j < items.length; j++) {
+      if (used.has(j)) continue;
+      if (getDistanceMeters(items[i].coords, items[j].coords) <= thresholdMeters) {
+        group.push(items[j]);
+        used.add(j);
+      }
+    }
+    if (group.length === 1) {
+      result.push({ isCluster: false, item: group[0] });
+    } else {
+      const lat = group.reduce((s, g) => s + g.coords.lat, 0) / group.length;
+      const lng = group.reduce((s, g) => s + g.coords.lng, 0) / group.length;
+      result.push({ isCluster: true, count: group.length, coords: { lat, lng }, items: group });
+    }
+  }
+  return result;
+};
+
 const getMarkerImageUrl = (property, propertyId) => {
   const imgs = property && Array.isArray(property.images) ? property.images : [];
   const candidates = [...imgs, property?.mainImage, property?.image, property?.imageUrl, property?.thumbnail];
@@ -384,6 +419,8 @@ const GoogleListingsMap = ({
   const drawListenersRef = useRef([]); const activeCircleRef = useRef(null);
   const draftCircleRef = useRef(null); const hoveredListingIdRef = useRef(hoveredListingId);
   const drawStartRef = useRef(null); const lastDraftPointerRef = useRef(null);
+  const clusterMarkersRef = useRef([]);
+  const rebuildClustersRef = useRef(null);
   const lastCompletionTimestampRef = useRef(0); const drawToggleSignalRef = useRef(drawModeToggleSignal);
   const clearSignalInitializedRef = useRef(false);
   const [mapError, setMapError] = useState(''); const [mapReady, setMapReady] = useState(false);
@@ -481,6 +518,9 @@ const GoogleListingsMap = ({
     setMarkerCount(visible); setTotalMarkerCount(markerEntriesRef.current.length);
     setCircleRadiusMeters(effective ? radiusM : 0);
     emitCircleSelection({ active: effective, propertyIds: ids, radiusMeters: effective ? radiusM : 0, center: centerPt });
+    if (!markerHydrationInProgressRef.current && typeof rebuildClustersRef.current === 'function') {
+      rebuildClustersRef.current();
+    }
   };
 
   const clearCircleFilter = () => {
@@ -671,6 +711,74 @@ const GoogleListingsMap = ({
     };
 
     updateMarkers();
+
+    // ── Clustering ─────────────────────────────────────────────────────────
+    // Defined here so it closes over mapsApi/map and can be stored in a ref
+    // for the zoom_changed listener to always call the current version.
+    const rebuildClusters = () => {
+      if (!window.google || !window.google.maps || !mapRef.current) return;
+      if (markerHydrationInProgressRef.current) return;
+
+      // Clear old cluster bubbles
+      clusterMarkersRef.current.forEach(cm => { if (typeof cm.setMap === 'function') cm.setMap(null); });
+      clusterMarkersRef.current = [];
+
+      // When circle filter is active it manages visibility — skip clustering
+      if (activeCircleRef.current) return;
+
+      const zoom = typeof map.getZoom === 'function' ? Number(map.getZoom()) : 10;
+      const clustered = clusterItems(markerEntriesRef.current, zoom);
+
+      // Step 1: restore all individual markers to visible
+      markerEntriesRef.current.forEach(e => {
+        if (e.isAdvancedMarker) e.marker.map = map;
+        else if (typeof e.marker.setVisible === 'function') e.marker.setVisible(true);
+        if (e.frameMarker && typeof e.frameMarker.setVisible === 'function') e.frameMarker.setVisible(true);
+      });
+
+      // Step 2: for each multi-item cluster, hide individuals and show bubble
+      clustered.forEach(result => {
+        if (!result.isCluster) return;
+
+        result.items.forEach(e => {
+          if (e.isAdvancedMarker) e.marker.map = null;
+          else if (typeof e.marker.setVisible === 'function') e.marker.setVisible(false);
+          if (e.frameMarker) e.frameMarker.setMap(null);
+        });
+
+        const count = result.count;
+        const label = count > 99 ? '99+' : String(count);
+        const fontSize = count > 9 ? 12 : 15;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="60" viewBox="0 0 52 60"><path d="M26 2 C13.3 2 3 12.3 3 25 C3 39.5 26 58 26 58 S49 39.5 49 25 C49 12.3 38.7 2 26 2 Z" fill="#1a1a1a" stroke="white" stroke-width="2"/><circle cx="26" cy="25" r="15" fill="white" opacity="0.15"/><text x="26" y="30.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="${fontSize}" font-weight="700" fill="white">${escapeHtml(label)}</text></svg>`;
+
+        const clusterMarker = new mapsApi.Marker({
+          map,
+          position: result.coords,
+          icon: {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            scaledSize: new mapsApi.Size(52, 60),
+            anchor: new mapsApi.Point(26, 58),
+          },
+          zIndex: 30,
+          title: `${count} listings — click to zoom in`,
+        });
+
+        clusterMarker.addListener('click', () => {
+          const bounds = new mapsApi.LatLngBounds();
+          result.items.forEach(e => bounds.extend(e.coords));
+          map.fitBounds(bounds, 80);
+        });
+
+        clusterMarkersRef.current.push(clusterMarker);
+      });
+    };
+
+    rebuildClustersRef.current = rebuildClusters;
+
+    const zoomListener = mapsApi.event.addListener(map, 'zoom_changed', () => {
+      if (typeof rebuildClustersRef.current === 'function') rebuildClustersRef.current();
+    });
+
     return () => {
       cancelled = true; activeMapHoverEntryRef.current = null;
       markerEntriesRef.current.forEach((e) => {
@@ -679,6 +787,13 @@ const GoogleListingsMap = ({
         if (e.frameMarker) e.frameMarker.setMap(null);
       });
       markerEntriesRef.current = []; markerHydrationInProgressRef.current = false; expectedMarkerCountRef.current = 0;
+      if (zoomListener) {
+        if (typeof zoomListener.remove === 'function') zoomListener.remove();
+        else if (window.google && window.google.maps && window.google.maps.event) window.google.maps.event.removeListener(zoomListener);
+      }
+      clusterMarkersRef.current.forEach(cm => { if (typeof cm.setMap === 'function') cm.setMap(null); });
+      clusterMarkersRef.current = [];
+      rebuildClustersRef.current = null;
     };
   }, [mapReady, propertiesWithAddress, markerPreset, favoritePropertyIdSet, locale, t, isRoommatesMode]);
 
