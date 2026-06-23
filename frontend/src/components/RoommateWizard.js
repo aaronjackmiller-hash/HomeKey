@@ -927,7 +927,7 @@ const Step4Preferences = ({ data, onChange, onNext, onBack }) => (
 const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, publishStage, error }) => {
   const formatPrice = (value) => {
     const n = Number(value);
-    return Number.isFinite(n) && n > 0 ? `₪${n.toLocaleString()}` : '—';
+    return Number.isFinite(n) && n > 0 ? `₪ ${n.toLocaleString()}` : '—';
   };
 
   const formatDate = (value) => {

@@ -225,6 +225,7 @@ const RoommateListingDetail = () => {
         { label: 'VAAD', amount: Number(utilities.vaad) || 0 },
     ].filter((item) => item.amount > 0);
     const hasItemizedUtilities = itemizedUtilities.length > 0;
+    const itemizedUtilitiesEstimate = itemizedUtilities.reduce((sum, item) => sum + item.amount, 0);
     const legacyUtilitiesEstimate = Number(listing.utilitiesEstimate) || 0;
     const genderLabel = GENDER_LABELS[listing.genderPreference] || GENDER_LABELS['no-preference'];
     const smokingLabel = SMOKING_LABELS[lifestyle.smoking] || SMOKING_LABELS['not-allowed'];
@@ -382,7 +383,7 @@ const RoommateListingDetail = () => {
                                 <span>{formatDate(listing.dateAvailable)}</span>
                             </div>
                         </div>
-                        <div className="detail-template-price">
+                        <div className="detail-template-price detail-template-price--roommate">
                             <div className="detail-template-price-copy">
                                 <p>MONTHLY RENT SHARE</p>
                                 <strong>
@@ -392,7 +393,7 @@ const RoommateListingDetail = () => {
                                 {hasItemizedUtilities ? (
                                     <div className="detail-template-utilities">
                                         <p className="detail-template-utilities-label">
-                                            + Estimated Additional Monthly Expenses
+                                            + {formatPrice(itemizedUtilitiesEstimate)} Estimated Additional Monthly Expenses
                                         </p>
                                         <ul className="detail-template-utilities-list">
                                             {itemizedUtilities.map((item) => (

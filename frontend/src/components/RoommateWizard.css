@@ -472,6 +472,7 @@
   color: var(--color-text-primary, #111827);
   margin: 0;
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .rw-preview-price span {
@@ -482,8 +483,10 @@
 }
 
 .rw-preview-utilities {
-  font-size: 0.82rem;
+  display: inline-block;
+  font-size: clamp(0.72rem, 1.8vw, 0.88rem);
   color: var(--color-text-secondary, #6b7280);
+  white-space: nowrap;
 }
 
 .rw-preview-location {
