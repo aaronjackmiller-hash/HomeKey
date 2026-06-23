@@ -342,6 +342,8 @@ const LocationAutocomplete = ({
   const [activeIndex, setActiveIndex] = useState(-1);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const suppressNextOpenRef = useRef(false);
+  const selectedValueRef = useRef('');
   const wrapperClassNames = ['location-autocomplete', wrapperClassName].filter(Boolean).join(' ');
   const resolvedInputClassName = inputClassName || (value.trim() ? 'is-active' : '');
 
@@ -351,9 +353,16 @@ const LocationAutocomplete = ({
 
   useEffect(() => {
     if (value.trim().length > 0) {
+      if (suppressNextOpenRef.current || selectedValueRef.current === value) {
+        suppressNextOpenRef.current = false;
+        setSuggestions({ cities: [], neighborhoods: [] });
+        setIsOpen(false);
+        return;
+      }
       setSuggestions(buildLocationSuggestions(value, language));
       setIsOpen(true);
     } else {
+      selectedValueRef.current = '';
       setSuggestions({ cities: [], neighborhoods: [] });
     }
   }, [value, language]);
@@ -375,18 +384,24 @@ const LocationAutocomplete = ({
 
   const handleSelect = useCallback((item) => {
     const val = item.value;
+    suppressNextOpenRef.current = true;
+    selectedValueRef.current = val;
+    setSuggestions({ cities: [], neighborhoods: [] });
+    setIsOpen(false);
+    setActiveIndex(-1);
     onChange(val);
     onSelect(val);
     saveRecentSearch(val);
     setRecentSearches(getRecentSearches());
-    setIsOpen(false);
-    setActiveIndex(-1);
   }, [onChange, onSelect]);
 
   const handleRecentSelect = useCallback((term) => {
+    suppressNextOpenRef.current = true;
+    selectedValueRef.current = term;
+    setSuggestions({ cities: [], neighborhoods: [] });
+    setIsOpen(false);
     onChange(term);
     onSelect(term);
-    setIsOpen(false);
   }, [onChange, onSelect]);
 
   const handleKeyDown = (e) => {
@@ -417,7 +432,11 @@ const LocationAutocomplete = ({
         placeholder={placeholder}
         className={resolvedInputClassName}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          suppressNextOpenRef.current = false;
+          selectedValueRef.current = '';
+          onChange(e.target.value);
+        }}
         onFocus={() => setIsOpen(true)}
         onBlur={(e) => {
           setTimeout(() => setIsOpen(false), 150);
@@ -439,6 +458,9 @@ const LocationAutocomplete = ({
                   type="button"
                   className="location-autocomplete__item location-autocomplete__item--recent"
                   onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(term); }}
+                  onMouseUp={(e) => { e.preventDefault(); handleRecentSelect(term); }}
+                  onTouchStart={(e) => { e.preventDefault(); handleRecentSelect(term); }}
+                  onClick={(e) => { e.preventDefault(); handleRecentSelect(term); }}
                 >
                   <span className="location-autocomplete__item-icon">
                     <HeaderIcon name="clock" />
@@ -464,6 +486,9 @@ const LocationAutocomplete = ({
                 type="button"
                 className={`location-autocomplete__item ${isActive ? 'is-active' : ''}`}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                onMouseUp={(e) => { e.preventDefault(); handleSelect(item); }}
+                onTouchStart={(e) => { e.preventDefault(); handleSelect(item); }}
+                onClick={(e) => { e.preventDefault(); handleSelect(item); }}
               >
                 <span className="location-autocomplete__item-icon">
                   <HeaderIcon name="location" />
