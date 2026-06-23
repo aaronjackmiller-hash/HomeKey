@@ -1109,18 +1109,6 @@ const Navbar = () => {
                   </button>
                   <div id="header-property-type-panel" className={`premium-header__property-type-panel ${propertyTypeExpanded ? 'is-open' : ''}`}>
                     <div className="premium-header__property-type-section">
-                      <p className="premium-header__rooms-section-title">{t('filterMenu.listingType')}</p>
-                      <div className="premium-header__rooms-options-grid">
-                        {LISTING_TYPE_OPTIONS.map((typeOption) => (
-                          <button key={typeOption} type="button"
-                            className={`premium-header__chip-btn ${listingType === typeOption ? 'is-selected' : ''}`}
-                            onClick={() => handleFilterMenuListingTypeChange(typeOption)}>
-                            {t(`filterMenu.${typeOption}`)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="premium-header__property-type-section">
                       <p className="premium-header__rooms-section-title">{t('filterMenu.propertyTypes')}</p>
                       <div className="premium-header__rooms-options-grid">
                         {PROPERTY_CATEGORY_OPTIONS.map((categoryOption) => (
