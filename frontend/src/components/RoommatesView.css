@@ -366,3 +366,63 @@
   .roommates-tab-panel { padding: 1rem 1rem 0; }
   .roommates-card-grid { grid-template-columns: 1fr; }
 }
+
+/* ── People Looking tab — post profile CTA ──────────────────────────────── */
+
+.roommates-looking-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: linear-gradient(135deg, #e8f4f0, #f0faf7);
+  border: 1px solid #b8d8d0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 1rem;
+}
+
+.roommates-looking-cta-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.roommates-looking-cta-copy strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a4a3e;
+}
+
+.roommates-looking-cta-copy span {
+  font-size: 0.8rem;
+  color: #4a8070;
+}
+
+.roommates-looking-cta-btn {
+  flex-shrink: 0;
+  background: #2d6b5e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.roommates-looking-cta-btn:hover {
+  background: #1f4f44;
+}
+
+@media (max-width: 600px) {
+  .roommates-looking-cta-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .roommates-looking-cta-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
