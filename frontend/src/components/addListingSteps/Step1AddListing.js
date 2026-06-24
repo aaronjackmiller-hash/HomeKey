@@ -66,29 +66,14 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
     const derivedTotalSteps = usesSyncPortfolio ? 4 : (usesEnterpriseModel ? 7 : 6);
     const totalSteps = totalStepsProp != null ? totalStepsProp : derivedTotalSteps;
     const progressPercent = Math.round((stepNumber / totalSteps) * 100);
-    const relationSelected = String(data.relation || '').trim().length > 0;
-    const trimmedStreet = String(data.address.street || '').trim();
-    const trimmedNumber = String(data.address.number || '').trim();
-    const trimmedCity = String(data.address.city || '').trim();
-    const trimmedLicense = String(data.licenseNumber || '').trim();
-    const trimmedAgency = String(data.agencyName || '').trim();
-    const trimmedBrokerFee = String(data.brokerFee || '').trim();
-    const trimmedManagementCompany = String(data.managementCompanyName || '').trim();
-    const trimmedEmergencyPhone = String(data.emergencyMaintenancePhone || '').trim();
 
     const missingFields = {
         propertyType: !data.propertyType,
         listingType: !data.listingType,
-        street: !trimmedStreet,
-        number: !trimmedNumber,
-        city: !trimmedCity,
-        relation: !relationSelected,
-        verificationDocument: data.relation === 'property owner' && !data.verificationDocument,
-        licenseNumber: data.relation === 'agent/broker' && !trimmedLicense,
-        agencyName: data.relation === 'agent/broker' && !trimmedAgency,
-        brokerFee: data.relation === 'agent/broker' && !trimmedBrokerFee,
-        managementCompanyName: data.relation === 'property manager' && !trimmedManagementCompany,
-        emergencyMaintenancePhone: data.relation === 'property manager' && !trimmedEmergencyPhone,
+        street: !String(data.address.street || '').trim(),
+        number: !String(data.address.number || '').trim(),
+        city: !String(data.address.city || '').trim(),
+        relation: !String(data.relation || '').trim(),
     };
 
     const hasMissingFields = Object.values(missingFields).some(Boolean);
@@ -131,7 +116,7 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
-            {/* Rental / Sale — full width, no roommates dropdown */}
+            {/* Rental / Sale */}
             <div className="wizard-row">
                 <label className="wizard-label">Rental / Sale</label>
                 <select
@@ -140,7 +125,7 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                     className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}
                 >
                     <option value="">Select...</option>
-                    <option value="Rental">Rental</option>
+                    <option value="Rental">For Rent</option>
                     <option value="For Sale">For Sale</option>
                 </select>
                 {showRequiredHints && missingFields.listingType ? <p className="wizard-required-copy">Required</p> : null}
@@ -184,99 +169,11 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 >
                     <option value="">Select option...</option>
                     <option value="property owner">Property Owner</option>
-                    <option value="agent/broker">Agent/Broker listing on someone&apos;s behalf</option>
+                    <option value="agent/broker">Agent / Broker</option>
                     <option value="property manager">Property Manager</option>
                 </select>
                 {showRequiredHints && missingFields.relation ? <p className="wizard-required-copy">Required</p> : null}
             </div>
-
-            {/* Verification panel */}
-            {data.relation && data.relation !== 'renter' ? (
-                <div className="wizard-relation-panel">
-                    <p className="wizard-relation-title">Verification &amp; Professional Details</p>
-
-                    {data.relation === 'property owner' ? (
-                        <div className="wizard-row">
-                            <label className="wizard-field-label">Property Verification Document (Tabu/ID)</label>
-                            <label className={`wizard-file-upload ${showRequiredHints && missingFields.verificationDocument ? 'wizard-field-required' : ''}`}>
-                                <input
-                                    type="file"
-                                    accept=".pdf,image/*"
-                                    onChange={(e) => updateData({ verificationDocument: e.target.files?.[0] || null })}
-                                />
-                                <span>
-                                    {showRequiredHints && missingFields.verificationDocument
-                                        ? 'Upload verification file (required)'
-                                        : 'Upload verification file'}
-                                </span>
-                            </label>
-                            {data.verificationDocument ? (
-                                <p className="wizard-file-name">{data.verificationDocument.name}</p>
-                            ) : null}
-                        </div>
-                    ) : null}
-
-                    {data.relation === 'agent/broker' ? (
-                        <div className="wizard-relation-grid">
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">License Number</label>
-                                <input
-                                    type="text"
-                                    className={`wizard-input ${showRequiredHints && missingFields.licenseNumber ? 'wizard-field-required' : ''}`}
-                                    value={data.licenseNumber}
-                                    onChange={(e) => updateData({ licenseNumber: e.target.value })}
-                                    placeholder={formatRequiredPlaceholder('e.g. BR-12345', missingFields.licenseNumber)}
-                                />
-                            </div>
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">Agency Name</label>
-                                <input
-                                    type="text"
-                                    className={`wizard-input ${showRequiredHints && missingFields.agencyName ? 'wizard-field-required' : ''}`}
-                                    value={data.agencyName}
-                                    onChange={(e) => updateData({ agencyName: e.target.value })}
-                                    placeholder={formatRequiredPlaceholder('Agency or brokerage', missingFields.agencyName)}
-                                />
-                            </div>
-                            <div className="wizard-field wizard-relation-grid-full">
-                                <label className="wizard-field-label">Broker Fee (₪ or %)</label>
-                                <input
-                                    type="text"
-                                    className={`wizard-input ${showRequiredHints && missingFields.brokerFee ? 'wizard-field-required' : ''}`}
-                                    value={data.brokerFee}
-                                    onChange={(e) => updateData({ brokerFee: e.target.value })}
-                                    placeholder={formatRequiredPlaceholder('e.g. ₪4,000 or 2%', missingFields.brokerFee)}
-                                />
-                            </div>
-                        </div>
-                    ) : null}
-
-                    {data.relation === 'property manager' ? (
-                        <div className="wizard-relation-grid">
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">Management Company Name</label>
-                                <input
-                                    type="text"
-                                    className={`wizard-input ${showRequiredHints && missingFields.managementCompanyName ? 'wizard-field-required' : ''}`}
-                                    value={data.managementCompanyName}
-                                    onChange={(e) => updateData({ managementCompanyName: e.target.value })}
-                                    placeholder={formatRequiredPlaceholder('Company name', missingFields.managementCompanyName)}
-                                />
-                            </div>
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">Emergency Maintenance Phone</label>
-                                <input
-                                    type="tel"
-                                    className={`wizard-input ${showRequiredHints && missingFields.emergencyMaintenancePhone ? 'wizard-field-required' : ''}`}
-                                    value={data.emergencyMaintenancePhone}
-                                    onChange={(e) => updateData({ emergencyMaintenancePhone: e.target.value })}
-                                    placeholder={formatRequiredPlaceholder('Phone number', missingFields.emergencyMaintenancePhone)}
-                                />
-                            </div>
-                        </div>
-                    ) : null}
-                </div>
-            ) : null}
 
             <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
                 {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
