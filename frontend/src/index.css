@@ -8405,6 +8405,8 @@ html[dir="rtl"] .premium-header__property-type-panel {
   text-align: center !important;
   gap: 6px !important;
   padding: 14px 8px !important;
+  min-height: 104px !important;
+  overflow: visible !important;
 }
 
 /* ── 3. Roommate filter section headers — larger on both sides ── */
@@ -8898,6 +8900,12 @@ html[dir="rtl"] .filter-menu {
   font-size: 13px !important;
   font-weight: 500 !important;
   color: #1a2a1a !important;
+  line-height: 1.2 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+  word-break: normal !important;
 }
 
 /* Phone input */

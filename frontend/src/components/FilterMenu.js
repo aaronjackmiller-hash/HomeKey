@@ -3,9 +3,10 @@
  * path: frontend/src/components/FilterMenu.js
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { createSeekerProfile } from '../services/api';
+import { ROOMMATE_AMENITY_OPTIONS, getRoommateAmenityLabel } from '../constants/roommateAmenities';
 
 const FEATURE_ITEMS = [
   { id: 'elevator', labelKey: 'filterMenu.elevator', icon: 'elevator' },
@@ -37,35 +38,7 @@ const BEDROOM_COUNT_OPTIONS = ['1', '2', '3', '4+'];
 const ROOMS_AVAILABLE_OPTIONS = ['1', '2', '3+'];
 const ROOMMATE_COUNT_OPTIONS = ['1', '2', '3+'];
 
-const ROOMMATE_AMENITY_ITEMS = [
-  { id: 'Mamad', icon: 'shield' },
-  { id: 'Elevator', icon: 'elevator' },
-  { id: 'Parking', icon: 'parking' },
-  { id: 'Pets Allowed', icon: 'pets' },
-  { id: 'Disabled Access', icon: 'accessibility' },
-  { id: 'Renovated', icon: 'renovated' },
-  { id: 'Furnished', icon: 'furnished' },
-  { id: 'Oven', icon: 'oven' },
-  { id: 'Balcony', icon: 'balcony' },
-  { id: 'Stovetop', icon: 'stovetop' },
-  { id: 'Laundry Facilities', icon: 'laundry' },
-  { id: 'In-Unit Washer & Dryer', icon: 'washer' },
-];
-
-const ROOMMATE_AMENITY_LABELS_HE = {
-  'Mamad': 'ממ״ד',
-  'Elevator': 'מעלית',
-  'Parking': 'חניה',
-  'Pets Allowed': 'מתאים לחיות מחמד',
-  'Disabled Access': 'נגישות',
-  'Renovated': 'משופץ',
-  'Furnished': 'מרוהט',
-  'Oven': 'תנור',
-  'Balcony': 'מרפסת',
-  'Stovetop': 'כיריים',
-  'Laundry Facilities': 'מתקני כביסה',
-  'In-Unit Washer & Dryer': 'מכונת כביסה ומייבש',
-};
+const ROOMMATE_AMENITY_ITEMS = ROOMMATE_AMENITY_OPTIONS;
 
 const FILTER_PRICE_MIN = 0;
 const FILTER_PRICE_MAX = 20000;
@@ -173,6 +146,17 @@ const CHARACTERISTIC_ICONS = {
       <path d="M12 6h.1" />
       <path d="M12 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
       <path d="M10 14.2c1.3.8 2.5-.8 4 0" />
+    </>
+  ),
+  dishwasher: (
+    <>
+      <path d="M6 4h12v16H6z" />
+      <path d="M6 8h12" />
+      <path d="M9 6h.1" />
+      <path d="M12 6h.1" />
+      <path d="M9 12h6" />
+      <path d="M9 15h6" />
+      <path d="M9 18h6" />
     </>
   ),
   washer: (
@@ -346,6 +330,7 @@ const FilterMenu = ({
   onMaxPriceChange,
   onTogglePropertyCategory,
   onToggleFeature,
+  onSetFeatures,
   onApplyFilters,
   onSaveFilters,
   roommateLocation,
@@ -416,9 +401,11 @@ const FilterMenu = ({
           lookingFor={lookingFor}
           bedroomsNeeded={bedroomsNeeded}
           roommatesNeeded={roommatesNeeded}
+          selectedFeatures={selectedFeatures}
           onLookingForChange={setLookingFor}
           onBedroomsNeededChange={setBedroomsNeeded}
           onRoommatesNeededChange={setRoommatesNeeded}
+          onSetFeatures={onSetFeatures}
           onApplyFilters={onApplyFilters}
           onSaveFilters={onSaveFilters}
           roommateLocation={roommateLocation}
@@ -485,9 +472,11 @@ const RoommateFilters = ({
   lookingFor,
   bedroomsNeeded,
   roommatesNeeded,
+  selectedFeatures = [],
   onLookingForChange,
   onBedroomsNeededChange,
   onRoommatesNeededChange,
+  onSetFeatures = () => {},
   onApplyFilters,
   onSaveFilters,
   roommateLocation = '',
@@ -506,7 +495,10 @@ const RoommateFilters = ({
   const [smoking, setSmoking] = useState('Not at all');
   const [kosher, setKosher] = useState('Open to it');
   const [leaseTerm, setLeaseTerm] = useState('6 mo');
-  const [amenities, setAmenities] = useState(['Mamad']);
+  const normalizedSelectedAmenities = (Array.isArray(selectedFeatures) ? selectedFeatures : [])
+    .filter((value) => ROOMMATE_AMENITY_ITEMS.some((item) => item.value === value));
+  const normalizedSelectedAmenitiesKey = normalizedSelectedAmenities.join('|');
+  const [selectedAmenityValues, setSelectedAmenityValues] = useState(normalizedSelectedAmenities);
 
   // ── FIX 3: Phone moved to top — seeker ──
   const [phone, setPhone] = useState('');
@@ -522,13 +514,23 @@ const RoommateFilters = ({
   const [ownerSmoking, setOwnerSmoking] = useState('Not at all');
   const [ownerKosher, setOwnerKosher] = useState('Not kosher');
   const [ownerLeaseTerm, setOwnerLeaseTerm] = useState('6 mo');
-  const [ownerAmenities, setOwnerAmenities] = useState(['Mamad']);
+  const [ownerAmenities, setOwnerAmenities] = useState(['mamad']);
 
   // ── FIX 3: Phone moved to top — lister ──
   const [ownerPhone, setOwnerPhone] = useState('');
   const [ownerPhoneSaved, setOwnerPhoneSaved] = useState(false);
 
-  const toggleAmenity = (item) => setAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
+  useEffect(() => {
+    setSelectedAmenityValues(normalizedSelectedAmenities);
+  }, [normalizedSelectedAmenitiesKey]);
+
+  const toggleAmenity = (value) => {
+    const nextAmenityValues = selectedAmenityValues.includes(value)
+      ? selectedAmenityValues.filter((item) => item !== value)
+      : [...selectedAmenityValues, value];
+    setSelectedAmenityValues(nextAmenityValues);
+    onSetFeatures(nextAmenityValues);
+  };
   const toggleOwnerAmenity = (item) => setOwnerAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
 
   // Publish seeker profile to backend so room listers can discover this person
@@ -546,7 +548,7 @@ const RoommateFilters = ({
         smoking,
         kosher,
         leaseTerm,
-        amenities,
+        amenities: selectedAmenityValues,
         bedroomsNeeded: bedroomsNeeded || 1,
         city: roommateLocation,
       });
@@ -564,7 +566,7 @@ const RoommateFilters = ({
   const roommateCardTitle = isHebrew ? (<>מחפש/ת <strong>שותף/ה</strong></>) : (<>Looking for a <strong>ROOMMATE</strong></>);
   const roommateCardSubtitle = isHebrew ? '(יש לי דירה)' : '(I have an apartment)';
 
-  const getAmenityLabel = (id) => isHebrew ? (ROOMMATE_AMENITY_LABELS_HE[id] || id) : id;
+  const getAmenityLabel = (value) => getRoommateAmenityLabel(value, language);
 
   const renderLocationInput = (id, placeholder = 'City or neighborhood…') => {
     if (typeof renderRoommateLocationInput === 'function') {
@@ -714,9 +716,9 @@ const RoommateFilters = ({
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button key={a.id} type="button" className={`roommate-amenity ${amenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleAmenity(a.id)} aria-pressed={amenities.includes(a.id)}>
+                <button key={a.value} type="button" className={`roommate-amenity ${selectedAmenityValues.includes(a.value) ? 'is-selected' : ''}`} onClick={() => toggleAmenity(a.value)} aria-pressed={selectedAmenityValues.includes(a.value)}>
                   <CharacteristicIcon name={a.icon} size={32} />
-                  <span>{getAmenityLabel(a.id)}</span>
+                  <span>{getAmenityLabel(a.value)}</span>
                 </button>
               ))}
             </div>
@@ -783,9 +785,9 @@ const RoommateFilters = ({
             <h3 className="roommate-filters__title">Property amenities</h3>
             <div className="roommate-amenities-grid">
               {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button key={a.id} type="button" className={`roommate-amenity ${ownerAmenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleOwnerAmenity(a.id)} aria-pressed={ownerAmenities.includes(a.id)}>
+                <button key={a.value} type="button" className={`roommate-amenity ${ownerAmenities.includes(a.value) ? 'is-selected' : ''}`} onClick={() => toggleOwnerAmenity(a.value)} aria-pressed={ownerAmenities.includes(a.value)}>
                   <CharacteristicIcon name={a.icon} size={32} />
-                  <span>{getAmenityLabel(a.id)}</span>
+                  <span>{getAmenityLabel(a.value)}</span>
                 </button>
               ))}
             </div>
@@ -891,6 +893,7 @@ FilterMenu.defaultProps = {
   onMaxPriceChange: () => {},
   onTogglePropertyCategory: () => {},
   onToggleFeature: () => {},
+  onSetFeatures: () => {},
   onApplyFilters: () => {},
   onSaveFilters: () => {},
   renderRoommateLocationInput: null,

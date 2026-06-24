@@ -4,7 +4,7 @@ const PRICE_MIN = 0;
 const PRICE_MAX = 20000;
 const PRICE_STEP = 500;
 const MAX_PROMPT_LENGTH = 500;
-const FEATURE_OPTIONS = ['elevator', 'parking', 'pets', 'disabled-access', 'renovated', 'furnished', 'mamad'];
+const FEATURE_OPTIONS = ['elevator', 'parking', 'pets', 'disabled-access', 'renovated', 'furnished', 'mamad', 'dishwasher'];
 const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const ROOM_OPTIONS = ['', 'studio', '1', '2', '3', '4+'];
 const BATH_OPTIONS = ['', '1', '2', '3+'];
@@ -27,6 +27,7 @@ const AI_FEATURE_KEYWORDS = {
     renovated: ['renovated', 'refurbished', 'משופץ', 'משופצת'],
     furnished: ['furnished', 'מרוהט', 'מרוהטת'],
     mamad: ['mamad', 'safe room', 'security room', 'ממד', 'ממ"ד', 'חדר ביטחון', 'חדר בטחון'],
+    dishwasher: ['dishwasher', 'מדיח'],
 };
 
 const HEBREW_CITY_HINTS = [

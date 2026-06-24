@@ -12,6 +12,7 @@ const FEATURE_FILTER_OPTIONS = new Set([
     'renovated',
     'furnished',
     'mamad',
+    'dishwasher',
 ]);
 const PROPERTY_CATEGORY_KEYWORDS = {
     apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
@@ -25,6 +26,7 @@ const FEATURE_KEYWORDS = {
     renovated: ['renovated', 'newly renovated', 'refurbished', 'משופץ'],
     furnished: ['furnished', 'fully furnished', 'מרוהט'],
     mamad: ['mamad', 'security room', 'safe room', 'ממד', 'ממ״ד'],
+    dishwasher: ['dishwasher', 'מדיח'],
 };
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
