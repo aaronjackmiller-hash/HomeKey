@@ -4,9 +4,9 @@
  *
  * Changes vs. original:
  * - Added `isRoommatesMode` prop (default false).
- * - In roommates mode, listings arrive with lat/lng already attached
- *   (saved by the wizard via geocodeController) so the live-geocode path
- *   is skipped entirely — no redundant API calls, pins appear instantly.
+ * - In roommates mode, listings with saved lat/lng skip live geocoding.
+ *   Older listings without coordinates fall back to address geocoding so
+ *   they still appear on the map.
  * - Roommate pins render in teal (#2d6b5e) so searchers can distinguish
  *   them from black Rent/Sale pins at a glance.
  * - Popup card link points to /roommates/:id instead of /properties/:id.
@@ -271,6 +271,20 @@ const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   const neighborhood = safeText(property?.address?.city || property?.neighborhood || (addressQuery || '').split(',')[0]);
   const neighborhoodLabel = neighborhood ? neighborhood.toUpperCase() : '';
   return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
+};
+
+const toMapMarkerInput = (property, language = 'en', isRoommatesMode = false) => {
+  const propertyId = getPropertyId(property);
+  if (!property || !propertyId) return null;
+  if (!isRoommatesMode) {
+    const addressQuery = buildAddressQuery(property.address, language);
+    return addressQuery ? { property, propertyId, addressQuery } : null;
+  }
+  const lat = Number(property?.address?.lat ?? property?.lat);
+  const lng = Number(property?.address?.lng ?? property?.lng);
+  const coords = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  const addressQuery = coords ? '' : buildAddressQuery(property.address, language);
+  return coords || addressQuery ? { property, propertyId, coords, addressQuery } : null;
 };
 
 // Roommate listings have no .title — build one from address fields instead.
@@ -540,22 +554,13 @@ const GoogleListingsMap = ({
     circ.setOptions({ clickable: interactive, draggable: interactive, editable: interactive && !touchLike });
   };
 
-  // Roommate listings already have lat/lng from the wizard geocoding step —
-  // skip live geocoding for them. Rent/Sale properties geocode from address.
   // RoommateListing stores coordinates at address.lat / address.lng (nested),
-  // so we check both that location and the top level for safety.
+  // so we use them when present. Existing listings may predate coordinate
+  // capture, so they fall back to the same address geocoding path as Rent/Sale.
   const propertiesWithAddress = useMemo(() => {
-    if (isRoommatesMode) {
-      return properties.map((property) => {
-        const lat = Number(property?.address?.lat ?? property?.lat);
-        const lng = Number(property?.address?.lng ?? property?.lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        return { property, propertyId: getPropertyId(property), coords: { lat, lng } };
-      }).filter((item) => item && item.propertyId);
-    }
-    return properties.map((property) => ({
-      property, propertyId: getPropertyId(property), addressQuery: buildAddressQuery(property.address, language),
-    })).filter((item) => item.property && item.propertyId && item.addressQuery);
+    return properties
+      .map((property) => toMapMarkerInput(property, language, isRoommatesMode))
+      .filter(Boolean);
   }, [properties, language, isRoommatesMode]);
 
   useEffect(() => { if (typeof onDrawModeChange === 'function') onDrawModeChange(drawMode); }, [drawMode, onDrawModeChange]);
