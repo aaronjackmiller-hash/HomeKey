@@ -1,3 +1,7 @@
+/**
+ * Step1AddListing.js
+ * path: frontend/src/components/addListingSteps/Step1AddListing.js
+ */
 import React from 'react';
 
 const ApartmentIcon = () => (
@@ -8,21 +12,17 @@ const ApartmentIcon = () => (
                 <rect x="25" y="50" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
                 <rect x="25" y="64" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
                 <rect x="25" y="75" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
-
                 <path d="M 60 85 L 60 47 L 80 47 L 80 85" fill="#EAECEE" />
                 <rect x="65" y="55" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
                 <rect x="65" y="70" width="10" height="6" fill="#AED6F1" strokeWidth="1" />
-
                 <path d="M 38 85 L 38 30 L 62 30 L 62 85" fill="#F4F6F7" />
                 <line x1="36" y1="30" x2="64" y2="30" />
-
                 <rect x="43" y="37" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
                 <rect x="51" y="37" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
                 <rect x="43" y="49" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
                 <rect x="51" y="49" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
                 <rect x="43" y="61" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
                 <rect x="51" y="61" width="6" height="8" fill="#AED6F1" strokeWidth="1" />
-
                 <rect x="47" y="73" width="6" height="12" fill="#34495E" />
                 <line x1="10" y1="85" x2="90" y2="85" strokeWidth="2" />
             </g>
@@ -79,7 +79,6 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
     const missingFields = {
         propertyType: !data.propertyType,
         listingType: !data.listingType,
-        lookingForRoommates: data.lookingForRoommates === null,
         street: !trimmedStreet,
         number: !trimmedNumber,
         city: !trimmedCity,
@@ -94,16 +93,12 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
 
     const hasMissingFields = Object.values(missingFields).some(Boolean);
     const formatRequiredPlaceholder = (basePlaceholder, isMissing) => (
-        showRequiredHints && isMissing
-            ? `${basePlaceholder} (required)`
-            : basePlaceholder
+        showRequiredHints && isMissing ? `${basePlaceholder} (required)` : basePlaceholder
     );
 
     const handleContinue = () => {
         setShowRequiredHints(true);
-        if (hasMissingFields) {
-            return;
-        }
+        if (hasMissingFields) return;
         nextStep();
     };
 
@@ -117,6 +112,7 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
+            {/* Property Type */}
             <div className="wizard-row">
                 <label className="wizard-label">Property Type</label>
                 <div className={`wizard-card-grid ${showRequiredHints && missingFields.propertyType ? 'wizard-card-grid--required' : ''}`}>
@@ -135,40 +131,22 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
-            <div className="wizard-step1-grid-two">
-                <div className="wizard-row">
-                    <label className="wizard-label">Rental/Sale</label>
-                    <select
-                        value={data.listingType}
-                        onChange={(e) => {
-                            updateData({ listingType: e.target.value });
-                        }}
-                        className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}
-                    >
-                        <option value="">Select...</option>
-                        <option value="Rental">Rental</option>
-                        <option value="For Sale">For Sale</option>
-                    </select>
-                </div>
-
-                <div className="wizard-row wizard-roommate-box">
-                    <label className="wizard-sub-label">Are you looking for roommates?</label>
-                    <select
-                        value={data.lookingForRoommates === null ? '' : (data.lookingForRoommates ? 'Yes' : 'No')}
-                        onChange={(e) => updateData({
-                            lookingForRoommates: e.target.value === ''
-                                ? null
-                                : e.target.value === 'Yes',
-                        })}
-                        className={`wizard-select ${showRequiredHints && missingFields.lookingForRoommates ? 'wizard-field-required' : ''}`}
-                    >
-                        <option value="">Select...</option>
-                        <option value="Yes">Yes, searching</option>
-                        <option value="No">No, not searching</option>
-                    </select>
-                </div>
+            {/* Rental / Sale — full width, no roommates dropdown */}
+            <div className="wizard-row">
+                <label className="wizard-label">Rental / Sale</label>
+                <select
+                    value={data.listingType}
+                    onChange={(e) => updateData({ listingType: e.target.value })}
+                    className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}
+                >
+                    <option value="">Select...</option>
+                    <option value="Rental">Rental</option>
+                    <option value="For Sale">For Sale</option>
+                </select>
+                {showRequiredHints && missingFields.listingType ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
+            {/* Address */}
             <div className="wizard-row">
                 <label className="wizard-label">Address</label>
                 <div className="wizard-address-grid wizard-address-grid--step1">
@@ -196,6 +174,7 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 </div>
             </div>
 
+            {/* Listing Relation */}
             <div className="wizard-row">
                 <label className="wizard-label">Listing Relation</label>
                 <select
@@ -204,13 +183,14 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                     className={`wizard-select ${showRequiredHints && missingFields.relation ? 'wizard-field-required' : ''}`}
                 >
                     <option value="">Select option...</option>
-                    <option value="renter">Renter</option>
                     <option value="property owner">Property Owner</option>
                     <option value="agent/broker">Agent/Broker listing on someone&apos;s behalf</option>
                     <option value="property manager">Property Manager</option>
                 </select>
+                {showRequiredHints && missingFields.relation ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
+            {/* Verification panel */}
             {data.relation && data.relation !== 'renter' ? (
                 <div className="wizard-relation-panel">
                     <p className="wizard-relation-title">Verification &amp; Professional Details</p>
@@ -298,12 +278,8 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 </div>
             ) : null}
 
-            <button
-                type="button"
-                onClick={handleContinue}
-                className="wizard-btn wizard-btn--full"
-            >
-                {usesEnterpriseModel ? 'Continue to Enterprise model' : 'Continue to Step 2'}
+            <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
+                {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
             </button>
         </div>
     );
