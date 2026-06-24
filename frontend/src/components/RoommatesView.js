@@ -1,4 +1,4 @@
-/**
+ /**
  * RoommatesView.js
  *
  * The full roommates experience, rendered inside PropertyList when
@@ -613,12 +613,31 @@ const RoommatesView = ({
 
         {activeTab === ROOMMATES_TAB.LOOKING && (
           <div className="roommates-browse-tab roommates-looking-tab">
+            {/* CTA for seekers to publish their own profile */}
+            <div className="roommates-looking-cta-row">
+              <div className="roommates-looking-cta-copy">
+                <strong>Looking for a room?</strong>
+                <span>Post your profile so room listers can find and contact you directly.</span>
+              </div>
+              <button
+                type="button"
+                className="roommates-looking-cta-btn"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+                  }
+                }}
+              >
+                Post my profile
+              </button>
+            </div>
+
             <p className="roommates-tab-stat">
               {seekerProfilesLoading
                 ? 'Loading…'
                 : seekerProfiles.length > 0
                   ? `${seekerProfiles.length} ${seekerProfiles.length === 1 ? 'person' : 'people'} looking for a room right now`
-                  : 'No active seekers yet — check back soon'}
+                  : 'No active seekers yet — be the first to post your profile'}
             </p>
             {seekerProfilesLoading && (
               <p className="status-message">{t('propertyList.loadingProperties')}</p>
@@ -627,7 +646,7 @@ const RoommatesView = ({
               <div className="roommates-empty-state">
                 <div className="roommates-empty-icon" aria-hidden="true">🔍</div>
                 <h3>No seekers listed yet</h3>
-                <p>People looking for rooms will appear here. Share HomeKey so seekers can publish their profiles!</p>
+                <p>People looking for rooms will appear here.</p>
               </div>
             )}
             {!seekerProfilesLoading && seekerProfiles.length > 0 && (
