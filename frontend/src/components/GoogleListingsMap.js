@@ -273,6 +273,20 @@ const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
 };
 
+export const toMapMarkerInput = (property, language = 'en', isRoommatesMode = false) => {
+  const propertyId = getPropertyId(property);
+  if (!property || !propertyId) return null;
+  if (!isRoommatesMode) {
+    const addressQuery = buildAddressQuery(property.address, language);
+    return addressQuery ? { property, propertyId, addressQuery } : null;
+  }
+  const lat = Number(property?.address?.lat ?? property?.lat);
+  const lng = Number(property?.address?.lng ?? property?.lng);
+  const coords = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  const addressQuery = coords ? '' : buildAddressQuery(property.address, language);
+  return coords || addressQuery ? { property, propertyId, coords, addressQuery } : null;
+};
+
 // Roommate listings have no .title — build one from address fields instead.
 const getMarkerTitle = (property = {}, isRoommatesMode = false) => {
   if (!isRoommatesMode) return safeText(property.title);
@@ -544,22 +558,9 @@ const GoogleListingsMap = ({
   // so we use them when present. Existing listings may predate coordinate
   // capture, so they fall back to the same address geocoding path as Rent/Sale.
   const propertiesWithAddress = useMemo(() => {
-    if (isRoommatesMode) {
-      return properties.map((property) => {
-        const lat = Number(property?.address?.lat ?? property?.lat);
-        const lng = Number(property?.address?.lng ?? property?.lng);
-        const coords = Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-        return {
-          property,
-          propertyId: getPropertyId(property),
-          coords,
-          addressQuery: coords ? '' : buildAddressQuery(property.address, language),
-        };
-      }).filter((item) => item && item.property && item.propertyId && (item.coords || item.addressQuery));
-    }
-    return properties.map((property) => ({
-      property, propertyId: getPropertyId(property), addressQuery: buildAddressQuery(property.address, language),
-    })).filter((item) => item.property && item.propertyId && item.addressQuery);
+    return properties
+      .map((property) => toMapMarkerInput(property, language, isRoommatesMode))
+      .filter(Boolean);
   }, [properties, language, isRoommatesMode]);
 
   useEffect(() => { if (typeof onDrawModeChange === 'function') onDrawModeChange(drawMode); }, [drawMode, onDrawModeChange]);
