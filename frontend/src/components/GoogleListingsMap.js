@@ -273,7 +273,7 @@ const buildMarkerDetailLine = (property = {}, addressQuery = '') => {
   return [roomLabel, neighborhoodLabel].filter(Boolean).join(' | ');
 };
 
-export const toMapMarkerInput = (property, language = 'en', isRoommatesMode = false) => {
+const toMapMarkerInput = (property, language = 'en', isRoommatesMode = false) => {
   const propertyId = getPropertyId(property);
   if (!property || !propertyId) return null;
   if (!isRoommatesMode) {
