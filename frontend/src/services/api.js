@@ -363,6 +363,15 @@ export const createRoommateListing = async (listing) => {
 };
 
 /**
+ * Create a new seeker profile for someone looking for a room.
+ * Public — anonymous users allowed.
+ */
+export const createSeekerProfile = async (profile) => {
+  const response = await api.post('/seekers', profile, { skipSessionExpiryLogout: true });
+  return response.data;
+};
+
+/**
  * Update an existing roommate listing.
  * Authenticated — owner or admin only.
  */
