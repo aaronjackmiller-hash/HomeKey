@@ -24,6 +24,7 @@ import { getLocalizedAddress } from '../utils/addressLocalization';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
 import { getRoommateStats, getRoommateListings } from '../services/api';
+import { ROOMMATE_AMENITY_LABELS, normalizeRoommateAmenityList } from '../constants/roommateAmenities';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -118,12 +119,9 @@ const RoommateCard = ({
     : property.lifestyle?.smoking === 'outside-only' ? 'Smoking outside' : null;
   const genderTag = property.genderPreference === 'men' ? 'Men only'
     : property.genderPreference === 'women' ? 'Women only' : null;
-  const AMENITY_LABELS = {
-    elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', renovated: 'Renovated',
-    furnished: 'Furnished', mamad: 'Mamad', balcony: 'Balcony',
-  };
+  const AMENITY_LABELS = ROOMMATE_AMENITY_LABELS;
   const amenityTags = Array.isArray(property.amenities)
-    ? property.amenities.slice(0, 2).map((a) => AMENITY_LABELS[a]).filter(Boolean)
+    ? normalizeRoommateAmenityList(property.amenities).slice(0, 2).map((a) => AMENITY_LABELS[a]?.label).filter(Boolean)
     : [];
   const quickTags = [smokingTag, genderTag, ...amenityTags].filter(Boolean).slice(0, 4);
 
@@ -423,6 +421,10 @@ const RoommatesView = ({
     const city = String(params.get('q') || '').trim();
     const roomsParam = String(params.get('rooms') || '').trim();
     const bathsParam = String(params.get('baths') || '').trim();
+    const featureParams = String(params.get('features') || '')
+      .split(',')
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter(Boolean);
     const availableFromParam = String(params.get('availableFrom') || '').trim();
 
     // "4+" style values mean "at least N" — the backend filter does an
@@ -440,6 +442,7 @@ const RoommatesView = ({
     if (bedroomsCount !== undefined) apiParams.bedrooms = bedroomsCount;
     const bathroomsCount = toExactCount(bathsParam);
     if (bathroomsCount !== undefined) apiParams.bathrooms = bathroomsCount;
+    if (featureParams.length > 0) apiParams.amenities = featureParams.join(',');
     if (/^\d{4}-\d{2}-\d{2}$/.test(availableFromParam)) apiParams.availableFrom = availableFromParam;
 
     getRoommateListings(apiParams)

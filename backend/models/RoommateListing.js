@@ -169,7 +169,7 @@ const RoommateListingSchema = new mongoose.Schema(
                 enum: [
                     'elevator', 'parking', 'pets', 'disabled-access', 'renovated',
                     'furnished', 'mamad', 'oven', 'balcony', 'stovetop',
-                    'laundry-facilities', 'in-unit-washer-dryer',
+                    'laundry-facilities', 'in-unit-washer-dryer', 'dishwasher',
                 ],
             }],
             default: [],

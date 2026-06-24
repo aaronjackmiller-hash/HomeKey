@@ -6,6 +6,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
 import { useLanguage } from '../context/LanguageContext';
+import { ROOMMATE_AMENITY_LABELS, normalizeRoommateAmenityList } from '../constants/roommateAmenities';
 import HomeKeyLogoBadge from './HomeKeyLogoBadge';
 
 const safeText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -69,21 +70,7 @@ const KOSHER_LABELS = {
     'open-to-it': 'Open to it',
 };
 
-const AMENITY_LABELS = {
-    elevator: { icon: '🛗', label: 'Elevator' },
-    parking: { icon: '🚗', label: 'Parking' },
-    pets: { icon: '🐾', label: 'Pets OK' },
-    'disabled-access': { icon: '♿', label: 'Accessible' },
-    renovated: { icon: '🔨', label: 'Renovated' },
-    furnished: { icon: '🛋️', label: 'Furnished' },
-    mamad: { icon: '🛡️', label: 'Mamad' },
-    oven: { icon: '🍳', label: 'Oven' },
-    balcony: { icon: '🌇', label: 'Balcony' },
-    stovetop: { icon: '🔥', label: 'Stovetop' },
-    'laundry-facilities': { icon: '🧺', label: 'Laundry' },
-    'in-unit-washer-dryer': { icon: '🌀', label: 'Washer/Dryer' },
-    dishwasher: { icon: '🍽️', label: 'Dishwasher' },
-};
+const AMENITY_LABELS = ROOMMATE_AMENITY_LABELS;
 
 const daysUntil = (isoDate) => {
     if (!isoDate) return null;
@@ -451,7 +438,7 @@ const RoommateListingDetail = () => {
                     <section className="detail-section-card">
                         <h2>Amenities</h2>
                         <div className="roommate-detail-amenity-grid">
-                            {listing.amenities.map((value) => {
+                            {normalizeRoommateAmenityList(listing.amenities).map((value) => {
                                 const info = AMENITY_LABELS[value];
                                 return (
                                     <div key={value} className="roommate-detail-amenity-row">

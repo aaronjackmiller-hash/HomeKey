@@ -19,6 +19,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createRoommateListing, geocodeAddress } from '../services/api';
+import { ROOMMATE_AMENITY_OPTIONS } from '../constants/roommateAmenities';
 import ISRAEL_LOCATIONS from '../israelLocations';
 import './RoommateWizard.css';
 
@@ -115,23 +116,7 @@ const LEASE_OPTIONS = [
   { value: '24', label: '24 months' },
 ];
 
-// Same vocabulary as the backend RoommateListing model's amenities enum,
-// so a value picked here saves cleanly without server-side rejection.
-const AMENITY_OPTIONS = [
-  { value: 'elevator', label: 'Elevator', icon: '🛗' },
-  { value: 'parking', label: 'Parking', icon: '🚗' },
-  { value: 'pets', label: 'Pets OK', icon: '🐾' },
-  { value: 'disabled-access', label: 'Accessible', icon: '♿' },
-  { value: 'renovated', label: 'Renovated', icon: '🔨' },
-  { value: 'furnished', label: 'Furnished', icon: '🛋️' },
-  { value: 'mamad', label: 'Mamad', icon: '🛡️' },
-  { value: 'oven', label: 'Oven', icon: '🍳' },
-  { value: 'balcony', label: 'Balcony', icon: '🌇' },
-  { value: 'stovetop', label: 'Stovetop', icon: '🔥' },
-  { value: 'laundry-facilities', label: 'Laundry', icon: '🧺' },
-  { value: 'in-unit-washer-dryer', label: 'Washer/Dryer', icon: '🌀' },
-  { value: 'dishwasher', label: 'Dishwasher', icon: '🍽️' },
-];
+const AMENITY_OPTIONS = ROOMMATE_AMENITY_OPTIONS;
 
 // The four components that make up "Estimated Additional Monthly Expenses".
 // Stored as separate fields so the lister can itemize them; the wizard sums
@@ -721,7 +706,7 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
                 }}
                 aria-pressed={isSelected}
               >
-                <span aria-hidden="true">{amenity.icon}</span>
+                <span aria-hidden="true">{amenity.emoji}</span>
                 <span>{amenity.label}</span>
               </button>
             );
@@ -1004,7 +989,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
                 const option = AMENITY_OPTIONS.find((a) => a.value === value);
                 return (
                   <span key={value} className="rw-preview-pref-tag">
-                    {option?.icon} {option?.label || value}
+                    {option?.emoji} {option?.label || value}
                   </span>
                 );
               })}
