@@ -11,6 +11,7 @@ const {
 } = require('@simplewebauthn/server');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const { sendRegistrationThankYouSms } = require('../services/smsService');
 
 const PASSKEY_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const APPLE_JWKS_URL = new URL('https://appleid.apple.com/auth/keys');
@@ -220,6 +221,11 @@ const register = async (req, res) => {
             agency,
             bio,
         });
+
+        sendRegistrationThankYouSms({
+            toPhone: user.phone,
+            name: user.name,
+        }).catch(() => {});
 
         res.status(201).json(buildAuthSuccessResponse(user));
     } catch (err) {

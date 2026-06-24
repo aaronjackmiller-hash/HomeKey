@@ -24,7 +24,11 @@ const validateRegister = [
     body('name').isLength({ min: 2 }).withMessage('Name must be at least 2 characters long').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Email must be valid').notEmpty().withMessage('Email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long').notEmpty().withMessage('Password is required'),
-    body('phone').optional().isMobilePhone('any').withMessage('Phone must be a valid mobile number'),
+    body('phone')
+        .notEmpty()
+        .withMessage('Phone is required')
+        .isMobilePhone('any')
+        .withMessage('Phone must be a valid mobile number'),
     body('whatsapp').optional().isMobilePhone('any').withMessage('WhatsApp must be a valid mobile number'),
     body('moveInDate').optional({ checkFalsy: true }).isISO8601().withMessage('Move-in date must be a valid date'),
     body('preferredContactMethod').optional().isIn(['email', 'whatsapp', 'phone', 'sms']).withMessage('Invalid preferred contact method'),

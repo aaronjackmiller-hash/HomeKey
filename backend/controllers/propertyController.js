@@ -480,6 +480,12 @@ const createProperty = async (req, res) => {
             ],
             ...sourceMetadata,
         };
+        if (!payload.contact.phone) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phone number is required to publish a property listing.',
+            });
+        }
         if (payload.address && typeof payload.address === 'object') {
             payload.address = await enrichAddressLocalization(payload.address);
         }

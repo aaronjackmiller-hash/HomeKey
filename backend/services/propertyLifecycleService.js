@@ -2,6 +2,7 @@
 
 const Property = require('../models/Property');
 const User = require('../models/User');
+const { sendPropertyListingConfirmationSms } = require('./smsService');
 
 const DEFAULT_USER_EXPIRY_DAYS = 30;
 const DEFAULT_AGENT_EXPIRY_DAYS = 60;
@@ -67,18 +68,11 @@ const brandBody = (body) => `${HOMEKEY_BRAND_PREFIX} ${body}`;
 const sendThankYouForListing = async ({ user, property }) => {
     if (!user || user.notifications?.sendThankYou === false) return null;
     const details = getPreferredContactDetails(user, property.contact);
-    const method = details.preferredMethod;
-    const target = buildDeliveryTarget(method, details);
-    return dispatchContactNotification({
-        channel: method,
-        target,
-        subject: brandSubject('Thanks for listing with us'),
-        body: brandBody(`Thank you ${details.name}! Your listing "${property.title}" is now live on HomeKey.`),
-        metadata: {
-            userId: String(user._id),
-            propertyId: String(property._id),
-            category: 'listing-thank-you',
-        },
+    return sendPropertyListingConfirmationSms({
+        toPhone: details.phone,
+        listingType: property.type,
+        title: property.title,
+        city: property.address?.city,
     });
 };
 

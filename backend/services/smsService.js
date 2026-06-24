@@ -3,13 +3,9 @@
 /**
  * smsService.js
  *
- * Sends SMS confirmations via Twilio. Used to notify a roommate listing's
- * lister that their listing is now live, sent to the phone number they
- * provided during the wizard (Step 1 — required field).
- *
- * Fails silently from the caller's perspective — a failed SMS should
- * never block or fail the listing publish itself. Errors are logged
- * server-side for diagnostics.
+ * Sends SMS confirmations via Twilio. These messages are intentionally
+ * best-effort: a failed SMS should never block account creation, listing
+ * publish, or roommate matching submissions.
  */
 
 let twilioClient = null;
@@ -37,23 +33,21 @@ const getTwilioClient = () => {
  * ensures the leading '+' is present.
  */
 const toE164 = (phone) => {
-    const raw = String(phone || '').trim();
+    const raw = String(phone || '').trim().replace(/[\s\-().]/g, '');
     if (!raw) return null;
     if (raw.startsWith('+')) return raw;
+    if (raw.startsWith('00')) return `+${raw.slice(2)}`;
+    if (raw.startsWith('0')) return `+972${raw.slice(1)}`;
     return `+${raw}`;
 };
 
-/**
- * Sends an SMS confirmation that a roommate listing is now live.
- * Returns { success: boolean, error?: string } — never throws.
- */
-const sendListingPublishedSms = async ({ toPhone, city, neighborhood }) => {
+const sendSms = async ({ toPhone, body, logContext = 'SMS' }) => {
     try {
         const client = getTwilioClient();
         const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
         if (!client || !fromNumber) {
-            console.warn('[smsService] Twilio is not configured — skipping SMS confirmation.');
+            console.warn(`[smsService] Twilio is not configured - skipping ${logContext}.`);
             return { success: false, error: 'Twilio not configured' };
         }
 
@@ -62,23 +56,66 @@ const sendListingPublishedSms = async ({ toPhone, city, neighborhood }) => {
             return { success: false, error: 'No valid phone number to send to' };
         }
 
-        const locationText = [neighborhood, city].filter(Boolean).join(', ') || 'your area';
-        const messageBody =
-            `🏠 HomeKey: Your room listing in ${locationText} is now live! ` +
-            `People looking for a room nearby can now see and contact you. ` +
-            `Reply STOP to opt out of future texts.`;
-
         await client.messages.create({
-            body: messageBody,
+            body,
             from: fromNumber,
             to: toNumber,
         });
 
         return { success: true };
     } catch (err) {
-        console.error('[smsService] Failed to send listing-published SMS:', err.message);
+        console.error(`[smsService] Failed to send ${logContext}:`, err.message);
         return { success: false, error: err.message };
     }
 };
 
-module.exports = { sendListingPublishedSms };
+const buildLocationText = (...values) => values.filter(Boolean).join(', ') || 'your area';
+
+const withOptOut = (message) => `${message} Reply STOP to opt out.`;
+
+const sendRegistrationThankYouSms = async ({ toPhone, name }) => sendSms({
+    toPhone,
+    body: withOptOut(`HomeKey: Thanks${name ? `, ${name}` : ''} for creating your account. Your login is ready.`),
+    logContext: 'registration thank-you SMS',
+});
+
+const sendPropertyListingConfirmationSms = async ({ toPhone, listingType, title, city }) => {
+    const processText = listingType === 'sale' ? 'for-sale listing' : 'rental listing';
+    const locationText = buildLocationText(city);
+    const titleText = title ? `"${title}"` : `your ${processText}`;
+    return sendSms({
+        toPhone,
+        body: withOptOut(`HomeKey: Thanks - ${titleText} in ${locationText} is now live.`),
+        logContext: `${processText} confirmation SMS`,
+    });
+};
+
+const sendRoommateListingConfirmationSms = async ({ toPhone, city, neighborhood }) => {
+    const locationText = buildLocationText(neighborhood, city);
+    return sendSms({
+        toPhone,
+        body: withOptOut(`HomeKey: Thanks - your room listing in ${locationText} is now live.`),
+        logContext: 'room listing confirmation SMS',
+    });
+};
+
+const sendRoommateSeekerConfirmationSms = async ({ toPhone, city, neighborhood }) => {
+    const locationText = buildLocationText(neighborhood, city);
+    return sendSms({
+        toPhone,
+        body: withOptOut(`HomeKey: Thanks - your roommate search profile for ${locationText} is now live.`),
+        logContext: 'roommate search confirmation SMS',
+    });
+};
+
+// Backward-compatible export for the existing roommate listing controller.
+const sendListingPublishedSms = sendRoommateListingConfirmationSms;
+
+module.exports = {
+    sendSms,
+    sendRegistrationThankYouSms,
+    sendPropertyListingConfirmationSms,
+    sendRoommateListingConfirmationSms,
+    sendRoommateSeekerConfirmationSms,
+    sendListingPublishedSms,
+};
