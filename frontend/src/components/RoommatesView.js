@@ -83,23 +83,14 @@ const RoommateCard = ({
   const street = String(localizedAddress.street || '').trim();
   const streetNumber = String(localizedAddress.streetNumber || '').trim();
 
-  // Neighborhood is the primary heading — searchers think in neighborhoods
-  // first ("I want Florentin"), not street addresses.
   const primaryHeading = neighborhood
     ? [neighborhood, city].filter(Boolean).join(', ')
     : (city || t('propertyList.propertyListingFallback'));
   const streetLine = [street, streetNumber].filter(Boolean).join(' ');
 
   const images = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
-  const hasMultiplePhotos = images.length > 1;
-  // Roommate photos are uploaded directly to Cloudinary by RoommateWizard —
-  // they're never Yad2-sourced, so there's no cropping utility to run them
-  // through. Use the URL as-is; only fall back to a placeholder when a
-  // listing genuinely has no photos.
   const imageSrc = images[0] || `https://picsum.photos/seed/rm-${propertyId || 'x'}/800/600`;
 
-  // Roommate listings store price as 'rentShare', not 'price' —
-  // a separate schema from the Property collection.
   const price = Number(property.rentShare ?? property.price);
   const displayPrice = Number.isNaN(price)
     ? t('propertyList.priceUnavailable')
@@ -109,7 +100,6 @@ const RoommateCard = ({
   const bathrooms = property.totalBathrooms ?? property.bathrooms ?? null;
   const sizeSqm = property.sizeSqm ?? property.size ?? null;
 
-  // "Available now" — true if the listing's available-from date is today or in the past.
   const isAvailableNow = (() => {
     if (!property.dateAvailable) return false;
     const parsed = new Date(property.dateAvailable);
@@ -117,25 +107,25 @@ const RoommateCard = ({
     return parsed.getTime() <= Date.now();
   })();
 
-  // Quick preference tags shown directly on the card so searchers can
-  // filter compatibility before clicking in.
-  const genderLabel = {
-    'no-preference': 'No gender preference',
-    men: 'Men only',
-    women: 'Women only',
-  }[property.genderPreference] || 'No gender preference';
-  const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking' : null;
-  const amenityTags = Array.isArray(property.amenities) ? property.amenities.slice(0, 2) : [];
+  // WhatsApp link using the lister's phone number
+  const rawPhone = String(property.contact?.phone || '').replace(/[^\d]/g, '').replace(/^0/, '972');
+  const whatsappHref = rawPhone.length >= 7
+    ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(`Hi, I saw your room on HomeKey and I'm interested.`)}`
+    : '';
+
+  // Lifestyle tags — unique to roommate cards
+  const smokingTag = property.lifestyle?.smoking === 'not-allowed' ? 'No smoking'
+    : property.lifestyle?.smoking === 'outside-only' ? 'Smoking outside' : null;
+  const genderTag = property.genderPreference === 'men' ? 'Men only'
+    : property.genderPreference === 'women' ? 'Women only' : null;
   const AMENITY_LABELS = {
-    elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', 'disabled-access': 'Accessible',
-    renovated: 'Renovated', furnished: 'Furnished', mamad: 'Mamad', oven: 'Oven',
-    balcony: 'Balcony', stovetop: 'Stovetop', 'laundry-facilities': 'Laundry', 'in-unit-washer-dryer': 'W/D',
+    elevator: 'Elevator', parking: 'Parking', pets: 'Pets ok', renovated: 'Renovated',
+    furnished: 'Furnished', mamad: 'Mamad', balcony: 'Balcony',
   };
-  const quickTags = [
-    genderLabel,
-    smokingTag,
-    ...amenityTags.map((a) => AMENITY_LABELS[a] || a),
-  ].filter(Boolean).slice(0, 4);
+  const amenityTags = Array.isArray(property.amenities)
+    ? property.amenities.slice(0, 2).map((a) => AMENITY_LABELS[a]).filter(Boolean)
+    : [];
+  const quickTags = [smokingTag, genderTag, ...amenityTags].filter(Boolean).slice(0, 4);
 
   const handleCardClick = useCallback(() => {
     if (!canOpen) return;
@@ -145,81 +135,88 @@ const RoommateCard = ({
 
   return (
     <div
-      className={`roommate-card ${canOpen ? 'is-clickable' : ''}`}
+      className={`property-card roommate-card ${canOpen ? 'is-clickable' : ''}`}
       onClick={handleCardClick}
       style={{ cursor: canOpen ? 'pointer' : 'default' }}
     >
-      <div className="roommate-card-image-wrap">
-        <img
-          className="roommate-card-image"
-          src={imageSrc}
-          alt={primaryHeading}
-        />
-
-        {isAvailableNow && (
-          <span className="roommate-card-available-badge">
-            {t('roommates.availableNow') || 'Available now'}
-          </span>
-        )}
-
-        {hasMultiplePhotos && (
-          <span className="roommate-card-photo-dots" aria-hidden="true">
-            {images.slice(0, 5).map((_, idx) => (
-              <span key={idx} className={`roommate-card-photo-dot ${idx === 0 ? 'is-active' : ''}`} />
-            ))}
-          </span>
-        )}
-
-        <button
-          type="button"
-          className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
-          aria-label={isFavorite
-            ? t('propertyList.removeFavoriteFromListing')
-            : t('propertyList.addFavoriteToListing')}
-          aria-pressed={isFavorite}
-          disabled={!propertyId}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!propertyId) return;
-            toggleFavoriteProperty(String(propertyId));
-            incrementHeartClickCount();
-            onFavoriteToggle?.();
-          }}
-        >
-          <span className="property-heart-icon-wrap" aria-hidden="true">
-            <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
-              <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
-            </svg>
-          </span>
-        </button>
-      </div>
-
-      <div className="roommate-card-body">
-        <div className="roommate-card-price-row">
-          <p className="roommate-card-price" dir="ltr">
-            {displayPrice}<span className="roommate-card-price-suffix">/{t('roommates.perMonthShort') || 'mo'}</span>
+      <div className="property-card-body">
+        {/* Text — left column, same as Rent/Sale */}
+        <div className="property-card-text-stack">
+          <p className={`property-card-price ${language === 'he' ? 'property-card-price--hebrew' : ''}`} dir="ltr">
+            {displayPrice}<span className="roommate-price-suffix">/mo</span>
           </p>
+          <h3 className="property-card-title property-card-title--street">{primaryHeading}</h3>
+          {streetLine && <p className="property-card-location">{streetLine}</p>}
+        </div>
+
+        {/* Image — right column, framed exactly like Rent/Sale */}
+        <div className="property-card-image-wrap property-card-image-wrap--framed">
+          <img
+            className="property-card-image"
+            src={imageSrc}
+            alt={primaryHeading}
+          />
+          {isAvailableNow && (
+            <span className="roommate-card-available-badge">
+              {t('roommates.availableNow') || 'Available now'}
+            </span>
+          )}
+          <button
+            type="button"
+            className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
+            aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
+            aria-pressed={isFavorite}
+            disabled={!propertyId}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!propertyId) return;
+              toggleFavoriteProperty(String(propertyId));
+              incrementHeartClickCount();
+              onFavoriteToggle?.();
+            }}
+          >
+            <span className="property-heart-icon-wrap" aria-hidden="true">
+              <svg className="property-heart-icon" viewBox="0 0 24 24" focusable="false">
+                <path d="M12 21s-6.6-4.5-9.1-8.2C.8 9.5 1.5 5.8 4.5 4c2.2-1.3 5-.7 6.7 1.2L12 6l.8-.8c1.8-1.9 4.5-2.4 6.7-1.2 3 1.8 3.7 5.5 1.6 8.8C18.6 16.5 12 21 12 21Z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        {/* Stats row — same black pills as Rent/Sale */}
+        <div className="property-card-stats" aria-label={t('propertyList.propertyHighlights')}>
           {bedrooms != null && (
-            <span className="roommate-card-bed-pill">
+            <span className="property-card-stat">
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M3.5 12v5M20.5 12v5M3.5 14.5h17M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12" />
               </svg>
-              {bedrooms}
+              <span>{bedrooms} {t('propertyList.beds')}</span>
+            </span>
+          )}
+          {bathrooms != null && (
+            <span className="property-card-stat">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 12h14v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" />
+                <path d="M8 12V9.5A2.5 2.5 0 0 1 10.5 7h2A1.5 1.5 0 0 1 14 8.5v0A1.5 1.5 0 0 1 12.5 10H11" />
+                <path d="M7.5 19v1.5M16.5 19v1.5" />
+              </svg>
+              <span>{bathrooms} {t('propertyList.baths')}</span>
+            </span>
+          )}
+          {sizeSqm != null && (
+            <span className="property-card-stat">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M5 5h5v2H7v3H5z" />
+                <path d="M14 5h5v5h-2V7h-3z" />
+                <path d="M5 14h2v3h3v2H5z" />
+                <path d="M17 17v-3h2v5h-5v-2z" />
+              </svg>
+              <span>{sizeSqm} {t('propertyList.sqm')}</span>
             </span>
           )}
         </div>
 
-        <h3 className="roommate-card-title">{primaryHeading}</h3>
-        {streetLine && <p className="roommate-card-location">{streetLine}</p>}
-
-        {(bathrooms != null || sizeSqm != null) && (
-          <p className="roommate-card-specs-line">
-            {bathrooms != null && `${bathrooms} bath`}
-            {bathrooms != null && sizeSqm != null && ' · '}
-            {sizeSqm != null && `${sizeSqm} sqm`}
-          </p>
-        )}
-
+        {/* Lifestyle tags — roommate-specific, teal pills */}
         {quickTags.length > 0 && (
           <div className="roommate-card-quick-tags">
             {quickTags.map((tag) => (
@@ -228,17 +225,29 @@ const RoommateCard = ({
           </div>
         )}
 
-        <button
-          type="button"
-          className="roommate-card-cta"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleCardClick();
-          }}
-          disabled={!canOpen}
-        >
-          {t('propertyList.viewDetails')} →
-        </button>
+        {/* Actions — same layout as Rent/Sale */}
+        <div className="property-card-actions">
+          <button
+            type="button"
+            className={`property-card-action-btn ${isMobile ? 'property-card-action-btn--primary-mobile' : 'property-card-action-btn--outline'}`}
+            onClick={(e) => { e.stopPropagation(); handleCardClick(); }}
+            disabled={!canOpen}
+          >
+            {t('propertyList.viewDetails')}
+          </button>
+          {!isMobile && whatsappHref && (
+            <button
+              type="button"
+              className="property-card-action-btn property-card-action-btn--whatsapp"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof window !== 'undefined') window.open(whatsappHref, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              {t('propertyList.whatsapp')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
