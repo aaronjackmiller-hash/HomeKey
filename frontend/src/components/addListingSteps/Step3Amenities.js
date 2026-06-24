@@ -1,4 +1,24 @@
+/**
+ * Step3Amenities.js
+ * path: frontend/src/components/addListingSteps/Step3Amenities.js
+ */
 import React from 'react';
+
+// Canonical amenity list — identical vocabulary to the Roommates wizard
+// so filters and property comparisons are consistent across the whole app.
+const ALL_AMENITIES = [
+    { id: 'MM', label: 'Mamad' },
+    { id: 'EL', label: 'Elevator' },
+    { id: 'PK', label: 'Parking' },
+    { id: 'PT', label: 'Pets Allowed' },
+    { id: 'DA', label: 'Disabled Access' },
+    { id: 'RN', label: 'Renovated' },
+    { id: 'FR', label: 'Furnished' },
+    { id: 'OV', label: 'Oven' },
+    { id: 'BL', label: 'Balcony' },
+    { id: 'ST', label: 'Stovetop' },
+    { id: 'WD', label: 'In-Unit Washer & Dryer' },
+];
 
 export const Step3Amenities = ({
     data,
@@ -14,20 +34,6 @@ export const Step3Amenities = ({
     const headingText = isEnterpriseTrack
         ? `Step ${stepNumber}: Global amenities baseline`
         : `Step ${stepNumber}: Amenities`;
-
-    const allAmenities = [
-        { id: 'EL', label: 'Elevator' },
-        { id: 'PK', label: 'Parking' },
-        { id: 'PT', label: 'Pets Allowed' },
-        { id: 'DA', label: 'Disabled Access' },
-        { id: 'RN', label: 'Renovated' },
-        { id: 'FR', label: 'Furnished' },
-        { id: 'AC', label: 'Air Conditioning' },
-        { id: 'WB', label: 'Bars on Windows' },
-        { id: 'MP', label: 'Mirpeset (Balcony)' },
-        { id: 'SU', label: 'Suitable for Partners' },
-        { id: 'MM', label: 'The Mamad (Security Room)' },
-    ];
 
     const toggleAmenity = (label) => {
         const current = data.amenities || [];
@@ -48,7 +54,7 @@ export const Step3Amenities = ({
             </div>
 
             <div className="wizard-amenities-grid">
-                {allAmenities.map((item) => {
+                {ALL_AMENITIES.map((item) => {
                     const isSelected = (data.amenities || []).includes(item.label);
                     return (
                         <button
@@ -57,9 +63,7 @@ export const Step3Amenities = ({
                             onClick={() => toggleAmenity(item.label)}
                             className={`wizard-amenity ${isSelected ? 'is-selected' : ''}`}
                         >
-                            <span className="wizard-amenity-code">
-                                {item.id}
-                            </span>
+                            <span className="wizard-amenity-code">{item.id}</span>
                             <span>{item.label}</span>
                         </button>
                     );
@@ -67,18 +71,10 @@ export const Step3Amenities = ({
             </div>
 
             <div className="wizard-actions">
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    className="wizard-btn wizard-btn--ghost"
-                >
+                <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
                     Back
                 </button>
-                <button
-                    type="button"
-                    onClick={nextStep}
-                    className="wizard-btn wizard-btn--full"
-                >
+                <button type="button" onClick={nextStep} className="wizard-btn wizard-btn--full">
                     {`Continue to Step ${nextStepLabel}`}
                 </button>
             </div>
