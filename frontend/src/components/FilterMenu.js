@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { createSeekerProfile } from '../services/api';
 
 const FEATURE_ITEMS = [
   { id: 'elevator', labelKey: 'filterMenu.elevator', icon: 'elevator' },
@@ -535,33 +536,24 @@ const RoommateFilters = ({
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
     try {
-      // Use the same API base URL as the rest of the app — avoids hitting the
-      // static frontend server when the frontend is hosted separately.
-      const apiBase = process.env.REACT_APP_API_URL || '';
-      const res = await fetch(`${apiBase}/api/seekers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          budgetRange: rentRange,
-          moveInDate: moveInDate || undefined,
-          flexibility,
-          sharingWith,
-          genderPreference: gender,
-          smoking,
-          kosher,
-          leaseTerm,
-          amenities,
-          bedroomsNeeded: bedroomsNeeded || 1,
-          city: roommateLocation,
-        }),
+      const data = await createSeekerProfile({
+        phone,
+        budgetRange: rentRange,
+        moveInDate: moveInDate || undefined,
+        flexibility,
+        sharingWith,
+        genderPreference: gender,
+        smoking,
+        kosher,
+        leaseTerm,
+        amenities,
+        bedroomsNeeded: bedroomsNeeded || 1,
+        city: roommateLocation,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to publish');
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
     } catch (err) {
-      console.error('[seeker-profile] publish error:', err.message);
+      console.error('[seeker-profile] publish error:', err?.response?.data?.message || err.message);
       setSeekerSubmitStatus('error');
     }
   };
