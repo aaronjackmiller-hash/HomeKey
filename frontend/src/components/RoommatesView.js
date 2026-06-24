@@ -39,8 +39,11 @@ const ROOMMATES_TAB = Object.freeze({
 // Fetches live stats from GET /api/roommates/stats
 const fetchSearcherCount = async () => {
   try {
-    const data = await getRoommateStats();
-    return typeof data.searcherCount === 'number' ? data.searcherCount : null;
+    const apiBase = process.env.REACT_APP_API_URL || '';
+    const res = await fetch(`${apiBase}/api/seekers?limit=1`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.count === 'number' ? data.count : null;
   } catch (_err) {
     return null;
   }
@@ -335,8 +338,8 @@ const ListARoomTab = ({ searcherCount, t, onStartWizard }) => (
         </h2>
         <p className="roommates-list-hero-body">
           {searcherCount != null
-            ? (t('roommates.listHeroBodyWithCount') || `${searcherCount.toLocaleString()} people are actively looking for a room right now.`).replace('{count}', searcherCount.toLocaleString())
-            : t('roommates.listHeroBody') || 'Thousands of people are actively looking for a room. List yours in minutes.'}
+            ? (t('roommates.listHeroBodyWithCount') || `${searcherCount.toLocaleString()} people have posted seeker profiles looking for a room right now.`).replace('{count}', searcherCount.toLocaleString())
+            : t('roommates.listHeroBody') || 'People are actively looking for a room. List yours in minutes.'}
         </p>
       </div>
 
@@ -521,7 +524,7 @@ const RoommatesView = ({
   const tabLabel = (tab) => {
     if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
     if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room';
-    if (tab === ROOMMATES_TAB.LOOKING) return 'People Looking';
+    if (tab === ROOMMATES_TAB.LOOKING) return 'Looking for a Room or Roommate';
     return tab;
   };
 
@@ -538,33 +541,61 @@ const RoommatesView = ({
         <StatPill
           icon="🔍"
           value={searcherCountLoading ? null : searcherCount}
-          label={t('roommates.statPeopleSearching') || 'people searching'}
+          label={t('roommates.statPeopleLooking') || 'people looking'}
           accent
         />
       </div>
 
-      <div
-        className="roommates-tab-strip"
-        role="tablist"
-        aria-label={t('roommates.tabStripAriaLabel') || 'Roommate sections'}
-      >
-        {[ROOMMATES_TAB.BROWSE, ROOMMATES_TAB.LIST, ROOMMATES_TAB.LOOKING].map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={`roommates-tab-btn ${activeTab === tab ? 'is-active' : ''}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tabLabel(tab)}
-            {tab === ROOMMATES_TAB.BROWSE && !loading && availableRoomsCount > 0 && (
-              <span className="roommates-tab-count" aria-label={`${availableRoomsCount} rooms`}>
-                {availableRoomsCount}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* ── Hero tab cards — the primary navigation for the Roommates experience ── */}
+      <div className="roommates-hero-tabs" role="tablist" aria-label={t('roommates.tabStripAriaLabel') || 'Roommate sections'}>
+
+        {/* Browse Rooms */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === ROOMMATES_TAB.BROWSE}
+          className={`roommates-hero-tab ${activeTab === ROOMMATES_TAB.BROWSE ? 'is-active' : ''}`}
+          onClick={() => setActiveTab(ROOMMATES_TAB.BROWSE)}
+        >
+          <span className="roommates-hero-tab__icon" aria-hidden="true">🏠</span>
+          <strong className="roommates-hero-tab__title">Browse Rooms</strong>
+          <span className="roommates-hero-tab__desc">See all available rooms on the map</span>
+          {!loading && availableRoomsCount > 0 && (
+            <span className="roommates-hero-tab__badge">{availableRoomsCount} available</span>
+          )}
+        </button>
+
+        {/* List a Room — HERO */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === ROOMMATES_TAB.LIST}
+          className={`roommates-hero-tab roommates-hero-tab--hero ${activeTab === ROOMMATES_TAB.LIST ? 'is-active' : ''}`}
+          onClick={() => setActiveTab(ROOMMATES_TAB.LIST)}
+        >
+          <span className="roommates-hero-tab__start-badge">⭐ Start Here</span>
+          <span className="roommates-hero-tab__icon" aria-hidden="true">🔑</span>
+          <strong className="roommates-hero-tab__title">List a Room</strong>
+          <span className="roommates-hero-tab__desc">Post your room — reach thousands instantly</span>
+          <span className="roommates-hero-tab__badge roommates-hero-tab__badge--white">Free · 2 minutes</span>
+        </button>
+
+        {/* Looking for a Room or Roommate */}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === ROOMMATES_TAB.LOOKING}
+          className={`roommates-hero-tab ${activeTab === ROOMMATES_TAB.LOOKING ? 'is-active' : ''}`}
+          onClick={() => setActiveTab(ROOMMATES_TAB.LOOKING)}
+        >
+          <span className="roommates-hero-tab__icon" aria-hidden="true">🔍</span>
+          <strong className="roommates-hero-tab__title">Looking for a Room or Roommate</strong>
+          <span className="roommates-hero-tab__desc">Post your profile — listers contact you</span>
+          {!searcherCountLoading && seekerCount != null && (
+            <span className="roommates-hero-tab__badge">{seekerCount} active seekers</span>
+          )}
+        </button>
+
       </div>
 
       <div
@@ -644,7 +675,7 @@ const RoommatesView = ({
                 ? 'Loading…'
                 : seekerProfiles.length > 0
                   ? `${seekerProfiles.length} ${seekerProfiles.length === 1 ? 'person' : 'people'} looking for a room right now`
-                  : 'No active seekers yet — be the first to post your profile'}
+                  : 'No one is looking for a room yet — be the first to post your profile'}
             </p>
             {seekerProfilesLoading && (
               <p className="status-message">{t('propertyList.loadingProperties')}</p>
