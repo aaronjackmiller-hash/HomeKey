@@ -66,10 +66,10 @@ const AMENITY_ALIASES = {
     'pets ok': 'pets',
     accessible: 'disabled-access',
     'disabled access': 'disabled-access',
-    laundry: 'laundry-facilities',
-    'washer/dryer': 'laundry-facilities',
-    'in-unit washer & dryer': 'laundry-facilities',
-    'in-unit-washer-dryer': 'laundry-facilities',
+    laundry: 'in-unit-washer-dryer',
+    'laundry facilities': 'in-unit-washer-dryer',
+    'laundry-facilities': 'in-unit-washer-dryer',
+    'washer/dryer': 'in-unit-washer-dryer',
     'mirpeset (balcony)': 'balcony',
     'the mamad (security room)': 'mamad',
 };
@@ -153,7 +153,7 @@ exports.getListings = async (req, res) => {
                 filter.$and = [
                     ...(filter.$and || []),
                     ...requestedAmenities.map((value) => (
-                        value === 'laundry-facilities'
+                        value === 'in-unit-washer-dryer'
                             ? { amenities: { $in: ['laundry-facilities', 'in-unit-washer-dryer'] } }
                             : { amenities: value }
                     )),

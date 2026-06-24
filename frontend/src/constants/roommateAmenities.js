@@ -9,7 +9,7 @@ export const ROOMMATE_AMENITY_OPTIONS = [
   { value: 'oven', label: 'Oven', labelHe: 'תנור', icon: 'oven', emoji: '🍳' },
   { value: 'balcony', label: 'Balcony', labelHe: 'מרפסת', icon: 'balcony', emoji: '🌇' },
   { value: 'stovetop', label: 'Stovetop', labelHe: 'כיריים', icon: 'stovetop', emoji: '🔥' },
-  { value: 'laundry-facilities', label: 'Laundry Facilities', labelHe: 'מתקני כביסה', icon: 'laundry', emoji: '🧺' },
+  { value: 'in-unit-washer-dryer', label: 'In-Unit Washer & Dryer', labelHe: 'מכונת כביסה ומייבש ביחידה', icon: 'washer', emoji: '🧺' },
   { value: 'dishwasher', label: 'Dishwasher', labelHe: 'מדיח כלים', icon: 'dishwasher', emoji: '🍽️' },
 ];
 
@@ -19,7 +19,7 @@ export const ROOMMATE_AMENITY_LABELS = ROOMMATE_AMENITY_OPTIONS.reduce((labels, 
 }, {});
 
 export const LEGACY_ROOMMATE_AMENITY_LABELS = {
-  'in-unit-washer-dryer': { icon: '🧺', label: 'Laundry Facilities' },
+  'laundry-facilities': { icon: '🧺', label: 'In-Unit Washer & Dryer' },
 };
 
 const ROOMMATE_AMENITY_VALUE_ALIASES = ROOMMATE_AMENITY_OPTIONS.reduce((aliases, option) => {
@@ -30,10 +30,10 @@ const ROOMMATE_AMENITY_VALUE_ALIASES = ROOMMATE_AMENITY_OPTIONS.reduce((aliases,
 }, {
   'pets ok': 'pets',
   accessible: 'disabled-access',
-  laundry: 'laundry-facilities',
-  'washer/dryer': 'laundry-facilities',
-  'in-unit washer & dryer': 'laundry-facilities',
-  'in-unit-washer-dryer': 'laundry-facilities',
+  laundry: 'in-unit-washer-dryer',
+  'laundry facilities': 'in-unit-washer-dryer',
+  'laundry-facilities': 'in-unit-washer-dryer',
+  'washer/dryer': 'in-unit-washer-dryer',
   'mirpeset (balcony)': 'balcony',
   'the mamad (security room)': 'mamad',
 });
