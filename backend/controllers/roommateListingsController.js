@@ -10,6 +10,45 @@
 const RoommateListing = require('../models/RoommateListing');
 const { sendListingPublishedSms } = require('../services/smsService');
 
+// ── Server-side geocoding fallback ────────────────────────────────────────────
+// If the wizard's client-side geocode call failed (network error, quota, etc.),
+// the listing arrives without address.lat / address.lng. This helper fires
+// after save and patches the coordinates in — fire-and-forget so it never
+// blocks or fails the publish response.
+const GEOCODE_API_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+const geocodeListingAddress = async (listing) => {
+    try {
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) return;
+
+        const { street, streetNumber, city, country } = listing.address || {};
+        if (!city) return;
+
+        const parts = [streetNumber, street, city, country || 'Israel'].filter(Boolean);
+        const query = parts.join(', ');
+        const url = `${GEOCODE_API_URL}?address=${encodeURIComponent(query)}&key=${apiKey}`;
+
+        const response = await fetch(url);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.status !== 'OK' || !data.results?.[0]?.geometry?.location) return;
+
+        const { lat, lng } = data.results[0].geometry.location;
+        if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+        await RoommateListing.findByIdAndUpdate(listing._id, {
+            'address.lat': lat,
+            'address.lng': lng,
+        });
+
+        console.log(`[roommate-listing] Server-side geocode OK for ${listing._id}: ${lat},${lng}`);
+    } catch (err) {
+        console.error(`[roommate-listing] Server-side geocode failed for ${listing._id}:`, err.message);
+    }
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const ALLOWED_GENDER_PREFS = ['men', 'women', 'no-preference'];
@@ -296,6 +335,12 @@ exports.createListing = async (req, res) => {
 
         await listing.save();
 
+        // If the wizard's client-side geocode failed, patch coordinates server-side.
+        // Fire-and-forget — never delays or fails the publish response.
+        if (!listing.address?.lat || !listing.address?.lng) {
+            geocodeListingAddress(listing).catch(() => {});
+        }
+
         // Fire-and-forget SMS confirmation — never delays or fails the
         // publish response. Errors are logged inside smsService itself.
         sendListingPublishedSms({
@@ -482,6 +527,61 @@ exports.debugExpiresAt = async (req, res) => {
             listings: summary,
         });
     } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// ── Backfill geocoding for existing listings missing coordinates ───────────────
+// POST /api/roommates/admin/geocode-backfill
+// Iterates all active listings without address.lat/lng, geocodes them,
+// and patches the database. Safe to run multiple times (skips listings
+// that already have coordinates). Requires ADMIN_SECRET header.
+exports.geocodeBackfill = async (req, res) => {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+        return res.status(403).json({ success: false, message: 'Admin endpoint disabled (ADMIN_SECRET not set).' });
+    }
+    const crypto = require('crypto');
+    const provided = req.headers['x-admin-secret'] || '';
+    const expected = Buffer.from(adminSecret);
+    const providedBuf = Buffer.from(provided);
+    const dummy = Buffer.alloc(expected.length);
+    const cmp = providedBuf.length === expected.length ? providedBuf : dummy;
+    if (!crypto.timingSafeEqual(expected, cmp)) {
+        return res.status(403).json({ success: false, message: 'Invalid X-Admin-Secret.' });
+    }
+
+    try {
+        const listings = await RoommateListing.find({
+            $or: [
+                { 'address.lat': { $exists: false } },
+                { 'address.lat': null },
+            ],
+        }).select('_id address').lean();
+
+        let patched = 0;
+        let failed = 0;
+
+        for (const listing of listings) {
+            try {
+                await geocodeListingAddress({ _id: listing._id, address: listing.address });
+                patched += 1;
+                // Avoid Google API rate limiting
+                await new Promise((r) => setTimeout(r, 120));
+            } catch (_err) {
+                failed += 1;
+            }
+        }
+
+        return res.json({
+            success: true,
+            message: `Geocode backfill complete.`,
+            total: listings.length,
+            patched,
+            failed,
+        });
+    } catch (err) {
+        console.error('[roommate-listing] geocodeBackfill error:', err.message);
         return res.status(500).json({ success: false, message: err.message });
     }
 };
