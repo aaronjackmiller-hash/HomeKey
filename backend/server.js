@@ -459,7 +459,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/agents', require('./routes/agents'));
 app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/roommates', require('./routes/roommateListings'));
-// app.use('/api/seekers', require('./routes/seekerProfiles'));
+app.use('/api/seekers', require('./routes/seekerProfiles'));
 app.use('/api/geocode', require('./routes/geocode'));
 
 // Admin seed endpoint — manually trigger seeding when auto-seed fails or is skipped.
