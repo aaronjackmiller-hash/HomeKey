@@ -75,6 +75,7 @@ const SUPPORTED_FEATURE_FILTERS = new Set([
   'stovetop',
   'laundry-facilities',
   'in-unit-washer-dryer',
+  'dishwasher',
 ]);
 
 const buildSavedSearchQuery = (search = {}) => {

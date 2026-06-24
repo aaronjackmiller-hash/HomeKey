@@ -11,6 +11,7 @@ import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
 import { Step5PublishListing } from './addListingSteps/Step5PublishListing';
 import { Step6EnterpriseRouting } from './addListingSteps/Step6EnterpriseRouting';
+import { normalizeRoommateAmenityList } from '../constants/roommateAmenities';
 import './addListingSteps/addListingWizard.css';
 
 /**
@@ -281,6 +282,7 @@ const AddListing = () => {
                 minLeaseMonths: data.leaseLength ? parseNumber(data.leaseLength) : 6,
                 description: data.description?.trim() || undefined,
                 images: [],
+                amenities: normalizeRoommateAmenityList(data.amenities),
                 genderPreference: 'no-preference',
                 lifestyle: {
                     smoking: 'not-allowed',

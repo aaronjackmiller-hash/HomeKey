@@ -55,6 +55,7 @@ const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator', 'parking', 'pets', 'disabled-access', 'renovated', 'furnished',
   'mamad', 'oven', 'balcony', 'stovetop', 'laundry-facilities', 'in-unit-washer-dryer',
+  'dishwasher',
 ];
 const PROPERTY_CATEGORY_KEYWORDS = {
   apartments: ['apartment', 'studio', 'penthouse', 'flat', 'condo', 'דירה', 'פנטהאוז', 'סטודיו'],
@@ -73,6 +74,7 @@ const FEATURE_KEYWORDS = {
   stovetop: ['stovetop', 'cooktop', 'hob', 'כיריים'],
   'laundry-facilities': ['laundry', 'laundry facilities', 'laundry room', 'laundromat', 'כביסה', 'חדר כביסה'],
   'in-unit-washer-dryer': ['in-unit washer', 'in unit washer', 'washer dryer', 'washer & dryer', 'washer and dryer', 'מכונת כביסה', 'מייבש'],
+  dishwasher: ['dishwasher', 'מדיח'],
 };
 
 const formatCurrency = (value, locale = 'en-US') => {

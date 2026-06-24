@@ -56,6 +56,23 @@ const ALLOWED_SMOKING = ['not-allowed', 'outside-only', 'allowed'];
 const ALLOWED_PETS = ['not-allowed', 'allowed', 'have-pets'];
 const ALLOWED_KOSHER = ['yes', 'no', 'open-to-it'];
 const ALLOWED_STATUSES = ['active', 'filled', 'inactive'];
+const ALLOWED_AMENITIES = [
+    'elevator', 'parking', 'pets', 'disabled-access', 'renovated',
+    'furnished', 'mamad', 'oven', 'balcony', 'stovetop',
+    'laundry-facilities', 'in-unit-washer-dryer', 'dishwasher',
+];
+const AMENITY_ALIASES = {
+    'pets allowed': 'pets',
+    'pets ok': 'pets',
+    accessible: 'disabled-access',
+    'disabled access': 'disabled-access',
+    laundry: 'laundry-facilities',
+    'washer/dryer': 'laundry-facilities',
+    'in-unit washer & dryer': 'laundry-facilities',
+    'in-unit-washer-dryer': 'laundry-facilities',
+    'mirpeset (balcony)': 'balcony',
+    'the mamad (security room)': 'mamad',
+};
 
 const parsePositiveInt = (value, fallback) => {
     const n = parseInt(value, 10);
@@ -65,6 +82,11 @@ const parsePositiveInt = (value, fallback) => {
 const parsePositiveNumber = (value) => {
     const n = Number(value);
     return Number.isFinite(n) && n >= 0 ? n : null;
+};
+
+const normalizeAmenityValue = (value) => {
+    const normalizedValue = String(value || '').trim().toLowerCase();
+    return AMENITY_ALIASES[normalizedValue] || normalizedValue;
 };
 
 // ── GET /api/roommates ────────────────────────────────────────────────────────
@@ -125,10 +147,17 @@ exports.getListings = async (req, res) => {
         if (amenities && typeof amenities === 'string' && amenities.trim()) {
             const requestedAmenities = amenities
                 .split(',')
-                .map((value) => value.trim().toLowerCase())
-                .filter(Boolean);
+                .map(normalizeAmenityValue)
+                .filter((value, index, values) => ALLOWED_AMENITIES.includes(value) && values.indexOf(value) === index);
             if (requestedAmenities.length > 0) {
-                filter.amenities = { $all: requestedAmenities };
+                filter.$and = [
+                    ...(filter.$and || []),
+                    ...requestedAmenities.map((value) => (
+                        value === 'laundry-facilities'
+                            ? { amenities: { $in: ['laundry-facilities', 'in-unit-washer-dryer'] } }
+                            : { amenities: value }
+                    )),
+                ];
             }
         }
 
@@ -280,15 +309,10 @@ exports.createListing = async (req, res) => {
             return res.status(400).json({ message: 'Maximum 3 photos allowed' });
         }
 
-        const ALLOWED_AMENITIES = [
-            'elevator', 'parking', 'pets', 'disabled-access', 'renovated',
-            'furnished', 'mamad', 'oven', 'balcony', 'stovetop',
-            'laundry-facilities', 'in-unit-washer-dryer',
-        ];
         const sanitizedAmenities = Array.isArray(amenities)
             ? amenities
-                .map((value) => String(value || '').trim().toLowerCase())
-                .filter((value) => ALLOWED_AMENITIES.includes(value))
+                .map(normalizeAmenityValue)
+                .filter((value, index, values) => ALLOWED_AMENITIES.includes(value) && values.indexOf(value) === index)
             : [];
 
         const listing = new RoommateListing({
@@ -388,6 +412,14 @@ exports.updateListing = async (req, res) => {
 
         allowedUpdates.forEach((field) => {
             if (req.body[field] !== undefined) {
+                if (field === 'amenities') {
+                    listing[field] = Array.isArray(req.body[field])
+                        ? req.body[field]
+                            .map(normalizeAmenityValue)
+                            .filter((value, index, values) => ALLOWED_AMENITIES.includes(value) && values.indexOf(value) === index)
+                        : [];
+                    return;
+                }
                 listing[field] = req.body[field];
             }
         });
