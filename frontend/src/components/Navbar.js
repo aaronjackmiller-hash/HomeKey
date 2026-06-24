@@ -1124,9 +1124,10 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* ALL FILTERS — hidden in Roommates mode */}
-              {!isRoommatesActive && (
-                <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
+              {/* ALL FILTERS — button hidden in Roommates mode, but panel always rendered
+                  so the "Post my profile" CTA in the People Looking tab can open it */}
+              <div className="premium-header__search-segment premium-header__search-segment--all-filters" ref={filtersRef}>
+                {!isRoommatesActive && (
                   <button id="header-search-filter-toggle" type="button"
                     className={`premium-header__filters-toggle ${hasAdvancedFilters ? 'is-active' : ''}`}
                     onClick={() => { setPriceExpanded(false); setRoomsBathsExpanded(false); setPropertyTypeExpanded(false); setFiltersExpanded((value) => !value); }}
@@ -1134,6 +1135,7 @@ const Navbar = () => {
                     <HeaderIcon name="filters" />
                     <span>{t('navbar.allFilters')}</span>
                   </button>
+                )}
                   <div id="header-filters-panel" ref={filtersPanelRef}
                     className={`premium-header__filters-panel ${filtersExpanded ? 'is-open' : ''} is-mobile-sheet`}
                     style={{ background: 'var(--color-surface, #fff)', isolation: 'isolate', ...(isHebrew ? { left: 0, right: 'auto' } : { right: 0, left: 'auto' }) }}>
@@ -1160,9 +1162,10 @@ const Navbar = () => {
                       roommateLocation={roommateLocationDraft}
                       onRoommateLocationChange={handleRoommateLocationChange}
                       renderRoommateLocationInput={renderRoommateLocationInput}
+                      initialLookingFor="room"
                     />
                     <button type="button" className="mobile-filter-sheet-close-btn" onClick={() => setFiltersExpanded(false)}>
-                      {t('navbar.showResults')}
+                      {isRoommatesActive ? (t('roommates.backToLooking') || 'Back to People Looking') : t('navbar.showResults')}
                     </button>
                   </div>
                   {filtersExpanded && (
@@ -1170,8 +1173,7 @@ const Navbar = () => {
                       onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); setFiltersExpanded(false); }}
                       onClick={(event) => { event.preventDefault(); event.stopPropagation(); setFiltersExpanded(false); }} />
                   )}
-                </div>
-              )}
+              </div>
             </div>
 
             {voiceSearchStatus && <p className="premium-header__voice-status" aria-live="polite">{voiceSearchStatus}</p>}
