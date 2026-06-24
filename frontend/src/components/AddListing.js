@@ -1,3 +1,7 @@
+/**
+ * AddListing.js
+ * path: frontend/src/components/AddListing.js
+ */
 import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { createProperty, createRoommateListing } from '../services/api';
@@ -17,7 +21,6 @@ import './addListingSteps/addListingWizard.css';
  * @typedef {Object} ListingData
  * @property {'Apartment'|'House'|''} propertyType
  * @property {'Rental'|'For Sale'|''} listingType
- * @property {boolean|null} lookingForRoommates
  * @property {{street: string, number: string, city: string}} address
  * @property {string} relation
  * @property {File|null} verificationDocument
@@ -46,7 +49,6 @@ const createInitialListingData = (preselectedProfileType = '') => ({
     profileType: preselectedProfileType || '',
     propertyType: '',
     listingType: '',
-    lookingForRoommates: null,
     address: { street: '', number: '', city: '' },
     relation: '',
     verificationDocument: null,
@@ -86,10 +88,6 @@ const AddListing = () => {
     const history = useHistory();
     const location = useLocation();
 
-    // If navigated here from the Roommates "List my room" button,
-    // location.state.preselectedProfileType will be 'renter-roommates'.
-    // Pre-populate it so Step0 has the card already selected,
-    // and skip straight to step 1 so the user doesn't have to click Continue.
     const preselectedProfileType = location?.state?.preselectedProfileType || '';
     const initialStep = preselectedProfileType ? 1 : 0;
 
@@ -134,13 +132,8 @@ const AddListing = () => {
         });
     };
 
-    const nextStep = () => {
-        setStep((prev) => Math.min(prev + 1, totalSteps));
-    };
-
-    const prevStep = () => {
-        setStep((prev) => Math.max(prev - 1, 0));
-    };
+    const nextStep = () => setStep((prev) => Math.min(prev + 1, totalSteps));
+    const prevStep = () => setStep((prev) => Math.max(prev - 1, 0));
 
     const handleEnterpriseAgentChange = (listingId, agentId) => {
         setEnterpriseListings((prev) => prev.map((item) => (
@@ -170,13 +163,9 @@ const AddListing = () => {
     };
 
     const parseNumber = (rawValue) => {
-        if (rawValue === '' || rawValue == null) {
-            return null;
-        }
+        if (rawValue === '' || rawValue == null) return null;
         const cleaned = String(rawValue).replace(/,/g, '').trim();
-        if (!cleaned) {
-            return null;
-        }
+        if (!cleaned) return null;
         const numeric = Number(cleaned);
         return Number.isFinite(numeric) ? numeric : null;
     };
@@ -202,7 +191,6 @@ const AddListing = () => {
 
         const summaryRows = [
             `Listing relation: ${data.relation || 'N/A'}`,
-            `Looking for roommates: ${data.lookingForRoommates === null ? 'N/A' : (data.lookingForRoommates ? 'Yes' : 'No')}`,
             `Lease length: ${data.leaseLength || 'N/A'}`,
             `Deposit: ${data.deposit || 'N/A'}`,
         ];
@@ -210,13 +198,11 @@ const AddListing = () => {
         if (data.relation === 'property owner') {
             summaryRows.push(`Property verification document: ${data.verificationDocument?.name || 'Not uploaded'}`);
         }
-
         if (data.relation === 'agent/broker') {
             summaryRows.push(`License number: ${data.licenseNumber || 'N/A'}`);
             summaryRows.push(`Agency name: ${data.agencyName || 'N/A'}`);
             summaryRows.push(`Broker fee: ${data.brokerFee || 'N/A'}`);
         }
-
         if (data.relation === 'property manager') {
             summaryRows.push(`Management company: ${data.managementCompanyName || 'N/A'}`);
             summaryRows.push(`Emergency maintenance phone: ${data.emergencyMaintenancePhone || 'N/A'}`);
@@ -255,7 +241,6 @@ const AddListing = () => {
         const isRoommatesListing = data.profileType === 'renter-roommates';
 
         if (isRoommatesListing) {
-            // Route to the separate roommate listings collection
             const phone = contactOverride.anonPhone || '';
             const email = contactOverride.anonEmail || '';
             if (!phone && !isAuthenticated) {
@@ -290,8 +275,7 @@ const AddListing = () => {
             };
             setLoading(true);
             try {
-                const result = await createRoommateListing(roommatePayload);
-                // After publishing, go back to roommates browse view
+                await createRoommateListing(roommatePayload);
                 history.push('/?type=roommates');
             } catch (err) {
                 setError(err.response?.data?.message || 'Failed to publish room listing.');
@@ -301,7 +285,6 @@ const AddListing = () => {
             return;
         }
 
-        // Standard property listing (rental / sale)
         const payload = buildPayloadFromListingData(contactOverride);
         if (!payload) {
             setError('Please complete address, price, bedrooms, bathrooms, and size before publishing.');
@@ -347,84 +330,25 @@ const AddListing = () => {
             ) : null}
             {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} stepNumber={2} totalSteps={totalSteps} /> : null}
             {usesEnterpriseModel && step === 2 ? (
-                <Step2EnterpriseModel
-                    data={data}
-                    updateData={updateData}
-                    onContinue={handleEnterpriseContinue}
-                    prevStep={prevStep}
-                    totalSteps={totalSteps}
-                />
+                <Step2EnterpriseModel data={data} updateData={updateData} onContinue={handleEnterpriseContinue} prevStep={prevStep} totalSteps={totalSteps} />
             ) : null}
             {usesSyncPortfolioFlow && step === feedConnectStep ? (
-                <Step3EnterpriseFeedConnect
-                    feedUrl={enterpriseFeedUrl}
-                    onFeedUrlChange={setEnterpriseFeedUrl}
-                    syncedCount={syncedPortfolioCount}
-                    onSyncComplete={setSyncedPortfolioCount}
-                    prevStep={prevStep}
-                    nextStep={nextStep}
-                    stepNumber={feedConnectStep + 1}
-                    totalSteps={totalSteps}
-                    progressPercent={progressForStep(feedConnectStep + 1)}
-                />
+                <Step3EnterpriseFeedConnect feedUrl={enterpriseFeedUrl} onFeedUrlChange={setEnterpriseFeedUrl} syncedCount={syncedPortfolioCount} onSyncComplete={setSyncedPortfolioCount} prevStep={prevStep} nextStep={nextStep} stepNumber={feedConnectStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(feedConnectStep + 1)} />
             ) : null}
             {(!usesEnterpriseModel && step === createListingStep) || (usesManualEnterpriseFlow && step === createListingStep) ? (
-                <Step2CreateListing
-                    data={data}
-                    updateData={updateData}
-                    nextStep={nextStep}
-                    prevStep={prevStep}
-                    stepNumber={createListingStep + 1}
-                    totalSteps={totalSteps}
-                    progressPercent={progressForStep(createListingStep + 1)}
-                />
+                <Step2CreateListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={createListingStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(createListingStep + 1)} />
             ) : null}
             {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === amenitiesStep ? (
-                <Step3Amenities
-                    data={data}
-                    updateData={updateData}
-                    nextStep={nextStep}
-                    prevStep={prevStep}
-                    stepNumber={amenitiesStep + 1}
-                    totalSteps={totalSteps}
-                    progressPercent={progressForStep(amenitiesStep + 1)}
-                    isEnterpriseTrack={usesEnterpriseModel}
-                />
+                <Step3Amenities data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={amenitiesStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(amenitiesStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
             ) : null}
             {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === mediaStep ? (
-                <Step4Media
-                    data={data}
-                    updateData={updateData}
-                    nextStep={nextStep}
-                    prevStep={prevStep}
-                    stepNumber={mediaStep + 1}
-                    totalSteps={totalSteps}
-                    progressPercent={progressForStep(mediaStep + 1)}
-                    isEnterpriseTrack={usesEnterpriseModel}
-                />
+                <Step4Media data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={mediaStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(mediaStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
             ) : null}
             {!usesEnterpriseModel && step === publishStep ? (
-                <Step5PublishListing
-                    data={data}
-                    prevStep={prevStep}
-                    onPublishFinished={onPublishFinished}
-                    stepNumber={publishStep + 1}
-                    totalSteps={totalSteps}
-                />
+                <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} stepNumber={publishStep + 1} totalSteps={totalSteps} />
             ) : null}
             {usesEnterpriseModel && step === publishStep ? (
-                <Step6EnterpriseRouting
-                    agents={initialEnterpriseAgents}
-                    listings={enterpriseListings}
-                    syncedPortfolioCount={syncedPortfolioCount}
-                    onboardingMethod={effectiveOnboardingMethod}
-                    onAgentChange={handleEnterpriseAgentChange}
-                    onToggleBooster={handleEnterpriseBoosterToggle}
-                    prevStep={prevStep}
-                    onLaunch={handleEnterpriseLaunch}
-                    stepNumber={publishStep + 1}
-                    totalSteps={totalSteps}
-                />
+                <Step6EnterpriseRouting agents={initialEnterpriseAgents} listings={enterpriseListings} syncedPortfolioCount={syncedPortfolioCount} onboardingMethod={effectiveOnboardingMethod} onAgentChange={handleEnterpriseAgentChange} onToggleBooster={handleEnterpriseBoosterToggle} prevStep={prevStep} onLaunch={handleEnterpriseLaunch} stepNumber={publishStep + 1} totalSteps={totalSteps} />
             ) : null}
         </div>
     );
