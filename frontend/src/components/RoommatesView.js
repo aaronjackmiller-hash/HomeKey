@@ -514,7 +514,8 @@ const RoommatesView = ({
   const tabLabel = (tab) => {
     if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
     if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room';
-    return t('roommates.tabLooking') || 'People Looking';
+    if (tab === ROOMMATES_TAB.LOOKING) return 'People Looking';
+    return tab;
   };
 
   return (
