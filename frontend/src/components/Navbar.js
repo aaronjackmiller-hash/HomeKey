@@ -770,7 +770,12 @@ const Navbar = () => {
   const handleToggleFeatureFilter = (featureId) => {
     const normalizedFeature = String(featureId || '').trim().toLowerCase();
     if (!FEATURE_FILTER_OPTIONS.includes(normalizedFeature)) return;
-    const nextFeatureFilters = featureFilters.includes(normalizedFeature) ? featureFilters.filter((value) => value !== normalizedFeature) : [...featureFilters, normalizedFeature];
+    const currentFeatureFilters = typeof window !== 'undefined'
+      ? parseSearchParams(window.location.search).featureFilters
+      : featureFilters;
+    const nextFeatureFilters = currentFeatureFilters.includes(normalizedFeature)
+      ? currentFeatureFilters.filter((value) => value !== normalizedFeature)
+      : [...currentFeatureFilters, normalizedFeature];
     setFeatureFilters(nextFeatureFilters);
     applyFilterMenuSearch({ nextFeatureFilters });
   };
