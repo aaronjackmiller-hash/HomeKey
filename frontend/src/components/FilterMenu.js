@@ -1,3 +1,8 @@
+/**
+ * FilterMenu.js
+ * path: frontend/src/components/FilterMenu.js
+ */
+
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -64,7 +69,7 @@ const ROOMMATE_AMENITY_LABELS_HE = {
 const FILTER_PRICE_MIN = 0;
 const FILTER_PRICE_MAX = 20000;
 const FILTER_PRICE_STEP = 500;
-const DEFAULT_MOVE_IN_MONTH = '2026-07';
+const DEFAULT_MOVE_IN_DATE = '2026-07-01';
 
 const CHARACTERISTIC_ICONS = {
   shield: (
@@ -493,7 +498,7 @@ const RoommateFilters = ({
   const { t, language } = useLanguage();
 
   const [rentRange, setRentRange] = useState('Under ₪5k');
-  const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_MONTH);
+  const [moveInDate, setMoveInDate] = useState(DEFAULT_MOVE_IN_DATE);
   const [flexibility, setFlexibility] = useState('Strict');
   const [sharingWith, setSharingWith] = useState('1 other');
   const [gender, setGender] = useState('No preference');
@@ -510,7 +515,7 @@ const RoommateFilters = ({
 
   const [rentAmount, setRentAmount] = useState('');
   const [utilities, setUtilities] = useState('Included');
-  const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_MONTH);
+  const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_DATE);
   const [totalBedrooms, setTotalBedrooms] = useState('2');
   const [ownerGender, setOwnerGender] = useState('No preference');
   const [ownerSmoking, setOwnerSmoking] = useState('Not at all');
@@ -530,13 +535,16 @@ const RoommateFilters = ({
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
     try {
-      const res = await fetch('/api/seekers', {
+      // Use the same API base URL as the rest of the app — avoids hitting the
+      // static frontend server when the frontend is hosted separately.
+      const apiBase = process.env.REACT_APP_API_URL || '';
+      const res = await fetch(`${apiBase}/api/seekers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone,
           budgetRange: rentRange,
-          moveInDate: moveInDate ? `${moveInDate}-01` : undefined,
+          moveInDate: moveInDate || undefined,
           flexibility,
           sharingWith,
           genderPreference: gender,
@@ -552,7 +560,8 @@ const RoommateFilters = ({
       if (!res.ok) throw new Error(data.message || 'Failed to publish');
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
-    } catch (_err) {
+    } catch (err) {
+      console.error('[seeker-profile] publish error:', err.message);
       setSeekerSubmitStatus('error');
     }
   };
@@ -670,7 +679,7 @@ const RoommateFilters = ({
                 <label className="roommate-filters__sub-label" htmlFor="seeker-move-in">Move-in date</label>
                 <div className="roommate-month-field">
                   <span aria-hidden="true"><CharacteristicIcon name="calendar" /></span>
-                  <input id="seeker-move-in" type="month" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className="roommate-month-input" />
+                  <input id="seeker-move-in" type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} className="roommate-month-input" />
                 </div>
               </div>
               <div>
@@ -746,7 +755,7 @@ const RoommateFilters = ({
                 <label className="roommate-filters__sub-label" htmlFor="owner-date">Date available</label>
                 <div className="roommate-month-field">
                   <span aria-hidden="true"><CharacteristicIcon name="calendar" /></span>
-                  <input id="owner-date" type="month" value={dateAvailable} onChange={(e) => setDateAvailable(e.target.value)} className="roommate-month-input" />
+                  <input id="owner-date" type="date" value={dateAvailable} onChange={(e) => setDateAvailable(e.target.value)} className="roommate-month-input" />
                 </div>
               </div>
               <div>
