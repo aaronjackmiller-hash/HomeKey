@@ -67,6 +67,25 @@ const parsePositiveNumber = (value) => {
     return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
+const getActiveListingFilter = (now = new Date()) => ({
+    status: 'active',
+    $and: [
+        {
+            $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: null },
+                { expiresAt: { $gt: now } },
+            ],
+        },
+    ],
+});
+
+const appendAndCondition = (filter, condition) => {
+    if (!condition || typeof condition !== 'object') return;
+    if (!Array.isArray(filter.$and)) filter.$and = [];
+    filter.$and.push(condition);
+};
+
 // ── GET /api/roommates ────────────────────────────────────────────────────────
 // Public. Returns active roommate listings with optional filters.
 
@@ -88,7 +107,7 @@ exports.getListings = async (req, res) => {
             limit = 50,
         } = req.query;
 
-        const filter = { status: 'active', expiresAt: { $gt: new Date() } };
+        const filter = getActiveListingFilter();
 
         if (city && typeof city === 'string' && city.trim()) {
             filter['address.city'] = { $regex: city.trim(), $options: 'i' };
@@ -96,10 +115,12 @@ exports.getListings = async (req, res) => {
 
         if (genderPreference && ALLOWED_GENDER_PREFS.includes(genderPreference)) {
             // Return listings that are compatible — either exact match or no-preference
-            filter.$or = [
-                { genderPreference },
-                { genderPreference: 'no-preference' },
-            ];
+            appendAndCondition(filter, {
+                $or: [
+                    { genderPreference },
+                    { genderPreference: 'no-preference' },
+                ],
+            });
         }
 
         const minRentNum = parsePositiveNumber(minRent);
@@ -182,7 +203,7 @@ exports.getListings = async (req, res) => {
 
 exports.getStats = async (req, res) => {
     try {
-        const activeFilter = { status: 'active', expiresAt: { $gt: new Date() } };
+        const activeFilter = getActiveListingFilter();
 
         const [availableCount, totalDemandClicks] = await Promise.all([
             RoommateListing.countDocuments(activeFilter),
@@ -465,11 +486,11 @@ exports.logDemand = async (req, res) => {
 
 exports.getHeatmap = async (req, res) => {
     try {
+        const activeFilter = getActiveListingFilter();
         const heatmapData = await RoommateListing.aggregate([
             {
                 $match: {
-                    status: 'active',
-                    expiresAt: { $gt: new Date() },
+                    ...activeFilter,
                     demandClickCount: { $gt: 0 },
                     'address.lat': { $exists: true },
                     'address.lng': { $exists: true },
