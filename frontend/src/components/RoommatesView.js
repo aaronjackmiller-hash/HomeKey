@@ -591,8 +591,8 @@ const RoommatesView = ({
           <span className="roommates-hero-tab__icon" aria-hidden="true">🔍</span>
           <strong className="roommates-hero-tab__title">Looking for a Room or Roommate</strong>
           <span className="roommates-hero-tab__desc">Post your profile — listers contact you</span>
-          {!searcherCountLoading && seekerCount != null && (
-            <span className="roommates-hero-tab__badge">{seekerCount} active seekers</span>
+          {!searcherCountLoading && searcherCount != null && (
+            <span className="roommates-hero-tab__badge">{searcherCount} active seekers</span>
           )}
         </button>
 
