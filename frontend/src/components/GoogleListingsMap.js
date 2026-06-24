@@ -997,7 +997,6 @@ const GoogleListingsMap = ({
       <div className="google-listings-map-canvas-wrap">
         <div ref={mapContainerRef} className={`google-listings-map-canvas map-viewport ${drawMode ? 'is-drawing' : ''}`} />
         <div className="google-listings-map-zoom-overlay" aria-label={t('map.zoomControlsAriaLabel')}>
-          <span className="google-listings-map-zoom-flourish" aria-hidden="true" />
           <div className="google-listings-map-zoom-controls">
             <button type="button" className="google-listings-map-zoom-btn" onClick={() => adjustMapZoom(ZOOM_STEP)} aria-label={t('map.zoomInAriaLabel')}>+</button>
             <button type="button" className="google-listings-map-zoom-btn" onClick={() => adjustMapZoom(-ZOOM_STEP)} aria-label={t('map.zoomOutAriaLabel')}>-</button>
