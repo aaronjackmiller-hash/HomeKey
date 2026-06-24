@@ -3,7 +3,7 @@
  * path: frontend/src/components/FilterMenu.js
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { ROOMMATE_AMENITY_OPTIONS, getRoommateAmenityLabel } from '../constants/roommateAmenities';
 
@@ -329,6 +329,7 @@ const FilterMenu = ({
   onMaxPriceChange,
   onTogglePropertyCategory,
   onToggleFeature,
+  onSetFeatures,
   onApplyFilters,
   onSaveFilters,
   roommateLocation,
@@ -403,7 +404,7 @@ const FilterMenu = ({
           onLookingForChange={setLookingFor}
           onBedroomsNeededChange={setBedroomsNeeded}
           onRoommatesNeededChange={setRoommatesNeeded}
-          onToggleFeature={onToggleFeature}
+          onSetFeatures={onSetFeatures}
           onApplyFilters={onApplyFilters}
           onSaveFilters={onSaveFilters}
           roommateLocation={roommateLocation}
@@ -474,7 +475,7 @@ const RoommateFilters = ({
   onLookingForChange,
   onBedroomsNeededChange,
   onRoommatesNeededChange,
-  onToggleFeature = () => {},
+  onSetFeatures = () => {},
   onApplyFilters,
   onSaveFilters,
   roommateLocation = '',
@@ -493,8 +494,10 @@ const RoommateFilters = ({
   const [smoking, setSmoking] = useState('Not at all');
   const [kosher, setKosher] = useState('Open to it');
   const [leaseTerm, setLeaseTerm] = useState('6 mo');
-  const selectedAmenityValues = (Array.isArray(selectedFeatures) ? selectedFeatures : [])
+  const normalizedSelectedAmenities = (Array.isArray(selectedFeatures) ? selectedFeatures : [])
     .filter((value) => ROOMMATE_AMENITY_ITEMS.some((item) => item.value === value));
+  const normalizedSelectedAmenitiesKey = normalizedSelectedAmenities.join('|');
+  const [selectedAmenityValues, setSelectedAmenityValues] = useState(normalizedSelectedAmenities);
 
   // ── FIX 3: Phone moved to top — seeker ──
   const [phone, setPhone] = useState('');
@@ -516,7 +519,17 @@ const RoommateFilters = ({
   const [ownerPhone, setOwnerPhone] = useState('');
   const [ownerPhoneSaved, setOwnerPhoneSaved] = useState(false);
 
-  const toggleAmenity = (value) => onToggleFeature(value);
+  useEffect(() => {
+    setSelectedAmenityValues(normalizedSelectedAmenities);
+  }, [normalizedSelectedAmenitiesKey]);
+
+  const toggleAmenity = (value) => {
+    const nextAmenityValues = selectedAmenityValues.includes(value)
+      ? selectedAmenityValues.filter((item) => item !== value)
+      : [...selectedAmenityValues, value];
+    setSelectedAmenityValues(nextAmenityValues);
+    onSetFeatures(nextAmenityValues);
+  };
   const toggleOwnerAmenity = (item) => setOwnerAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
 
   // Publish seeker profile to backend so room listers can discover this person
@@ -888,6 +901,7 @@ FilterMenu.defaultProps = {
   onMaxPriceChange: () => {},
   onTogglePropertyCategory: () => {},
   onToggleFeature: () => {},
+  onSetFeatures: () => {},
   onApplyFilters: () => {},
   onSaveFilters: () => {},
   renderRoommateLocationInput: null,

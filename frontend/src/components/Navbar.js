@@ -780,6 +780,14 @@ const Navbar = () => {
     applyFilterMenuSearch({ nextFeatureFilters });
   };
 
+  const handleSetFeatureFilters = (nextFeatures = []) => {
+    const nextFeatureFilters = (Array.isArray(nextFeatures) ? nextFeatures : [])
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter((value, index, values) => FEATURE_FILTER_OPTIONS.includes(value) && values.indexOf(value) === index);
+    setFeatureFilters(nextFeatureFilters);
+    applyFilterMenuSearch({ nextFeatureFilters });
+  };
+
   const handleFilterMenuListingTypeChange = (nextListingType) => {
     const normalizedListingType = sanitizeListingType(nextListingType);
     setListingType(normalizedListingType);
@@ -1164,6 +1172,7 @@ const Navbar = () => {
                       onMaxPriceChange={handleFilterMenuMaxPriceChange}
                       onTogglePropertyCategory={handleTogglePropertyCategory}
                       onToggleFeature={handleToggleFeatureFilter}
+                      onSetFeatures={handleSetFeatureFilters}
                       onApplyFilters={handleApplyFilterMenu}
                       onSaveFilters={handleSaveFilterMenu}
                       roommateLocation={roommateLocationDraft}
