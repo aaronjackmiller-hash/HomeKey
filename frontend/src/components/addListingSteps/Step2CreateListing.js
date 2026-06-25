@@ -1,3 +1,7 @@
+/**
+ * Step2CreateListing.js
+ * path: frontend/src/components/addListingSteps/Step2CreateListing.js
+ */
 import React from 'react';
 
 export const Step2CreateListing = ({
@@ -47,7 +51,7 @@ export const Step2CreateListing = ({
                         onChange={(e) => updateData({ bathrooms: e.target.value })}
                         className="wizard-select"
                     >
-                        {[1, 1.5, 2, 2.5, 3].map((n) => <option key={n} value={String(n)}>{n}</option>)}
+                        {[1, 2, 3, 4].map((n) => <option key={n} value={String(n)}>{n}</option>)}
                     </select>
                 </div>
 
