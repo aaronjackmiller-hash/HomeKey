@@ -499,14 +499,15 @@ const RoommatesView = ({
     if (activeTab !== ROOMMATES_TAB.LOOKING) return;
     let cancelled = false;
     setSeekerProfilesLoading(true);
-    fetch('/api/seekers')
+    const apiBase = process.env.REACT_APP_API_URL || '';
+    fetch(`${apiBase}/api/seekers`)
       .then((res) => res.json())
       .then((data) => {
         if (!cancelled) {
           const profiles = Array.isArray(data?.data) ? data.data : [];
           setSeekerProfiles(profiles);
-          // Keep stats banner in sync with the actual loaded count
-          setSearcherCount(profiles.length);
+          // Sync the stats banner count with the authoritative loaded data
+          if (profiles.length > 0) setSearcherCount(profiles.length);
         }
       })
       .catch(() => { if (!cancelled) setSeekerProfiles([]); })
