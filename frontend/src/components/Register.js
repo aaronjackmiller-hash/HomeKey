@@ -161,8 +161,15 @@ const Register = () => {
           autoComplete="new-password"
         />
         <div className="input-field">
-          <label>{t('register.mobilePhoneOptional')}</label>
-          <input type="tel" name="phone" value={form.phone} onChange={handleChange} />
+          <label>{t('register.mobilePhoneRequired')}</label>
+          <input
+            type="tel"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            autoComplete="tel"
+            required
+          />
         </div>
         <div className="input-field">
           <label>{t('register.moveInDateOptional')}</label>

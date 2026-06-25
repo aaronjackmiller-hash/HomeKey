@@ -88,6 +88,7 @@ const initialEnterpriseListings = [
 const AddListing = () => {
     const history = useHistory();
     const location = useLocation();
+    const { user, isAuthenticated } = useAuth();
 
     const preselectedProfileType = location?.state?.preselectedProfileType || '';
     const initialStep = preselectedProfileType ? 1 : 0;
@@ -233,6 +234,13 @@ const AddListing = () => {
             financialDetails: {
                 ...(deposit !== null ? { totalMonthlyPayment: price, maintenanceFees: deposit } : {}),
             },
+            contact: {
+                phone: String(user?.phone || '').trim(),
+                whatsapp: String(user?.whatsapp || '').trim(),
+                email: String(user?.email || '').trim(),
+                name: String(user?.name || '').trim(),
+                preferredMethod: user?.preferredContactMethod || 'phone',
+            },
             status: 'active',
         };
     };
@@ -242,9 +250,9 @@ const AddListing = () => {
         const isRoommatesListing = data.profileType === 'renter-roommates';
 
         if (isRoommatesListing) {
-            const phone = contactOverride.anonPhone || '';
-            const email = contactOverride.anonEmail || '';
-            if (!phone && !isAuthenticated) {
+            const phone = contactOverride.anonPhone || (isAuthenticated ? String(user?.phone || '').trim() : '');
+            const email = contactOverride.anonEmail || (isAuthenticated ? String(user?.email || '').trim() : '');
+            if (!phone) {
                 setError('Please enter a phone number so renters can reach you.');
                 return;
             }
@@ -291,6 +299,10 @@ const AddListing = () => {
         if (!payload) {
             setError('Please complete address, price, bedrooms, bathrooms, and size before publishing.');
             setStep(createListingStep);
+            return;
+        }
+        if (!payload.contact.phone) {
+            setError('Please add a phone number to your account before publishing so HomeKey can confirm your listing by SMS.');
             return;
         }
 

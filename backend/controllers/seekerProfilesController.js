@@ -6,6 +6,7 @@
  */
 
 const SeekerProfile = require('../models/SeekerProfile');
+const { sendRoommateSeekerConfirmationSms } = require('../services/smsService');
 
 // Sanitize a phone string for the wa.me link — strips non-digit chars,
 // converts leading 0 (Israeli local) to 972 country code.
@@ -122,6 +123,12 @@ const createSeekerProfile = async (req, res) => {
 
         const profile = new SeekerProfile(profileData);
         await profile.save();
+
+        sendRoommateSeekerConfirmationSms({
+            toPhone: profile.contact.phone,
+            city: profile.locationPreference?.city,
+            neighborhood: profile.locationPreference?.neighborhood,
+        }).catch(() => {});
 
         return res.status(201).json({
             success: true,
