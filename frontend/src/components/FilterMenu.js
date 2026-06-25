@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { createSeekerProfile } from '../services/api';
 
 const FEATURE_ITEMS = [
   { id: 'elevator', labelKey: 'filterMenu.elevator', icon: 'elevator' },
@@ -533,38 +534,27 @@ const RoommateFilters = ({
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
     try {
-      const apiBase = process.env.REACT_APP_API_URL || '';
-      const res = await fetch(`${apiBase}/api/seekers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          budgetRange: rentRange,
-          moveInDate: moveInDate || undefined,
-          flexibility,
-          sharingWith,
-          genderPreference: gender,
-          smoking,
-          kosher,
-          leaseTerm,
-          amenities,
-          bedroomsNeeded: bedroomsNeeded || 1,
-          city: roommateLocation,
-        }),
+      const data = await createSeekerProfile({
+        phone,
+        budgetRange: rentRange,
+        moveInDate: moveInDate || undefined,
+        flexibility,
+        sharingWith,
+        genderPreference: gender,
+        smoking,
+        kosher,
+        leaseTerm,
+        amenities,
+        bedroomsNeeded: bedroomsNeeded || 1,
+        city: roommateLocation,
       });
-      // Guard against HTML error pages (e.g. 503 from backend cold start)
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        throw new Error(`Server error ${res.status} — please try again shortly`);
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
     } catch (err) {
-      console.error('[seeker-profile] publish error:', err.message);
+      const message = err?.response?.data?.message || err.message || 'Something went wrong — try again';
+      console.error('[seeker-profile] publish error:', message);
       setSeekerSubmitStatus('error');
-      setSeekerErrorMessage(err.message || 'Something went wrong — try again');
+      setSeekerErrorMessage(message);
     }
   };
 
