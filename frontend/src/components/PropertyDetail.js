@@ -1,3 +1,7 @@
+/**
+ * PropertyDetail.js
+ * path: frontend/src/components/PropertyDetail.js
+ */
 import React, { useState, useEffect } from 'react';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
 import {
@@ -21,6 +25,26 @@ import { getLocalizedAddress } from '../utils/addressLocalization';
 import { buildYad2TopCroppedImageUrl } from '../utils/yad2ImageCrop';
 
 const LIVE_LISTINGS_CACHE_KEY = 'homekey:live-listings-cache:v1';
+
+// ── CHANGE 1: localStorage for contact info pre-fill ─────────────────────────
+// Saves name + phone after first inquiry so repeat visitors never retype.
+const CONTACT_CACHE_KEY = 'homekey:contact-info:v1';
+
+const getStoredContact = () => {
+    try {
+        if (typeof window === 'undefined' || !window.localStorage) return {};
+        const raw = window.localStorage.getItem(CONTACT_CACHE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (_err) { return {}; }
+};
+
+const saveStoredContact = ({ firstName, phone, email }) => {
+    try {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        window.localStorage.setItem(CONTACT_CACHE_KEY, JSON.stringify({ firstName, phone, email }));
+    } catch (_err) {}
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const formatCurrency = (value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -176,35 +200,35 @@ const buildMessageWithUserNote = (automatedMessage = '', userNote = '') => {
     return `${frozenMessage}\n\n${note}`;
 };
 
+// ── CHANGE 2: Pre-fill from localStorage for logged-out users ─────────────────
 const buildInquiryDefaultsFromUser = (authUser, isAuthenticated) => {
-    if (!isAuthenticated || !authUser) {
+    if (isAuthenticated && authUser) {
+        const { firstName, lastName } = splitNameForInquiry(authUser.name);
         return {
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: '',
+            firstName,
+            lastName,
+            email: safeText(authUser.email),
+            phone: safeText(authUser.phone || authUser.whatsapp),
         };
     }
-
-    const { firstName, lastName } = splitNameForInquiry(authUser.name);
+    // Not logged in — check localStorage for previously entered info
+    const stored = getStoredContact();
     return {
-        firstName,
-        lastName,
-        email: safeText(authUser.email),
-        phone: safeText(authUser.phone || authUser.whatsapp),
+        firstName: stored.firstName || '',
+        lastName: '',
+        email: stored.email || '',
+        phone: stored.phone || '',
     };
 };
+// ─────────────────────────────────────────────────────────────────────────────
 
 const getListingContact = (property = {}) => {
     const externalContact = property.externalContact && typeof property.externalContact === 'object'
-        ? property.externalContact
-        : {};
+        ? property.externalContact : {};
     const directContact = property.contact && typeof property.contact === 'object'
-        ? property.contact
-        : {};
+        ? property.contact : {};
     const agentContact = property.agent && typeof property.agent === 'object' && !Array.isArray(property.agent)
-        ? property.agent
-        : {};
+        ? property.agent : {};
 
     const name = pickBestContactName({
         directName: directContact.name,
@@ -234,14 +258,8 @@ const getListingContact = (property = {}) => {
 const hasAnyPattern = (text, patterns) => patterns.some((pattern) => pattern.test(text));
 
 const KNOWN_AMENITY_KEYS = new Set([
-    'modernKitchen',
-    'airConditioning',
-    'balcony',
-    'secureParking',
-    'safeRoom',
-    'elevator',
-    'renovated',
-    'secureBuilding',
+    'modernKitchen', 'airConditioning', 'balcony', 'secureParking',
+    'safeRoom', 'elevator', 'renovated', 'secureBuilding',
 ]);
 
 const normalizeAmenityLabel = (value = '') => {
@@ -263,15 +281,11 @@ const normalizeAmenityLabel = (value = '') => {
 const getPersistedAmenities = (property = {}) => {
     const details = property.details && typeof property.details === 'object' ? property.details : {};
     const buildingDetails = property.buildingDetails && typeof property.buildingDetails === 'object'
-        ? property.buildingDetails
-        : {};
+        ? property.buildingDetails : {};
     const amenityCandidates = [
-        property.amenities,
-        property.features,
-        details.amenities,
-        details.features,
-        buildingDetails.amenities,
-        buildingDetails.features,
+        property.amenities, property.features,
+        details.amenities, details.features,
+        buildingDetails.amenities, buildingDetails.features,
     ]
         .flatMap((value) => (Array.isArray(value) ? value : [value]))
         .map((value) => normalizeAmenityLabel(String(value || '')))
@@ -281,28 +295,20 @@ const getPersistedAmenities = (property = {}) => {
 
 const buildAmenities = (property = {}) => {
     const persistedAmenities = getPersistedAmenities(property);
-    if (persistedAmenities.length > 0) {
-        return persistedAmenities.slice(0, 8);
-    }
+    if (persistedAmenities.length > 0) return persistedAmenities.slice(0, 8);
     const localizedContent = property.localizedContent && typeof property.localizedContent === 'object'
-        ? property.localizedContent
-        : {};
+        ? property.localizedContent : {};
     const textCandidates = [
-        property.description,
-        property.featuresText,
-        property.bathroomText,
+        property.description, property.featuresText, property.bathroomText,
         localizedContent.en && localizedContent.en.description,
         localizedContent.he && localizedContent.he.description,
-    ]
-        .map((value) => String(value || '').trim())
-        .filter(Boolean);
+    ].map((value) => String(value || '').trim()).filter(Boolean);
     const haystack = textCandidates.join(' ').toLowerCase();
     const amenities = [];
     const addAmenity = (label, condition) => {
         if (!condition || amenities.includes(label)) return;
         amenities.push(label);
     };
-
     addAmenity('modernKitchen', hasAnyPattern(haystack, [/kitchen/i, /מטבח/]));
     addAmenity('airConditioning', hasAnyPattern(haystack, [/air\s*condition/i, /\bac\b/i, /מזגן/, /מיזוג/]));
     addAmenity('balcony', hasAnyPattern(haystack, [/balcony/i, /terrace/i, /מרפסת/]));
@@ -310,33 +316,23 @@ const buildAmenities = (property = {}) => {
     addAmenity('safeRoom', hasAnyPattern(haystack, [/safe\s*room/i, /security\s*room/i, /\bmamad\b/i, /ממ["״']?ד/, /ממד/]));
     addAmenity('elevator', hasAnyPattern(haystack, [/elevator/i, /lift/i, /מעלית/]));
     addAmenity('renovated', hasAnyPattern(haystack, [/renovat/i, /refurbish/i, /משופצ/]));
-    addAmenity(
-        'secureBuilding',
-        Boolean(property.buildingDetails?.name) || hasAnyPattern(haystack, [/doorman/i, /guard/i, /intercom/i, /שומר/, /אינטרקום/, /מאובטח/])
-    );
-
+    addAmenity('secureBuilding',
+        Boolean(property.buildingDetails?.name) || hasAnyPattern(haystack, [/doorman/i, /guard/i, /intercom/i, /שומר/, /אינטרקום/, /מאובטח/]));
     if (amenities.length === 0) {
-        if (property.type === 'rental') {
-            amenities.push('modernKitchen', 'airConditioning', 'balcony');
-        } else {
-            amenities.push('secureBuilding', 'modernKitchen', 'balcony');
-        }
+        if (property.type === 'rental') amenities.push('modernKitchen', 'airConditioning', 'balcony');
+        else amenities.push('secureBuilding', 'modernKitchen', 'balcony');
     }
     return amenities.slice(0, 8);
 };
 
 const getLocalizedContentValue = (property = {}, fieldName = 'description', language = 'en') => {
     const localizedContent = property.localizedContent && typeof property.localizedContent === 'object'
-        ? property.localizedContent
-        : {};
+        ? property.localizedContent : {};
     const direct = safeText(property[fieldName]);
     const requested = safeText(localizedContent[language] && localizedContent[language][fieldName]);
     const english = safeText(localizedContent.en && localizedContent.en[fieldName]);
     const hebrew = safeText(localizedContent.he && localizedContent.he[fieldName]);
-
-    if (language === 'he') {
-        return requested || hebrew || direct || english;
-    }
+    if (language === 'he') return requested || hebrew || direct || english;
     return requested || english || direct || hebrew;
 };
 
@@ -366,9 +362,7 @@ const normalizeVirtualTourUrl = (value) => {
         const parsed = new URL(raw);
         if (!['http:', 'https:'].includes(parsed.protocol)) return '';
         return parsed.toString();
-    } catch (_err) {
-        return '';
-    }
+    } catch (_err) { return ''; }
 };
 
 const getVirtualTourEmbedUrl = (tourUrl) => {
@@ -376,7 +370,6 @@ const getVirtualTourEmbedUrl = (tourUrl) => {
     try {
         const parsed = new URL(tourUrl);
         const host = parsed.hostname.toLowerCase();
-
         if (host.includes('youtu.be')) {
             const videoId = parsed.pathname.replace('/', '');
             return videoId ? `https://www.youtube.com/embed/${videoId}` : '';
@@ -391,9 +384,7 @@ const getVirtualTourEmbedUrl = (tourUrl) => {
             return modelId ? `https://my.matterport.com/show/?m=${modelId}&play=1&brand=0` : '';
         }
         return '';
-    } catch (_err) {
-        return '';
-    }
+    } catch (_err) { return ''; }
 };
 
 const PropertyDetail = () => {
@@ -432,24 +423,18 @@ const PropertyDetail = () => {
             const matchingSampleProperty = SAMPLE_PROPERTIES.find((item) => getPropertyId(item) === normalizedId) || null;
             const matchingCachedProperty = getCachedLiveListingById(normalizedId);
             const fallbackProperty = matchingPreviewProperty || matchingSampleProperty || matchingCachedProperty;
-
-            if (fallbackProperty) {
-                setProperty(fallbackProperty);
-            }
-
+            if (fallbackProperty) setProperty(fallbackProperty);
             if (isSampleId && fallbackProperty) {
                 setLoading(false);
                 setError('');
                 return;
             }
-
             try {
                 const result = await getProperty(id);
                 setProperty(result.data);
                 setError('');
             } catch (err) {
                 if (fallbackProperty) {
-                    // Keep rendering the fallback listing so users can still open detail template.
                     setError('');
                 } else if (err.response?.status === 404) {
                     setError('Property not found.');
@@ -484,27 +469,33 @@ const PropertyDetail = () => {
         }
     };
 
+    // ── CHANGE 3: Simplified submit — firstName only, save to localStorage ────
     const handleInquirySubmit = async (e) => {
         e.preventDefault();
         setInquiryStatus('');
-        const fullName = `${inquiry.firstName} ${inquiry.lastName}`.trim();
-        if (!fullName) {
-            setInquiryStatus('Please provide your first and last name.');
+        const firstName = inquiry.firstName.trim();
+        if (!firstName) {
+            setInquiryStatus('Please provide your first name.');
             return;
         }
+        // Save contact info so next property visit is pre-filled
+        if (!isAuthenticated) {
+            saveStoredContact({
+                firstName: inquiry.firstName,
+                phone: inquiry.phone,
+                email: inquiry.email,
+            });
+        }
         const inquiryPayload = {
-            name: fullName,
+            name: firstName,
             email: inquiry.email,
             phone: inquiry.phone,
             preferredMethod: 'email',
-            message: buildMessageWithUserNote(
-                `I am interested in ${detailTitle}. Please send more details.`,
-                inquiry.messageNote,
-            ),
+            message: buildMessageWithUserNote(inquiryFrozenMessage, inquiry.messageNote),
         };
         try {
             await createPropertyInquiry(id, inquiryPayload);
-            setInquiryStatus('Details request sent successfully.');
+            setInquiryStatus('Message sent successfully.');
             setInquiry({
                 ...buildInquiryDefaultsFromUser(user, isAuthenticated),
                 messageNote: '',
@@ -512,9 +503,10 @@ const PropertyDetail = () => {
             const result = await getProperty(id);
             setProperty(result.data);
         } catch (err) {
-            setInquiryStatus(err.response?.data?.message || 'Failed to send inquiry.');
+            setInquiryStatus(err.response?.data?.message || 'Failed to send message.');
         }
     };
+    // ─────────────────────────────────────────────────────────────────────────
 
     const handleShowingInput = (showingId, field, value) => {
         setShowingForms((prev) => ({
@@ -558,9 +550,7 @@ const PropertyDetail = () => {
     const allImages = (Array.isArray(property.images) ? property.images : [])
         .map((image) => sanitizeImageSource(image, property.externalSource || property.sourceType))
         .filter(Boolean);
-    const heroImage =
-        allImages[0] ||
-        'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
+    const heroImage = allImages[0] || 'https://picsum.photos/seed/homekey-fallback-detail/1200/620';
     const additionalImages = allImages.slice(1);
     const fallbackTitle = getPrimaryAddressTitle(property);
     const localizedStreet = normalizeStreetDisplay(localizedAddress.street, localizedAddress.streetNumber);
@@ -584,8 +574,7 @@ const PropertyDetail = () => {
 
     const openImageViewer = (index) => {
         if (allImages.length === 0) return;
-        const bounded = Math.max(0, Math.min(index, allImages.length - 1));
-        setSelectedImageIndex(bounded);
+        setSelectedImageIndex(Math.max(0, Math.min(index, allImages.length - 1)));
     };
     const closeImageViewer = () => setSelectedImageIndex(null);
     const showPrevImage = () => {
@@ -615,9 +604,7 @@ const PropertyDetail = () => {
     const templateTypeLabel = property.type === 'rental' ? 'Rent' : 'Sale';
     const templateTitle = [coverTitleStreet, coverTitleNumber].filter(Boolean).join(' ').trim() || detailTitle;
     const templateLocation = (
-        safeText(localizedAddress.city)
-        || safeText(locationLine.split(',')[0])
-        || 'Israel'
+        safeText(localizedAddress.city) || safeText(locationLine.split(',')[0]) || 'Israel'
     ).toUpperCase();
     const templatePriceSuffix = '';
     const templatePriceValue = formatTemplatePrice(property.price);
@@ -626,10 +613,20 @@ const PropertyDetail = () => {
     const inquirySubtitle = inquirySubtitleRaw.length > 130
         ? `${inquirySubtitleRaw.slice(0, 127)}...`
         : inquirySubtitleRaw;
-    const inquiryWhatsAppNumber = String(listingContact.whatsapp || '').replace(/[^\d]/g, '');
-    const inquiryFrozenMessage = t('propertyDetail.inquiryDefaultMessage', { title: detailTitle });
+
+    // ── CHANGE 4: WhatsApp number falls back to phone; message includes lister name + street ──
+    const inquiryWhatsAppNumber = String(listingContact.whatsapp || listingContact.phone || '').replace(/[^\d]/g, '');
+    const listerFirstName = listingContact.name
+        ? listingContact.name.trim().split(/\s+/)[0]
+        : '';
+    const streetRef = localizedStreet || detailTitle;
+    const inquiryFrozenMessage = listerFirstName
+        ? `Hi ${listerFirstName}, I saw your listing at ${streetRef} on HomeKey. Is it still available?`
+        : `Hi, I saw your listing at ${streetRef} on HomeKey. Is it still available?`;
+    // ─────────────────────────────────────────────────────────────────────────
+
     const inquiryAgent = {
-        agency: listingContact.agency || 'Real Deal',
+        agency: listingContact.agency || '',
         name: listingContact.name || '',
         hasWhatsApp: Boolean(inquiryWhatsAppNumber),
         whatsappNumber: inquiryWhatsAppNumber,
@@ -654,10 +651,7 @@ const PropertyDetail = () => {
                             tabIndex={0}
                             onClick={() => openImageViewer(0)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    openImageViewer(0);
-                                }
+                                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openImageViewer(0); }
                             }}
                         />
                         {isYad2ListingMedia && (
@@ -741,6 +735,7 @@ const PropertyDetail = () => {
                         </div>
                     </div>
                 </section>
+
                 {additionalImages.length > 0 && (
                     <section className="detail-gallery-grid">
                         {additionalImages.map((image, index) => (
@@ -750,10 +745,7 @@ const PropertyDetail = () => {
                                 className="detail-gallery-image-button"
                                 onClick={() => openImageViewer(index + 1)}
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        openImageViewer(index + 1);
-                                    }
+                                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openImageViewer(index + 1); }
                                 }}
                             >
                                 <span className="detail-gallery-image-media">
@@ -787,9 +779,7 @@ const PropertyDetail = () => {
                     <section className="detail-section-card detail-virtual-tour-card">
                         <div className="detail-virtual-tour-header">
                             <h2>3D Virtual Tour</h2>
-                            <a href={virtualTourUrl} target="_blank" rel="noopener noreferrer">
-                                Open full tour
-                            </a>
+                            <a href={virtualTourUrl} target="_blank" rel="noopener noreferrer">Open full tour</a>
                         </div>
                         {virtualTourEmbedUrl ? (
                             <div className="detail-virtual-tour-frame-wrap">
@@ -876,36 +866,19 @@ const PropertyDetail = () => {
                                     <form onSubmit={(e) => handleShowingSubmit(e, showing._id)}>
                                         <div className="input-field">
                                             <label>Your Name</label>
-                                            <input
-                                                type="text"
-                                                value={formState.name || ''}
-                                                onChange={(e) => handleShowingInput(showing._id, 'name', e.target.value)}
-                                                required
-                                            />
+                                            <input type="text" value={formState.name || ''} onChange={(e) => handleShowingInput(showing._id, 'name', e.target.value)} required />
                                         </div>
                                         <div className="input-field">
                                             <label>Your Email</label>
-                                            <input
-                                                type="email"
-                                                value={formState.email || ''}
-                                                onChange={(e) => handleShowingInput(showing._id, 'email', e.target.value)}
-                                            />
+                                            <input type="email" value={formState.email || ''} onChange={(e) => handleShowingInput(showing._id, 'email', e.target.value)} />
                                         </div>
                                         <div className="input-field">
                                             <label>Your Phone</label>
-                                            <input
-                                                type="tel"
-                                                value={formState.phone || ''}
-                                                onChange={(e) => handleShowingInput(showing._id, 'phone', e.target.value)}
-                                            />
+                                            <input type="tel" value={formState.phone || ''} onChange={(e) => handleShowingInput(showing._id, 'phone', e.target.value)} />
                                         </div>
                                         <div className="input-field">
                                             <label>Message (optional)</label>
-                                            <input
-                                                type="text"
-                                                value={formState.message || ''}
-                                                onChange={(e) => handleShowingInput(showing._id, 'message', e.target.value)}
-                                            />
+                                            <input type="text" value={formState.message || ''} onChange={(e) => handleShowingInput(showing._id, 'message', e.target.value)} />
                                         </div>
                                         <button type="submit" className="primary-button">Reserve Showing Slot</button>
                                         {showingStatus[showing._id] && <p>{showingStatus[showing._id]}</p>}
@@ -930,6 +903,7 @@ const PropertyDetail = () => {
                     </div>
                 )}
             </div>
+
             {selectedImageIndex != null && allImages[selectedImageIndex] && (
                 <div className="image-lightbox-backdrop" onClick={closeImageViewer}>
                     <div className="image-lightbox-panel" onClick={(e) => e.stopPropagation()}>
@@ -946,36 +920,16 @@ const PropertyDetail = () => {
                                         alt={`Property image ${selectedImageIndex + 1}`}
                                     />
                                     {isYad2ListingMedia && (
-                                        <>
-                                            <span className="detail-h-badge detail-h-badge--lightbox" aria-hidden="true">
-                                                <span className="detail-h-badge-icon" />
-                                            </span>
-                                        </>
+                                        <span className="detail-h-badge detail-h-badge--lightbox" aria-hidden="true">
+                                            <span className="detail-h-badge-icon" />
+                                        </span>
                                     )}
                                 </span>
                             </div>
                             {allImages.length > 1 && (
                                 <>
-                                    <button
-                                        className="image-lightbox-nav prev"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            showPrevImage();
-                                        }}
-                                        type="button"
-                                    >
-                                        ‹
-                                    </button>
-                                    <button
-                                        className="image-lightbox-nav next"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            showNextImage();
-                                        }}
-                                        type="button"
-                                    >
-                                        ›
-                                    </button>
+                                    <button className="image-lightbox-nav prev" onClick={(e) => { e.stopPropagation(); showPrevImage(); }} type="button">‹</button>
+                                    <button className="image-lightbox-nav next" onClick={(e) => { e.stopPropagation(); showNextImage(); }} type="button">›</button>
                                 </>
                             )}
                         </div>
