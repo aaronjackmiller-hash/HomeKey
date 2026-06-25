@@ -41,13 +41,17 @@ const toE164 = (phone) => {
     return `+${raw}`;
 };
 
+const getTwilioFromNumber = () => (
+    String(process.env.TWILIO_PHONE_NUMBER || process.env.TWILIO_FROM_NUMBER || '').trim()
+);
+
 const sendSms = async ({ toPhone, body, logContext = 'SMS' }) => {
     try {
         const client = getTwilioClient();
-        const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+        const fromNumber = getTwilioFromNumber();
 
         if (!client || !fromNumber) {
-            console.warn(`[smsService] Twilio is not configured - skipping ${logContext}.`);
+            console.warn(`[smsService] Twilio is not configured - skipping ${logContext}. Set TWILIO_PHONE_NUMBER or TWILIO_FROM_NUMBER.`);
             return { success: false, error: 'Twilio not configured' };
         }
 

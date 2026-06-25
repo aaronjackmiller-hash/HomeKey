@@ -128,7 +128,13 @@ const createSeekerProfile = async (req, res) => {
             toPhone: profile.contact.phone,
             city: profile.locationPreference?.city,
             neighborhood: profile.locationPreference?.neighborhood,
-        }).catch(() => {});
+        }).then((result) => {
+            if (result && result.success === false) {
+                console.warn(`[seekers] Confirmation SMS was not sent for profile ${profile._id}: ${result.error}`);
+            }
+        }).catch((err) => {
+            console.warn(`[seekers] Confirmation SMS failed for profile ${profile._id}: ${err.message}`);
+        });
 
         return res.status(201).json({
             success: true,
