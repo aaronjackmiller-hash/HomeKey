@@ -5,7 +5,6 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { createSeekerProfile } from '../services/api';
 
 const FEATURE_ITEMS = [
   { id: 'elevator', labelKey: 'filterMenu.elevator', icon: 'elevator' },
@@ -20,7 +19,6 @@ const DETAIL_ITEMS = [
   { id: 'oven', labelKey: 'filterMenu.oven', icon: 'oven' },
   { id: 'balcony', labelKey: 'filterMenu.balcony', icon: 'balcony' },
   { id: 'stovetop', labelKey: 'filterMenu.stovetop', icon: 'stovetop' },
-  { id: 'laundry-facilities', labelKey: 'filterMenu.laundryFacilities', icon: 'laundry' },
   { id: 'in-unit-washer-dryer', labelKey: 'filterMenu.inUnitWasherDryer', icon: 'washer' },
 ];
 
@@ -48,7 +46,6 @@ const ROOMMATE_AMENITY_ITEMS = [
   { id: 'Oven', icon: 'oven' },
   { id: 'Balcony', icon: 'balcony' },
   { id: 'Stovetop', icon: 'stovetop' },
-  { id: 'Laundry Facilities', icon: 'laundry' },
   { id: 'In-Unit Washer & Dryer', icon: 'washer' },
 ];
 
@@ -63,7 +60,6 @@ const ROOMMATE_AMENITY_LABELS_HE = {
   'Oven': 'תנור',
   'Balcony': 'מרפסת',
   'Stovetop': 'כיריים',
-  'Laundry Facilities': 'מתקני כביסה',
   'In-Unit Washer & Dryer': 'מכונת כביסה ומייבש',
 };
 
@@ -536,27 +532,31 @@ const RoommateFilters = ({
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
     try {
-      const data = await createSeekerProfile({
-        phone,
-        budgetRange: rentRange,
-        moveInDate: moveInDate || undefined,
-        flexibility,
-        sharingWith,
-        genderPreference: gender,
-        smoking,
-        kosher,
-        leaseTerm,
-        amenities,
-        bedroomsNeeded: bedroomsNeeded || 1,
-        city: roommateLocation,
+      // Use the same API base URL as the rest of the app — avoids hitting the
+      // static frontend server when the frontend is hosted separately.
+      const apiBase = process.env.REACT_APP_API_URL || '';
+      const res = await fetch(`${apiBase}/api/seekers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          budgetRange: rentRange,
+          moveInDate: moveInDate || undefined,
+          flexibility,
+          sharingWith,
+          genderPreference: gender,
+          smoking,
+          kosher,
+          leaseTerm,
+          amenities,
+          bedroomsNeeded: bedroomsNeeded || 1,
+          city: roommateLocation,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to publish');
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('homekey:seeker-profile-published', {
-          detail: { profileId: data.data?._id || null },
-        }));
-      }
     } catch (err) {
       console.error('[seeker-profile] publish error:', err.message);
       setSeekerSubmitStatus('error');
