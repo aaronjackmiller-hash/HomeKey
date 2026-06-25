@@ -518,6 +518,12 @@ const RoommatesView = ({
 
   const displayProperties = listings;
   const availableRoomsCount = displayProperties.length;
+  const roomsAvailableLabel = availableRoomsCount === 1
+    ? (t('roommates.statRoomAvailable') || 'room available')
+    : (t('roommates.statRoomsAvailable') || 'rooms available');
+  const peopleLookingLabel = searcherCount === 1
+    ? (t('roommates.statPersonLooking') || 'person looking')
+    : (t('roommates.statPeopleLooking') || 'people looking');
 
   // Switch to Browse tab when seeker publishes profile and clicks "Browse available rooms"
   useEffect(() => {
@@ -569,13 +575,13 @@ const RoommatesView = ({
         <StatPill
           icon="🏠"
           value={loading ? null : availableRoomsCount}
-          label={t('roommates.statRoomsAvailable') || 'rooms available'}
+          label={roomsAvailableLabel}
         />
         <div className="roommates-stats-divider" aria-hidden="true" />
         <StatPill
           icon="🔍"
           value={searcherCountLoading ? null : searcherCount}
-          label={t('roommates.statPeopleLooking') || 'people looking'}
+          label={peopleLookingLabel}
           accent
         />
       </div>

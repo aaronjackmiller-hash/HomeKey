@@ -169,8 +169,11 @@ export const translations = {
     },
     roommates: {
       statsBannerAriaLabel: 'Roommate market overview',
+      statRoomAvailable: 'room available',
       statRoomsAvailable: 'rooms available',
       statPeopleSearching: 'people searching',
+      statPersonLooking: 'person looking',
+      statPeopleLooking: 'people looking',
       tabBrowse: 'Browse Rooms',
       tabList: 'List a Room',
       tabStripAriaLabel: 'Roommate sections',
@@ -442,8 +445,11 @@ export const translations = {
     },
     roommates: {
       statsBannerAriaLabel: 'סקירת שוק השותפים',
+      statRoomAvailable: 'חדר פנוי',
       statRoomsAvailable: 'חדרים פנויים',
       statPeopleSearching: 'אנשים מחפשים',
+      statPersonLooking: 'אדם מחפש',
+      statPeopleLooking: 'אנשים מחפשים',
       tabBrowse: 'חיפוש חדרים',
       tabList: 'פרסם חדר',
       tabStripAriaLabel: 'אזורי שותפים',
