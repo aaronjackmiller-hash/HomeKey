@@ -77,10 +77,10 @@ const ForgotPassword = () => {
         <div className="forgot-password-card forgot-password-success-card">
           <h2>Request received</h2>
           <p className="auth-help-text">
-            An email has been sent with a link to reset your password.
+            If an account exists for that email, we will send a link to reset your password.
           </p>
           <p className="auth-help-text forgot-password-email-line">
-            Email sent to: <strong>{requestedEmail}</strong>
+            Request submitted for: <strong>{requestedEmail}</strong>
           </p>
           <p className="forgot-password-footer-link">
             Know your password? <Link to="/login">Sign in now.</Link>

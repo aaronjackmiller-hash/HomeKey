@@ -12,6 +12,7 @@ const {
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { sendRegistrationThankYouSms } = require('../services/smsService');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 const PASSKEY_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const APPLE_JWKS_URL = new URL('https://appleid.apple.com/auth/keys');
@@ -45,6 +46,10 @@ const getResetCookieOptions = (minutes) => ({
     path: '/api/auth',
     maxAge: minutes * 60 * 1000,
 });
+
+const getFrontendOrigin = () => String(
+    process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000'
+).replace(/\/$/, '');
 
 const parsePreferredContactMethod = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
@@ -634,9 +639,18 @@ const forgotPassword = async (req, res) => {
         // Keep the reset token out of public UI by storing it in an httpOnly cookie.
         res.cookie('homekey_reset_token', rawToken, resetCookieOptions);
         res.cookie('homekey_reset_email', normalizedEmail, resetCookieOptions);
+        const frontendOrigin = getFrontendOrigin();
+        const resetUrl = `${frontendOrigin}/reset-password?token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(normalizedEmail)}`;
+        const mailResult = await sendPasswordResetEmail({
+            toEmail: normalizedEmail,
+            resetUrl,
+            expiresAt,
+        });
+        if (mailResult && mailResult.success === false) {
+            console.warn(`[auth] Password reset email was not sent to ${normalizedEmail}: ${mailResult.error}`);
+        }
         if (process.env.NODE_ENV !== 'production') {
-            const frontendOrigin = String(process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-            responsePayload.previewResetUrl = `${frontendOrigin}/reset-password?token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(normalizedEmail)}`;
+            responsePayload.previewResetUrl = resetUrl;
             responsePayload.expiresAt = expiresAt;
         }
         return res.json(responsePayload);
