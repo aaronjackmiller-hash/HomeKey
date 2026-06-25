@@ -387,6 +387,38 @@ const getVirtualTourEmbedUrl = (tourUrl) => {
     } catch (_err) { return ''; }
 };
 
+// ── Amenity icons — same SVG vocabulary as the Roommates section ─────────────
+const DETAIL_AMENITY_ICONS = {
+    shield: (<><path d="M12 3 5.5 5.5v5.4c0 4.1 2.6 7.9 6.5 9.1 3.9-1.2 6.5-5 6.5-9.1V5.5L12 3Z" /><path d="M9.5 12.1 11.3 14l3.4-4" /></>),
+    elevator: (<><path d="M7 3h10v18H7z" /><path d="M12 3v18" /><path d="m9.2 8 1.8-2 1.8 2" /><path d="m14.8 16-1.8 2-1.8-2" /></>),
+    parking: (<><path d="M6 14.5h12l-1.3-4.2A2 2 0 0 0 14.8 9H9.2a2 2 0 0 0-1.9 1.3L6 14.5Z" /><path d="M7.5 14.5v3M16.5 14.5v3M8 17.5h1.3M14.7 17.5H16M8.5 12.5h7" /></>),
+    renovated: (<><path d="M4 14.5h9.5" /><path d="M13.5 11.5v6" /><path d="M13.5 12.2 18 7.7a2 2 0 0 1 2.8 2.8L16.3 15" /><path d="M4 17.5h4.5M5.5 6.5h5M8 4v5" /></>),
+    balcony: (<><path d="M6 5h12v8H6z" /><path d="M4 13h16M6 13v6M10 13v6M14 13v6M18 13v6M4 19h16" /></>),
+    oven: (<><path d="M6 4h12v16H6z" /><path d="M6 8h12M9 6h.1M12 6h.1M15 6h.1M9 11h6v5H9z" /></>),
+    ac: (<><rect x="3" y="6" width="18" height="9" rx="2" /><path d="M7 15v3M12 15v3M17 15v3M7 11h10" /></>),
+    lock: (<><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><circle cx="12" cy="16" r="1" /></>),
+};
+
+// Maps property amenity keys → { label, icon }
+const PROPERTY_AMENITY_MAP = {
+    modernKitchen:  { label: 'Kitchen',        icon: 'oven' },
+    airConditioning:{ label: 'A/C',            icon: 'ac' },
+    balcony:        { label: 'Balcony',        icon: 'balcony' },
+    secureParking:  { label: 'Parking',        icon: 'parking' },
+    safeRoom:       { label: 'Mamad',          icon: 'shield' },
+    elevator:       { label: 'Elevator',       icon: 'elevator' },
+    renovated:      { label: 'Renovated',      icon: 'renovated' },
+    secureBuilding: { label: 'Secure Building', icon: 'lock' },
+};
+
+const DetailAmenityIcon = ({ name }) => (
+    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"
+        style={{ width: 28, height: 28, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+        {DETAIL_AMENITY_ICONS[name]}
+    </svg>
+);
+// ─────────────────────────────────────────────────────────────────────────────
+
 const PropertyDetail = () => {
     const { id } = useParams();
     const history = useHistory();
@@ -714,11 +746,18 @@ const PropertyDetail = () => {
                         </div>
                         <section className="detail-template-amenities" aria-label={t('propertyDetail.amenitiesHeading')}>
                             <h3>{t('propertyDetail.amenitiesHeading')}</h3>
-                            <ul>
-                                {amenities.map((amenity) => (
-                                    <li key={amenity}>{t(`propertyDetail.amenityLabels.${amenity}`)}</li>
-                                ))}
-                            </ul>
+                            <div className="detail-amenity-grid">
+                                {amenities.map((amenityKey) => {
+                                    const config = PROPERTY_AMENITY_MAP[amenityKey];
+                                    if (!config) return null;
+                                    return (
+                                        <div key={amenityKey} className="detail-amenity-item">
+                                            <DetailAmenityIcon name={config.icon} />
+                                            <span>{config.label}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </section>
                         <div className="detail-template-price">
                             <div className="detail-template-price-mark">
