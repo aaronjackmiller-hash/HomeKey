@@ -162,12 +162,15 @@ const getSeekerProfiles = async (req, res) => {
 
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '40', 10)));
 
-        const profiles = await SeekerProfile
-            .find(query)
-            .select('-contact.phone') // never expose raw phone
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .lean();
+        const [profiles, total] = await Promise.all([
+            SeekerProfile
+                .find(query)
+                .select('-contact.phone') // never expose raw phone
+                .sort({ createdAt: -1 })
+                .limit(limit)
+                .lean(),
+            SeekerProfile.countDocuments(query),
+        ]);
 
         // Attach a pre-built WhatsApp link so the frontend never touches the raw number
         const profilesWithContact = await Promise.all(
@@ -182,7 +185,12 @@ const getSeekerProfiles = async (req, res) => {
             })
         );
 
-        return res.json({ success: true, data: profilesWithContact, count: profilesWithContact.length });
+        return res.json({
+            success: true,
+            data: profilesWithContact,
+            count: total,
+            total,
+        });
     } catch (err) {
         console.error('[seekers] getSeekerProfiles error:', err.message);
         return res.status(500).json({ success: false, message: 'Failed to load seeker profiles.' });

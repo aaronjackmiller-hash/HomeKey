@@ -372,6 +372,15 @@ export const createSeekerProfile = async (profile) => {
 };
 
 /**
+ * Browse active seeker profiles with optional filters.
+ * Public — phone numbers stay hidden server-side.
+ */
+export const getSeekerProfiles = async (params) => {
+  const response = await api.get('/seekers', { params });
+  return response.data;
+};
+
+/**
  * Update an existing roommate listing.
  * Authenticated — owner or admin only.
  */

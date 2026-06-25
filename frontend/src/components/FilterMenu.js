@@ -552,6 +552,11 @@ const RoommateFilters = ({
       });
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('homekey:seeker-profile-published', {
+          detail: { profileId: data.data?._id || null },
+        }));
+      }
     } catch (err) {
       console.error('[seeker-profile] publish error:', err.message);
       setSeekerSubmitStatus('error');

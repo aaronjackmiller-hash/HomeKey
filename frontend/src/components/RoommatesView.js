@@ -23,7 +23,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
-import { getRoommateStats, getRoommateListings } from '../services/api';
+import { getRoommateListings, getSeekerProfiles } from '../services/api';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -36,17 +36,19 @@ const ROOMMATES_TAB = Object.freeze({
   LOOKING: 'looking',
 });
 
-// Fetches live stats from GET /api/roommates/stats
+// Fetches the live count of people looking for a room.
 const fetchSearcherCount = async () => {
   try {
-    const apiBase = process.env.REACT_APP_API_URL || '';
-    const res = await fetch(`${apiBase}/api/seekers?limit=1`);
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await getSeekerProfiles({ limit: 1 });
     return typeof data.count === 'number' ? data.count : null;
   } catch (_err) {
     return null;
   }
+};
+
+const fetchSeekerProfiles = async () => {
+  const data = await getSeekerProfiles();
+  return Array.isArray(data?.data) ? data.data : [];
 };
 
 // ---------------------------------------------------------------------------
@@ -466,6 +468,32 @@ const RoommatesView = ({
     return cleanup;
   }, [refreshListings]);
 
+  const refreshSearcherCount = useCallback(() => {
+    setSearcherCountLoading(true);
+    return fetchSearcherCount()
+      .then((count) => setSearcherCount(typeof count === 'number' ? count : null))
+      .catch(() => {
+        setSearcherCount(null);
+      })
+      .finally(() => {
+        setSearcherCountLoading(false);
+      });
+  }, []);
+
+  const refreshSeekerProfiles = useCallback(() => {
+    setSeekerProfilesLoading(true);
+    return fetchSeekerProfiles()
+      .then((profiles) => {
+        setSeekerProfiles(profiles);
+      })
+      .catch(() => {
+        setSeekerProfiles([]);
+      })
+      .finally(() => {
+        setSeekerProfilesLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setSearcherCountLoading(true);
@@ -484,6 +512,12 @@ const RoommatesView = ({
 
   const displayProperties = listings;
   const availableRoomsCount = displayProperties.length;
+  const roomsAvailableLabel = availableRoomsCount === 1
+    ? (t('roommates.statRoomAvailable') || 'room available')
+    : (t('roommates.statRoomsAvailable') || 'rooms available');
+  const peopleLookingLabel = searcherCount === 1
+    ? (t('roommates.statPersonLooking') || 'person looking')
+    : (t('roommates.statPeopleLooking') || 'people looking');
 
   // Switch to Browse tab when seeker publishes profile and clicks "Browse available rooms"
   useEffect(() => {
@@ -492,20 +526,22 @@ const RoommatesView = ({
     return () => window.removeEventListener('homekey:browse-rooms', handleBrowseRooms);
   }, []);
 
+  useEffect(() => {
+    const handleSeekerProfilePublished = () => {
+      refreshSearcherCount();
+      if (activeTab === ROOMMATES_TAB.LOOKING) {
+        refreshSeekerProfiles();
+      }
+    };
+    window.addEventListener('homekey:seeker-profile-published', handleSeekerProfilePublished);
+    return () => window.removeEventListener('homekey:seeker-profile-published', handleSeekerProfilePublished);
+  }, [activeTab, refreshSearcherCount, refreshSeekerProfiles]);
+
   // Fetch seeker profiles when the "People Looking" tab is activated
   useEffect(() => {
     if (activeTab !== ROOMMATES_TAB.LOOKING) return;
-    let cancelled = false;
-    setSeekerProfilesLoading(true);
-    fetch('/api/seekers')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setSeekerProfiles(Array.isArray(data?.data) ? data.data : []);
-      })
-      .catch(() => { if (!cancelled) setSeekerProfiles([]); })
-      .finally(() => { if (!cancelled) setSeekerProfilesLoading(false); });
-    return () => { cancelled = true; };
-  }, [activeTab]);
+    refreshSeekerProfiles();
+  }, [activeTab, refreshSeekerProfiles]);
 
   const handleStartWizard = useCallback(() => {
     setWizardOpen(true);
@@ -515,11 +551,9 @@ const RoommatesView = ({
     setWizardOpen(false);
     // Refresh listings and stats in case a new one was just published
     refreshListings();
-    fetchSearcherCount().then((count) => {
-      setSearcherCount(typeof count === 'number' ? count : null);
-    });
+    refreshSearcherCount();
     setActiveTab(ROOMMATES_TAB.BROWSE);
-  }, [refreshListings]);
+  }, [refreshListings, refreshSearcherCount]);
 
   const tabLabel = (tab) => {
     if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
@@ -535,13 +569,13 @@ const RoommatesView = ({
         <StatPill
           icon="🏠"
           value={loading ? null : availableRoomsCount}
-          label={t('roommates.statRoomsAvailable') || 'rooms available'}
+          label={roomsAvailableLabel}
         />
         <div className="roommates-stats-divider" aria-hidden="true" />
         <StatPill
           icon="🔍"
           value={searcherCountLoading ? null : searcherCount}
-          label={t('roommates.statPeopleLooking') || 'people looking'}
+          label={peopleLookingLabel}
           accent
         />
       </div>
