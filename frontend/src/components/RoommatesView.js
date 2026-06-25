@@ -43,6 +43,8 @@ const fetchSearcherCount = async () => {
     const res = await fetch(`${apiBase}/api/seekers`);
     if (!res.ok) return null;
     const data = await res.json();
+    // Use the actual array length — same source as the People Looking tab
+    if (Array.isArray(data?.data)) return data.data.length;
     return typeof data.count === 'number' ? data.count : null;
   } catch (_err) {
     return null;
@@ -500,7 +502,12 @@ const RoommatesView = ({
     fetch('/api/seekers')
       .then((res) => res.json())
       .then((data) => {
-        if (!cancelled) setSeekerProfiles(Array.isArray(data?.data) ? data.data : []);
+        if (!cancelled) {
+          const profiles = Array.isArray(data?.data) ? data.data : [];
+          setSeekerProfiles(profiles);
+          // Keep stats banner in sync with the actual loaded count
+          setSearcherCount(profiles.length);
+        }
       })
       .catch(() => { if (!cancelled) setSeekerProfiles([]); })
       .finally(() => { if (!cancelled) setSeekerProfilesLoading(false); });
