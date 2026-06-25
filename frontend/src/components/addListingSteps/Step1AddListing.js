@@ -73,7 +73,6 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
         street: !String(data.address.street || '').trim(),
         number: !String(data.address.number || '').trim(),
         city: !String(data.address.city || '').trim(),
-        relation: !String(data.relation || '').trim(),
     };
 
     const hasMissingFields = Object.values(missingFields).some(Boolean);
@@ -157,22 +156,6 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                         className={`wizard-input ${showRequiredHints && missingFields.city ? 'wizard-field-required' : ''}`}
                     />
                 </div>
-            </div>
-
-            {/* Listing Relation */}
-            <div className="wizard-row">
-                <label className="wizard-label">Listing Relation</label>
-                <select
-                    value={data.relation}
-                    onChange={(e) => updateData({ relation: e.target.value })}
-                    className={`wizard-select ${showRequiredHints && missingFields.relation ? 'wizard-field-required' : ''}`}
-                >
-                    <option value="">Select option...</option>
-                    <option value="property owner">Property Owner</option>
-                    <option value="agent/broker">Agent / Broker</option>
-                    <option value="property manager">Property Manager</option>
-                </select>
-                {showRequiredHints && missingFields.relation ? <p className="wizard-required-copy">Required</p> : null}
             </div>
 
             <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
