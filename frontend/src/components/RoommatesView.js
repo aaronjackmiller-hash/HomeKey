@@ -23,7 +23,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
-import { getRoommateStats, getRoommateListings } from '../services/api';
+import { getRoommateListings, getSeekerProfiles } from '../services/api';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -39,10 +39,7 @@ const ROOMMATES_TAB = Object.freeze({
 // Fetches live stats from GET /api/roommates/stats
 const fetchSearcherCount = async () => {
   try {
-    const apiBase = process.env.REACT_APP_API_URL || '';
-    const res = await fetch(`${apiBase}/api/seekers`);
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await getSeekerProfiles();
     // Use the actual array length — same source as the People Looking tab
     if (Array.isArray(data?.data)) return data.data.length;
     return typeof data.count === 'number' ? data.count : null;
@@ -499,9 +496,7 @@ const RoommatesView = ({
     if (activeTab !== ROOMMATES_TAB.LOOKING) return;
     let cancelled = false;
     setSeekerProfilesLoading(true);
-    const apiBase = process.env.REACT_APP_API_URL || '';
-    fetch(`${apiBase}/api/seekers`)
-      .then((res) => res.json())
+    getSeekerProfiles()
       .then((data) => {
         if (!cancelled) {
           const profiles = Array.isArray(data?.data) ? data.data : [];
