@@ -509,6 +509,7 @@ const RoommateFilters = ({
   const [phoneSaved, setPhoneSaved] = useState(false);
   const [seekerSubmitStatus, setSeekerSubmitStatus] = useState('idle'); // idle | submitting | success | error
   const [seekerProfileId, setSeekerProfileId] = useState(null);
+  const [seekerErrorMessage, setSeekerErrorMessage] = useState('');
 
   const [rentAmount, setRentAmount] = useState('');
   const [utilities, setUtilities] = useState('Included');
@@ -532,8 +533,6 @@ const RoommateFilters = ({
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
     try {
-      // Use the same API base URL as the rest of the app — avoids hitting the
-      // static frontend server when the frontend is hosted separately.
       const apiBase = process.env.REACT_APP_API_URL || '';
       const res = await fetch(`${apiBase}/api/seekers`, {
         method: 'POST',
@@ -553,13 +552,19 @@ const RoommateFilters = ({
           city: roommateLocation,
         }),
       });
+      // Guard against HTML error pages (e.g. 503 from backend cold start)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Server error ${res.status} — please try again shortly`);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to publish');
+      if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
       setSeekerProfileId(data.data?._id || null);
       setSeekerSubmitStatus('success');
     } catch (err) {
       console.error('[seeker-profile] publish error:', err.message);
       setSeekerSubmitStatus('error');
+      setSeekerErrorMessage(err.message || 'Something went wrong — try again');
     }
   };
 
@@ -831,7 +836,7 @@ const RoommateFilters = ({
               : (isHebrew ? 'פרסם את הפרופיל שלי' : 'Publish my profile')}
           </button>
           {seekerSubmitStatus === 'error' && (
-            <p className="seeker-publish-error">{isHebrew ? 'שגיאה — נסה שוב' : 'Something went wrong — try again'}</p>
+            <p className="seeker-publish-error">{seekerErrorMessage || (isHebrew ? 'שגיאה — נסה שוב' : 'Something went wrong — try again')}</p>
           )}
           {!phoneSaved && (
             <p className="seeker-publish-hint">{isHebrew ? 'שמור מספר טלפון תחילה' : 'Save your phone number above to publish'}</p>
