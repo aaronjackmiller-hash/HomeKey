@@ -1,3 +1,7 @@
+/**
+ * Step5PublishListing.js
+ * path: frontend/src/components/addListingSteps/Step5PublishListing.js
+ */
 import React, { useEffect, useState } from 'react';
 
 export const Step5PublishListing = ({
@@ -20,6 +24,12 @@ export const Step5PublishListing = ({
         return undefined;
     }, [data.mediaFiles]);
 
+    // Consolidate: "Apartment for Rent — Tel Aviv" instead of two redundant lines
+    const transactionType = data.listingType === 'For Sale' ? 'Sale' : 'Rent';
+    const propertyType = data.propertyType || 'Apartment';
+    const city = data.address.city || 'Tel Aviv';
+    const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
+
     return (
         <div className="wizard-step-card">
             <div className="wizard-progress-rail">
@@ -40,19 +50,14 @@ export const Step5PublishListing = ({
                 </div>
 
                 <div className="wizard-publish-body">
-                    <p className="wizard-kicker">
-                        {data.listingType || 'Rental'} Listing in {data.address.city || 'Tel Aviv-Yafo'}
-                    </p>
-                    <div className="wizard-kicker">
-                        {data.propertyType || 'Apartment'} in {data.address.city || 'Tel Aviv-Yafo'}
-                    </div>
+                    <p className="wizard-kicker">{consolidatedTitle}</p>
 
                     <h3 className="wizard-price">
                         ₪{data.price ? Number(String(data.price).replace(/,/g, '') || 0).toLocaleString() : '0'} <span>/ month</span>
                     </h3>
 
                     <p className="wizard-address-line">
-                        📍 {data.address.street || 'Street'} {data.address.number || ''}, {data.address.city || 'City'}
+                        📍 {data.address.street || 'Street'} {data.address.number || ''}, {city}
                     </p>
 
                     <div className="wizard-spec-row">
@@ -74,9 +79,7 @@ export const Step5PublishListing = ({
                             <p className="wizard-kicker">Amenities Added</p>
                             <div className="wizard-amenity-chips">
                                 {data.amenities.map((amenity) => (
-                                    <span key={amenity} className="wizard-chip">
-                                        {amenity}
-                                    </span>
+                                    <span key={amenity} className="wizard-chip">{amenity}</span>
                                 ))}
                             </div>
                         </div>
@@ -96,18 +99,10 @@ export const Step5PublishListing = ({
             </div>
 
             <div className="wizard-actions">
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    className="wizard-btn wizard-btn--ghost"
-                >
+                <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
                     Back
                 </button>
-                <button
-                    type="button"
-                    onClick={onPublishFinished}
-                    className="wizard-btn wizard-btn--full"
-                >
+                <button type="button" onClick={onPublishFinished} className="wizard-btn wizard-btn--full">
                     Go Live! Publish Listing
                 </button>
             </div>
