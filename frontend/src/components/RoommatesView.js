@@ -23,7 +23,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
-import { getRoommateListings } from '../services/api';
+import { getRoommateListings, getSeekerProfiles } from '../services/api';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -39,10 +39,7 @@ const ROOMMATES_TAB = Object.freeze({
 // Fetches the live count of people looking for a room.
 const fetchSearcherCount = async () => {
   try {
-    const apiBase = process.env.REACT_APP_API_URL || '';
-    const res = await fetch(`${apiBase}/api/seekers?limit=1`);
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await getSeekerProfiles({ limit: 1 });
     return typeof data.count === 'number' ? data.count : null;
   } catch (_err) {
     return null;
@@ -50,10 +47,7 @@ const fetchSearcherCount = async () => {
 };
 
 const fetchSeekerProfiles = async () => {
-  const apiBase = process.env.REACT_APP_API_URL || '';
-  const res = await fetch(`${apiBase}/api/seekers`);
-  if (!res.ok) return [];
-  const data = await res.json();
+  const data = await getSeekerProfiles();
   return Array.isArray(data?.data) ? data.data : [];
 };
 
