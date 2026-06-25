@@ -26,6 +26,12 @@ const getTwilioClient = () => {
     return twilioClient;
 };
 
+const getTwilioSenderConfig = () => {
+    const fromNumber = String(process.env.TWILIO_PHONE_NUMBER || process.env.TWILIO_FROM_NUMBER || '').trim();
+    const messagingServiceSid = String(process.env.TWILIO_MESSAGING_SERVICE_SID || '').trim();
+    return { fromNumber, messagingServiceSid };
+};
+
 /**
  * Converts a phone number to E.164 format required by Twilio.
  * Our roommate listings store phone as "+972XXXXXXXXX" already
@@ -44,10 +50,10 @@ const toE164 = (phone) => {
 const sendSms = async ({ toPhone, body, logContext = 'SMS' }) => {
     try {
         const client = getTwilioClient();
-        const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+        const { fromNumber, messagingServiceSid } = getTwilioSenderConfig();
 
-        if (!client || !fromNumber) {
-            console.warn(`[smsService] Twilio is not configured - skipping ${logContext}.`);
+        if (!client || (!fromNumber && !messagingServiceSid)) {
+            console.warn(`[smsService] Twilio is not configured - skipping ${logContext}. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER or TWILIO_PHONE_NUMBER.`);
             return { success: false, error: 'Twilio not configured' };
         }
 
@@ -56,11 +62,13 @@ const sendSms = async ({ toPhone, body, logContext = 'SMS' }) => {
             return { success: false, error: 'No valid phone number to send to' };
         }
 
-        await client.messages.create({
+        const messagePayload = {
             body,
-            from: fromNumber,
             to: toNumber,
-        });
+            ...(messagingServiceSid ? { messagingServiceSid } : { from: fromNumber }),
+        };
+
+        await client.messages.create(messagePayload);
 
         return { success: true };
     } catch (err) {
