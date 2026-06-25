@@ -1,3 +1,7 @@
+/**
+ * server.js
+ * path: backend/server.js
+ */
 'use strict';
 
 require('dotenv').config();
@@ -57,21 +61,17 @@ app.use(cors({
 
 // Rate limiting
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 100,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many requests, please try again later.' },
-    // Render's health check hits this repeatedly; without this it shares the
-    // same budget as real traffic and eventually gets rate-limited itself —
-    // which Render reports as "HTTP health check failed with status code 429"
-    // and responds to by restarting the instance.
     skip: (req) => req.path === '/health',
 });
 app.use('/api/', apiLimiter);
 
 const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 500,
     standardHeaders: true,
     legacyHeaders: false,
@@ -112,16 +112,6 @@ const ensureFallbackFeedSeeded = async () => {
     }
 };
 
-/**
- * Render environment groups can sometimes strip '+' from values entered manually,
- * turning "mongodb+srv://" into "mongodb://". Fix only that SRV-shaped case.
- *
- * IMPORTANT: Atlas "standard connection string" URIs with multiple hosts/ports
- * (mongodb://host1:27017,host2:27017,...) are valid and must remain unchanged.
- *
- * @param {string} uri
- * @returns {string}
- */
 const normalizeMongoUri = (uri) => {
     if (typeof uri !== 'string' || uri.length === 0) return uri;
     if (!uri.startsWith('mongodb://') || !uri.includes('.mongodb.net')) return uri;
@@ -131,10 +121,8 @@ const normalizeMongoUri = (uri) => {
     const hasMultipleHosts = hostSegment.includes(',');
     const hasExplicitPort = /:\d+/.test(hostSegment);
 
-    // Standard Atlas URI (multiple hosts and/or :27017) should stay mongodb://
     if (hasMultipleHosts || hasExplicitPort) return uri;
 
-    // SRV-like Atlas URI accidentally missing '+'
     const withSrv = uri.replace(/^mongodb:\/\//, 'mongodb+srv://');
     console.warn('[startup] Normalized Atlas URI from mongodb:// to mongodb+srv:// format.');
     return withSrv;
@@ -229,8 +217,6 @@ const deriveUnavailableReason = (status, summarizedResult) => {
     if (!status.enabled) return 'Live Yad2 sync is disabled on the server.';
     if (status.inFlight) return 'A live Yad2 sync is currently in progress.';
     if (summarizedResult && summarizedResult.skipped) {
-        // Prefer explicit runtime skip reason over generic mode text so operators
-        // can immediately see why listings are missing.
         return `Last sync was skipped: ${summarizedResult.reason || 'Unknown reason'}.`;
     }
     if (status.lastError) return `Last sync failed: ${sanitizeSyncMessage(status.lastError)}.`;
@@ -314,7 +300,6 @@ const connectMongo = async (initialUri) => {
     }
 };
 
-// MongoDB connection
 const MONGODB_URI = normalizeMongoUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/homekey');
 const PORT = process.env.PORT || 5000;
 const JWT_FALLBACK_SECRET_PATH = path.join(__dirname, '.jwt-fallback-secret');
@@ -323,9 +308,6 @@ const ensureJwtSecret = () => {
     if (typeof process.env.JWT_SECRET === 'string' && process.env.JWT_SECRET.trim().length > 0) {
         return;
     }
-
-    // Keep auth endpoints operational in misconfigured environments while
-    // avoiding unexpected session invalidation after server restarts.
     try {
         const hasPersistedSecret = fs.existsSync(JWT_FALLBACK_SECRET_PATH);
         if (hasPersistedSecret) {
@@ -336,7 +318,6 @@ const ensureJwtSecret = () => {
                 return;
             }
         }
-
         const generatedSecret = crypto.randomBytes(48).toString('hex');
         fs.writeFileSync(JWT_FALLBACK_SECRET_PATH, generatedSecret, { mode: 0o600 });
         process.env.JWT_SECRET = generatedSecret;
@@ -356,9 +337,6 @@ if (!process.env.MONGODB_URI) {
 const yad2Scheduler = createYad2Scheduler(console);
 const propertyLifecycleRunner = createPropertyLifecycleRunner(console);
 
-// Start accepting HTTP connections immediately so the React frontend is always
-// reachable — even during cold starts or while MongoDB is still connecting.
-// API routes that need the database will return 503 until the connection is ready.
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 connectMongo(MONGODB_URI)
@@ -367,7 +345,6 @@ connectMongo(MONGODB_URI)
         if (usedAuthSourceFallback) {
             console.log('[startup] Connected after applying authSource=admin fallback.');
         }
-        // Auto-seed if the database is empty (no-op if data already exists)
         try {
             await runSeed(false);
             console.log('[startup] Seed check complete.');
@@ -376,7 +353,6 @@ connectMongo(MONGODB_URI)
         }
         const enableFeaturedSeed = process.env.ENABLE_FEATURED_YAD2_SEED === 'true';
         if (enableFeaturedSeed) {
-            // Optional curated seed data (disabled by default when running live sync-only mode).
             try {
                 const curatedImport = await importYad2Listings({
                     rows: featuredYad2ListingsIL,
@@ -435,13 +411,8 @@ connectMongo(MONGODB_URI)
             console.error('[startup] Atlas auth failed. Verify DB username/password and ensure authSource=admin when needed.');
         }
         console.error('[startup] Full error:', err);
-        // Do not exit — keep the server running so the frontend remains accessible.
-        // The /api/health endpoint will report the degraded state.
     });
 
-// Readiness guard — return 503 for all API routes that need the database until
-// MongoDB is connected. The /api/health endpoint is exempt so monitoring can
-// always check the server state.
 app.use('/api', (req, res, next) => {
     if (req.path === '/health') return next();
     if (req.path === '/search/interpret') return next();
@@ -462,11 +433,7 @@ app.use('/api/roommates', require('./routes/roommateListings'));
 app.use('/api/seekers', require('./routes/seekerProfiles'));
 app.use('/api/geocode', require('./routes/geocode'));
 
-// Admin seed endpoint — manually trigger seeding when auto-seed fails or is skipped.
-// Protected by ADMIN_SECRET env var. If ADMIN_SECRET is not set, the endpoint is disabled.
-// Usage: POST /api/admin/seed
-//   Header: X-Admin-Secret: <value of ADMIN_SECRET>
-//   Optional body: { "force": true }  — drops existing seed data and re-seeds
+// Admin seed endpoint
 app.post('/api/admin/seed', async (req, res) => {
     const adminSecret = process.env.ADMIN_SECRET;
     if (!adminSecret) {
@@ -474,8 +441,6 @@ app.post('/api/admin/seed', async (req, res) => {
     }
     const provided = req.headers['x-admin-secret'];
     const secretBuf = Buffer.from(adminSecret);
-    // Use a zero-filled dummy buffer so timingSafeEqual always runs,
-    // preventing timing leaks regardless of whether `provided` is missing or wrong length.
     const providedBuf = Buffer.from(typeof provided === 'string' ? provided : '');
     const dummy = Buffer.alloc(secretBuf.length);
     const cmpBuf = providedBuf.length === secretBuf.length ? providedBuf : dummy;
@@ -494,21 +459,7 @@ app.post('/api/admin/seed', async (req, res) => {
     }
 });
 
-// Admin import endpoint — bulk import listings from Yad2-like JSON payloads.
-// Designed for additive imports: each batch is inserted, and rows with a known
-// external ID are updated in-place (unless "upsert": false is provided).
-// Authorization options:
-// - ADMIN_IMPORT_SECRET via X-Admin-Import-Secret header
-// - ADMIN_SECRET via X-Admin-Secret header
-// - agent/admin JWT bearer token (for in-app imports)
-// Usage: POST /api/admin/import/yad2
-//   Header: X-Admin-Secret: <value of ADMIN_SECRET>
-//   Body:
-//     {
-//       "items": [ ... ],       // or "listings": [ ... ]
-//       "upsert": true,         // optional (default true)
-//       "sourceTag": "yad2"     // optional label (recommended per batch/source)
-//     }
+// Admin import endpoint
 app.post('/api/admin/import/yad2', async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
         return res.status(403).json({
@@ -516,113 +467,60 @@ app.post('/api/admin/import/yad2', async (req, res) => {
             message: 'Not authorized for import. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
         });
     }
-
     try {
         const payload = req.body || {};
         const items = Array.isArray(payload)
             ? payload
-            : (
-                Array.isArray(payload.items)
-                    ? payload.items
-                    : (Array.isArray(payload.listings) ? payload.listings : null)
-            );
+            : (Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.listings) ? payload.listings : null));
         if (!items) {
             return res.status(400).json({
                 success: false,
                 message: 'Payload must be an array or an object with an "items" / "listings" array.',
             });
         }
-
         const result = await importYad2Listings({
             rows: items,
             upsert: payload.upsert !== false,
-            sourceTag:
-                typeof payload.sourceTag === 'string' && payload.sourceTag.trim()
-                    ? payload.sourceTag.trim()
-                    : (
-                        typeof payload.source === 'string' && payload.source.trim()
-                            ? payload.source.trim()
-                            : 'yad2'
-                    ),
+            sourceTag: typeof payload.sourceTag === 'string' && payload.sourceTag.trim()
+                ? payload.sourceTag.trim()
+                : (typeof payload.source === 'string' && payload.source.trim() ? payload.source.trim() : 'yad2'),
         });
-
-        res.json({
-            success: true,
-            message: 'Yad2 import completed.',
-            ...result,
-        });
+        res.json({ success: true, message: 'Yad2 import completed.', ...result });
     } catch (err) {
         console.error('[admin/import/yad2] Import failed:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// Admin endpoint — trigger Yad2 scheduled sync manually.
-// Uses the same authorization as /api/admin/import/yad2.
-// Usage: POST /api/admin/sync/yad2
+// Admin sync endpoint
 app.post('/api/admin/sync/yad2', async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for sync. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for sync.' });
     }
     try {
         const result = await yad2Scheduler.runSyncOnce('admin-api');
         if (result.skipped) {
-            return res.json({
-                success: true,
-                message: `Yad2 sync skipped: ${result.reason}.`,
-                ...result,
-            });
+            return res.json({ success: true, message: `Yad2 sync skipped: ${result.reason}.`, ...result });
         }
-        return res.json({
-            success: true,
-            message: 'Yad2 sync completed.',
-            ...result,
-        });
+        return res.json({ success: true, message: 'Yad2 sync completed.', ...result });
     } catch (err) {
         console.error('[admin/sync/yad2] Sync failed:', err);
         return res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// Admin endpoint — one-time reprocessing backfill for existing Yad2 records.
-// Re-imports already stored Yad2 listings through latest mapping logic so
-// address/contact/bathroom/transliteration fixes apply to existing records.
-// Uses same authorization as /api/admin/import/yad2.
-// Usage: POST /api/admin/backfill/yad2
-//    or: POST /api/admin/sync/yad2/backfill
-// Body (optional):
-// {
-//   "sourceTag": "yad2-live-sync", // default: all Yad2-like sources
-//   "batchSize": 300               // default 250, max 1000
-// }
+// Admin backfill endpoint
 const handleYad2Backfill = async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for backfill. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for backfill.' });
     }
     try {
         const payload = req.body || {};
-        const sourceTag = typeof payload.sourceTag === 'string' && payload.sourceTag.trim()
-            ? payload.sourceTag.trim()
-            : null;
+        const sourceTag = typeof payload.sourceTag === 'string' && payload.sourceTag.trim() ? payload.sourceTag.trim() : null;
         const batchSizeRaw = Number(payload.batchSize);
-        const batchSize = Number.isFinite(batchSizeRaw)
-            ? Math.min(1000, Math.max(50, Math.floor(batchSizeRaw)))
-            : 250;
-        const result = await backfillYad2Listings({
-            sourceTag,
-            batchSize,
-        });
-        return res.json({
-            success: true,
-            message: 'Yad2 backfill completed.',
-            ...result,
-        });
+        const batchSize = Number.isFinite(batchSizeRaw) ? Math.min(1000, Math.max(50, Math.floor(batchSizeRaw))) : 250;
+        const result = await backfillYad2Listings({ sourceTag, batchSize });
+        return res.json({ success: true, message: 'Yad2 backfill completed.', ...result });
     } catch (err) {
         console.error('[admin/backfill/yad2] Backfill failed:', err);
         return res.status(500).json({ success: false, message: err.message });
@@ -631,58 +529,29 @@ const handleYad2Backfill = async (req, res) => {
 app.post('/api/admin/backfill/yad2', handleYad2Backfill);
 app.post('/api/admin/sync/yad2/backfill', handleYad2Backfill);
 
-// Admin endpoint — view Yad2 sync status/health.
-// Uses the same authorization as /api/admin/import/yad2.
-// Usage: GET /api/admin/sync/yad2/status
+// Admin sync status
 app.get('/api/admin/sync/yad2/status', async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for sync status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for sync status.' });
     }
     const status = yad2Scheduler.getStatus();
-    return res.json({
-        success: true,
-        ...status,
-    });
+    return res.json({ success: true, ...status });
 });
 
-// Admin endpoint — upload/refresh internal captcha fallback listings store.
-// Uses same authorization as Yad2 import/sync admin gates.
-// Usage: POST /api/admin/sync/yad2/fallback
-// Body:
-// {
-//   "items": [ ... ] // or "listings" or raw array
-// }
+// Fallback feed endpoints
 const handleFallbackUpload = async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for fallback feed upload. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for fallback feed upload.' });
     }
     try {
         const payload = req.body || {};
-        const rows = Array.isArray(payload)
-            ? payload
-            : (
-                Array.isArray(payload.items)
-                    ? payload.items
-                    : (Array.isArray(payload.listings) ? payload.listings : null)
-            );
+        const rows = Array.isArray(payload) ? payload
+            : (Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.listings) ? payload.listings : null));
         if (!rows) {
-            return res.status(400).json({
-                success: false,
-                message: 'Payload must be an array or an object with an "items" / "listings" array.',
-            });
+            return res.status(400).json({ success: false, message: 'Payload must be an array or an object with an "items" / "listings" array.' });
         }
         const result = await upsertYad2FallbackFeedRows(rows);
-        return res.json({
-            success: true,
-            message: 'Yad2 fallback feed store updated.',
-            ...result,
-        });
+        return res.json({ success: true, message: 'Yad2 fallback feed store updated.', ...result });
     } catch (err) {
         console.error('[admin/sync/yad2/fallback] Upload failed:', err);
         return res.status(500).json({ success: false, message: err.message });
@@ -691,21 +560,13 @@ const handleFallbackUpload = async (req, res) => {
 app.post('/api/admin/sync/yad2/fallback', handleFallbackUpload);
 app.post('/api/admin/sync/yad2/fallback-feed', handleFallbackUpload);
 
-// Admin endpoint — view fallback feed store summary for diagnostics.
-// Usage: GET /api/admin/sync/yad2/fallback/status
 const handleFallbackStatus = async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for fallback feed status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for fallback feed status.' });
     }
     try {
         const summary = await getYad2FallbackFeedSummary();
-        return res.json({
-            success: true,
-            ...summary,
-        });
+        return res.json({ success: true, ...summary });
     } catch (err) {
         console.error('[admin/sync/yad2/fallback/status] Failed:', err);
         return res.status(500).json({ success: false, message: err.message });
@@ -714,79 +575,44 @@ const handleFallbackStatus = async (req, res) => {
 app.get('/api/admin/sync/yad2/fallback/status', handleFallbackStatus);
 app.get('/api/admin/sync/yad2/fallback-feed', handleFallbackStatus);
 
-// Admin endpoint — run listing lifecycle sweep manually.
-// Authorization: same as Yad2 import/sync admin gates.
-// Usage: POST /api/admin/lifecycle/run
+// Lifecycle endpoints
 app.post('/api/admin/lifecycle/run', async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for lifecycle run. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for lifecycle run.' });
     }
     try {
         const result = await propertyLifecycleRunner.runOnce('admin-api');
         if (result.skipped) {
-            return res.json({
-                success: true,
-                message: `Lifecycle sweep skipped: ${result.reason}.`,
-                ...result,
-            });
+            return res.json({ success: true, message: `Lifecycle sweep skipped: ${result.reason}.`, ...result });
         }
-        return res.json({
-            success: true,
-            message: 'Lifecycle sweep completed.',
-            ...result,
-        });
+        return res.json({ success: true, message: 'Lifecycle sweep completed.', ...result });
     } catch (err) {
         console.error('[admin/lifecycle/run] Sweep failed:', err);
         return res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// Admin endpoint — lifecycle runner status.
-// Usage: GET /api/admin/lifecycle/status
 app.get('/api/admin/lifecycle/status', async (req, res) => {
     if (!(await isYad2ImportAuthorized(req))) {
-        return res.status(403).json({
-            success: false,
-            message: 'Not authorized for lifecycle status. Use X-Admin-Import-Secret, X-Admin-Secret, or an agent/admin bearer token.',
-        });
+        return res.status(403).json({ success: false, message: 'Not authorized for lifecycle status.' });
     }
     const status = propertyLifecycleRunner.getStatus();
-    return res.json({
-        success: true,
-        ...status,
-    });
+    return res.json({ success: true, ...status });
 });
 
-// Public endpoint — read-only live Yad2 sync status for frontend diagnostics.
-// Usage: GET /api/sync/yad2/status
+// Public sync status
 app.get('/api/sync/yad2/status', (req, res) => {
-    res.json({
-        success: true,
-        status: getPublicYad2SyncStatus(),
-    });
+    res.json({ success: true, status: getPublicYad2SyncStatus() });
 });
 
-// Authenticated endpoint — trigger one immediate Yad2 sync run from the app.
-// Intended for in-product enterprise onboarding without requiring admin secrets.
-// Usage: POST /api/sync/yad2/run
+// Authenticated sync run
 app.post('/api/sync/yad2/run', protect, async (req, res) => {
     try {
         const result = await yad2Scheduler.runSyncOnce('app-user-api');
         if (result.skipped) {
-            return res.json({
-                success: true,
-                message: `Yad2 sync skipped: ${result.reason}.`,
-                ...result,
-            });
+            return res.json({ success: true, message: `Yad2 sync skipped: ${result.reason}.`, ...result });
         }
-        return res.json({
-            success: true,
-            message: 'Yad2 sync completed.',
-            ...result,
-        });
+        return res.json({ success: true, message: 'Yad2 sync completed.', ...result });
     } catch (err) {
         console.error('[sync/yad2/run] Sync failed:', err);
         return res.status(500).json({ success: false, message: err.message });
@@ -821,8 +647,6 @@ if (process.env.NODE_ENV === 'production') {
         app.use(express.static(frontendBuild, { index: false }));
         app.get('*', sendFrontendIndex(frontendIndexPath));
     } else {
-        // Keep API-only production deployments alive even when frontend assets
-        // are hosted separately (or intentionally omitted).
         console.warn(
             '[startup] frontend/build/index.html not found. ' +
             'Skipping static frontend serving and running in API-only mode.'
