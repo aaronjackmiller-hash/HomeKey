@@ -8,6 +8,19 @@
 const SeekerProfile = require('../models/SeekerProfile');
 const { sendRoommateSeekerConfirmationSms } = require('../services/smsService');
 
+const formatSmsConfirmationForApi = (smsResult = {}) => ({
+    attempted: Boolean(smsResult.attempted),
+    success: Boolean(smsResult.success),
+    status: smsResult.status || (smsResult.success ? 'accepted' : 'unknown'),
+    reason: smsResult.reason,
+    provider: smsResult.provider,
+    providerCode: smsResult.providerCode,
+    providerStatus: smsResult.providerStatus,
+    sender: smsResult.sender,
+    fromNumberEnv: smsResult.fromNumberEnv,
+    messagingServiceSidConfigured: Boolean(smsResult.messagingServiceSidConfigured),
+});
+
 // Normalize a phone string for the stored wa.me link target. This keeps
 // explicit country codes, maps Israeli local numbers, and supports bare
 // North American 10-digit numbers from US/CA users.
@@ -131,15 +144,16 @@ const createSeekerProfile = async (req, res) => {
         const profile = new SeekerProfile(profileData);
         await profile.save();
 
-        sendRoommateSeekerConfirmationSms({
+        const smsResult = await sendRoommateSeekerConfirmationSms({
             toPhone: profile.contact.phone,
             city: profile.locationPreference?.city,
             neighborhood: profile.locationPreference?.neighborhood,
-        }).catch(() => {});
+        });
 
         return res.status(201).json({
             success: true,
             message: 'Seeker profile published. Room listers can now contact you.',
+            smsConfirmation: formatSmsConfirmationForApi(smsResult),
             data: {
                 _id: profile._id,
                 firstName: profile.firstName,
