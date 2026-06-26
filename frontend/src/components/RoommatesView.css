@@ -544,7 +544,28 @@
   .roommates-hero-tabs {
     grid-template-columns: 1fr;
   }
+  .roommates-hero-tab {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px;
+  }
   .roommates-hero-tab--hero {
     padding-top: 22px;
+  }
+  .roommates-hero-tab__icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .roommates-hero-tab__title {
+    text-align: left;
+  }
+  .roommates-hero-tab__desc {
+    text-align: left;
+  }
+  .roommates-hero-tab__badge {
+    margin-top: 0;
+    align-self: center;
+    flex-shrink: 0;
   }
 }
