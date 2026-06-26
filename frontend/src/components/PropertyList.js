@@ -454,8 +454,6 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
 };
 
 // ── Image carousel for property cards ────────────────────────────────────────
-// Shows < > arrows when a listing has multiple photos.
-// Each card manages its own index independently.
 const CardImageCarousel = ({ images = [], alt = '', isYad2Media = false, sourceType = '', fallbackSeed = '' }) => {
   const [index, setIndex] = useState(0);
 
@@ -483,11 +481,12 @@ const CardImageCarousel = ({ images = [], alt = '', isYad2Media = false, sourceT
   };
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'block' }}>
       <img
         className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
         src={src}
         alt={alt}
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
       />
       {total > 1 && (
         <>
@@ -512,7 +511,7 @@ const CardImageCarousel = ({ images = [], alt = '', isYad2Media = false, sourceT
           </span>
         </>
       )}
-    </>
+    </div>
   );
 };
 // ─────────────────────────────────────────────────────────────────────────────
