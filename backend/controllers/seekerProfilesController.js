@@ -8,12 +8,19 @@
 const SeekerProfile = require('../models/SeekerProfile');
 const { sendRoommateSeekerConfirmationSms } = require('../services/smsService');
 
-// Sanitize a phone string for the wa.me link — strips non-digit chars,
-// converts leading 0 (Israeli local) to 972 country code.
+// Normalize a phone string for the stored wa.me link target. This keeps
+// explicit country codes, maps Israeli local numbers, and supports bare
+// North American 10-digit numbers from US/CA users.
 const sanitizePhone = (raw = '') => {
-    const digits = String(raw || '').replace(/[^\d+]/g, '').replace(/^\+/, '');
+    const value = String(raw || '').trim();
+    const digits = value.replace(/[^\d+]/g, '').replace(/^\+/, '');
+    if (!digits) return '';
+    if (digits.startsWith('00')) return digits.slice(2);
+    if (value.startsWith('+')) return digits;
     if (digits.startsWith('972')) return digits;
+    if (/^1\d{10}$/.test(digits)) return digits;
     if (digits.startsWith('0')) return `972${digits.slice(1)}`;
+    if (/^[2-9]\d{9}$/.test(digits)) return `1${digits}`;
     return digits;
 };
 

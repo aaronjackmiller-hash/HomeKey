@@ -34,17 +34,22 @@ const getTwilioSenderConfig = () => {
 
 /**
  * Converts a phone number to E.164 format required by Twilio.
- * Our roommate listings store phone as "+972XXXXXXXXX" already
- * (country code + local number, leading zero stripped) — this just
- * ensures the leading '+' is present.
+ * Keeps explicit country codes, maps Israeli local numbers, and supports
+ * bare North American 10-digit numbers from US/CA users.
  */
 const toE164 = (phone) => {
-    const raw = String(phone || '').trim().replace(/[\s\-().]/g, '');
+    const value = String(phone || '').trim();
+    const raw = value.replace(/[\s\-().]/g, '');
     if (!raw) return null;
     if (raw.startsWith('+')) return raw;
-    if (raw.startsWith('00')) return `+${raw.slice(2)}`;
-    if (raw.startsWith('0')) return `+972${raw.slice(1)}`;
-    return `+${raw}`;
+
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return null;
+    if (digits.startsWith('00')) return `+${digits.slice(2)}`;
+    if (/^1\d{10}$/.test(digits)) return `+${digits}`;
+    if (digits.startsWith('0')) return `+972${digits.slice(1)}`;
+    if (/^[2-9]\d{9}$/.test(digits)) return `+1${digits}`;
+    return `+${digits}`;
 };
 
 const sendSms = async ({ toPhone, body, logContext = 'SMS' }) => {
