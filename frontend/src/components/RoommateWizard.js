@@ -1,19 +1,15 @@
 /**
  * RoommateWizard.js
+ * path: frontend/src/components/RoommateWizard.js
  *
- * Dedicated 4-step wizard for creating a roommate listing.
- * Launched from the "List my room" button in RoommatesView.
- *
- * Step 1 — Contact        (phone, email, preferred method)
- * Step 2 — Your Apartment (address, rent, utilities, bedrooms, sqm, date, lease, description)
- * Step 3 — Photos         (up to 3 apartment/common area photos)
- * Step 4 — Preferences    (gender, smoking, pets, kosher, vibe)
+ * Step 1 — Your Apartment (address, rent, utilities, bedrooms, sqm, date, lease, description)
+ * Step 2 — Photos         (up to 3 apartment/common area photos)
+ * Step 3 — Preferences    (gender, smoking, pets, kosher, vibe)
+ * Step 4 — Contact        (phone, email — collected last, right before preview)
  * Step 5 — Preview        (full card preview → Go Live!)
  *
- * On publish: calls createRoommateListing() → redirects to /?type=roommates
- * On cancel: fires onClose() prop
- *
- * Structured for future extraction to /roommates/new route.
+ * Contact info moved to Step 4 (just before publish) so users commit to the
+ * process first before being asked for personal details.
  */
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -23,44 +19,23 @@ import ISRAEL_LOCATIONS from '../israelLocations';
 import './RoommateWizard.css';
 
 // ── Cloudinary config ───────────────────────────────────────────────────────
-// Unsigned upload preset — safe to expose in frontend code, scoped to the
-// homekey/roommates folder only. No API secret involved.
 const CLOUDINARY_CLOUD_NAME = 'dxz5neie0';
 const CLOUDINARY_UPLOAD_PRESET = 'txkn4ah1';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-/**
- * Uploads a single File to Cloudinary using the unsigned upload preset.
- * Returns the secure_url string on success, or null on failure.
- */
 const uploadPhotoToCloudinary = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-  const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Photo upload failed (${response.status})`);
-  }
-
+  const response = await fetch(CLOUDINARY_UPLOAD_URL, { method: 'POST', body: formData });
+  if (!response.ok) throw new Error(`Photo upload failed (${response.status})`);
   const result = await response.json();
   return result.secure_url || null;
 };
 
-/**
- * Uploads multiple photo Files to Cloudinary in parallel.
- * Returns { urls, failedCount } — urls for successful uploads,
- * failedCount so the caller can tell the user if some/all photos
- * failed instead of silently publishing without them.
- */
 const uploadPhotosToCloudinary = async (files = []) => {
   if (!files.length) return { urls: [], failedCount: 0 };
   const results = await Promise.allSettled(files.map((file) => uploadPhotoToCloudinary(file)));
-
   const urls = [];
   let failedCount = 0;
   results.forEach((result, index) => {
@@ -68,20 +43,15 @@ const uploadPhotosToCloudinary = async (files = []) => {
       urls.push(result.value);
     } else {
       failedCount += 1;
-      // eslint-disable-next-line no-console
-      console.error(
-        `[RoommateWizard] Photo ${index + 1} failed to upload to Cloudinary:`,
-        result.status === 'rejected' ? result.reason : 'No URL returned'
-      );
+      console.error(`[RoommateWizard] Photo ${index + 1} failed:`, result.status === 'rejected' ? result.reason : 'No URL');
     }
   });
-
   return { urls, failedCount };
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5; // 4 input steps + 1 preview step
+const TOTAL_STEPS = 5;
 
 const GENDER_OPTIONS = [
   { value: 'no-preference', label: 'No preference' },
@@ -115,8 +85,6 @@ const LEASE_OPTIONS = [
   { value: '24', label: '24 months' },
 ];
 
-// Same vocabulary as the backend RoommateListing model's amenities enum,
-// so a value picked here saves cleanly without server-side rejection.
 const AMENITY_OPTIONS = [
   { value: 'elevator', label: 'Elevator', icon: '🛗' },
   { value: 'parking', label: 'Parking', icon: '🚗' },
@@ -128,14 +96,10 @@ const AMENITY_OPTIONS = [
   { value: 'oven', label: 'Oven', icon: '🍳' },
   { value: 'balcony', label: 'Balcony', icon: '🌇' },
   { value: 'stovetop', label: 'Stovetop', icon: '🔥' },
-  
   { value: 'in-unit-washer-dryer', label: 'Washer/Dryer', icon: '🌀' },
   { value: 'dishwasher', label: 'Dishwasher', icon: '🍽️' },
 ];
 
-// The four components that make up "Estimated Additional Monthly Expenses".
-// Stored as separate fields so the lister can itemize them; the wizard sums
-// these automatically rather than asking for one opaque lump number.
 const UTILITY_ITEMS = [
   { key: 'utilityElectricity', label: 'Electricity' },
   { key: 'utilityWater', label: 'Water' },
@@ -148,23 +112,18 @@ const sumUtilities = (data) =>
 
 const MIN_DESCRIPTION_LENGTH = 15;
 
-// Matches freely-typed city input (e.g. "Tel Aviv-Yafo", "tel aviv") against
-// israelLocations.js's city names, since the City field is a plain text
-// input, not constrained to this list's exact spelling.
 const normalizeCityName = (value) =>
-    String(value || '').trim().toLowerCase().replace(/[-–—].*$/, '').trim();
+  String(value || '').trim().toLowerCase().replace(/[-–—].*$/, '').trim();
 
 const findCityEntry = (cityInput) => {
-    const normalizedInput = normalizeCityName(cityInput);
-    if (!normalizedInput) return null;
-    return ISRAEL_LOCATIONS.find((entry) => {
-        const normalizedEntryCity = normalizeCityName(entry.city.en);
-        return (
-            normalizedEntryCity === normalizedInput
-            || normalizedInput.startsWith(normalizedEntryCity)
-            || normalizedEntryCity.startsWith(normalizedInput)
-        );
-    }) || null;
+  const normalizedInput = normalizeCityName(cityInput);
+  if (!normalizedInput) return null;
+  return ISRAEL_LOCATIONS.find((entry) => {
+    const normalizedEntryCity = normalizeCityName(entry.city.en);
+    return normalizedEntryCity === normalizedInput
+      || normalizedInput.startsWith(normalizedEntryCity)
+      || normalizedEntryCity.startsWith(normalizedInput);
+  }) || null;
 };
 
 const CONTACT_METHODS = [
@@ -173,8 +132,6 @@ const CONTACT_METHODS = [
   { value: 'email', label: 'Email' },
 ];
 
-// Most common country codes for HomeKey's user base —
-// Israeli locals + Anglo expat community (SA, UK, US, AU, CA, FR, DE)
 const COUNTRY_CODES = [
   { code: '+972', flag: '🇮🇱', label: 'IL', placeholder: '050 000 0000' },
   { code: '+1',   flag: '🇺🇸', label: 'US', placeholder: '212 000 0000' },
@@ -191,13 +148,7 @@ const COUNTRY_CODES = [
 // ── Initial state ─────────────────────────────────────────────────────────────
 
 const createInitialData = () => ({
-  // Step 1 — Contact
-  phone: '',
-  countryCode: '+972',
-  email: '',
-  preferredMethod: 'whatsapp',
-
-  // Step 2 — Apartment
+  // Step 1 — Apartment
   city: '',
   street: '',
   streetNumber: '',
@@ -217,26 +168,30 @@ const createInitialData = () => ({
   description: '',
   amenities: [],
 
-  // Step 3 — Photos
+  // Step 2 — Photos
   photoFiles: [],
   photoPreviewUrls: [],
 
-  // Step 4 — Preferences
+  // Step 3 — Preferences
   genderPreference: 'no-preference',
   smoking: 'not-allowed',
   pets: 'not-allowed',
   kosherKitchen: 'no',
   vibe: '',
+
+  // Step 4 — Contact (collected last)
+  phone: '',
+  countryCode: '+972',
+  countryLabel: 'IL',
+  email: '',
+  preferredMethod: 'whatsapp',
 });
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
 const ProgressBar = ({ step }) => (
   <div className="rw-progress-rail">
-    <div
-      className="rw-progress-fill"
-      style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }}
-    />
+    <div className="rw-progress-fill" style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }} />
   </div>
 );
 
@@ -262,13 +217,9 @@ const Field = ({ label, required, hint, error, children }) => (
 const ToggleGroup = ({ options, value, onChange }) => (
   <div className="rw-toggle-group" role="group">
     {options.map((opt) => (
-      <button
-        key={opt.value}
-        type="button"
+      <button key={opt.value} type="button"
         className={`rw-toggle-btn ${value === opt.value ? 'is-active' : ''}`}
-        onClick={() => onChange(opt.value)}
-        aria-pressed={value === opt.value}
-      >
+        onClick={() => onChange(opt.value)} aria-pressed={value === opt.value}>
         {opt.label}
       </button>
     ))}
@@ -278,156 +229,19 @@ const ToggleGroup = ({ options, value, onChange }) => (
 const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Back', nextDisabled = false, isLoading = false, loadingLabel = 'Publishing...' }) => (
   <div className="rw-actions">
     {onBack && (
-      <button type="button" className="rw-btn rw-btn--ghost" onClick={onBack}>
-        {backLabel}
-      </button>
+      <button type="button" className="rw-btn rw-btn--ghost" onClick={onBack}>{backLabel}</button>
     )}
-    <button
-      type="button"
-      className="rw-btn rw-btn--primary"
-      onClick={onNext}
-      disabled={nextDisabled || isLoading}
-    >
+    <button type="button" className="rw-btn rw-btn--primary" onClick={onNext} disabled={nextDisabled || isLoading}>
       {isLoading ? loadingLabel : nextLabel}
     </button>
   </div>
 );
 
-// ── Step 1: Contact ───────────────────────────────────────────────────────────
+// ── Step 1: Apartment Details (moved from Step 2) ─────────────────────────────
 
-const Step1Contact = ({ data, onChange, onNext, onClose }) => {
+const Step1Apartment = ({ data, onChange, onNext, onClose }) => {
   const [errors, setErrors] = useState({});
-
-  const selectedCountry = COUNTRY_CODES.find((c) => c.code === data.countryCode && c.label === (data.countryLabel || 'IL'))
-    || COUNTRY_CODES[0];
-
-  const validate = () => {
-    const next = {};
-    if (!data.phone.trim()) {
-      next.phone = 'Phone number is required';
-    } else if (!/^[\d\s\-\(\)]{5,15}$/.test(data.phone.trim())) {
-      next.phone = 'Please enter a valid phone number';
-    }
-    if (data.preferredMethod === 'email' && !data.email.trim()) {
-      next.email = 'Email is required since you selected it as your preferred contact method';
-    } else if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-      next.email = 'Please enter a valid email address';
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validate()) onNext();
-  };
-
-  // Build the full phone number for storage: countryCode + local number
-  const fullPhone = `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`;
-
-  return (
-    <div className="rw-step-card">
-      <ProgressBar step={1} />
-      <StepHeader step={1} title="How can renters reach you?" />
-      <p className="rw-step-intro">
-        Your contact details are only shown to people seriously interested in your room. We never share them publicly.
-      </p>
-
-      <Field label="Phone number" required error={errors.phone}>
-        <div className="rw-phone-row">
-          {/* Country code selector */}
-          <div className="rw-country-select-wrap">
-            <select
-              className="rw-country-select"
-              value={`${data.countryCode}|${data.countryLabel || 'IL'}`}
-              onChange={(e) => {
-                const [code, label] = e.target.value.split('|');
-                onChange('countryCode', code);
-                onChange('countryLabel', label);
-                onChange('phone', '');
-              }}
-              aria-label="Country code"
-            >
-              {COUNTRY_CODES.map((c) => (
-                <option key={`${c.code}-${c.label}`} value={`${c.code}|${c.label}`}>
-                  {c.flag} {c.code} {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Local number input */}
-          <input
-            type="tel"
-            className={`rw-input rw-phone-input ${errors.phone ? 'rw-input--error' : ''}`}
-            placeholder={selectedCountry.placeholder}
-            value={data.phone}
-            onChange={(e) => onChange('phone', e.target.value)}
-            autoFocus
-          />
-        </div>
-        {data.phone.trim() && (
-          <p className="rw-phone-preview">
-            Full number: <strong>{fullPhone}</strong>
-          </p>
-        )}
-      </Field>
-
-      <Field
-        label="Email"
-        required={data.preferredMethod === 'email'}
-        hint={data.preferredMethod === 'email'
-          ? "Required since you selected Email as your preferred contact method"
-          : "Optional — add if you prefer email contact"}
-        error={errors.email}
-      >
-        <input
-          type="email"
-          className={`rw-input ${errors.email ? 'rw-input--error' : ''}`}
-          placeholder="you@example.com"
-          value={data.email}
-          onChange={(e) => {
-            onChange('email', e.target.value);
-            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-          }}
-        />
-      </Field>
-
-      <Field label="Preferred contact method">
-        <ToggleGroup
-          options={CONTACT_METHODS}
-          value={data.preferredMethod}
-          onChange={(val) => {
-            onChange('preferredMethod', val);
-            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-          }}
-        />
-      </Field>
-
-      <div className="rw-anon-nudge">
-        <span aria-hidden="true">💡</span>
-        <p>
-          Want to edit your listing later?{' '}
-          <a href="/register" target="_blank" rel="noopener noreferrer">
-            Create a free account
-          </a>{' '}
-          — takes 30 seconds.
-        </p>
-      </div>
-
-      <WizardActions
-        onNext={handleNext}
-        nextLabel="Continue to apartment details →"
-      />
-      <button type="button" className="rw-cancel-link" onClick={onClose}>
-        Cancel
-      </button>
-    </div>
-  );
-};
-
-// ── Step 2: Apartment Details ─────────────────────────────────────────────────
-
-const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
-  const [errors, setErrors] = useState({});
+  const geocodeRequestIdRef = useRef(0);
 
   const validate = () => {
     const next = {};
@@ -451,216 +265,114 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
     return Object.keys(next).length === 0;
   };
 
-  // Clears a single field's error as soon as the user changes it,
-  // instead of leaving a stale error message visible until the next
-  // "Continue" click re-runs full validation.
   const handleFieldChange = (field, value) => {
     onChange(field, value);
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
+    if (errors[field]) setErrors((prev) => { const next = { ...prev }; delete next[field]; return next; });
   };
 
-  // Guards against a race condition where an earlier (slower) geocode
-  // request resolves after a later one and overwrites a correct result
-  // with a stale one.
-  const geocodeRequestIdRef = useRef(0);
-
-  // Derives lat/lng from street + city using Google Geocoding, for use on
-  // the map. Triggered ONLY on blur of the Number field — the last and most
-  // specific piece of the address — so we don't fire multiple competing
-  // requests as the lister fills in City, then Street, then Number.
-  //
-  // NOTE: this used to also try to auto-fill Neighborhood from Google's
-  // response, but extensive testing (forward geocode, restricted reverse
-  // geocode, and an unrestricted reverse geocode scanning every result)
-  // confirmed Google's Geocoding API simply doesn't carry neighborhood-level
-  // data for many Israeli addresses — only city-level. Neighborhood is now
-  // sourced from israelLocations.js instead (see cityEntry/the Neighborhood
-  // field below), which is far more reliable for the cities it covers.
   const tryAutoFillCoordinates = async () => {
     const street = data.street.trim();
     const city = data.city.trim();
     if (!street || !city) return;
-
     const requestId = ++geocodeRequestIdRef.current;
     try {
-      const result = await geocodeAddress({
-        street,
-        streetNumber: data.streetNumber.trim(),
-        city,
-      });
-      // If a newer request has started since this one was sent, discard
-      // this result — it's stale.
+      const result = await geocodeAddress({ street, streetNumber: data.streetNumber.trim(), city });
       if (requestId !== geocodeRequestIdRef.current) return;
-      // Every other endpoint in this app wraps its JSON body as
-      // { data: ... } (see getRoommateListing, getRoommateListings) and
-      // geocodeAddress() is implemented identically — it just returns
-      // response.data straight through. Handling both shapes here so it
-      // works regardless of which one the backend actually sends.
       const geocoded = result?.data ?? result;
       if (typeof geocoded?.lat === 'number' && typeof geocoded?.lng === 'number') {
         onChange('lat', geocoded.lat);
         onChange('lng', geocoded.lng);
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[RoommateWizard] Coordinate geocode lookup failed:', err);
+      console.error('[RoommateWizard] Geocode failed:', err);
     }
   };
 
-  const handleNext = () => {
-    if (validate()) onNext();
-  };
-
-  // Changing the city invalidates whatever neighborhood was previously
-  // selected/typed — a leftover "Florentin" doesn't make sense once the
-  // city changes to Jerusalem.
   const handleCityChange = (value) => {
     handleFieldChange('city', value);
     onChange('neighborhood', '');
   };
 
   const cityEntry = findCityEntry(data.city);
-
   const today = new Date().toISOString().split('T')[0];
 
   return (
     <div className="rw-step-card">
-      <ProgressBar step={2} />
-      <StepHeader step={2} title="Tell us about your apartment" />
+      <ProgressBar step={1} />
+      <StepHeader step={1} title="Tell us about your apartment" />
 
       <Field label="City" required error={errors.city}>
-        <input
-          type="text"
-          className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
-          placeholder="Tel Aviv-Yafo"
-          value={data.city}
-          onChange={(e) => handleCityChange(e.target.value)}
-          autoFocus
-        />
+        <input type="text" className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
+          placeholder="Tel Aviv-Yafo" value={data.city}
+          onChange={(e) => handleCityChange(e.target.value)} autoFocus />
       </Field>
 
       <div className="rw-field-row">
         <Field label="Street" required error={errors.street}>
-          <input
-            type="text"
-            className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
-            placeholder="Rothschild Blvd"
-            value={data.street}
+          <input type="text" className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
+            placeholder="Rothschild Blvd" value={data.street}
             onChange={(e) => handleFieldChange('street', e.target.value)}
-            onBlur={() => {
-              // Fallback for addresses with no street number — geocode
-              // right away rather than waiting on a Number field the
-              // lister may never fill in.
-              if (!data.streetNumber.trim()) tryAutoFillCoordinates();
-            }}
-          />
+            onBlur={() => { if (!data.streetNumber.trim()) tryAutoFillCoordinates(); }} />
         </Field>
         <Field label="Number">
-          <input
-            type="text"
-            className="rw-input rw-input--short"
-            placeholder="42"
-            value={data.streetNumber}
-            onChange={(e) => onChange('streetNumber', e.target.value)}
-            onBlur={tryAutoFillCoordinates}
-          />
+          <input type="text" className="rw-input rw-input--short" placeholder="42"
+            value={data.streetNumber} onChange={(e) => onChange('streetNumber', e.target.value)}
+            onBlur={tryAutoFillCoordinates} />
         </Field>
       </div>
 
-      <Field
-        label="Neighborhood"
-        required
-        error={errors.neighborhood}
-        hint={cityEntry
-          ? 'Select the neighborhood that best matches your address'
-          : 'Type your neighborhood'}
-      >
+      <Field label="Neighborhood" required error={errors.neighborhood}
+        hint={cityEntry ? 'Select the neighborhood that best matches your address' : 'Type your neighborhood'}>
         {cityEntry ? (
-          <select
-            className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
-            value={data.neighborhood}
-            onChange={(e) => handleFieldChange('neighborhood', e.target.value)}
-          >
+          <select className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
+            value={data.neighborhood} onChange={(e) => handleFieldChange('neighborhood', e.target.value)}>
             <option value="">Select a neighborhood…</option>
             {cityEntry.neighborhoods.map((n) => (
               <option key={n.en} value={n.en}>{n.en}</option>
             ))}
           </select>
         ) : (
-          <input
-            type="text"
-            className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
-            placeholder="Florentin"
-            value={data.neighborhood}
-            onChange={(e) => handleFieldChange('neighborhood', e.target.value)}
-          />
+          <input type="text" className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
+            placeholder="Florentin" value={data.neighborhood}
+            onChange={(e) => handleFieldChange('neighborhood', e.target.value)} />
         )}
       </Field>
-
 
       <div className="rw-field-row">
         <Field label="Monthly rent share (₪)" required error={errors.rentShare}
           hint="What the incoming roommate will pay per month">
-          <input
-            type="number"
-            className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
-            placeholder="3500"
-            min="0"
-            value={data.rentShare}
-            onChange={(e) => handleFieldChange('rentShare', e.target.value)}
-          />
+          <input type="number" className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
+            placeholder="3500" min="0" value={data.rentShare}
+            onChange={(e) => handleFieldChange('rentShare', e.target.value)} />
         </Field>
       </div>
 
-      <Field
-        label="Estimated Additional Monthly Expenses (₪)"
-        hint="Itemized — electricity, water, internet, VAAD. Leave any blank if not yet known."
-      >
+      <Field label="Estimated Additional Monthly Expenses (₪)"
+        hint="Electricity, water, internet, VAAD. Leave any blank if not yet known.">
         <div className="rw-utilities-grid">
           {UTILITY_ITEMS.map((item) => (
             <div key={item.key} className="rw-utility-item">
               <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
-              <input
-                id={`rw-${item.key}`}
-                type="number"
-                className="rw-input"
-                placeholder="0"
-                min="0"
-                value={data[item.key]}
-                onChange={(e) => onChange(item.key, e.target.value)}
-              />
+              <input id={`rw-${item.key}`} type="number" className="rw-input" placeholder="0" min="0"
+                value={data[item.key]} onChange={(e) => onChange(item.key, e.target.value)} />
             </div>
           ))}
         </div>
-        <p className="rw-utilities-total">
-          Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month
-        </p>
+        <p className="rw-utilities-total">Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month</p>
       </Field>
 
       <div className="rw-field-row">
-        <Field label="Total bedrooms in apartment" required error={errors.totalBedrooms}>
-          <select
-            className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
-            value={data.totalBedrooms}
-            onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}
-          >
+        <Field label="Total bedrooms" required error={errors.totalBedrooms}>
+          <select className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
+            value={data.totalBedrooms} onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}>
             {[1,2,3,4,5,6].map((n) => (
               <option key={n} value={String(n)}>{n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
             ))}
           </select>
         </Field>
-        <Field label="Total bathrooms in apartment">
-          <select
-            className="rw-select"
-            value={data.totalBathrooms}
-            onChange={(e) => onChange('totalBathrooms', e.target.value)}
-          >
+        <Field label="Total bathrooms">
+          <select className="rw-select" value={data.totalBathrooms}
+            onChange={(e) => onChange('totalBathrooms', e.target.value)}>
             {[1,2,3,4].map((n) => (
               <option key={n} value={String(n)}>{n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
             ))}
@@ -670,33 +382,20 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
 
       <div className="rw-field-row">
         <Field label="Apartment size (sqm)">
-          <input
-            type="number"
-            className="rw-input"
-            placeholder="75"
-            min="0"
-            value={data.sizeSqm}
-            onChange={(e) => onChange('sizeSqm', e.target.value)}
-          />
+          <input type="number" className="rw-input" placeholder="75" min="0"
+            value={data.sizeSqm} onChange={(e) => onChange('sizeSqm', e.target.value)} />
         </Field>
       </div>
 
       <div className="rw-field-row">
         <Field label="Available from" required error={errors.dateAvailable}>
-          <input
-            type="date"
-            className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
-            min={today}
-            value={data.dateAvailable}
-            onChange={(e) => handleFieldChange('dateAvailable', e.target.value)}
-          />
+          <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
+            min={today} value={data.dateAvailable}
+            onChange={(e) => handleFieldChange('dateAvailable', e.target.value)} />
         </Field>
         <Field label="Minimum lease">
-          <select
-            className="rw-select"
-            value={data.minLeaseMonths}
-            onChange={(e) => onChange('minLeaseMonths', e.target.value)}
-          >
+          <select className="rw-select" value={data.minLeaseMonths}
+            onChange={(e) => onChange('minLeaseMonths', e.target.value)}>
             {LEASE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
@@ -709,18 +408,15 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
           {AMENITY_OPTIONS.map((amenity) => {
             const isSelected = data.amenities.includes(amenity.value);
             return (
-              <button
-                key={amenity.value}
-                type="button"
+              <button key={amenity.value} type="button"
                 className={`rw-amenity-btn ${isSelected ? 'is-active' : ''}`}
                 onClick={() => {
                   const next = isSelected
-                    ? data.amenities.filter((value) => value !== amenity.value)
+                    ? data.amenities.filter((v) => v !== amenity.value)
                     : [...data.amenities, amenity.value];
                   onChange('amenities', next);
                 }}
-                aria-pressed={isSelected}
-              >
+                aria-pressed={isSelected}>
                 <span aria-hidden="true">{amenity.icon}</span>
                 <span>{amenity.label}</span>
               </button>
@@ -729,20 +425,13 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
         </div>
       </Field>
 
-      <Field
-        label="About the apartment"
-        required
+      <Field label="About the apartment" required
         hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc."
-        error={errors.description}
-      >
-        <textarea
-          className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
+        error={errors.description}>
+        <textarea className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
           placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
-          rows={4}
-          maxLength={300}
-          value={data.description}
-          onChange={(e) => handleFieldChange('description', e.target.value)}
-        />
+          rows={4} maxLength={300} value={data.description}
+          onChange={(e) => handleFieldChange('description', e.target.value)} />
         <p className="rw-char-count">
           {data.description.length}/300
           {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
@@ -751,18 +440,15 @@ const Step2Apartment = ({ data, onChange, onNext, onBack }) => {
         </p>
       </Field>
 
-      <WizardActions
-        onBack={onBack}
-        onNext={handleNext}
-        nextLabel="Continue to photos →"
-      />
+      <WizardActions onNext={() => { if (validate()) onNext(); }} nextLabel="Continue to photos →" />
+      <button type="button" className="rw-cancel-link" onClick={onClose}>Cancel</button>
     </div>
   );
 };
 
-// ── Step 3: Photos ────────────────────────────────────────────────────────────
+// ── Step 2: Photos (moved from Step 3) ───────────────────────────────────────
 
-const Step3Photos = ({ data, onChange, onNext, onBack }) => {
+const Step2Photos = ({ data, onChange, onNext, onBack }) => {
   const fileInputRef = useRef(null);
   const MAX_PHOTOS = 3;
 
@@ -770,77 +456,49 @@ const Step3Photos = ({ data, onChange, onNext, onBack }) => {
     const files = Array.from(e.target.files || []);
     const remaining = MAX_PHOTOS - data.photoFiles.length;
     const newFiles = files.slice(0, remaining);
-
     const newUrls = newFiles.map((file) => URL.createObjectURL(file));
     onChange('photoFiles', [...data.photoFiles, ...newFiles]);
     onChange('photoPreviewUrls', [...data.photoPreviewUrls, ...newUrls]);
-
-    // Reset input so same file can be re-selected after removal
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleRemove = (index) => {
-    const newFiles = data.photoFiles.filter((_, i) => i !== index);
-    const newUrls = data.photoPreviewUrls.filter((_, i) => i !== index);
-    // Revoke the object URL to free memory
     URL.revokeObjectURL(data.photoPreviewUrls[index]);
-    onChange('photoFiles', newFiles);
-    onChange('photoPreviewUrls', newUrls);
+    onChange('photoFiles', data.photoFiles.filter((_, i) => i !== index));
+    onChange('photoPreviewUrls', data.photoPreviewUrls.filter((_, i) => i !== index));
   };
 
   const canAddMore = data.photoFiles.length < MAX_PHOTOS;
 
   return (
     <div className="rw-step-card">
-      <ProgressBar step={3} />
-      <StepHeader step={3} title="Add up to 3 photos" />
+      <ProgressBar step={2} />
+      <StepHeader step={2} title="Add up to 3 photos" />
       <p className="rw-step-intro">
-        Show the apartment and common areas — living room, kitchen, balcony. No profile photos needed.
-        Good photos get 3× more enquiries.
+        Show the apartment and common areas — living room, kitchen, balcony. Good photos get 3× more enquiries.
       </p>
 
       <div className="rw-photo-grid">
         {data.photoPreviewUrls.map((url, index) => (
           <div key={index} className="rw-photo-thumb">
             <img src={url} alt={`Photo ${index + 1}`} className="rw-photo-img" />
-            <button
-              type="button"
-              className="rw-photo-remove"
-              onClick={() => handleRemove(index)}
-              aria-label={`Remove photo ${index + 1}`}
-            >
-              ×
-            </button>
-            {index === 0 && (
-              <span className="rw-photo-badge">Cover photo</span>
-            )}
+            <button type="button" className="rw-photo-remove" onClick={() => handleRemove(index)}
+              aria-label={`Remove photo ${index + 1}`}>×</button>
+            {index === 0 && <span className="rw-photo-badge">Cover photo</span>}
           </div>
         ))}
-
         {canAddMore && (
-          <button
-            type="button"
-            className="rw-photo-add"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Add photo"
-          >
+          <button type="button" className="rw-photo-add" onClick={() => fileInputRef.current?.click()}
+            aria-label="Add photo">
             <span className="rw-photo-add-icon" aria-hidden="true">+</span>
             <span>{data.photoFiles.length === 0 ? 'Add photos' : 'Add another'}</span>
-            <span className="rw-photo-add-count">
-              {data.photoFiles.length + 1}/{MAX_PHOTOS}
-            </span>
+            <span className="rw-photo-add-count">{data.photoFiles.length + 1}/{MAX_PHOTOS}</span>
           </button>
         )}
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" multiple
+        style={{ display: 'none' }} onChange={handleFileChange} />
 
       <p className="rw-photo-note">
         {data.photoFiles.length === 0
@@ -848,79 +506,150 @@ const Step3Photos = ({ data, onChange, onNext, onBack }) => {
           : `${MAX_PHOTOS - data.photoFiles.length} photo slot${MAX_PHOTOS - data.photoFiles.length === 1 ? '' : 's'} remaining.`}
       </p>
 
-      <WizardActions
-        onBack={onBack}
-        onNext={onNext}
-        nextLabel="Continue to preferences →"
-      />
+      <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to preferences →" />
     </div>
   );
 };
 
-// ── Step 4: Preferences ───────────────────────────────────────────────────────
+// ── Step 3: Preferences (moved from Step 4) ───────────────────────────────────
 
-const Step4Preferences = ({ data, onChange, onNext, onBack }) => (
+const Step3Preferences = ({ data, onChange, onNext, onBack }) => (
   <div className="rw-step-card">
-    <ProgressBar step={4} />
-    <StepHeader step={4} title="What kind of roommate are you looking for?" />
-    <p className="rw-step-intro">
-      Be honest — it leads to better matches for everyone.
-    </p>
+    <ProgressBar step={3} />
+    <StepHeader step={3} title="What kind of roommate are you looking for?" />
+    <p className="rw-step-intro">Be honest — it leads to better matches for everyone.</p>
 
     <Field label="I'm most comfortable living with">
-      <ToggleGroup
-        options={GENDER_OPTIONS}
-        value={data.genderPreference}
-        onChange={(val) => onChange('genderPreference', val)}
-      />
+      <ToggleGroup options={GENDER_OPTIONS} value={data.genderPreference}
+        onChange={(val) => onChange('genderPreference', val)} />
     </Field>
-
     <Field label="Smoking in the apartment">
-      <ToggleGroup
-        options={SMOKING_OPTIONS}
-        value={data.smoking}
-        onChange={(val) => onChange('smoking', val)}
-      />
+      <ToggleGroup options={SMOKING_OPTIONS} value={data.smoking}
+        onChange={(val) => onChange('smoking', val)} />
     </Field>
-
     <Field label="Pets">
-      <ToggleGroup
-        options={PETS_OPTIONS}
-        value={data.pets}
-        onChange={(val) => onChange('pets', val)}
-      />
+      <ToggleGroup options={PETS_OPTIONS} value={data.pets}
+        onChange={(val) => onChange('pets', val)} />
     </Field>
-
     <Field label="Kosher kitchen">
-      <ToggleGroup
-        options={KOSHER_OPTIONS}
-        value={data.kosherKitchen}
-        onChange={(val) => onChange('kosherKitchen', val)}
-      />
+      <ToggleGroup options={KOSHER_OPTIONS} value={data.kosherKitchen}
+        onChange={(val) => onChange('kosherKitchen', val)} />
     </Field>
-
-    <Field
-      label="Anything else? (optional)"
-      hint="Work from home, religious observance, quiet hours, guests policy..."
-    >
-      <textarea
-        className="rw-textarea"
-        placeholder="We work from home and keep quiet hours after 10pm. Happy people and good vibes only."
-        rows={3}
-        maxLength={300}
-        value={data.vibe}
-        onChange={(e) => onChange('vibe', e.target.value)}
-      />
+    <Field label="Anything else? (optional)"
+      hint="Work from home, religious observance, quiet hours, guests policy...">
+      <textarea className="rw-textarea"
+        placeholder="We work from home and keep quiet hours after 10pm."
+        rows={3} maxLength={300} value={data.vibe}
+        onChange={(e) => onChange('vibe', e.target.value)} />
       <p className="rw-char-count">{data.vibe.length}/300</p>
     </Field>
 
-    <WizardActions
-      onBack={onBack}
-      onNext={onNext}
-      nextLabel="Preview my listing →"
-    />
+    <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to contact details →" />
   </div>
 );
+
+// ── Step 4: Contact (moved from Step 1 — collected last) ──────────────────────
+
+const Step4Contact = ({ data, onChange, onNext, onBack }) => {
+  const [errors, setErrors] = useState({});
+
+  const selectedCountry = COUNTRY_CODES.find(
+    (c) => c.code === data.countryCode && c.label === (data.countryLabel || 'IL')
+  ) || COUNTRY_CODES[0];
+
+  const validate = () => {
+    const next = {};
+    if (!data.phone.trim()) {
+      next.phone = 'Phone number is required';
+    } else if (!/^[\d\s\-\(\)]{5,15}$/.test(data.phone.trim())) {
+      next.phone = 'Please enter a valid phone number';
+    }
+    if (data.preferredMethod === 'email' && !data.email.trim()) {
+      next.email = 'Email is required since you selected it as your preferred contact method';
+    } else if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      next.email = 'Please enter a valid email address';
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const fullPhone = `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`;
+
+  return (
+    <div className="rw-step-card">
+      <ProgressBar step={4} />
+      <StepHeader step={4} title="How can renters reach you?" />
+      <p className="rw-step-intro">
+        Your contact details are only shown to people seriously interested in your room. We never share them publicly.
+      </p>
+
+      <Field label="Phone number" required error={errors.phone}>
+        <div className="rw-phone-row">
+          <div className="rw-country-select-wrap">
+            <select className="rw-country-select"
+              value={`${data.countryCode}|${data.countryLabel || 'IL'}`}
+              onChange={(e) => {
+                const [code, label] = e.target.value.split('|');
+                onChange('countryCode', code);
+                onChange('countryLabel', label);
+                onChange('phone', '');
+              }}
+              aria-label="Country code">
+              {COUNTRY_CODES.map((c) => (
+                <option key={`${c.code}-${c.label}`} value={`${c.code}|${c.label}`}>
+                  {c.flag} {c.code} {c.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <input type="tel"
+            className={`rw-input rw-phone-input ${errors.phone ? 'rw-input--error' : ''}`}
+            placeholder={selectedCountry.placeholder}
+            value={data.phone}
+            onChange={(e) => onChange('phone', e.target.value)}
+            autoFocus />
+        </div>
+        {data.phone.trim() && (
+          <p className="rw-phone-preview">Full number: <strong>{fullPhone}</strong></p>
+        )}
+      </Field>
+
+      <Field label="Email"
+        required={data.preferredMethod === 'email'}
+        hint={data.preferredMethod === 'email'
+          ? 'Required since you selected Email as your preferred contact method'
+          : 'Optional — add if you prefer email contact'}
+        error={errors.email}>
+        <input type="email" className={`rw-input ${errors.email ? 'rw-input--error' : ''}`}
+          placeholder="you@example.com" value={data.email}
+          onChange={(e) => {
+            onChange('email', e.target.value);
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+          }} />
+      </Field>
+
+      <Field label="Preferred contact method">
+        <ToggleGroup options={CONTACT_METHODS} value={data.preferredMethod}
+          onChange={(val) => {
+            onChange('preferredMethod', val);
+            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+          }} />
+      </Field>
+
+      <div className="rw-anon-nudge">
+        <span aria-hidden="true">💡</span>
+        <p>
+          Want to edit your listing later?{' '}
+          <a href="/register" target="_blank" rel="noopener noreferrer">Create a free account</a>
+          {' '}— takes 30 seconds.
+        </p>
+      </div>
+
+      <WizardActions onBack={onBack} onNext={() => { if (validate()) onNext(); }}
+        nextLabel="Preview my listing →" />
+    </div>
+  );
+};
 
 // ── Step 5: Preview ───────────────────────────────────────────────────────────
 
@@ -938,7 +667,11 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
     });
   };
 
-  const locationParts = [data.street && `${data.street} ${data.streetNumber}`.trim(), data.neighborhood, data.city].filter(Boolean);
+  const locationParts = [
+    data.street && `${data.street} ${data.streetNumber}`.trim(),
+    data.neighborhood,
+    data.city,
+  ].filter(Boolean);
   const locationLine = locationParts.join(', ');
 
   const genderLabel = GENDER_OPTIONS.find((o) => o.value === data.genderPreference)?.label || '—';
@@ -950,13 +683,9 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
     <div className="rw-step-card">
       <ProgressBar step={5} />
       <StepHeader step={5} title="Here's what renters will see" />
-      <p className="rw-step-intro">
-        Review your listing before it goes live. You can go back to make changes.
-      </p>
+      <p className="rw-step-intro">Review your listing before it goes live. You can go back to make changes.</p>
 
-      {/* Preview card */}
       <div className="rw-preview-card">
-        {/* Cover photo */}
         <div className="rw-preview-photo">
           {data.photoPreviewUrls.length > 0 ? (
             <div className="rw-preview-photo-grid">
@@ -972,11 +701,9 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
           )}
         </div>
 
-        {/* Details */}
         <div className="rw-preview-body">
           <p className="rw-preview-price">
-            {formatPrice(data.rentShare)}
-            <span>/month</span>
+            {formatPrice(data.rentShare)}<span>/month</span>
             {sumUtilities(data) > 0 && (
               <span className="rw-preview-utilities">
                 {' '}+ {formatPrice(sumUtilities(data))} Estimated Additional Monthly Expenses
@@ -994,9 +721,7 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
             <span>⏳ Min {data.minLeaseMonths} months</span>
           </div>
 
-          {data.description && (
-            <p className="rw-preview-description">{data.description}</p>
-          )}
+          {data.description && <p className="rw-preview-description">{data.description}</p>}
 
           {data.amenities.length > 0 && (
             <div className="rw-preview-prefs">
@@ -1018,22 +743,15 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
             <span className="rw-preview-pref-tag">✡️ Kosher: {kosherLabel}</span>
           </div>
 
-          {data.vibe && (
-            <p className="rw-preview-vibe">💬 "{data.vibe}"</p>
-          )}
+          {data.vibe && <p className="rw-preview-vibe">💬 "{data.vibe}"</p>}
         </div>
       </div>
 
       {error && <p className="rw-publish-error">{error}</p>}
 
-      <WizardActions
-        onBack={onBack}
-        onNext={onPublish}
-        nextLabel="🚀 Go Live!"
-        backLabel="Edit listing"
+      <WizardActions onBack={onBack} onNext={onPublish} nextLabel="🚀 Go Live!" backLabel="Edit listing"
         isLoading={isLoading}
-        loadingLabel={publishStage || (uploadingPhotos ? 'Uploading photos...' : 'Publishing...')}
-      />
+        loadingLabel={publishStage || (uploadingPhotos ? 'Uploading photos...' : 'Publishing...')} />
 
       <p className="rw-publish-note">
         Your listing will be visible immediately. It expires automatically after 60 days.
@@ -1060,19 +778,12 @@ const RoommateWizard = ({ onClose }) => {
   const nextStep = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS)), []);
   const prevStep = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
 
-  // Render's free tier spins the backend down after ~15 min of inactivity.
-  // The first request after idle time can time out or get dropped before
-  // the server finishes waking up. Retrying silently means the user almost
-  // never sees a failure that would have resolved itself in a few seconds.
   const retryWithBackoff = async (fn, { retries = 2, delayMs = 2000 } = {}) => {
     let lastError;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
-      try {
-        return await fn();
-      } catch (err) {
+      try { return await fn(); } catch (err) {
         lastError = err;
-        const isLastAttempt = attempt === retries;
-        if (isLastAttempt) throw err;
+        if (attempt === retries) throw err;
         if (attempt === 0) setPublishStage('Server is waking up — retrying...');
         await new Promise((resolve) => setTimeout(resolve, delayMs * (attempt + 1)));
       }
@@ -1083,10 +794,7 @@ const RoommateWizard = ({ onClose }) => {
   const handlePublish = async () => {
     setPublishError('');
     setIsLoading(true);
-
     try {
-      // Upload selected photos to Cloudinary first — payload needs the
-      // resulting URLs, not the local File objects.
       let uploadedImageUrls = [];
       let photoUploadWarning = '';
       if (data.photoFiles.length > 0) {
@@ -1097,12 +805,11 @@ const RoommateWizard = ({ onClose }) => {
           if (failedCount > 0 && urls.length > 0) {
             photoUploadWarning = `${failedCount} of ${data.photoFiles.length} photos failed to upload. Publishing with the ${urls.length} that succeeded.`;
           } else if (failedCount > 0 && urls.length === 0) {
-            photoUploadWarning = 'All photos failed to upload. Publishing without photos — you can add them later by editing your listing.';
+            photoUploadWarning = 'All photos failed to upload. Publishing without photos — you can add them later.';
           }
         } catch (uploadErr) {
-          // eslint-disable-next-line no-console
-          console.error('[RoommateWizard] Unexpected photo upload error:', uploadErr);
-          photoUploadWarning = 'Photos failed to upload. Publishing without them — you can add photos later.';
+          console.error('[RoommateWizard] Photo upload error:', uploadErr);
+          photoUploadWarning = 'Photos failed to upload. Publishing without them.';
           uploadedImageUrls = [];
         } finally {
           setUploadingPhotos(false);
@@ -1122,13 +829,8 @@ const RoommateWizard = ({ onClose }) => {
           city: data.city.trim(),
           country: 'Israel',
           ...(typeof data.lat === 'number' && typeof data.lng === 'number'
-            ? { lat: data.lat, lng: data.lng }
-            : {}),
+            ? { lat: data.lat, lng: data.lng } : {}),
         },
-        // Lets the backend log when listers are typing cities outside
-        // israelLocations.js's 20-city coverage, so the list can grow based
-        // on real demand instead of guessing. Computed here rather than
-        // duplicating findCityEntry's matching logic server-side.
         cityMatchedKnownList: Boolean(findCityEntry(data.city)),
         rentShare: Number(data.rentShare),
         utilitiesEstimate: sumUtilities(data),
@@ -1157,9 +859,6 @@ const RoommateWizard = ({ onClose }) => {
 
       await retryWithBackoff(() => createRoommateListing(payload));
 
-      // Success — surface any photo upload warning before the wizard
-      // unmounts and navigates away, since there's no other UI left
-      // to display it once we leave this screen.
       if (photoUploadWarning && typeof window !== 'undefined') {
         window.alert(photoUploadWarning);
       }
@@ -1178,28 +877,14 @@ const RoommateWizard = ({ onClose }) => {
   return (
     <div className="rw-overlay" role="dialog" aria-modal="true" aria-label="List your room">
       <div className="rw-container">
-        {step === 1 && (
-          <Step1Contact data={data} onChange={onChange} onNext={nextStep} onClose={onClose} />
-        )}
-        {step === 2 && (
-          <Step2Apartment data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />
-        )}
-        {step === 3 && (
-          <Step3Photos data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />
-        )}
-        {step === 4 && (
-          <Step4Preferences data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />
-        )}
+        {step === 1 && <Step1Apartment data={data} onChange={onChange} onNext={nextStep} onClose={onClose} />}
+        {step === 2 && <Step2Photos data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
+        {step === 3 && <Step3Preferences data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
+        {step === 4 && <Step4Contact data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
         {step === 5 && (
-          <Step5Preview
-            data={data}
-            onBack={prevStep}
-            onPublish={handlePublish}
-            isLoading={isLoading}
-            uploadingPhotos={uploadingPhotos}
-            publishStage={publishStage}
-            error={publishError}
-          />
+          <Step5Preview data={data} onBack={prevStep} onPublish={handlePublish}
+            isLoading={isLoading} uploadingPhotos={uploadingPhotos}
+            publishStage={publishStage} error={publishError} />
         )}
       </div>
     </div>
