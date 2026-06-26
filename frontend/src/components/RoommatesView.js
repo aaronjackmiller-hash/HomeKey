@@ -536,8 +536,8 @@ const RoommatesView = ({
 
   const tabLabel = (tab) => {
     if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
-    if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room';
-    if (tab === ROOMMATES_TAB.LOOKING) return 'Looking for a Room or Roommate';
+    if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room in a Shared Apartment';
+    if (tab === ROOMMATES_TAB.LOOKING) return 'Looking for a Room in a Shared Apartment';
     return tab;
   };
 
@@ -578,31 +578,36 @@ const RoommatesView = ({
           )}
         </button>
 
-        {/* List a Room — HERO */}
+        {/* List a Room in a Shared Apartment — HERO */}
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === ROOMMATES_TAB.LIST}
           className={`roommates-hero-tab roommates-hero-tab--hero ${activeTab === ROOMMATES_TAB.LIST ? 'is-active' : ''}`}
-          onClick={() => setActiveTab(ROOMMATES_TAB.LIST)}
+          onClick={() => { setActiveTab(ROOMMATES_TAB.LIST); handleStartWizard(); }}
         >
           <span className="roommates-hero-tab__start-badge">⭐ Start Here</span>
           <span className="roommates-hero-tab__icon" aria-hidden="true">🔑</span>
-          <strong className="roommates-hero-tab__title">List a Room</strong>
+          <strong className="roommates-hero-tab__title">List a Room in a Shared Apartment</strong>
           <span className="roommates-hero-tab__desc">Post your room — reach thousands instantly</span>
           <span className="roommates-hero-tab__badge roommates-hero-tab__badge--white">Free · 2 minutes</span>
         </button>
 
-        {/* Looking for a Room or Roommate */}
+        {/* Looking for a Room in a Shared Apartment */}
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === ROOMMATES_TAB.LOOKING}
           className={`roommates-hero-tab ${activeTab === ROOMMATES_TAB.LOOKING ? 'is-active' : ''}`}
-          onClick={() => setActiveTab(ROOMMATES_TAB.LOOKING)}
+          onClick={() => {
+            setActiveTab(ROOMMATES_TAB.LOOKING);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+            }
+          }}
         >
           <span className="roommates-hero-tab__icon" aria-hidden="true">🔍</span>
-          <strong className="roommates-hero-tab__title">Looking for a Room or Roommate</strong>
+          <strong className="roommates-hero-tab__title">Looking for a Room in a Shared Apartment</strong>
           <span className="roommates-hero-tab__desc">Post your profile — listers contact you</span>
           {!searcherCountLoading && searcherCount != null && (
             <span className="roommates-hero-tab__badge">{searcherCount} active seekers</span>
@@ -664,25 +669,6 @@ const RoommatesView = ({
 
         {activeTab === ROOMMATES_TAB.LOOKING && (
           <div className="roommates-browse-tab roommates-looking-tab">
-            {/* CTA for seekers to publish their own profile */}
-            <div className="roommates-looking-cta-row">
-              <div className="roommates-looking-cta-copy">
-                <strong>Looking for a room?</strong>
-                <span>Post your profile so room listers can find and contact you directly.</span>
-              </div>
-              <button
-                type="button"
-                className="roommates-looking-cta-btn"
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
-                  }
-                }}
-              >
-                Post my profile
-              </button>
-            </div>
-
             <p className="roommates-tab-stat">
               {seekerProfilesLoading
                 ? 'Loading…'
