@@ -2,9 +2,9 @@
  * Step5PublishListing.js
  * path: frontend/src/components/addListingSteps/Step5PublishListing.js
  *
- * If logged in: contact info pre-filled from account, one-click publish.
- * If not logged in: inline name + phone fields with sign-in nudge.
- * Phone pre-filled from localStorage if previously entered.
+ * Always shows inline contact fields — no auth gating.
+ * Pre-filled from auth account or localStorage.
+ * Includes country code prefix pill matching RoommateWizard.
  */
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -20,13 +20,24 @@ const getStoredContact = () => {
     } catch (_err) { return {}; }
 };
 
-const saveStoredContact = ({ firstName, phone }) => {
+const saveStoredContact = ({ firstName, phone, email }) => {
     try {
         if (typeof window === 'undefined' || !window.localStorage) return;
         const existing = getStoredContact();
-        window.localStorage.setItem(CONTACT_CACHE_KEY, JSON.stringify({ ...existing, firstName, phone }));
+        window.localStorage.setItem(CONTACT_CACHE_KEY, JSON.stringify({ ...existing, firstName, phone, email }));
     } catch (_err) {}
 };
+
+const COUNTRY_CODES = [
+    { code: '+972', flag: '🇮🇱', label: 'IL' },
+    { code: '+1',   flag: '🇺🇸', label: 'US' },
+    { code: '+44',  flag: '🇬🇧', label: 'UK' },
+    { code: '+27',  flag: '🇿🇦', label: 'ZA' },
+    { code: '+61',  flag: '🇦🇺', label: 'AU' },
+    { code: '+1',   flag: '🇨🇦', label: 'CA' },
+    { code: '+33',  flag: '🇫🇷', label: 'FR' },
+    { code: '+49',  flag: '🇩🇪', label: 'DE' },
+];
 
 export const Step5PublishListing = ({
     data,
@@ -37,17 +48,16 @@ export const Step5PublishListing = ({
 }) => {
     const { isAuthenticated, user } = useAuth();
     const history = useHistory();
+    const stored = getStoredContact();
+
     const [primaryImageSrc, setPrimaryImageSrc] = useState('');
     const [displayPhone, setDisplayPhone] = useState(true);
-
-    // Contact fields for logged-out users
-    const stored = getStoredContact();
+    const [countryCode, setCountryCode] = useState('+972');
+    const [countryLabel, setCountryLabel] = useState('IL');
     const [contactFirstName, setContactFirstName] = useState(
         user?.name?.split(' ')[0] || stored.firstName || ''
     );
-    const [contactPhone, setContactPhone] = useState(
-        user?.phone || user?.whatsapp || stored.phone || ''
-    );
+    const [localPhone, setLocalPhone] = useState(stored.phone || '');
 
     useEffect(() => {
         if (data.mediaFiles && data.mediaFiles.length > 0) {
@@ -59,29 +69,28 @@ export const Step5PublishListing = ({
         return undefined;
     }, [data.mediaFiles]);
 
-    // Keep fields in sync when auth state changes
     useEffect(() => {
         if (isAuthenticated && user) {
             setContactFirstName(user.name?.split(' ')[0] || '');
-            setContactPhone(user.phone || user.whatsapp || '');
+            const rawPhone = user.phone || user.whatsapp || '';
+            setLocalPhone(rawPhone.replace(/^\+\d{1,3}/, '').replace(/^0/, ''));
         }
     }, [isAuthenticated, user]);
 
     const transactionType = data.listingType === 'For Sale' ? 'Sale' : 'Rent';
     const propertyType = data.propertyType || 'Apartment';
-    const city = data.address.city || 'Tel Aviv';
+    const city = data.address?.city || 'Tel Aviv';
     const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
 
-    const canPublish = Boolean(contactFirstName.trim() && contactPhone.trim());
+    const fullPhone = `${countryCode}${localPhone.trim().replace(/^0/, '')}`;
+    const canPublish = Boolean(contactFirstName.trim() && localPhone.trim());
 
     const handlePublish = () => {
+        const phone = fullPhone;
         if (!isAuthenticated) {
-            saveStoredContact({ firstName: contactFirstName, phone: contactPhone });
+            saveStoredContact({ firstName: contactFirstName, phone, email: '' });
         }
-        onPublishFinished({
-            anonPhone: isAuthenticated ? (user?.phone || user?.whatsapp || '') : contactPhone,
-            anonFirstName: isAuthenticated ? (user?.name?.split(' ')[0] || '') : contactFirstName,
-        });
+        onPublishFinished({ anonPhone: phone, anonFirstName: contactFirstName });
     };
 
     return (
@@ -96,38 +105,32 @@ export const Step5PublishListing = ({
 
             <div className="wizard-publish-card">
                 <div className="wizard-publish-image">
-                    {primaryImageSrc ? (
-                        <img src={primaryImageSrc} alt="Primary Listing Banner Preview" />
-                    ) : (
-                        <span>No photos uploaded yet</span>
-                    )}
+                    {primaryImageSrc
+                        ? <img src={primaryImageSrc} alt="Primary Listing Banner Preview" />
+                        : <span>No photos uploaded yet</span>}
                 </div>
 
                 <div className="wizard-publish-body">
                     <p className="wizard-kicker">{consolidatedTitle}</p>
-
                     <h3 className="wizard-price">
-                        ₪{data.price ? Number(String(data.price).replace(/,/g, '') || 0).toLocaleString() : '0'} <span>/ month</span>
+                        ₪{data.price ? Number(String(data.price).replace(/,/g, '') || 0).toLocaleString() : '0'}
+                        <span>/ month</span>
                     </h3>
-
                     <p className="wizard-address-line">
-                        📍 {data.address.street || 'Street'} {data.address.number || ''}, {city}
+                        📍 {data.address?.street || 'Street'} {data.address?.number || ''}, {city}
                     </p>
-
                     <div className="wizard-spec-row">
                         <span>🛏️ {data.bedrooms || '0'} Rooms</span>
                         <span>🚿 {data.bathrooms || '0'} Baths</span>
                         <span>📐 {data.sizeSqm || '0'} SQM</span>
                         <span>⏳ {data.leaseLength || '0'} Mos</span>
                     </div>
-
                     {data.description && (
                         <div className="wizard-row">
                             <p className="wizard-kicker">Description</p>
                             <p className="wizard-step-note">{data.description}</p>
                         </div>
                     )}
-
                     {data.amenities && data.amenities.length > 0 && (
                         <div className="wizard-row">
                             <p className="wizard-kicker">Amenities Added</p>
@@ -141,7 +144,7 @@ export const Step5PublishListing = ({
                 </div>
             </div>
 
-    {/* ── Contact info section ───────────────────────────────────── */}
+            {/* ── Contact info — always shown, pre-filled if possible ──── */}
             <div className="wizard-publish-contact">
                 <div className="wizard-publish-contact-anon">
                     <p className="wizard-publish-contact-label">
@@ -161,14 +164,38 @@ export const Step5PublishListing = ({
                         </div>
                         <div className="wizard-field">
                             <label className="wizard-field-label">Phone / WhatsApp</label>
-                            <input
-                                type="tel"
-                                className="wizard-input"
-                                placeholder="05X XXX XXXX"
-                                value={contactPhone}
-                                onChange={(e) => setContactPhone(e.target.value)}
-                                required
-                            />
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <select
+                                    style={{ flexShrink: 0, padding: '8px 6px', border: '1px solid var(--color-border, #e5e7eb)', borderRadius: '8px', fontSize: '13px', background: 'var(--color-surface, #fff)' }}
+                                    value={`${countryCode}|${countryLabel}`}
+                                    onChange={(e) => {
+                                        const [code, label] = e.target.value.split('|');
+                                        setCountryCode(code);
+                                        setCountryLabel(label);
+                                    }}
+                                    aria-label="Country code"
+                                >
+                                    {COUNTRY_CODES.map((c) => (
+                                        <option key={`${c.code}-${c.label}`} value={`${c.code}|${c.label}`}>
+                                            {c.flag} {c.code} {c.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="tel"
+                                    className="wizard-input"
+                                    placeholder="050 000 0000"
+                                    value={localPhone}
+                                    onChange={(e) => setLocalPhone(e.target.value)}
+                                    style={{ flex: 1 }}
+                                    required
+                                />
+                            </div>
+                            {localPhone.trim() && (
+                                <p style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                                    Full number: <strong>{fullPhone}</strong>
+                                </p>
+                            )}
                         </div>
                     </div>
                     {!isAuthenticated && (
@@ -188,11 +215,8 @@ export const Step5PublishListing = ({
 
             <div className="wizard-row">
                 <label className="wizard-toggle-row">
-                    <input
-                        type="checkbox"
-                        checked={displayPhone}
-                        onChange={(e) => setDisplayPhone(e.target.checked)}
-                    />
+                    <input type="checkbox" checked={displayPhone}
+                        onChange={(e) => setDisplayPhone(e.target.checked)} />
                     <span>Display Phone Number</span>
                 </label>
             </div>
