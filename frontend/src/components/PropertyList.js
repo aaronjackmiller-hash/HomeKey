@@ -8,6 +8,7 @@
  * - `isRoommatesMode` prop passed to GoogleListingsMap so it uses teal pins + /roommates links.
  * - `onListingsChange` callback passed to RoommatesView to keep map data in sync.
  * - Rent/Sale and Roommate maps are completely separate — no mixing.
+ * - Added CardImageCarousel for < > navigation arrows on property card images.
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -452,6 +453,70 @@ const prioritizeFavorites = (listings = [], favoriteIdSet = new Set()) => {
   return [...favorites, ...others];
 };
 
+// ── Image carousel for property cards ────────────────────────────────────────
+// Shows < > arrows when a listing has multiple photos.
+// Each card manages its own index independently.
+const CardImageCarousel = ({ images = [], alt = '', isYad2Media = false, sourceType = '', fallbackSeed = '' }) => {
+  const [index, setIndex] = useState(0);
+
+  const builtImages = useMemo(() => {
+    const processed = images
+      .map((img) => buildYad2TopCroppedImageUrl(String(img || ''), sourceType))
+      .filter(Boolean);
+    if (processed.length === 0) {
+      processed.push(`https://picsum.photos/seed/homekey-card-${fallbackSeed}/800/600`);
+    }
+    return processed;
+  }, [images, sourceType, fallbackSeed]);
+
+  const total = builtImages.length;
+  const src = builtImages[Math.min(index, total - 1)];
+
+  const goPrev = (e) => {
+    e.stopPropagation();
+    setIndex((i) => (i - 1 + total) % total);
+  };
+
+  const goNext = (e) => {
+    e.stopPropagation();
+    setIndex((i) => (i + 1) % total);
+  };
+
+  return (
+    <>
+      <img
+        className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
+        src={src}
+        alt={alt}
+      />
+      {total > 1 && (
+        <>
+          <button
+            type="button"
+            className="property-card-img-nav property-card-img-nav--prev"
+            onClick={goPrev}
+            aria-label="Previous photo"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="property-card-img-nav property-card-img-nav--next"
+            onClick={goNext}
+            aria-label="Next photo"
+          >
+            ›
+          </button>
+          <span className="property-card-img-counter" aria-hidden="true">
+            {index + 1} / {total}
+          </span>
+        </>
+      )}
+    </>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const PropertyList = () => {
   const { t, locale, language } = useLanguage();
   const homeKeyBrand = t('brand.homeKey');
@@ -490,8 +555,6 @@ const PropertyList = () => {
   const [savedSearchId, setSavedSearchId] = useState('');
   const [savedSearchHistoryMatches, setSavedSearchHistoryMatches] = useState([]);
   const [hoveredListingId, setHoveredListingId] = useState(null);
-  // Roommate listings for the map — kept separate from Rent/Sale properties.
-  // Populated via the onListingsChange callback passed to RoommatesView.
   const [roommateListingsForMap, setRoommateListingsForMap] = useState([]);
 
   const clearTimers = () => {
@@ -815,7 +878,7 @@ const PropertyList = () => {
           const isYad2Media = isYad2LikeListing(property);
           const isFavorite = interestPropertyId ? favoriteIdSet.has(interestPropertyId) : false;
           const key = propertyId || `property-${index}`;
-          const imageSrc = buildYad2TopCroppedImageUrl(Array.isArray(property.images) ? property.images[0] : '', property.externalSource || property.sourceType) || `https://picsum.photos/seed/homekey-card-${key}/800/600`;
+          const allCardImages = Array.isArray(property.images) ? property.images : [];
           const { street, locationLine } = getAddressDisplay(property.address, language);
           const titleFromData = sanitizeReadableText(property, property.title);
           const fallbackStreetFromTitle = (() => {
@@ -851,8 +914,16 @@ const PropertyList = () => {
                   {shouldShowLocation && <p className="property-card-location">{displayLocation}</p>}
                   {isHistoricalMatch && <p className="property-card-history-note">{t('propertyList.previouslyAvailable')}{historicalMatchDate ? ` • ${t('propertyList.matched')} ${historicalMatchDate}` : ''}</p>}
                 </div>
+
+                {/* ── Image with < > carousel arrows ── */}
                 <div className="property-card-image-wrap property-card-image-wrap--framed">
-                  <img className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`} src={imageSrc} alt={displayTitle || t('propertyList.propertyListingFallback')} />
+                  <CardImageCarousel
+                    images={allCardImages}
+                    alt={displayTitle || t('propertyList.propertyListingFallback')}
+                    isYad2Media={isYad2Media}
+                    sourceType={property.externalSource || property.sourceType || ''}
+                    fallbackSeed={key}
+                  />
                   <button type="button" className={`property-card-favorite-btn property-card-favorite-btn--card-overlay ${isFavorite ? 'is-active' : ''}`}
                     aria-label={isFavorite ? t('propertyList.removeFavoriteFromListing') : t('propertyList.addFavoriteToListing')}
                     aria-pressed={isFavorite} disabled={!interestPropertyId}
@@ -863,6 +934,7 @@ const PropertyList = () => {
                   </button>
                   {isYad2Media && <span className="yad2-logo-mask yad2-logo-mask--card" aria-hidden="true" />}
                 </div>
+
                 <div className="property-card-stats" aria-label={t('propertyList.propertyHighlights')}>
                   <span className="property-card-stat"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 12v5"/><path d="M20.5 12v5"/><path d="M3.5 14.5h17"/><path d="M5.5 12V9.8A1.8 1.8 0 0 1 7.3 8h4.9A1.8 1.8 0 0 1 14 9.8V12"/><path d="M14 12V9.8A1.8 1.8 0 0 1 15.8 8h.9a1.8 1.8 0 0 1 1.8 1.8V12"/></svg><span>{bedroomCount ?? '—'} {t('propertyList.beds')}</span></span>
                   <span className="property-card-stat"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M8 12V9.5A2.5 2.5 0 0 1 10.5 7h2A1.5 1.5 0 0 1 14 8.5v0A1.5 1.5 0 0 1 12.5 10H11"/><path d="M7.5 19v1.5M16.5 19v1.5"/></svg><span>{bathroomCount ?? '—'} {t('propertyList.baths')}</span></span>
