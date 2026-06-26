@@ -99,12 +99,16 @@ const normalizePhoneForLinks = (value) => {
   return cleaned;
 };
 
-const buildWhatsAppHref = (phone, title = 'this listing', contactName = '') => {
+const buildWhatsAppHref = (phone, contactName = '', listingType = '', street = '') => {
   const normalizedPhone = normalizePhoneForLinks(phone);
   if (!normalizedPhone) return '';
-  const firstName = getContactFirstName(contactName) || 'there';
-  const normalizedTitle = String(title || '').trim() || 'this listing';
-  const message = `Hi ${firstName}, I was on HomeKey and I am interested in ${normalizedTitle}.`;
+  const firstName = getContactFirstName(contactName) || '';
+  const greeting = firstName ? `Hi ${firstName}` : 'Hi';
+  const typeLabel = listingType === 'sale' ? 'property for sale'
+    : listingType === 'rental' ? 'property for rent'
+    : 'listing';
+  const location = street ? ` at ${street}` : '';
+  const message = `${greeting}, I saw your ${typeLabel}${location} on HomeKey and I'm interested.`;
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 };
 
@@ -896,7 +900,7 @@ const PropertyList = () => {
           const { whatsappNumber: cardWhatsAppNumber } = getPropertyAgentWhatsApp(property);
           const cardAgentDisplayName = getPropertyAgentDisplayName(property);
           const agentHasWhatsApp = Boolean(normalizePhoneForLinks(cardWhatsAppNumber));
-          const cardWhatsAppHref = agentHasWhatsApp ? buildWhatsAppHref(cardWhatsAppNumber, displayTitle, cardAgentDisplayName) : '';
+          const cardWhatsAppHref = agentHasWhatsApp ? buildWhatsAppHref(cardWhatsAppNumber, cardAgentDisplayName, property.type || '', displayStreet) : '';
           const virtualTourHref = normalizeVirtualTourUrl(property.virtualTourUrl);
           const hasVirtualTour = Boolean(virtualTourHref);
           const historicalMatchDate = formatHistoryBadgeDate(property.historyMatchedAt);
