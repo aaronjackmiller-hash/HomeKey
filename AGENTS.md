@@ -15,7 +15,7 @@ HomeKey is a monorepo with two services:
 
 ### Starting services
 
-1. **MongoDB**: `mkdir -p /data/db && mongod --dbpath /data/db --fork --logpath /var/log/mongod.log`
+1. **MongoDB**: `mkdir -p /data/db && mongod --dbpath /data/db --fork --logpath /var/log/mongod.log` — on cloud VMs without write access to `/data`, use `/workspace/data/db` (and `/workspace/logs/mongod.log`) instead. If `mongod` is not installed, install MongoDB 6.0 via the official `mongodb-org` apt repository (Ubuntu jammy).
 2. **Backend**: `cd /workspace/backend && node server.js` (port 5000)
 3. **Frontend**: `cd /workspace/frontend && PORT=3000 BROWSER=none NODE_OPTIONS=--openssl-legacy-provider npm start` (port 3000)
 
