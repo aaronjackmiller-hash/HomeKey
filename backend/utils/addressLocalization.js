@@ -2,6 +2,7 @@
 
 const HEBREW_CHAR_RE = /[א-ת]/;
 const HEBREW_DIACRITICS_RE = /[\u0591-\u05C7]/g;
+const { inferNeighborhoodFromStreet } = require('./streetNeighborhoodResolver');
 
 const STREET_TYPE_PREFIXES = [
     { patterns: ['רחוב', 'רח׳', "רח'", 'רח'], suffix: 'St' },
@@ -545,7 +546,7 @@ const buildLocalizedAddress = (address = {}) => {
     const splitStreet = splitStreetAndNumber(sourceStreetRaw, sourceStreetNumberRaw);
     const sourceStreet = splitStreet.street;
     const sourceStreetNumber = splitStreet.streetNumber;
-    const sourceNeighborhood = normalizeText(sourceAddress.neighborhood)
+    const sourceNeighborhoodInput = normalizeText(sourceAddress.neighborhood)
         || normalizeText(sourceLocalizedHe.neighborhood)
         || normalizeText(sourceLocalizedEn.neighborhood);
     const sourceCity = normalizeText(sourceAddress.city)
@@ -557,7 +558,7 @@ const buildLocalizedAddress = (address = {}) => {
     const sourceZip = normalizeText(sourceAddress.zip);
     const shouldDefaultToHebrewCountry = (
         containsHebrew(sourceStreet)
-        || containsHebrew(sourceNeighborhood)
+        || containsHebrew(sourceNeighborhoodInput)
         || containsHebrew(sourceCity)
         || containsHebrew(sourceState)
     );
@@ -565,6 +566,21 @@ const buildLocalizedAddress = (address = {}) => {
         || normalizeText(sourceLocalizedHe.country)
         || normalizeText(sourceLocalizedEn.country)
         || (shouldDefaultToHebrewCountry ? 'ישראל' : 'Israel');
+    const inferredNeighborhood = sourceNeighborhoodInput
+        ? null
+        : inferNeighborhoodFromStreet({
+            street: sourceStreet,
+            city: sourceCity,
+            neighborhood: sourceNeighborhoodInput,
+        });
+    const inferredNeighborhoodHe = normalizeText(inferredNeighborhood && inferredNeighborhood.he);
+    const inferredNeighborhoodEn = normalizeText(inferredNeighborhood && inferredNeighborhood.en);
+    const sourceNeighborhood = sourceNeighborhoodInput
+        || normalizeText(
+            inferredNeighborhood
+                ? (containsHebrew(sourceStreet) || containsHebrew(sourceCity) ? inferredNeighborhood.he : inferredNeighborhood.en)
+                : ''
+        );
 
     const englishStreet = toEnglishStreet(sourceStreet, sourceStreetNumber, sourceCity);
     const localizedEn = {
@@ -572,7 +588,7 @@ const buildLocalizedAddress = (address = {}) => {
         streetNumber: normalizeText(sourceLocalizedEn.streetNumber) || englishStreet.streetNumber || sourceStreetNumber,
         neighborhood: preferExistingEnglishValue(
             sourceLocalizedEn.neighborhood,
-            toEnglishAddressField(sourceNeighborhood, 'neighborhood')
+            inferredNeighborhoodEn || toEnglishAddressField(sourceNeighborhood, 'neighborhood')
         ),
         city: preferExistingEnglishValue(sourceLocalizedEn.city, toEnglishAddressField(sourceCity, 'city')),
         state: preferExistingEnglishValue(sourceLocalizedEn.state, toEnglishAddressField(sourceState, 'state')),
@@ -582,7 +598,10 @@ const buildLocalizedAddress = (address = {}) => {
     const localizedHe = {
         street: normalizeText(sourceLocalizedHe.street) || sourceStreet,
         streetNumber: normalizeText(sourceLocalizedHe.streetNumber) || sourceStreetNumber,
-        neighborhood: normalizeText(sourceLocalizedHe.neighborhood) || sourceNeighborhood,
+        neighborhood: normalizeText(sourceLocalizedHe.neighborhood)
+            || (containsHebrew(sourceNeighborhood) ? sourceNeighborhood : '')
+            || inferredNeighborhoodHe
+            || sourceNeighborhood,
         city: normalizeText(sourceLocalizedHe.city) || sourceCity,
         state: normalizeText(sourceLocalizedHe.state) || sourceState,
         country: normalizeText(sourceLocalizedHe.country) || sourceCountry,

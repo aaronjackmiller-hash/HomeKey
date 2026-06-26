@@ -91,6 +91,11 @@ const toEnglishFieldValue = async ({
     const explicitEnglish = normalizeText(explicitEnglishValue);
     const source = normalizeText(sourceValue);
 
+    // Keep curated/normalized neighborhood labels when an English value already exists.
+    if (fieldName === 'neighborhood' && fallback && !containsHebrew(fallback)) {
+        return explicitEnglish || fallback;
+    }
+
     if (!shouldTranslateHebrewField({ sourceValue: source, explicitEnglishValue: explicitEnglish })) {
         return explicitEnglish || fallback;
     }
@@ -131,6 +136,7 @@ const enrichAddressLocalization = async (address = {}) => {
             sourceValue: localizedHe.neighborhood || baseAddress.neighborhood,
             fallbackValue: localizedEn.neighborhood,
             explicitEnglishValue: incomingLocalizedEn.neighborhood,
+            fieldName: 'neighborhood',
         }),
         toEnglishFieldValue({
             sourceValue: localizedHe.city || baseAddress.city,
