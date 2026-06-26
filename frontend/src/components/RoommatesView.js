@@ -23,7 +23,7 @@ import { getPropertyId } from '../utils/propertyIdentity';
 import { getLocalizedAddress } from '../utils/addressLocalization';
 import { toggleFavoriteProperty, incrementHeartClickCount } from '../utils/propertyInterest';
 import { logRoommateDemandSignal } from '../utils/logRoommateDemand';
-import { getRoommateListings, getSeekerProfiles } from '../services/api';
+import { getRoommateStats, getRoommateListings } from '../services/api';
 import RoommateWizard from './RoommateWizard';
 
 // ---------------------------------------------------------------------------
@@ -39,7 +39,10 @@ const ROOMMATES_TAB = Object.freeze({
 // Fetches live stats from GET /api/roommates/stats
 const fetchSearcherCount = async () => {
   try {
-    const data = await getSeekerProfiles();
+    const apiBase = process.env.REACT_APP_API_URL || '';
+    const res = await fetch(`${apiBase}/api/seekers`);
+    if (!res.ok) return null;
+    const data = await res.json();
     // Use the actual array length — same source as the People Looking tab
     if (Array.isArray(data?.data)) return data.data.length;
     return typeof data.count === 'number' ? data.count : null;
@@ -111,8 +114,13 @@ const RoommateCard = ({
 
   // WhatsApp link using the lister's phone number
   const rawPhone = String(property.contact?.phone || '').replace(/[^\d]/g, '').replace(/^0/, '972');
+  const listerFirstName = String(property.contact?.name || '').trim().split(/\s+/)[0] || '';
+  const streetRef = [property.address?.street, property.address?.streetNumber].filter(Boolean).join(' ').trim();
+  const waGreeting = listerFirstName ? `Hi ${listerFirstName}` : 'Hi';
+  const waLocation = streetRef ? ` at ${streetRef}` : '';
+  const waMessage = `${waGreeting}, I saw your room${waLocation} on HomeKey and I'm interested.`;
   const whatsappHref = rawPhone.length >= 7
-    ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(`Hi, I saw your room on HomeKey and I'm interested.`)}`
+    ? `https://wa.me/${rawPhone}?text=${encodeURIComponent(waMessage)}`
     : '';
 
   // Lifestyle tags — unique to roommate cards
@@ -496,7 +504,9 @@ const RoommatesView = ({
     if (activeTab !== ROOMMATES_TAB.LOOKING) return;
     let cancelled = false;
     setSeekerProfilesLoading(true);
-    getSeekerProfiles()
+    const apiBase = process.env.REACT_APP_API_URL || '';
+    fetch(`${apiBase}/api/seekers`)
+      .then((res) => res.json())
       .then((data) => {
         if (!cancelled) {
           const profiles = Array.isArray(data?.data) ? data.data : [];
