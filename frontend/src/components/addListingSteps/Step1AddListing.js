@@ -59,7 +59,7 @@ const HouseIcon = () => (
     </div>
 );
 
-export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, totalSteps: totalStepsProp }) => {
+export const Step1AddListing = ({ data, updateData, nextStep, prevStep, stepNumber = 2, totalSteps: totalStepsProp }) => {
     const [showRequiredHints, setShowRequiredHints] = React.useState(false);
     const usesEnterpriseModel = data.relation === 'property manager';
     const usesSyncPortfolio = usesEnterpriseModel && data.onboardingMethod === 'SyncPortfolio';
@@ -158,9 +158,16 @@ export const Step1AddListing = ({ data, updateData, nextStep, stepNumber = 2, to
                 </div>
             </div>
 
-            <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
-                {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
-            </button>
+            <div className="wizard-actions">
+                {prevStep && (
+                    <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
+                        Back
+                    </button>
+                )}
+                <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
+                    {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
+                </button>
+            </div>
         </div>
     );
 };
