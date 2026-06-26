@@ -15,7 +15,6 @@ import { Step3Amenities } from './addListingSteps/Step3Amenities';
 import { Step4Media } from './addListingSteps/Step4Media';
 import { Step5PublishListing } from './addListingSteps/Step5PublishListing';
 import { Step6EnterpriseRouting } from './addListingSteps/Step6EnterpriseRouting';
-import { normalizeRoommateAmenityList } from '../constants/roommateAmenities';
 import './addListingSteps/addListingWizard.css';
 
 /**
@@ -88,7 +87,6 @@ const initialEnterpriseListings = [
 const AddListing = () => {
     const history = useHistory();
     const location = useLocation();
-    const { user, isAuthenticated } = useAuth();
 
     const preselectedProfileType = location?.state?.preselectedProfileType || '';
     const initialStep = preselectedProfileType ? 1 : 0;
@@ -234,13 +232,6 @@ const AddListing = () => {
             financialDetails: {
                 ...(deposit !== null ? { totalMonthlyPayment: price, maintenanceFees: deposit } : {}),
             },
-            contact: {
-                phone: String(user?.phone || '').trim(),
-                whatsapp: String(user?.whatsapp || '').trim(),
-                email: String(user?.email || '').trim(),
-                name: String(user?.name || '').trim(),
-                preferredMethod: user?.preferredContactMethod || 'phone',
-            },
             status: 'active',
         };
     };
@@ -250,9 +241,9 @@ const AddListing = () => {
         const isRoommatesListing = data.profileType === 'renter-roommates';
 
         if (isRoommatesListing) {
-            const phone = contactOverride.anonPhone || (isAuthenticated ? String(user?.phone || '').trim() : '');
-            const email = contactOverride.anonEmail || (isAuthenticated ? String(user?.email || '').trim() : '');
-            if (!phone) {
+            const phone = contactOverride.anonPhone || '';
+            const email = contactOverride.anonEmail || '';
+            if (!phone && !isAuthenticated) {
                 setError('Please enter a phone number so renters can reach you.');
                 return;
             }
@@ -275,7 +266,6 @@ const AddListing = () => {
                 minLeaseMonths: data.leaseLength ? parseNumber(data.leaseLength) : 6,
                 description: data.description?.trim() || undefined,
                 images: [],
-                amenities: normalizeRoommateAmenityList(data.amenities),
                 genderPreference: 'no-preference',
                 lifestyle: {
                     smoking: 'not-allowed',
@@ -299,10 +289,6 @@ const AddListing = () => {
         if (!payload) {
             setError('Please complete address, price, bedrooms, bathrooms, and size before publishing.');
             setStep(createListingStep);
-            return;
-        }
-        if (!payload.contact.phone) {
-            setError('Please add a phone number to your account before publishing so HomeKey can confirm your listing by SMS.');
             return;
         }
 
@@ -342,7 +328,7 @@ const AddListing = () => {
                     totalSteps={totalSteps}
                 />
             ) : null}
-            {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} stepNumber={2} totalSteps={totalSteps} /> : null}
+            {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={2} totalSteps={totalSteps} /> : null}
             {usesEnterpriseModel && step === 2 ? (
                 <Step2EnterpriseModel data={data} updateData={updateData} onContinue={handleEnterpriseContinue} prevStep={prevStep} totalSteps={totalSteps} />
             ) : null}
