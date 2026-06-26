@@ -72,9 +72,7 @@ export const Step5PublishListing = ({
     const city = data.address.city || 'Tel Aviv';
     const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
 
-    const canPublish = isAuthenticated
-        ? Boolean(user?.phone || user?.whatsapp)
-        : Boolean(contactFirstName.trim() && contactPhone.trim());
+    const canPublish = Boolean(contactFirstName.trim() && contactPhone.trim());
 
     const handlePublish = () => {
         if (!isAuthenticated) {
@@ -143,59 +141,37 @@ export const Step5PublishListing = ({
                 </div>
             </div>
 
-            {/* ── Contact info section ───────────────────────────────────── */}
+    {/* ── Contact info section ───────────────────────────────────── */}
             <div className="wizard-publish-contact">
-                {isAuthenticated && (user?.phone || user?.whatsapp) ? (
-                    // Logged in with phone — show confirmed state
-                    <div className="wizard-publish-contact-confirmed">
-                        <span>✓</span>
-                        <div>
-                            <strong>Contact confirmed</strong>
-                            <p>HomeKey will confirm your listing via SMS to {user.phone || user.whatsapp}</p>
+                <div className="wizard-publish-contact-anon">
+                    <p className="wizard-publish-contact-label">
+                        📱 Contact details for SMS confirmation
+                    </p>
+                    <div className="wizard-step2-grid" style={{ marginBottom: '12px' }}>
+                        <div className="wizard-field">
+                            <label className="wizard-field-label">Your first name</label>
+                            <input
+                                type="text"
+                                className="wizard-input"
+                                placeholder="First name"
+                                value={contactFirstName}
+                                onChange={(e) => setContactFirstName(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="wizard-field">
+                            <label className="wizard-field-label">Phone / WhatsApp</label>
+                            <input
+                                type="tel"
+                                className="wizard-input"
+                                placeholder="05X XXX XXXX"
+                                value={contactPhone}
+                                onChange={(e) => setContactPhone(e.target.value)}
+                                required
+                            />
                         </div>
                     </div>
-                ) : isAuthenticated && !(user?.phone || user?.whatsapp) ? (
-                    // Logged in but no phone on account
-                    <div className="wizard-publish-contact-warning">
-                        <p>⚠️ Please add a phone number to your account before publishing so HomeKey can confirm your listing by SMS.</p>
-                        <button
-                            type="button"
-                            className="wizard-btn wizard-btn--ghost"
-                            onClick={() => history.push('/account')}
-                        >
-                            Add phone to account →
-                        </button>
-                    </div>
-                ) : (
-                    // Not logged in — collect inline
-                    <div className="wizard-publish-contact-anon">
-                        <p className="wizard-publish-contact-label">
-                            📱 Add your contact details so HomeKey can confirm your listing by SMS
-                        </p>
-                        <div className="wizard-step2-grid" style={{ marginBottom: '12px' }}>
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">Your first name</label>
-                                <input
-                                    type="text"
-                                    className="wizard-input"
-                                    placeholder="First name"
-                                    value={contactFirstName}
-                                    onChange={(e) => setContactFirstName(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="wizard-field">
-                                <label className="wizard-field-label">Phone / WhatsApp</label>
-                                <input
-                                    type="tel"
-                                    className="wizard-input"
-                                    placeholder="05X XXX XXXX"
-                                    value={contactPhone}
-                                    onChange={(e) => setContactPhone(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
+                    {!isAuthenticated && (
                         <div className="wizard-publish-signin-nudge">
                             <span>💡 Save time on future listings —</span>
                             <button
@@ -206,8 +182,8 @@ export const Step5PublishListing = ({
                                 Create a free account
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             <div className="wizard-row">
