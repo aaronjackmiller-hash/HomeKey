@@ -1,8 +1,32 @@
 /**
  * Step5PublishListing.js
  * path: frontend/src/components/addListingSteps/Step5PublishListing.js
+ *
+ * If logged in: contact info pre-filled from account, one-click publish.
+ * If not logged in: inline name + phone fields with sign-in nudge.
+ * Phone pre-filled from localStorage if previously entered.
  */
 import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+const CONTACT_CACHE_KEY = 'homekey:contact-info:v1';
+
+const getStoredContact = () => {
+    try {
+        if (typeof window === 'undefined' || !window.localStorage) return {};
+        const raw = window.localStorage.getItem(CONTACT_CACHE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (_err) { return {}; }
+};
+
+const saveStoredContact = ({ firstName, phone }) => {
+    try {
+        if (typeof window === 'undefined' || !window.localStorage) return;
+        const existing = getStoredContact();
+        window.localStorage.setItem(CONTACT_CACHE_KEY, JSON.stringify({ ...existing, firstName, phone }));
+    } catch (_err) {}
+};
 
 export const Step5PublishListing = ({
     data,
@@ -11,8 +35,19 @@ export const Step5PublishListing = ({
     stepNumber = 5,
     totalSteps = 5,
 }) => {
+    const { isAuthenticated, user } = useAuth();
+    const history = useHistory();
     const [primaryImageSrc, setPrimaryImageSrc] = useState('');
     const [displayPhone, setDisplayPhone] = useState(true);
+
+    // Contact fields for logged-out users
+    const stored = getStoredContact();
+    const [contactFirstName, setContactFirstName] = useState(
+        user?.name?.split(' ')[0] || stored.firstName || ''
+    );
+    const [contactPhone, setContactPhone] = useState(
+        user?.phone || user?.whatsapp || stored.phone || ''
+    );
 
     useEffect(() => {
         if (data.mediaFiles && data.mediaFiles.length > 0) {
@@ -24,11 +59,32 @@ export const Step5PublishListing = ({
         return undefined;
     }, [data.mediaFiles]);
 
-    // Consolidate: "Apartment for Rent — Tel Aviv" instead of two redundant lines
+    // Keep fields in sync when auth state changes
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            setContactFirstName(user.name?.split(' ')[0] || '');
+            setContactPhone(user.phone || user.whatsapp || '');
+        }
+    }, [isAuthenticated, user]);
+
     const transactionType = data.listingType === 'For Sale' ? 'Sale' : 'Rent';
     const propertyType = data.propertyType || 'Apartment';
     const city = data.address.city || 'Tel Aviv';
     const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
+
+    const canPublish = isAuthenticated
+        ? Boolean(user?.phone || user?.whatsapp)
+        : Boolean(contactFirstName.trim() && contactPhone.trim());
+
+    const handlePublish = () => {
+        if (!isAuthenticated) {
+            saveStoredContact({ firstName: contactFirstName, phone: contactPhone });
+        }
+        onPublishFinished({
+            anonPhone: isAuthenticated ? (user?.phone || user?.whatsapp || '') : contactPhone,
+            anonFirstName: isAuthenticated ? (user?.name?.split(' ')[0] || '') : contactFirstName,
+        });
+    };
 
     return (
         <div className="wizard-step-card">
@@ -87,6 +143,73 @@ export const Step5PublishListing = ({
                 </div>
             </div>
 
+            {/* ── Contact info section ───────────────────────────────────── */}
+            <div className="wizard-publish-contact">
+                {isAuthenticated && (user?.phone || user?.whatsapp) ? (
+                    // Logged in with phone — show confirmed state
+                    <div className="wizard-publish-contact-confirmed">
+                        <span>✓</span>
+                        <div>
+                            <strong>Contact confirmed</strong>
+                            <p>HomeKey will confirm your listing via SMS to {user.phone || user.whatsapp}</p>
+                        </div>
+                    </div>
+                ) : isAuthenticated && !(user?.phone || user?.whatsapp) ? (
+                    // Logged in but no phone on account
+                    <div className="wizard-publish-contact-warning">
+                        <p>⚠️ Please add a phone number to your account before publishing so HomeKey can confirm your listing by SMS.</p>
+                        <button
+                            type="button"
+                            className="wizard-btn wizard-btn--ghost"
+                            onClick={() => history.push('/account')}
+                        >
+                            Add phone to account →
+                        </button>
+                    </div>
+                ) : (
+                    // Not logged in — collect inline
+                    <div className="wizard-publish-contact-anon">
+                        <p className="wizard-publish-contact-label">
+                            📱 Add your contact details so HomeKey can confirm your listing by SMS
+                        </p>
+                        <div className="wizard-step2-grid" style={{ marginBottom: '12px' }}>
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">Your first name</label>
+                                <input
+                                    type="text"
+                                    className="wizard-input"
+                                    placeholder="First name"
+                                    value={contactFirstName}
+                                    onChange={(e) => setContactFirstName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="wizard-field">
+                                <label className="wizard-field-label">Phone / WhatsApp</label>
+                                <input
+                                    type="tel"
+                                    className="wizard-input"
+                                    placeholder="05X XXX XXXX"
+                                    value={contactPhone}
+                                    onChange={(e) => setContactPhone(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="wizard-publish-signin-nudge">
+                            <span>💡 Save time on future listings —</span>
+                            <button
+                                type="button"
+                                className="wizard-publish-signin-link"
+                                onClick={() => history.push(`/register?redirect=${encodeURIComponent(window.location.pathname)}`)}
+                            >
+                                Create a free account
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             <div className="wizard-row">
                 <label className="wizard-toggle-row">
                     <input
@@ -102,13 +225,17 @@ export const Step5PublishListing = ({
                 <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
                     Back
                 </button>
-                <button type="button" onClick={onPublishFinished} className="wizard-btn wizard-btn--full">
+                <button
+                    type="button"
+                    onClick={handlePublish}
+                    className="wizard-btn wizard-btn--full"
+                    disabled={!canPublish}
+                    style={{ opacity: canPublish ? 1 : 0.45 }}
+                >
                     Go Live! Publish Listing
                 </button>
             </div>
-            <p className="wizard-footer-note">
-                Your listing will be live in 15 minutes.
-            </p>
+            <p className="wizard-footer-note">Your listing will be live in 15 minutes.</p>
         </div>
     );
 };
