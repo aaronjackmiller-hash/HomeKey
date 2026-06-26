@@ -1,10 +1,13 @@
 /**
  * Step3Amenities.js
  * path: frontend/src/components/addListingSteps/Step3Amenities.js
+ *
+ * Uses the exact same CSS classes and SVG icons as the Roommates
+ * amenity grid in FilterMenu.js — one consistent visual language.
  */
 import React from 'react';
 
-// Same SVG icon paths as FilterMenu.js / Roommates section — one consistent vocabulary
+// Identical SVG icon paths to FilterMenu.js CHARACTERISTIC_ICONS
 const ICONS = {
     shield: (<><path d="M12 3 5.5 5.5v5.4c0 4.1 2.6 7.9 6.5 9.1 3.9-1.2 6.5-5 6.5-9.1V5.5L12 3Z" /><path d="M9.5 12.1 11.3 14l3.4-4" /></>),
     elevator: (<><path d="M7 3h10v18H7z" /><path d="M12 3v18" /><path d="m9.2 8 1.8-2 1.8 2" /><path d="m14.8 16-1.8 2-1.8-2" /></>),
@@ -17,29 +20,37 @@ const ICONS = {
     balcony: (<><path d="M6 5h12v8H6z" /><path d="M4 13h16" /><path d="M6 13v6" /><path d="M10 13v6" /><path d="M14 13v6" /><path d="M18 13v6" /><path d="M4 19h16" /></>),
     stovetop: (<><path d="M5 5h14v14H5z" /><path d="M9 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path d="M15 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path d="M9 17.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /><path d="M15 17.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /></>),
     washer: (<><path d="M7 3.5h10v17H7z" /><path d="M7 7.5h10" /><path d="M10 5.5h.1" /><path d="M13 5.5h.1" /><path d="M12 17.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /><path d="M9.6 14.1c1.5 1.1 3.3-1.1 4.8 0" /></>),
+    laundry: (<><path d="M6 4h12v16H6z" /><path d="M6 8h12" /><path d="M9 6h.1" /><path d="M12 6h.1" /><path d="M12 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M10 14.2c1.3.8 2.5-.8 4 0" /></>),
 };
 
+// Exact same list as Roommates section — 11 items, Laundry Facilities removed
+const ALL_AMENITIES = [
+    { id: 'Mamad',                icon: 'shield' },
+    { id: 'Elevator',             icon: 'elevator' },
+    { id: 'Parking',              icon: 'parking' },
+    { id: 'Pets Allowed',         icon: 'pets' },
+    { id: 'Disabled Access',      icon: 'accessibility' },
+    { id: 'Renovated',            icon: 'renovated' },
+    { id: 'Furnished',            icon: 'furnished' },
+    { id: 'Oven',                 icon: 'oven' },
+    { id: 'Balcony',              icon: 'balcony' },
+    { id: 'Stovetop',             icon: 'stovetop' },
+    { id: 'In-Unit Washer & Dryer', icon: 'washer' },
+    { id: 'Laundry Facilities',     icon: 'laundry' },
+];
+
 const AmenityIcon = ({ name }) => (
-    <svg viewBox="0 0 24 24" focusable="false" width={28} height={28}
-        style={{ width: 28, height: 28, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+    <svg
+        className="filter-menu__characteristic-svg"
+        viewBox="0 0 24 24"
+        focusable="false"
+        width={32}
+        height={32}
+        style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+    >
         {ICONS[name]}
     </svg>
 );
-
-// Canonical amenity list — identical vocabulary to the Roommates wizard
-const ALL_AMENITIES = [
-    { id: 'mamad',              label: 'Mamad',                  icon: 'shield' },
-    { id: 'elevator',           label: 'Elevator',               icon: 'elevator' },
-    { id: 'parking',            label: 'Parking',                icon: 'parking' },
-    { id: 'pets',               label: 'Pets Allowed',           icon: 'pets' },
-    { id: 'disabled-access',    label: 'Disabled Access',        icon: 'accessibility' },
-    { id: 'renovated',          label: 'Renovated',              icon: 'renovated' },
-    { id: 'furnished',          label: 'Furnished',              icon: 'furnished' },
-    { id: 'oven',               label: 'Oven',                   icon: 'oven' },
-    { id: 'balcony',            label: 'Balcony',                icon: 'balcony' },
-    { id: 'stovetop',           label: 'Stovetop',               icon: 'stovetop' },
-    { id: 'in-unit-washer-dryer', label: 'In-Unit Washer & Dryer', icon: 'washer' },
-];
 
 export const Step3Amenities = ({
     data,
@@ -59,7 +70,7 @@ export const Step3Amenities = ({
     const toggleAmenity = (label) => {
         const current = data.amenities || [];
         const updated = current.includes(label)
-            ? current.filter((item) => item !== label)
+            ? current.filter((a) => a !== label)
             : [...current, label];
         updateData({ amenities: updated });
     };
@@ -74,19 +85,20 @@ export const Step3Amenities = ({
                 <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
             </div>
 
-            <div className="wizard-amenities-grid">
+            {/* Use exact same grid + button classes as Roommates FilterMenu */}
+            <div className="roommate-amenities-grid">
                 {ALL_AMENITIES.map((item) => {
-                    const isSelected = (data.amenities || []).includes(item.label);
+                    const isSelected = (data.amenities || []).includes(item.id);
                     return (
                         <button
                             type="button"
                             key={item.id}
-                            onClick={() => toggleAmenity(item.label)}
-                            className={`wizard-amenity ${isSelected ? 'is-selected' : ''}`}
+                            onClick={() => toggleAmenity(item.id)}
+                            className={`roommate-amenity ${isSelected ? 'is-selected' : ''}`}
                             aria-pressed={isSelected}
                         >
                             <AmenityIcon name={item.icon} />
-                            <span>{item.label}</span>
+                            <span>{item.id}</span>
                         </button>
                     );
                 })}
