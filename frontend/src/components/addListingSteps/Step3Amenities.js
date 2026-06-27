@@ -25,15 +25,24 @@ const ICONS = {
   dishwasher:    (<><path d="M6 4h12v16H6z"/><path d="M6 8h12M9 6h.1M12 6h.1M12 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M10 14.2c1.3.8 2.5-.8 4 0"/></>),
 };
 
-// Same icon component as RoommateWizard — uses filter-menu__characteristic-svg
-// so it picks up the same stroke styles and teal selected colour
+// Inline stroke styles so icons render correctly in any CSS context
 const AmenityIcon = ({ name }) => (
   <svg
-    className="filter-menu__characteristic-svg"
     viewBox="0 0 24 24"
     focusable="false"
-    width={32} height={32}
-    style={{ width: 32, height: 32, minWidth: 32, minHeight: 32 }}
+    width={32}
+    height={32}
+    style={{
+      width: 32,
+      height: 32,
+      minWidth: 32,
+      minHeight: 32,
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: 1.5,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+    }}
   >
     {ICONS[name]}
   </svg>
