@@ -46,6 +46,7 @@ export const Step2CreateListing = ({
     const priceNum = Number(String(data.price || '').replace(/,/g, ''));
     if (!data.price || isNaN(priceNum) || priceNum <= 0) next.price = 'Please enter a valid price';
     if (!data.sizeSqm) next.sizeSqm = 'Please enter the apartment size';
+    if (!data.dateAvailable) next.dateAvailable = 'Please select a date available';
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -121,10 +122,12 @@ export const Step2CreateListing = ({
 
       {/* Date + Lease */}
       <div className="rw-field-row">
-        <div className="rw-field">
-          <label className="rw-label">Date available</label>
-          <input type="date" className="rw-input" value={data.dateAvailable}
+        <div className={`rw-field ${errors.dateAvailable ? 'rw-field--error' : ''}`}>
+          <label className="rw-label">Date available <span className="rw-label-required">*</span></label>
+          <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
+            value={data.dateAvailable}
             onChange={(e) => updateData({ dateAvailable: e.target.value })} />
+          {errors.dateAvailable && <p className="rw-field-error">{errors.dateAvailable}</p>}
         </div>
         <div className="rw-field">
           <label className="rw-label">Lease (months)</label>
