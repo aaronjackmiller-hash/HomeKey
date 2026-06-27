@@ -1,165 +1,155 @@
 /**
  * Step2CreateListing.js
  * path: frontend/src/components/addListingSteps/Step2CreateListing.js
+ *
+ * Rebuilt to match RoommateWizard visual style — rw-* CSS classes,
+ * toggle buttons for bedrooms/bathrooms instead of dropdowns.
  */
-import React from 'react';
+import React, { useState } from 'react';
+
+const BEDROOM_OPTIONS = [
+  { value: '1', label: '1' }, { value: '2', label: '2' },
+  { value: '3', label: '3' }, { value: '4', label: '4' },
+  { value: '5', label: '5' }, { value: '6', label: '6+' },
+];
+
+const BATHROOM_OPTIONS = [
+  { value: '1', label: '1' }, { value: '2', label: '2' },
+  { value: '3', label: '3' }, { value: '4', label: '4+' },
+];
+
+const ToggleGroup = ({ options, value, onChange }) => (
+  <div className="rw-toggle-group" role="group">
+    {options.map((opt) => (
+      <button key={opt.value} type="button"
+        className={`rw-toggle-btn ${value === opt.value ? 'is-active' : ''}`}
+        onClick={() => onChange(opt.value)} aria-pressed={value === opt.value}>
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
 
 export const Step2CreateListing = ({
-    data,
-    updateData,
-    nextStep,
-    prevStep,
-    stepNumber = 2,
-    totalSteps = 5,
-    progressPercent = 40,
+  data,
+  updateData,
+  nextStep,
+  prevStep,
+  stepNumber = 2,
+  totalSteps = 5,
+  progressPercent = 40,
 }) => {
-    const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
+  const [errors, setErrors] = useState({});
 
-    return (
-        <div className="wizard-step-card">
-            <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="wizard-step-header">
-                <h2>{`Step ${stepNumber}: Create a listing`}</h2>
-                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
-            </div>
+  const validate = () => {
+    const next = {};
+    const priceNum = Number(String(data.price || '').replace(/,/g, ''));
+    if (!data.price || isNaN(priceNum) || priceNum <= 0) next.price = 'Please enter a valid price';
+    if (!data.sizeSqm) next.sizeSqm = 'Please enter the apartment size';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
-            <div className="wizard-verified-pill">
-                <span aria-hidden="true">✓</span>
-                <span>
-                    {`${data.address.street || ''} ${data.address.number || ''}`.trim() || 'Address missing'}
-                    {`, ${data.address.city || 'City missing'} (Verified)`}
-                </span>
-            </div>
+  const handleNext = () => { if (validate()) nextStep(); };
 
-            <div className="wizard-step2-grid">
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Number of bedrooms</label>
-                    <select
-                        value={data.bedrooms}
-                        onChange={(e) => updateData({ bedrooms: e.target.value })}
-                        className="wizard-select"
-                    >
-                        {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={String(n)}>{n}</option>)}
-                    </select>
-                </div>
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Number of bathrooms</label>
-                    <select
-                        value={data.bathrooms}
-                        onChange={(e) => updateData({ bathrooms: e.target.value })}
-                        className="wizard-select"
-                    >
-                        {[1, 2, 3, 4].map((n) => <option key={n} value={String(n)}>{n}</option>)}
-                    </select>
-                </div>
+  const addressLine = [
+    `${data.address.street || ''} ${data.address.number || ''}`.trim(),
+    data.address.city,
+  ].filter(Boolean).join(', ');
 
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Size</label>
-                    <div className="wizard-input-group">
-                        <input
-                            type="number"
-                            placeholder="Size"
-                            value={data.sizeSqm}
-                            onChange={(e) => updateData({ sizeSqm: e.target.value })}
-                            className="wizard-input wizard-input--with-suffix"
-                        />
-                        <span className="wizard-input-suffix">SQM</span>
-                    </div>
-                </div>
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Date available</label>
-                    <input
-                        type="date"
-                        value={data.dateAvailable}
-                        onChange={(e) => updateData({ dateAvailable: e.target.value })}
-                        className="wizard-input"
-                    />
-                </div>
+  return (
+    <div className="rw-step-card">
+      <div className="rw-progress-rail">
+        <div className="rw-progress-fill" style={{ width: `${progressPercent}%` }} />
+      </div>
+      <div className="rw-step-header">
+        <h2 className="rw-step-title">Create your listing</h2>
+        <span className="rw-step-counter">Step {stepNumber} of {totalSteps}</span>
+      </div>
 
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Total Monthly Price</label>
-                    <div className="wizard-input-group">
-                        <span className="wizard-input-prefix">₪</span>
-                        <input
-                            type="text"
-                            placeholder="ex. 2,500"
-                            value={data.price}
-                            onChange={(e) => updateData({ price: e.target.value })}
-                            className="wizard-input wizard-input--with-prefix"
-                        />
-                    </div>
-                </div>
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Deposit</label>
-                    <div className="wizard-input-group">
-                        <span className="wizard-input-prefix">₪</span>
-                        <input
-                            type="text"
-                            value={data.deposit}
-                            onChange={(e) => updateData({ deposit: e.target.value })}
-                            className="wizard-input wizard-input--with-prefix"
-                        />
-                    </div>
-                </div>
+      {/* Address confirmation pill */}
+      <div className="rw-address-confirmed">
+        <span aria-hidden="true">✓</span>
+        <span>{addressLine || 'Address missing'}</span>
+      </div>
 
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Lease length</label>
-                    <div className="wizard-input-group">
-                        <input
-                            type="text"
-                            placeholder="ex. 12"
-                            value={data.leaseLength}
-                            onChange={(e) => updateData({ leaseLength: e.target.value })}
-                            className="wizard-input wizard-input--with-suffix"
-                        />
-                        <span className="wizard-input-suffix">Months</span>
-                    </div>
-                </div>
-                <div className="wizard-field">
-                    <label className="wizard-field-label">Floor Number</label>
-                    <input
-                        type="number"
-                        placeholder="Floor"
-                        value={data.floorNumber}
-                        onChange={(e) => updateData({ floorNumber: e.target.value })}
-                        className="wizard-input"
-                    />
-                </div>
-            </div>
+      {/* Bedrooms */}
+      <div className="rw-field">
+        <label className="rw-label">Bedrooms</label>
+        <ToggleGroup options={BEDROOM_OPTIONS} value={data.bedrooms}
+          onChange={(val) => updateData({ bedrooms: val })} />
+      </div>
 
-            <div className="wizard-row" style={{ marginTop: '8px' }}>
-                <label className="wizard-field-label">Description</label>
-                <textarea
-                    rows={4}
-                    placeholder="Provide key details, unique features, and lifestyle potential"
-                    maxLength={7000}
-                    value={data.description}
-                    onChange={(e) => updateData({ description: e.target.value })}
-                    className="wizard-textarea"
-                />
-                <div className="wizard-char-counter">
-                    {7000 - (data.description?.length || 0)} characters remaining
-                </div>
-            </div>
+      {/* Bathrooms */}
+      <div className="rw-field">
+        <label className="rw-label">Bathrooms</label>
+        <ToggleGroup options={BATHROOM_OPTIONS} value={data.bathrooms}
+          onChange={(val) => updateData({ bathrooms: val })} />
+      </div>
 
-            <div className="wizard-actions">
-                <button
-                    type="button"
-                    onClick={prevStep}
-                    className="wizard-btn wizard-btn--ghost"
-                >
-                    Back
-                </button>
-                <button
-                    type="button"
-                    onClick={nextStep}
-                    className="wizard-btn wizard-btn--full"
-                >
-                    {`Continue to Step ${nextStepLabel}`}
-                </button>
-            </div>
+      {/* Size + Floor */}
+      <div className="rw-field-row">
+        <div className={`rw-field ${errors.sizeSqm ? 'rw-field--error' : ''}`}>
+          <label className="rw-label">Size (sqm) <span className="rw-label-required">*</span></label>
+          <input type="number" className={`rw-input ${errors.sizeSqm ? 'rw-input--error' : ''}`}
+            placeholder="75" min="0" value={data.sizeSqm}
+            onChange={(e) => updateData({ sizeSqm: e.target.value })} />
+          {errors.sizeSqm && <p className="rw-field-error">{errors.sizeSqm}</p>}
         </div>
-    );
+        <div className="rw-field">
+          <label className="rw-label">Floor</label>
+          <input type="number" className="rw-input" placeholder="Floor"
+            value={data.floorNumber} onChange={(e) => updateData({ floorNumber: e.target.value })} />
+        </div>
+      </div>
+
+      {/* Price + Deposit */}
+      <div className="rw-field-row">
+        <div className={`rw-field ${errors.price ? 'rw-field--error' : ''}`}>
+          <label className="rw-label">Monthly price (₪) <span className="rw-label-required">*</span></label>
+          <input type="text" className={`rw-input ${errors.price ? 'rw-input--error' : ''}`}
+            placeholder="ex. 5,000" value={data.price}
+            onChange={(e) => updateData({ price: e.target.value })} />
+          {errors.price && <p className="rw-field-error">{errors.price}</p>}
+        </div>
+        <div className="rw-field">
+          <label className="rw-label">Deposit (₪)</label>
+          <input type="text" className="rw-input" placeholder="ex. 10,000"
+            value={data.deposit} onChange={(e) => updateData({ deposit: e.target.value })} />
+        </div>
+      </div>
+
+      {/* Date + Lease */}
+      <div className="rw-field-row">
+        <div className="rw-field">
+          <label className="rw-label">Date available</label>
+          <input type="date" className="rw-input" value={data.dateAvailable}
+            onChange={(e) => updateData({ dateAvailable: e.target.value })} />
+        </div>
+        <div className="rw-field">
+          <label className="rw-label">Lease (months)</label>
+          <input type="text" className="rw-input" placeholder="ex. 12"
+            value={data.leaseLength} onChange={(e) => updateData({ leaseLength: e.target.value })} />
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="rw-field">
+        <label className="rw-label">Description</label>
+        <p className="rw-hint">Highlight unique features, lifestyle, and what makes this property special</p>
+        <textarea className="rw-textarea" rows={4}
+          placeholder="Bright apartment with sea views, renovated kitchen, and a large balcony..."
+          maxLength={7000} value={data.description}
+          onChange={(e) => updateData({ description: e.target.value })} />
+        <p className="rw-char-count">{(data.description?.length || 0)}/7000</p>
+      </div>
+
+      <div className="rw-actions">
+        <button type="button" onClick={prevStep} className="rw-btn rw-btn--ghost">Back</button>
+        <button type="button" onClick={handleNext} className="rw-btn rw-btn--primary">
+          Continue to Step {Math.min(stepNumber + 1, totalSteps)}
+        </button>
+      </div>
+    </div>
+  );
 };
