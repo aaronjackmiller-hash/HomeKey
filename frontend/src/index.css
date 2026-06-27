@@ -9613,3 +9613,26 @@ html[dir="rtl"] .filter-menu {
   z-index: 10;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   AddListing wizard — address confirmed pill (Step2CreateListing)
+   ========================================================================== */
+
+.rw-address-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #e8f4f0;
+  border: 1px solid #b8d8d0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2d6b5e;
+  margin-bottom: 4px;
+}
+
+.rw-address-confirmed span:first-child {
+  font-size: 16px;
+  flex-shrink: 0;
+}
