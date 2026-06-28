@@ -2,14 +2,11 @@
  * Step3Amenities.js
  * path: frontend/src/components/addListingSteps/Step3Amenities.js
  *
- * Uses rw-* wrapper classes (matching RoommateWizard style) and the exact
- * same roommate-amenities-grid + roommate-amenity CSS classes with
- * filter-menu__characteristic-svg icons — identical to all 3 other places
- * in the app where amenities appear.
+ * 100% inline styles — zero CSS dependency.
+ * Teal selected state, SVG icons always visible regardless of loaded CSS.
  */
 import React from 'react';
 
-// Same 12 SVG icon paths used in RoommateWizard, FilterMenu, and RoommatesView
 const ICONS = {
   shield:        (<><path d="M12 3 5.5 5.5v5.4c0 4.1 2.6 7.9 6.5 9.1 3.9-1.2 6.5-5 6.5-9.1V5.5L12 3Z"/><path d="M9.5 12.1 11.3 14l3.4-4"/></>),
   elevator:      (<><path d="M7 3h10v18H7z"/><path d="M12 3v18"/><path d="m9.2 8 1.8-2 1.8 2"/><path d="m14.8 16-1.8 2-1.8-2"/></>),
@@ -25,30 +22,6 @@ const ICONS = {
   dishwasher:    (<><path d="M6 4h12v16H6z"/><path d="M6 8h12M9 6h.1M12 6h.1M12 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M10 14.2c1.3.8 2.5-.8 4 0"/></>),
 };
 
-// Inline stroke styles so icons render correctly in any CSS context
-const AmenityIcon = ({ name }) => (
-  <svg
-    viewBox="0 0 24 24"
-    focusable="false"
-    width={32}
-    height={32}
-    style={{
-      width: 32,
-      height: 32,
-      minWidth: 32,
-      minHeight: 32,
-      fill: 'none',
-      stroke: 'currentColor',
-      strokeWidth: 1.5,
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    }}
-  >
-    {ICONS[name]}
-  </svg>
-);
-
-// All 12 amenities — identical across all 4 places in the app
 const ALL_AMENITIES = [
   { id: 'Mamad',                  icon: 'shield' },
   { id: 'Elevator',               icon: 'elevator' },
@@ -64,6 +37,54 @@ const ALL_AMENITIES = [
   { id: 'Dishwasher',             icon: 'dishwasher' },
 ];
 
+const TEAL = '#2d6b5e';
+const TEAL_LIGHT = '#e8f4f0';
+const TEAL_BORDER = '#b8d8d0';
+const GRAY = '#6b7280';
+const GRAY_BORDER = '#e5e7eb';
+
+const btnBase = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '6px',
+  padding: '14px 8px',
+  border: `1.5px solid ${GRAY_BORDER}`,
+  borderRadius: '12px',
+  background: '#fff',
+  cursor: 'pointer',
+  textAlign: 'center',
+  transition: 'all 0.15s',
+  minHeight: '88px',
+  color: GRAY,
+  fontSize: '11px',
+  fontWeight: '600',
+  lineHeight: '1.2',
+  width: '100%',
+};
+
+const btnSelected = {
+  ...btnBase,
+  background: TEAL,
+  border: `1.5px solid ${TEAL}`,
+  color: '#fff',
+  fontWeight: '700',
+};
+
+const svgStyle = {
+  width: 32,
+  height: 32,
+  minWidth: 32,
+  minHeight: 32,
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  display: 'block',
+};
+
 export const Step3Amenities = ({
   data,
   updateData,
@@ -74,44 +95,53 @@ export const Step3Amenities = ({
   progressPercent = 60,
   isEnterpriseTrack = false,
 }) => {
-  const toggleAmenity = (label) => {
+  const toggle = (label) => {
     const current = data.amenities || [];
-    const updated = current.includes(label)
-      ? current.filter((a) => a !== label)
-      : [...current, label];
-    updateData({ amenities: updated });
+    updateData({
+      amenities: current.includes(label)
+        ? current.filter((a) => a !== label)
+        : [...current, label],
+    });
   };
 
+  const pct = `${progressPercent}%`;
   const title = isEnterpriseTrack ? 'Global amenities baseline' : 'Amenities';
 
   return (
     <div className="rw-step-card">
       <div className="rw-progress-rail">
-        <div className="rw-progress-fill" style={{ width: `${progressPercent}%` }} />
+        <div className="rw-progress-fill" style={{ width: pct }} />
       </div>
       <div className="rw-step-header">
         <h2 className="rw-step-title">{title}</h2>
         <span className="rw-step-counter">Step {stepNumber} of {totalSteps}</span>
       </div>
-
-      <p className="rw-hint" style={{ marginBottom: '12px' }}>
+      <p className="rw-hint" style={{ marginBottom: '4px' }}>
         Select everything that applies — helps buyers and renters find you faster.
       </p>
 
-      {/* Exact same grid + classes as RoommateWizard, FilterMenu, and seeker form */}
-      <div className="roommate-amenities-grid">
+      {/* 100% inline styles — no external CSS needed */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '8px',
+      }}>
         {ALL_AMENITIES.map((item) => {
           const isSelected = (data.amenities || []).includes(item.id);
           return (
             <button
               type="button"
               key={item.id}
-              onClick={() => toggleAmenity(item.id)}
-              className={`roommate-amenity ${isSelected ? 'is-selected' : ''}`}
+              onClick={() => toggle(item.id)}
               aria-pressed={isSelected}
+              style={isSelected ? btnSelected : btnBase}
             >
-              <AmenityIcon name={item.icon} />
-              <span>{item.id}</span>
+              <svg viewBox="0 0 24 24" focusable="false" style={svgStyle}>
+                {ICONS[item.icon]}
+              </svg>
+              <span style={{ fontSize: '11px', fontWeight: isSelected ? '700' : '600' }}>
+                {item.id}
+              </span>
             </button>
           );
         })}
