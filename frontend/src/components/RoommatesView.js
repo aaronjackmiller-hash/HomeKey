@@ -423,21 +423,19 @@ const RoommatesView = ({
   const [seekerProfiles, setSeekerProfiles] = useState([]);
   const [seekerProfilesLoading, setSeekerProfilesLoading] = useState(false);
 
+  const [listingError, setListingError] = useState('');
+
   const refreshListings = useCallback(() => {
     let cancelled = false;
     setLoading(true);
+    setListingError('');
 
-    // Read the same filter params the Navbar writes for Roommates mode —
-    // city (q), rooms (-> bedrooms), baths (-> bathrooms), availableFrom.
     const params = new URLSearchParams(location.search);
     const city = String(params.get('q') || '').trim();
     const roomsParam = String(params.get('rooms') || '').trim();
     const bathsParam = String(params.get('baths') || '').trim();
     const availableFromParam = String(params.get('availableFrom') || '').trim();
 
-    // "4+" style values mean "at least N" — the backend filter does an
-    // exact match, so for now we send the leading digit. A future
-    // enhancement could add $gte support server-side for "+" values.
     const toExactCount = (value) => {
       const digitsOnly = value.replace(/\+$/, '');
       const parsed = Number(digitsOnly);
@@ -459,8 +457,12 @@ const RoommatesView = ({
         setListings(nextListings);
         if (typeof onListingsChange === 'function') onListingsChange(nextListings);
       })
-      .catch(() => {
-        if (!cancelled) setListings([]);
+      .catch((err) => {
+        if (!cancelled) {
+          setListings([]);
+          setListingError(err?.response?.data?.message || err?.message || 'Failed to load listings');
+          if (typeof onListingsChange === 'function') onListingsChange([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -630,7 +632,13 @@ const RoommatesView = ({
               </p>
             )}
             {loading && <p className="status-message">{t('propertyList.loadingProperties')}</p>}
-            {!loading && availableRoomsCount === 0 && <BrowseEmptyState t={t} />}
+            {!loading && listingError && (
+              <div className="status-panel">
+                <p className="status-message status-message-error">{listingError}</p>
+                <button className="secondary-btn" onClick={refreshListings}>Try again</button>
+              </div>
+            )}
+            {!loading && !listingError && availableRoomsCount === 0 && <BrowseEmptyState t={t} />}
             {!loading && availableRoomsCount > 0 && (
               <div className="roommates-card-grid">
                 {displayProperties.map((property, index) => {
