@@ -485,7 +485,7 @@ const CardImageCarousel = ({ images = [], alt = '', isYad2Media = false, sourceT
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'block' }}>
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', display: 'block' }}>
       <img
         className={`property-card-image ${isYad2Media ? 'yad2-image' : ''}`}
         src={src}
