@@ -83,7 +83,7 @@ export const Step5PublishListing = ({
     const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
 
     const fullPhone = `${countryCode}${localPhone.trim().replace(/^0/, '')}`;
-    const canPublish = Boolean(contactFirstName.trim() && localPhone.trim());
+    const canPublish = Boolean(localPhone.trim());
 
     const handlePublish = () => {
         const phone = fullPhone;
