@@ -426,6 +426,27 @@ const FilterMenu = ({
       ) : (
         <>
           <section className="filter-menu__section">
+            <h3 className="filter-menu__section-title">{t('filterMenu.location') || 'Location'}</h3>
+            {typeof renderRoommateLocationInput === 'function'
+              ? renderRoommateLocationInput({
+                  id: 'all-filters-location',
+                  value: roommateLocation,
+                  onChange: onRoommateLocationChange,
+                  placeholder: t('filterMenu.locationPlaceholder') || 'City or neighborhood…',
+                })
+              : (
+                <input
+                  id="all-filters-location"
+                  type="text"
+                  value={roommateLocation || ''}
+                  onChange={(e) => onRoommateLocationChange(e.target.value)}
+                  placeholder={t('filterMenu.locationPlaceholder') || 'City or neighborhood…'}
+                  className="roommate-text-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              )}
+          </section>
+          <section className="filter-menu__section">
             <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
             <div className="filter-menu__type-row">
               <button type="button" className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('apartments')}>{t('filterMenu.apartments')}</button>
