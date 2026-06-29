@@ -100,17 +100,30 @@ export const Step1AddListing = ({ data, updateData, nextStep, prevStep, stepNumb
             <div className="wizard-row">
                 <label className="wizard-label">Property Type</label>
                 <div className={`wizard-card-grid ${showRequiredHints && missingFields.propertyType ? 'wizard-card-grid--required' : ''}`}>
-                    {['Apartment', 'House'].map((type) => (
-                        <button
-                            type="button"
-                            key={type}
-                            onClick={() => updateData({ propertyType: type })}
-                            className={`wizard-property-card ${data.propertyType === type ? 'is-selected' : ''}`}
-                        >
-                            {type === 'Apartment' ? <ApartmentIcon /> : <HouseIcon />}
-                            <span>{type}</span>
-                        </button>
-                    ))}
+                    {['Apartment', 'House'].map((type) => {
+                        const isSelected = data.propertyType === type;
+                        return (
+                            <button
+                                type="button"
+                                key={type}
+                                onClick={() => updateData({ propertyType: type })}
+                                className={`wizard-property-card ${isSelected ? 'is-selected' : ''}`}
+                                style={{ position: 'relative' }}
+                            >
+                                {isSelected && (
+                                    <span style={{
+                                        position: 'absolute', top: 8, right: 8,
+                                        width: 22, height: 22, borderRadius: '50%',
+                                        background: '#2d6b5e', color: '#fff',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 13, fontWeight: 700, lineHeight: 1, zIndex: 2,
+                                    }}>✓</span>
+                                )}
+                                {type === 'Apartment' ? <ApartmentIcon /> : <HouseIcon />}
+                                <span>{type}</span>
+                            </button>
+                        );
+                    })}
                 </div>
                 {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
             </div>
@@ -138,21 +151,21 @@ export const Step1AddListing = ({ data, updateData, nextStep, prevStep, stepNumb
                         type="text"
                         placeholder={formatRequiredPlaceholder('Street', missingFields.street)}
                         value={data.address.street}
-                        onChange={(e) => updateData({ address: { ...data.address, street: e.target.value } })}
+                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, street: val } }); }}
                         className={`wizard-input ${showRequiredHints && missingFields.street ? 'wizard-field-required' : ''}`}
                     />
                     <input
                         type="text"
                         placeholder={formatRequiredPlaceholder('No.', missingFields.number)}
                         value={data.address.number}
-                        onChange={(e) => updateData({ address: { ...data.address, number: e.target.value } })}
+                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, number: val } }); }}
                         className={`wizard-input ${showRequiredHints && missingFields.number ? 'wizard-field-required' : ''}`}
                     />
                     <input
                         type="text"
                         placeholder={formatRequiredPlaceholder('City', missingFields.city)}
                         value={data.address.city}
-                        onChange={(e) => updateData({ address: { ...data.address, city: e.target.value } })}
+                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, city: val } }); }}
                         className={`wizard-input ${showRequiredHints && missingFields.city ? 'wizard-field-required' : ''}`}
                     />
                 </div>
