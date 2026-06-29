@@ -537,9 +537,9 @@ const RoommatesView = ({
   }, [refreshListings]);
 
   const tabLabel = (tab) => {
-    if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse Rooms';
-    if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'List a Room in a Shared Apartment';
-    if (tab === ROOMMATES_TAB.LOOKING) return 'Looking for a Room in a Shared Apartment';
+    if (tab === ROOMMATES_TAB.BROWSE) return t('roommates.tabBrowse') || 'Browse All Rooms';
+    if (tab === ROOMMATES_TAB.LIST) return t('roommates.tabList') || 'Looking for a Roommate';
+    if (tab === ROOMMATES_TAB.LOOKING) return 'Looking for a Room';
     return tab;
   };
 
@@ -564,7 +564,7 @@ const RoommatesView = ({
       {/* ── Hero tab cards — the primary navigation for the Roommates experience ── */}
       <div className="roommates-hero-tabs" role="tablist" aria-label={t('roommates.tabStripAriaLabel') || 'Roommate sections'}>
 
-        {/* Browse Rooms */}
+        {/* Browse All Rooms */}
         <button
           type="button"
           role="tab"
@@ -573,14 +573,14 @@ const RoommatesView = ({
           onClick={() => setActiveTab(ROOMMATES_TAB.BROWSE)}
         >
           <span className="roommates-hero-tab__icon" aria-hidden="true">🏠</span>
-          <strong className="roommates-hero-tab__title">Browse Rooms</strong>
+          <strong className="roommates-hero-tab__title">Browse All Rooms</strong>
           <span className="roommates-hero-tab__desc">See all available rooms on the map</span>
           {!loading && availableRoomsCount > 0 && (
             <span className="roommates-hero-tab__badge">{availableRoomsCount} available</span>
           )}
         </button>
 
-        {/* List a Room in a Shared Apartment — HERO */}
+        {/* Looking for a Roommate — HERO (I have a room, need someone to share with) */}
         <button
           type="button"
           role="tab"
@@ -590,12 +590,12 @@ const RoommatesView = ({
         >
           <span className="roommates-hero-tab__start-badge">⭐ Start Here</span>
           <span className="roommates-hero-tab__icon" aria-hidden="true">🔑</span>
-          <strong className="roommates-hero-tab__title">List a Room in a Shared Apartment</strong>
+          <strong className="roommates-hero-tab__title">Looking for a Roommate</strong>
           <span className="roommates-hero-tab__desc">Post your room — reach thousands instantly</span>
           <span className="roommates-hero-tab__badge roommates-hero-tab__badge--white">Free · 2 minutes</span>
         </button>
 
-        {/* Looking for a Room in a Shared Apartment */}
+        {/* Looking for a Room (I need a place to live) */}
         <button
           type="button"
           role="tab"
@@ -609,7 +609,7 @@ const RoommatesView = ({
           }}
         >
           <span className="roommates-hero-tab__icon" aria-hidden="true">🔍</span>
-          <strong className="roommates-hero-tab__title">Looking for a Room in a Shared Apartment</strong>
+          <strong className="roommates-hero-tab__title">Looking for a Room</strong>
           <span className="roommates-hero-tab__desc">Post your profile — listers contact you</span>
           {!searcherCountLoading && searcherCount != null && (
             <span className="roommates-hero-tab__badge">{searcherCount} active seekers</span>
