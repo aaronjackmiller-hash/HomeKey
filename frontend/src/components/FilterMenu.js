@@ -36,17 +36,18 @@ const ROOMS_AVAILABLE_OPTIONS = ['1', '2', '3+'];
 const ROOMMATE_COUNT_OPTIONS = ['1', '2', '3+'];
 
 const ROOMMATE_AMENITY_ITEMS = [
-  { id: 'Mamad', icon: 'shield' },
-  { id: 'Elevator', icon: 'elevator' },
-  { id: 'Parking', icon: 'parking' },
-  { id: 'Pets Allowed', icon: 'pets' },
-  { id: 'Disabled Access', icon: 'accessibility' },
-  { id: 'Renovated', icon: 'renovated' },
-  { id: 'Furnished', icon: 'furnished' },
-  { id: 'Oven', icon: 'oven' },
-  { id: 'Balcony', icon: 'balcony' },
-  { id: 'Stovetop', icon: 'stovetop' },
-  { id: 'In-Unit Washer & Dryer', icon: 'washer' },
+  { id: 'Mamad',                  label: 'Mamad',        icon: '🛡️' },
+  { id: 'Elevator',               label: 'Elevator',     icon: '🛗' },
+  { id: 'Parking',                label: 'Parking',      icon: '🚗' },
+  { id: 'Pets Allowed',           label: 'Pets OK',      icon: '🐾' },
+  { id: 'Disabled Access',        label: 'Accessible',   icon: '♿' },
+  { id: 'Renovated',              label: 'Renovated',    icon: '🔨' },
+  { id: 'Furnished',              label: 'Furnished',    icon: '🛋️' },
+  { id: 'Oven',                   label: 'Oven',         icon: '🍳' },
+  { id: 'Balcony',                label: 'Balcony',      icon: '🌇' },
+  { id: 'Stovetop',               label: 'Stovetop',     icon: '🔥' },
+  { id: 'In-Unit Washer & Dryer', label: 'Washer/Dryer', icon: '🌀' },
+  { id: 'Dishwasher',             label: 'Dishwasher',   icon: '🍽️' },
 ];
 
 const ROOMMATE_AMENITY_LABELS_HE = {
@@ -354,8 +355,6 @@ const FilterMenu = ({
   const isHebrew = language === 'he';
   const selectedFeatureSet = new Set(selectedFeatures || []);
   const isRoommatesView = listingType === 'roommates';
-
-  const [lookingFor, setLookingFor] = useState(initialLookingFor);
   const [bedroomsNeeded, setBedroomsNeeded] = useState('1');
   const [roommatesNeeded, setRoommatesNeeded] = useState('1');
 
@@ -373,12 +372,12 @@ const FilterMenu = ({
   // ── FIX 2: Dynamic title based on mode and selection ──
   const getPanelTitle = () => {
     if (!isRoommatesView) return t('filterMenu.title');
-    if (lookingFor === 'room') return isHebrew ? 'מצא חדר' : 'Looking for a Room in a Shared Apartment';
+    return isHebrew ? 'מצא חדר' : 'Looking for a Room';
     return isHebrew ? 'פרסם את החדר שלך' : 'List Your Room';
   };
 
   return (
-    <div className={`filter-menu ${isRoommatesView ? `filter-menu--roommates filter-menu--${lookingFor === 'room' ? 'room-wanted' : 'roommate-wanted'}` : ''}`}>
+    <div className={`filter-menu ${isRoommatesView ? 'filter-menu--roommates filter-menu--room-wanted' : ''}`}>
       <div className="filter-menu__sticky-top" style={{ background: 'var(--color-surface, #fff)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div className="filter-menu__header">
           {/* ── FIX 2: Dynamic title ── */}
@@ -409,10 +408,8 @@ const FilterMenu = ({
 
       {isRoommatesView ? (
         <RoommateFilters
-          lookingFor={lookingFor}
           bedroomsNeeded={bedroomsNeeded}
           roommatesNeeded={roommatesNeeded}
-          onLookingForChange={setLookingFor}
           onBedroomsNeededChange={setBedroomsNeeded}
           onRoommatesNeededChange={setRoommatesNeeded}
           onApplyFilters={onApplyFilters}
@@ -420,7 +417,6 @@ const FilterMenu = ({
           roommateLocation={roommateLocation}
           onRoommateLocationChange={onRoommateLocationChange}
           renderRoommateLocationInput={renderRoommateLocationInput}
-          initialLookingFor={initialLookingFor}
           isHebrew={isHebrew}
         />
       ) : (
@@ -499,10 +495,8 @@ const FilterMenu = ({
 };
 
 const RoommateFilters = ({
-  lookingFor,
   bedroomsNeeded,
   roommatesNeeded,
-  onLookingForChange,
   onBedroomsNeededChange,
   onRoommatesNeededChange,
   onApplyFilters,
@@ -510,7 +504,6 @@ const RoommateFilters = ({
   roommateLocation = '',
   onRoommateLocationChange = () => {},
   renderRoommateLocationInput = null,
-  initialLookingFor = 'room',
   isHebrew = false,
 }) => {
   const { t, language } = useLanguage();
@@ -525,31 +518,14 @@ const RoommateFilters = ({
   const [leaseTerm, setLeaseTerm] = useState('6 mo');
   const [amenities, setAmenities] = useState(['Mamad']);
 
-  // ── FIX 3: Phone moved to top — seeker ──
   const [phone, setPhone] = useState('');
   const [phoneSaved, setPhoneSaved] = useState(false);
-  const [seekerSubmitStatus, setSeekerSubmitStatus] = useState('idle'); // idle | submitting | success | error
+  const [seekerSubmitStatus, setSeekerSubmitStatus] = useState('idle');
   const [seekerProfileId, setSeekerProfileId] = useState(null);
   const [seekerErrorMessage, setSeekerErrorMessage] = useState('');
 
-  const [rentAmount, setRentAmount] = useState('');
-  const [utilities, setUtilities] = useState('Included');
-  const [dateAvailable, setDateAvailable] = useState(DEFAULT_MOVE_IN_DATE);
-  const [totalBedrooms, setTotalBedrooms] = useState('2');
-  const [ownerGender, setOwnerGender] = useState('No preference');
-  const [ownerSmoking, setOwnerSmoking] = useState('Not at all');
-  const [ownerKosher, setOwnerKosher] = useState('Not kosher');
-  const [ownerLeaseTerm, setOwnerLeaseTerm] = useState('6 mo');
-  const [ownerAmenities, setOwnerAmenities] = useState(['Mamad']);
-
-  // ── FIX 3: Phone moved to top — lister ──
-  const [ownerPhone, setOwnerPhone] = useState('');
-  const [ownerPhoneSaved, setOwnerPhoneSaved] = useState(false);
-
   const toggleAmenity = (item) => setAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
-  const toggleOwnerAmenity = (item) => setOwnerAmenities((prev) => prev.includes(item) ? prev.filter((a) => a !== item) : [...prev, item]);
 
-  // Publish seeker profile to backend so room listers can discover this person
   const handlePublishSeekerProfile = async () => {
     if (!phoneSaved || !phone) return;
     setSeekerSubmitStatus('submitting');
@@ -573,7 +549,6 @@ const RoommateFilters = ({
           city: roommateLocation,
         }),
       });
-      // Guard against HTML error pages (e.g. 503 from backend cold start)
       const contentType = res.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
         throw new Error(`Server error ${res.status} — please try again shortly`);
@@ -589,12 +564,6 @@ const RoommateFilters = ({
     }
   };
 
-  const isRoom = lookingFor === 'room';
-
-  const roomCardTitle = isHebrew ? (<>מחפש/ת <strong>חדר</strong></>) : (<>Looking for a <strong>ROOM</strong></>);
-  const roommateCardTitle = isHebrew ? (<>מחפש/ת <strong>שותף/ה</strong></>) : (<>Looking for a <strong>ROOMMATE</strong></>);
-  const roommateCardSubtitle = isHebrew ? '(יש לי דירה)' : '(I have an apartment)';
-
   const getAmenityLabel = (id) => isHebrew ? (ROOMMATE_AMENITY_LABELS_HE[id] || id) : id;
 
   const renderLocationInput = (id, placeholder = 'City or neighborhood…') => {
@@ -607,90 +576,52 @@ const RoommateFilters = ({
   };
 
   return (
-    <div className="roommate-filters">
+    <div className="roommate-filters" style={{ background: '#e8f4f0', minHeight: '100%' }}>
 
-      {/* ── FIX 1: Live counter at top ── */}
-      <div style={{ padding: '12px 0 4px' }}>
-        <RoommateCounter lookingFor={lookingFor} isHebrew={isHebrew} />
-      </div>
-
-      {/* I AM LOOKING FOR */}
-      <section className="filter-menu__section roommate-filters__section">
-        <h3 className="roommate-filters__title">{isHebrew ? 'אני מחפש/ת' : 'I am looking for'}</h3>
-        <div className="roommate-filters__looking-grid">
-          <div role="button" tabIndex={0} className={`looking-for-card ${isRoom ? 'is-selected' : ''}`}
-            onClick={() => onLookingForChange('room')}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('room'); } }}
-            aria-pressed={isRoom}>
-            <div className="roommate-card__illustration" aria-hidden="true">
-              <svg viewBox="0 0 120 90" focusable="false">
-                <rect x="8" y="6" width="104" height="74" rx="2" fill="none" stroke="#5a7a5a" strokeWidth="3"/>
-                <line x1="58" y1="6" x2="58" y2="52" stroke="#5a7a5a" strokeWidth="2.5"/>
-                <line x1="58" y1="52" x2="112" y2="52" stroke="#5a7a5a" strokeWidth="2.5"/>
-                <rect x="9" y="7" width="48" height="44" rx="1" fill="#d4e8d4"/>
-                <rect x="14" y="12" width="24" height="16" rx="2" fill="#5a7a5a" opacity="0.8"/>
-                <rect x="14" y="12" width="24" height="6" rx="1" fill="#7aaa7a"/>
-                <rect x="16" y="14" width="10" height="4" rx="1" fill="#c8dcc8"/>
-                <rect x="14" y="34" width="16" height="10" rx="1" fill="#5a7a5a" opacity="0.5"/>
-                <circle cx="50" cy="14" r="7" fill="#5a7a5a"/>
-                <text x="50" y="17" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="bold">★</text>
-                <rect x="56" y="38" width="4" height="14" fill="#f0ebe0"/>
-                <path d="M58 38 Q68 38 68 52" fill="none" stroke="#5a7a5a" strokeWidth="1" strokeDasharray="2,2"/>
-                <rect x="62" y="7" width="46" height="42" rx="1" fill="#e8f0e0" opacity="0.6"/>
-                <rect x="62" y="56" width="46" height="22" rx="1" fill="#e8f0e0" opacity="0.6"/>
-                <rect x="10" y="56" width="44" height="22" rx="1" fill="#e8f0e0" opacity="0.6"/>
-              </svg>
-            </div>
-            <span className="roommate-card__title">{roomCardTitle}</span>
-            <div className="roommate-card__control" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-              <span className="roommate-card__control-label">{isHebrew ? 'מספר חדרי שינה נדרשים:' : 'Number of bedrooms needed:'}</span>
-              <OptionButtonGroup options={ROOMMATE_COUNT_OPTIONS} selectedValue={bedroomsNeeded} onChange={(v) => { onLookingForChange('room'); onBedroomsNeededChange(v); }} compact ariaLabel={isHebrew ? 'מספר חדרי שינה נדרשים' : 'Number of bedrooms needed'} />
-            </div>
+      {/* ── Teal decorative header with illustration ── */}
+      <div style={{ background: '#2d6b5e', padding: '20px 16px 16px', marginBottom: '0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ flexShrink: 0 }}>
+            <svg viewBox="0 0 72 72" width="64" height="64" focusable="false" aria-hidden="true">
+              <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44"/>
+              <polygon points="36,8 6,30 66,30" fill="#4a9b85"/>
+              <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0"/>
+              <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85"/>
+              <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44"/>
+              <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0"/>
+              <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6"/>
+              <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8"/>
+            </svg>
           </div>
-
-          <div role="button" tabIndex={0} className={`looking-for-card ${!isRoom ? 'is-selected' : ''}`}
-            onClick={() => onLookingForChange('roommate')}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLookingForChange('roommate'); } }}
-            aria-pressed={!isRoom}>
-            <div className="roommate-card__illustration" aria-hidden="true">
-              <svg viewBox="0 0 120 100" focusable="false">
-                <rect x="32" y="6" width="56" height="82" rx="3" fill="#6d9b6d"/>
-                {[10,21,32,43,54].map((y) => (
-                  <React.Fragment key={y}>
-                    <rect x="38" y={y} width="8" height="7" rx="1" fill="#b8d8f0"/>
-                    <rect x="50" y={y} width="8" height="7" rx="1" fill="#b8d8f0"/>
-                    <rect x="62" y={y} width="8" height="7" rx="1" fill="#b8d8f0"/>
-                    <rect x="74" y={y} width="8" height="7" rx="1" fill="#b8d8f0"/>
-                  </React.Fragment>
-                ))}
-                <rect x="32" y="64" width="56" height="5" fill="#6d9b6d"/>
-                <rect x="55" y="69" width="10" height="19" rx="1" fill="#3a5a3a"/>
-                <circle cx="62" cy="80" r="1.5" fill="#7aaa7a"/>
-                <rect x="32" y="87" width="56" height="2" fill="#4a6a4a"/>
-                <circle cx="10" cy="30" r="8" fill="#5a7a5a"/>
-                <path d="M4 52 Q6 42 9 37 Q10 35 10 35 Q10 35 13 37 Q16 42 18 52Z" fill="#5a7a5a"/>
-                <line x1="18" y1="40" x2="28" y2="36" stroke="#5a7a5a" strokeWidth="1.8" strokeDasharray="2,2"/>
-                <polygon points="28,33 33,36 28,39" fill="#5a7a5a"/>
-                <circle cx="110" cy="30" r="8" fill="#3a5a3a"/>
-                <path d="M104 52 Q106 42 109 37 Q110 35 110 35 Q110 35 113 37 Q116 42 118 52Z" fill="#3a5a3a"/>
-                <line x1="102" y1="40" x2="92" y2="36" stroke="#3a5a3a" strokeWidth="1.8" strokeDasharray="2,2"/>
-                <polygon points="92,33 87,36 92,39" fill="#3a5a3a"/>
-              </svg>
-            </div>
-            <span className="roommate-card__title">{roommateCardTitle}</span>
-            <span className="roommate-card__subtitle">{roommateCardSubtitle}</span>
-            <div className="roommate-card__control" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-              <span className="roommate-card__control-label">{isHebrew ? 'מספר חדרים פנויים:' : 'Number of rooms available:'}</span>
-              <OptionButtonGroup options={ROOMS_AVAILABLE_OPTIONS} selectedValue={roommatesNeeded} onChange={(v) => { onLookingForChange('roommate'); onRoommatesNeededChange(v); }} compact ariaLabel={isHebrew ? 'מספר חדרים פנויים' : 'Number of rooms available'} />
-            </div>
+          <div>
+            <p style={{ color: '#fff', fontWeight: 600, fontSize: '15px', margin: '0 0 4px' }}>
+              {isHebrew ? 'מחפש/ת חדר?' : 'Looking for a Room?'}
+            </p>
+            <p style={{ color: '#a8d5c8', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>
+              {isHebrew
+                ? 'פרסם את הפרופיל שלך — בעלי חדרים יפנו אליך ישירות'
+                : 'Post your profile — room listers will contact you directly on WhatsApp'}
+            </p>
           </div>
         </div>
-      </section>
 
-      {/* MODE-SPECIFIC FIELDS */}
-      {isRoom ? (
-        <>
-          {/* ── FIX 3: Phone number FIRST for seeker ── */}
+        {/* Stats pills */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+          <RoommateCounter lookingFor="room" isHebrew={isHebrew} />
+        </div>
+      </div>
+
+      {/* ── Seeker form — white cards on teal background ── */}
+      <div style={{ padding: '12px 12px 0' }}>
+
+      {/* ── Phone number ── */}
+                <rect x="8" y="6" width="104" height="74" rx="2" fill="none" stroke="#5a7a5a" strokeWidth="3"/>
+                <line x1="58" y1="6" x2="58" y2="52" stroke="#5a7a5a" strokeWidth="2.5"/>
+      {/* ── Phone number ── */}
           <PhoneField phone={phone} setPhone={setPhone} phoneSaved={phoneSaved} setPhoneSaved={setPhoneSaved} isHebrew={isHebrew} />
 
           <section className="filter-menu__section roommate-filters__section">
@@ -743,90 +674,24 @@ const RoommateFilters = ({
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Property amenities</h3>
-            <div className="roommate-amenities-grid">
-              {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button key={a.id} type="button" className={`roommate-amenity ${amenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleAmenity(a.id)} aria-pressed={amenities.includes(a.id)}>
-                  <CharacteristicIcon name={a.icon} size={32} />
-                  <span>{getAmenityLabel(a.id)}</span>
-                </button>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {ROOMMATE_AMENITY_ITEMS.map((a) => {
+                const isSelected = amenities.includes(a.id);
+                return (
+                  <button key={a.id} type="button" onClick={() => toggleAmenity(a.id)} aria-pressed={isSelected}
+                    style={{ display:'flex', alignItems:'center', gap:'8px', padding:'8px 12px', border:`1.5px solid ${isSelected ? '#2d6b5e' : '#e5e7eb'}`, borderRadius:'10px', background: isSelected ? '#2d6b5e' : '#fff', color: isSelected ? '#fff' : '#6b7280', fontSize:'13px', fontWeight:'600', cursor:'pointer', textAlign:'left', width:'100%', transition:'all 0.15s ease' }}>
+                    <span aria-hidden="true" style={{ fontSize:'17px', lineHeight:1, flexShrink:0 }}>{a.icon}</span>
+                    <span>{getAmenityLabel(a.id)}</span>
+                  </button>
+                );
+              })}
             </div>
           </section>
-        </>
-      ) : (
-        <>
-          {/* ── FIX 3: Phone number FIRST for lister ── */}
-          <PhoneField phone={ownerPhone} setPhone={setOwnerPhone} phoneSaved={ownerPhoneSaved} setPhoneSaved={setOwnerPhoneSaved} isHebrew={isHebrew} />
+      </div>{/* end padding wrapper */}
 
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">About my apartment</h3>
-            <div className="roommate-filters__budget-row">
-              <div>
-                <label className="roommate-filters__sub-label" htmlFor="owner-rent">Monthly rent — their share</label>
-                <div className="roommate-money-input">
-                  <span aria-hidden="true">₪</span>
-                  <input id="owner-rent" type="number" value={rentAmount} onChange={(e) => setRentAmount(e.target.value)} placeholder="e.g. 3,500" required />
-                </div>
-              </div>
-              <div>
-                <p className="roommate-filters__sub-label">Utilities</p>
-                <SegmentedButtonGroup options={UTILITIES_OPTIONS} selectedValue={utilities} onChange={setUtilities} ariaLabel="Utilities" />
-              </div>
-            </div>
-            <div className="roommate-filters__budget-row" style={{marginTop:'12px'}}>
-              <div>
-                <label className="roommate-filters__sub-label" htmlFor="owner-date">Date available</label>
-                <div className="roommate-month-field">
-                  <span aria-hidden="true"><CharacteristicIcon name="calendar" /></span>
-                  <input id="owner-date" type="date" value={dateAvailable} onChange={(e) => setDateAvailable(e.target.value)} className="roommate-month-input" />
-                </div>
-              </div>
-              <div>
-                <p className="roommate-filters__sub-label">Total bedrooms in apt</p>
-                <SegmentedButtonGroup options={BEDROOM_COUNT_OPTIONS} selectedValue={totalBedrooms} onChange={setTotalBedrooms} ariaLabel="Total bedrooms" />
-              </div>
-            </div>
-            <label className="roommate-filters__sub-label" htmlFor="owner-location" style={{marginTop:'10px',display:'block'}}>Location:</label>
-            {renderLocationInput('owner-location')}
-          </section>
-
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">I'd be most comfortable with</h3>
-            <p className="roommate-filters__sub-label">I prefer to live with:</p>
-            <SegmentedButtonGroup options={GENDER_OPTIONS} selectedValue={ownerGender} onChange={setOwnerGender} ariaLabel="Gender preference" />
-            <div className="roommate-filters__habit-box">
-              <p className="roommate-filters__habit-label">Smoking in the apartment:</p>
-              <p className="roommate-filters__habit-hint">What are you comfortable with?</p>
-              <SegmentedButtonGroup options={SMOKING_OPTIONS} selectedValue={ownerSmoking} onChange={setOwnerSmoking} ariaLabel="Smoking preference" />
-            </div>
-            <div className="roommate-filters__habit-box" style={{marginTop:'8px'}}>
-              <p className="roommate-filters__habit-label">Kitchen:</p>
-              <SegmentedButtonGroup options={['Kosher — must respect', 'Not kosher']} selectedValue={ownerKosher} onChange={setOwnerKosher} ariaLabel="Kosher kitchen" />
-            </div>
-          </section>
-
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">I'm looking for someone to stay for...</h3>
-            <SegmentedButtonGroup options={LEASE_OPTIONS} selectedValue={ownerLeaseTerm} onChange={setOwnerLeaseTerm} ariaLabel="Preferred stay duration" />
-          </section>
-
-          <section className="filter-menu__section roommate-filters__section">
-            <h3 className="roommate-filters__title">Property amenities</h3>
-            <div className="roommate-amenities-grid">
-              {ROOMMATE_AMENITY_ITEMS.map((a) => (
-                <button key={a.id} type="button" className={`roommate-amenity ${ownerAmenities.includes(a.id) ? 'is-selected' : ''}`} onClick={() => toggleOwnerAmenity(a.id)} aria-pressed={ownerAmenities.includes(a.id)}>
-                  <CharacteristicIcon name={a.icon} size={32} />
-                  <span>{getAmenityLabel(a.id)}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ── SEEKER: Publish Profile button ── */}
-      {isRoom && seekerSubmitStatus === 'success' ? (
-        <div className="roommate-filter-actions">
+      {/* ── Action buttons ── */}
+      {seekerSubmitStatus === 'success' ? (
+        <div className="roommate-filter-actions" style={{ background: '#e8f4f0', padding: '12px 12px 16px' }}>
           <div className="seeker-publish-success">
             <span>✓</span>
             <div>
@@ -843,8 +708,8 @@ const RoommateFilters = ({
             {isHebrew ? 'הצג חדרים זמינים' : 'Browse available rooms'}
           </button>
         </div>
-      ) : isRoom ? (
-        <div className="roommate-filter-actions">
+      ) : (
+        <div className="roommate-filter-actions" style={{ background: '#e8f4f0', padding: '12px 12px 16px' }}>
           <button
             type="button"
             className="roommate-filter-actions__publish"
@@ -864,15 +729,6 @@ const RoommateFilters = ({
           )}
           <button type="button" className="roommate-filter-actions__save" onClick={onApplyFilters}>
             {isHebrew ? 'גלה חדרים קודם' : 'Browse rooms first'}
-          </button>
-        </div>
-      ) : (
-        <div className="roommate-filter-actions">
-          <button type="button" className="roommate-filter-actions__apply" onClick={onApplyFilters}>
-            {isHebrew ? 'החל פילטרים' : 'Apply Filters'}
-          </button>
-          <button type="button" className="roommate-filter-actions__save" onClick={onSaveFilters}>
-            {isHebrew ? 'שמור כהתראה' : 'Save as Alert'}
           </button>
         </div>
       )}
