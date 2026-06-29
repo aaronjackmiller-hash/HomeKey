@@ -819,15 +819,28 @@ const PropertyList = () => {
     return () => window.removeEventListener('homekey:save-current-search', handleSave);
   }, [citySearch, circleCityHints, circleSelection.active, circleSelection.center, circleSelection.radiusMeters, favoritesOnly, featureSearch, filter, maxPrice, minPrice, propertyCategorySearch, roomsSearch, bathsSearch, locale, t]);
 
-  const mobileListingHeaderTitle = loading ? t('propertyList.loadingHomes') : t('propertyList.homesCount', { count: displayProperties.length.toLocaleString(locale) });
+  const mobileListingHeaderTitle = isRoommatesView
+    ? (t('propertyList.roommates') || 'Roommates')
+    : (loading
+        ? t('propertyList.loadingHomes')
+        : t('propertyList.homesCount', { count: displayProperties.length.toLocaleString(locale) }));
+
+  const mobileHeaderEyebrow = isRoommatesView
+    ? 'Find & list shared rooms'
+    : t('propertyList.mobileHeaderEyebrow', { brand: homeKeyBrand });
+
+  const mobileFilterBtnLabel = isRoommatesView
+    ? 'Find / Post Room'
+    : t('propertyList.filters');
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
   const isRoommatesView = filter === 'roommates';
 
+  useEffect(() => {
+    if (isRoommatesView && isMobileViewport) {
+      setMobileDiscoveryView('list');
+    }
+  }, [isRoommatesView, isMobileViewport]);
   const openMobileFilters = () => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const handleCircleSelectionChange = useCallback((selection) => {
     const next = (!selection || typeof selection !== 'object')
@@ -974,10 +987,17 @@ const PropertyList = () => {
         <div className={`desktop-discovery-list-column minimalist-scrollbar ${isListScrolling ? 'is-scrolling' : ''}`} onScroll={handleListScroll}>
           <section className="mobile-listing-header" aria-label={t('propertyList.listingQuickControlsAriaLabel')}>
             <div className="mobile-listing-header-copy">
-              <p className="mobile-listing-header-eyebrow">{t('propertyList.mobileHeaderEyebrow', { brand: homeKeyBrand })}</p>
+              <p className="mobile-listing-header-eyebrow">{mobileHeaderEyebrow}</p>
               <h2>{mobileListingHeaderTitle}</h2>
             </div>
-            <button type="button" className="mobile-listing-header-filter-btn" onClick={openMobileFilters}>{t('propertyList.filters')}</button>
+            <button
+              type="button"
+              className="mobile-listing-header-filter-btn"
+              onClick={openMobileFilters}
+              style={isRoommatesView ? { background: '#2d6b5e', borderColor: '#2d6b5e' } : {}}
+            >
+              {mobileFilterBtnLabel}
+            </button>
           </section>
 
           {!isRoommatesView && (
