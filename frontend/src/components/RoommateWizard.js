@@ -102,17 +102,6 @@ const AMENITY_OPTIONS = [
 ];
 
 
-  { value: 'pets',                 label: 'Pets OK',         icon: 'pets' },
-  { value: 'disabled-access',      label: 'Accessible',      icon: 'accessibility' },
-  { value: 'renovated',            label: 'Renovated',       icon: 'renovated' },
-  { value: 'furnished',            label: 'Furnished',       icon: 'furnished' },
-  { value: 'oven',                 label: 'Oven',            icon: 'oven' },
-  { value: 'balcony',              label: 'Balcony',         icon: 'balcony' },
-  { value: 'stovetop',             label: 'Stovetop',        icon: 'stovetop' },
-  { value: 'in-unit-washer-dryer', label: 'Washer/Dryer',   icon: 'washer' },
-  { value: 'dishwasher',           label: 'Dishwasher',      icon: 'dishwasher' },
-];
-
 const UTILITY_ITEMS = [
   { key: 'utilityElectricity', label: 'Electricity' },
   { key: 'utilityWater', label: 'Water' },
