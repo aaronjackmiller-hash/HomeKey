@@ -299,164 +299,217 @@ const Step1Apartment = ({ data, onChange, onNext, onClose }) => {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="rw-step-card">
-      <ProgressBar step={1} />
-      <StepHeader step={1} title="Tell us about your apartment" />
+    <div className="rw-step-card" style={{ background: '#e8f4f0', padding: 0, gap: 0, overflow: 'hidden' }}>
 
-      <Field label="City" required error={errors.city}>
-        <input type="text" className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
-          placeholder="Tel Aviv-Yafo" value={data.city}
-          onChange={(e) => handleCityChange(e.target.value)} autoFocus />
-      </Field>
-
-      <div className="rw-field-row">
-        <Field label="Street" required error={errors.street}>
-          <input type="text" className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
-            placeholder="Rothschild Blvd" value={data.street}
-            onChange={(e) => handleFieldChange('street', e.target.value)}
-            onBlur={() => { if (!data.streetNumber.trim()) tryAutoFillCoordinates(); }} />
-        </Field>
-        <Field label="Number">
-          <input type="text" className="rw-input rw-input--short" placeholder="42"
-            value={data.streetNumber} onChange={(e) => onChange('streetNumber', e.target.value)}
-            onBlur={tryAutoFillCoordinates} />
-        </Field>
-      </div>
-
-      <Field label="Neighborhood" required error={errors.neighborhood}
-        hint={cityEntry ? 'Select the neighborhood that best matches your address' : 'Type your neighborhood'}>
-        {cityEntry ? (
-          <select className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
-            value={data.neighborhood} onChange={(e) => handleFieldChange('neighborhood', e.target.value)}>
-            <option value="">Select a neighborhood…</option>
-            {cityEntry.neighborhoods.map((n) => (
-              <option key={n.en} value={n.en}>{n.en}</option>
-            ))}
-          </select>
-        ) : (
-          <input type="text" className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
-            placeholder="Florentin" value={data.neighborhood}
-            onChange={(e) => handleFieldChange('neighborhood', e.target.value)} />
-        )}
-      </Field>
-
-      <div className="rw-field-row">
-        <Field label="Monthly rent share (₪)" required error={errors.rentShare}
-          hint="What the incoming roommate will pay per month">
-          <input type="number" className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
-            placeholder="3500" min="0" value={data.rentShare}
-            onChange={(e) => handleFieldChange('rentShare', e.target.value)} />
-        </Field>
-      </div>
-
-      <Field label="Estimated Additional Monthly Expenses (₪)"
-        hint="Electricity, water, internet, VAAD. Leave any blank if not yet known.">
-        <div className="rw-utilities-grid">
-          {UTILITY_ITEMS.map((item) => (
-            <div key={item.key} className="rw-utility-item">
-              <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
-              <input id={`rw-${item.key}`} type="number" className="rw-input" placeholder="0" min="0"
-                value={data[item.key]} onChange={(e) => onChange(item.key, e.target.value)} />
+      {/* ── Teal decorative header ── */}
+      <div style={{ background: '#2d6b5e', padding: '20px 20px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ flexShrink: 0 }}>
+            <svg viewBox="0 0 72 72" width="60" height="60" focusable="false" aria-hidden="true">
+              <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44"/>
+              <polygon points="36,8 6,30 66,30" fill="#4a9b85"/>
+              <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0"/>
+              <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+              <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85"/>
+              <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44"/>
+              <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0"/>
+              <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6"/>
+              <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: '0 0 4px' }}>
+                Tell us about your apartment
+              </p>
+              <span style={{ color: '#a8d5c8', fontSize: '11px', whiteSpace: 'nowrap' }}>Step 1 of {TOTAL_STEPS}</span>
             </div>
-          ))}
+            <p style={{ color: '#a8d5c8', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>
+              Help roommates find and contact you — we'll never share your details publicly
+            </p>
+          </div>
         </div>
-        <p className="rw-utilities-total">Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month</p>
-      </Field>
-
-      <div className="rw-field-row">
-        <Field label="Total bedrooms" required error={errors.totalBedrooms}>
-          <select className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
-            value={data.totalBedrooms} onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}>
-            {[1,2,3,4,5,6].map((n) => (
-              <option key={n} value={String(n)}>{n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Total bathrooms">
-          <select className="rw-select" value={data.totalBathrooms}
-            onChange={(e) => onChange('totalBathrooms', e.target.value)}>
-            {[1,2,3,4].map((n) => (
-              <option key={n} value={String(n)}>{n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
-            ))}
-          </select>
-        </Field>
+        {/* Teal progress bar inside header */}
+        <div style={{ height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '99px', marginTop: '14px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: '#fff', borderRadius: '99px', width: `${Math.round((1 / TOTAL_STEPS) * 100)}%`, transition: 'width 0.35s ease' }} />
+        </div>
       </div>
 
-      <div className="rw-field-row">
-        <Field label="Apartment size (sqm)">
-          <input type="number" className="rw-input" placeholder="75" min="0"
-            value={data.sizeSqm} onChange={(e) => onChange('sizeSqm', e.target.value)} />
-        </Field>
-      </div>
+      {/* ── Form sections — white cards on teal background ── */}
+      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-      <div className="rw-field-row">
-        <Field label="Available from" required error={errors.dateAvailable}>
-          <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
-            min={today} value={data.dateAvailable}
-            onChange={(e) => handleFieldChange('dateAvailable', e.target.value)} />
-        </Field>
-        <Field label="Minimum lease">
-          <select className="rw-select" value={data.minLeaseMonths}
-            onChange={(e) => onChange('minLeaseMonths', e.target.value)}>
-            {LEASE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </Field>
-      </div>
+        {/* Location */}
+        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Location</p>
+          <Field label="City" required error={errors.city}>
+            <input type="text" className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
+              placeholder="Tel Aviv-Yafo" value={data.city}
+              onChange={(e) => handleCityChange(e.target.value)} autoFocus />
+          </Field>
+          <div className="rw-field-row" style={{ marginTop: '10px' }}>
+            <Field label="Street" required error={errors.street}>
+              <input type="text" className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
+                placeholder="Rothschild Blvd" value={data.street}
+                onChange={(e) => handleFieldChange('street', e.target.value)}
+                onBlur={() => { if (!data.streetNumber.trim()) tryAutoFillCoordinates(); }} />
+            </Field>
+            <Field label="Number">
+              <input type="text" className="rw-input rw-input--short" placeholder="42"
+                value={data.streetNumber} onChange={(e) => onChange('streetNumber', e.target.value)}
+                onBlur={tryAutoFillCoordinates} />
+            </Field>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <Field label="Neighborhood" required error={errors.neighborhood}
+              hint={cityEntry ? 'Select the neighborhood that best matches your address' : 'Type your neighborhood'}>
+              {cityEntry ? (
+                <select className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
+                  value={data.neighborhood} onChange={(e) => handleFieldChange('neighborhood', e.target.value)}>
+                  <option value="">Select a neighborhood…</option>
+                  {cityEntry.neighborhoods.map((n) => (
+                    <option key={n.en} value={n.en}>{n.en}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
+                  placeholder="Florentin" value={data.neighborhood}
+                  onChange={(e) => handleFieldChange('neighborhood', e.target.value)} />
+              )}
+            </Field>
+          </div>
+        </div>
 
-      <Field label="Apartment amenities" hint="Select everything that applies — optional but helps you get better matches">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-          {AMENITY_OPTIONS.map((amenity) => {
-            const isSelected = data.amenities.includes(amenity.value);
-            return (
-              <button
-                key={amenity.value}
-                type="button"
-                onClick={() => {
+        {/* Rent & costs */}
+        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Rent & costs</p>
+          <Field label="Monthly rent share (₪)" required error={errors.rentShare}
+            hint="What the incoming roommate will pay per month">
+            <input type="number" className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
+              placeholder="3500" min="0" value={data.rentShare}
+              onChange={(e) => handleFieldChange('rentShare', e.target.value)} />
+          </Field>
+          <div style={{ marginTop: '10px' }}>
+            <Field label="Estimated Additional Monthly Expenses (₪)"
+              hint="Electricity, water, internet, VAAD. Leave any blank if not yet known.">
+              <div className="rw-utilities-grid">
+                {UTILITY_ITEMS.map((item) => (
+                  <div key={item.key} className="rw-utility-item">
+                    <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
+                    <input id={`rw-${item.key}`} type="number" className="rw-input" placeholder="0" min="0"
+                      value={data[item.key]} onChange={(e) => onChange(item.key, e.target.value)} />
+                  </div>
+                ))}
+              </div>
+              <p className="rw-utilities-total">Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month</p>
+            </Field>
+          </div>
+        </div>
+
+        {/* Apartment details */}
+        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Apartment details</p>
+          <div className="rw-field-row">
+            <Field label="Total bedrooms" required error={errors.totalBedrooms}>
+              <select className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
+                value={data.totalBedrooms} onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}>
+                {[1,2,3,4].map((n) => (
+                  <option key={n} value={String(n)}>{n === 4 ? '4+' : n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Total bathrooms">
+              <select className="rw-select" value={data.totalBathrooms}
+                onChange={(e) => onChange('totalBathrooms', e.target.value)}>
+                {[1,2,3].map((n) => (
+                  <option key={n} value={String(n)}>{n === 3 ? '3+' : n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="rw-field-row" style={{ marginTop: '10px' }}>
+            <Field label="Apartment size (sqm)">
+              <input type="number" className="rw-input" placeholder="75" min="0"
+                value={data.sizeSqm} onChange={(e) => onChange('sizeSqm', e.target.value)} />
+            </Field>
+            <Field label="Available from" required error={errors.dateAvailable}>
+              <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
+                min={today} value={data.dateAvailable}
+                onChange={(e) => handleFieldChange('dateAvailable', e.target.value)} />
+            </Field>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <Field label="Minimum lease">
+              <select className="rw-select" value={data.minLeaseMonths}
+                onChange={(e) => onChange('minLeaseMonths', e.target.value)}>
+                {LEASE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        {/* Amenities */}
+        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Apartment amenities</p>
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 10px' }}>Select everything that applies — optional but helps you get better matches</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            {AMENITY_OPTIONS.map((amenity) => {
+              const isSelected = data.amenities.includes(amenity.value);
+              return (
+                <button key={amenity.value} type="button" onClick={() => {
                   const next = isSelected
                     ? data.amenities.filter((v) => v !== amenity.value)
                     : [...data.amenities, amenity.value];
                   onChange('amenities', next);
-                }}
-                aria-pressed={isSelected}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 12px',
-                  border: `1.5px solid ${isSelected ? '#2d6b5e' : '#e5e7eb'}`,
-                  borderRadius: '10px',
-                  background: isSelected ? '#2d6b5e' : '#fff',
-                  color: isSelected ? '#fff' : '#6b7280',
-                  fontSize: '13px', fontWeight: '600',
-                  cursor: 'pointer', textAlign: 'left', width: '100%',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <span aria-hidden="true" style={{ fontSize: '17px', lineHeight: 1, flexShrink: 0 }}>{amenity.icon}</span>
-                <span>{amenity.label}</span>
-              </button>
-            );
-          })}
+                }} aria-pressed={isSelected}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 12px',
+                    border: `1.5px solid ${isSelected ? '#2d6b5e' : '#e5e7eb'}`,
+                    borderRadius: '10px',
+                    background: isSelected ? '#2d6b5e' : '#fff',
+                    color: isSelected ? '#fff' : '#6b7280',
+                    fontSize: '13px', fontWeight: '600',
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'all 0.15s ease',
+                  }}>
+                  <span aria-hidden="true" style={{ fontSize: '17px', lineHeight: 1, flexShrink: 0 }}>{amenity.icon}</span>
+                  <span>{amenity.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </Field>
 
-      <Field label="About the apartment" required
-        hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc."
-        error={errors.description}>
-        <textarea className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
-          placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
-          rows={4} maxLength={300} value={data.description}
-          onChange={(e) => handleFieldChange('description', e.target.value)} />
-        <p className="rw-char-count">
-          {data.description.length}/300
-          {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
-            <span> — minimum {MIN_DESCRIPTION_LENGTH} characters</span>
-          )}
-        </p>
-      </Field>
+        {/* Description */}
+        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
+          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>About the apartment</p>
+          <Field label="" required error={errors.description}
+            hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc.">
+            <textarea className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
+              placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
+              rows={4} maxLength={300} value={data.description}
+              onChange={(e) => handleFieldChange('description', e.target.value)} />
+            <p className="rw-char-count">
+              {data.description.length}/300
+              {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
+                <span> — minimum {MIN_DESCRIPTION_LENGTH} characters</span>
+              )}
+            </p>
+          </Field>
+        </div>
 
-      <WizardActions onNext={() => { if (validate()) onNext(); }} nextLabel="Continue to photos →" />
-      <button type="button" className="rw-cancel-link" onClick={onClose}>Cancel</button>
+        {/* Actions */}
+        <div style={{ padding: '4px 0 8px' }}>
+          <WizardActions onNext={() => { if (validate()) onNext(); }} nextLabel="Continue to photos →" />
+          <button type="button" className="rw-cancel-link" onClick={onClose}>Cancel</button>
+        </div>
+
+      </div>
     </div>
   );
 };
