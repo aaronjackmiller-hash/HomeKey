@@ -35,18 +35,93 @@
   border-color: #b8d8d0;
 }
 
-/* ── Step card ───────────────────────────────────────────────────────────── */
+/* ── Step card — teal background matching FilterMenu seeker panel ──────── */
 
 .wizard-step-card {
   width: min(520px, 100%);
   margin: 0 auto;
-  padding: 1.75rem;
   border-radius: 16px;
-  border: 1px solid #d7dee8;
-  background: #ffffff;
+  border: none;
+  background: #e8f4f0;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09);
+  overflow: hidden;
+  padding: 0;
 }
 
+/* ── Teal header (matches FilterMenu seeker panel header) ─────────────── */
+
+.wizard-teal-header {
+  background: #2d6b5e;
+  padding: 20px 20px 16px;
+}
+
+.wizard-teal-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wizard-teal-header__title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+
+.wizard-teal-header__counter {
+  color: #a8d5c8;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wizard-teal-header__subtitle {
+  color: #a8d5c8;
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.wizard-teal-header__progress {
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 99px;
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.wizard-teal-header__progress-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 99px;
+  transition: width 0.35s ease;
+}
+
+/* ── Section card — white card on teal background ─────────────────────── */
+
+.wizard-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wizard-section-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.wizard-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2d6b5e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 10px;
+}
+
+/* ── Step header (legacy — kept for non-teal steps) ──────────────────── */
 .wizard-step-header {
   display: flex;
   justify-content: space-between;
@@ -95,9 +170,10 @@
   display: block;
   margin: 0 0 6px;
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: #2d6b5e;
   color: #374151;
 }
 
