@@ -88,98 +88,97 @@ export const Step1AddListing = ({ data, updateData, nextStep, prevStep, stepNumb
 
     return (
         <div className="wizard-step-card">
-            <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="wizard-step-header">
-                <h2>{`Step ${stepNumber}: Add your listing`}</h2>
-                <span className="wizard-step-counter">{`Step ${stepNumber} of ${totalSteps}`}</span>
-            </div>
-
-            {/* Property Type */}
-            <div className="wizard-row">
-                <label className="wizard-label">Property Type</label>
-                <div className={`wizard-card-grid ${showRequiredHints && missingFields.propertyType ? 'wizard-card-grid--required' : ''}`}>
-                    {['Apartment', 'House'].map((type) => {
-                        const isSelected = data.propertyType === type;
-                        return (
-                            <button
-                                type="button"
-                                key={type}
-                                onClick={() => updateData({ propertyType: type })}
-                                className={`wizard-property-card ${isSelected ? 'is-selected' : ''}`}
-                                style={{ position: 'relative' }}
-                            >
-                                {isSelected && (
-                                    <span style={{
-                                        position: 'absolute', top: 8, right: 8,
-                                        width: 22, height: 22, borderRadius: '50%',
-                                        background: '#2d6b5e', color: '#fff',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: 13, fontWeight: 700, lineHeight: 1, zIndex: 2,
-                                    }}>✓</span>
-                                )}
-                                {type === 'Apartment' ? <ApartmentIcon /> : <HouseIcon />}
-                                <span>{type}</span>
-                            </button>
-                        );
-                    })}
+            {/* ── Teal header ── */}
+            <div className="wizard-teal-header">
+                <div className="wizard-teal-header__inner">
+                    <svg viewBox="0 0 72 72" width="60" height="60" focusable="false" aria-hidden="true" style={{ flexShrink: 0 }}>
+                        <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44"/>
+                        <polygon points="36,8 6,30 66,30" fill="#4a9b85"/>
+                        <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0"/>
+                        <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                        <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                        <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                        <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                        <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85"/>
+                        <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44"/>
+                        <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0"/>
+                        <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6"/>
+                        <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8"/>
+                    </svg>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+                            <p className="wizard-teal-header__title">List your property</p>
+                            <span className="wizard-teal-header__counter">Step {stepNumber} of {totalSteps}</span>
+                        </div>
+                        <p className="wizard-teal-header__subtitle">Tell us the basics — you can always edit later</p>
+                    </div>
                 </div>
-                {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
-            </div>
-
-            {/* Rental / Sale */}
-            <div className="wizard-row">
-                <label className="wizard-label">Rental / Sale</label>
-                <select
-                    value={data.listingType}
-                    onChange={(e) => updateData({ listingType: e.target.value })}
-                    className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}
-                >
-                    <option value="">Select...</option>
-                    <option value="Rental">For Rent</option>
-                    <option value="For Sale">For Sale</option>
-                </select>
-                {showRequiredHints && missingFields.listingType ? <p className="wizard-required-copy">Required</p> : null}
-            </div>
-
-            {/* Address */}
-            <div className="wizard-row">
-                <label className="wizard-label">Address</label>
-                <div className="wizard-address-grid wizard-address-grid--step1">
-                    <input
-                        type="text"
-                        placeholder={formatRequiredPlaceholder('Street', missingFields.street)}
-                        value={data.address.street}
-                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, street: val } }); }}
-                        className={`wizard-input ${showRequiredHints && missingFields.street ? 'wizard-field-required' : ''}`}
-                    />
-                    <input
-                        type="text"
-                        placeholder={formatRequiredPlaceholder('No.', missingFields.number)}
-                        value={data.address.number}
-                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, number: val } }); }}
-                        className={`wizard-input ${showRequiredHints && missingFields.number ? 'wizard-field-required' : ''}`}
-                    />
-                    <input
-                        type="text"
-                        placeholder={formatRequiredPlaceholder('City', missingFields.city)}
-                        value={data.address.city}
-                        onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, city: val } }); }}
-                        className={`wizard-input ${showRequiredHints && missingFields.city ? 'wizard-field-required' : ''}`}
-                    />
+                <div className="wizard-teal-header__progress">
+                    <div className="wizard-teal-header__progress-fill" style={{ width: `${progressPercent}%` }} />
                 </div>
             </div>
 
-            <div className="wizard-actions">
-                {prevStep && (
-                    <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
-                        Back
+            {/* ── Body ── */}
+            <div className="wizard-body">
+
+                {/* Property type + listing type */}
+                <div className="wizard-section-card">
+                    <p className="wizard-section-label">Property type</p>
+                    <div className={`wizard-card-grid ${showRequiredHints && missingFields.propertyType ? 'wizard-card-grid--required' : ''}`}>
+                        {['Apartment', 'House'].map((type) => {
+                            const isSelected = data.propertyType === type;
+                            return (
+                                <button type="button" key={type} onClick={() => updateData({ propertyType: type })}
+                                    className={`wizard-property-card ${isSelected ? 'is-selected' : ''}`}
+                                    style={{ position: 'relative' }}>
+                                    {isSelected && (
+                                        <span style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', background: '#2d6b5e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>✓</span>
+                                    )}
+                                    {type === 'Apartment' ? <ApartmentIcon /> : <HouseIcon />}
+                                    <span>{type}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {showRequiredHints && missingFields.propertyType ? <p className="wizard-required-copy">Required</p> : null}
+
+                    <p className="wizard-section-label" style={{ marginTop: '14px' }}>Rental / Sale</p>
+                    <select value={data.listingType} onChange={(e) => updateData({ listingType: e.target.value })}
+                        className={`wizard-select ${showRequiredHints && missingFields.listingType ? 'wizard-field-required' : ''}`}>
+                        <option value="">Select...</option>
+                        <option value="Rental">For Rent</option>
+                        <option value="For Sale">For Sale</option>
+                    </select>
+                    {showRequiredHints && missingFields.listingType ? <p className="wizard-required-copy">Required</p> : null}
+                </div>
+
+                {/* Address */}
+                <div className="wizard-section-card">
+                    <p className="wizard-section-label">Address</p>
+                    <div className="wizard-address-grid wizard-address-grid--step1">
+                        <input type="text" placeholder={formatRequiredPlaceholder('Street', missingFields.street)}
+                            value={data.address.street}
+                            onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, street: val } }); }}
+                            className={`wizard-input ${showRequiredHints && missingFields.street ? 'wizard-field-required' : ''}`} />
+                        <input type="text" placeholder={formatRequiredPlaceholder('No.', missingFields.number)}
+                            value={data.address.number}
+                            onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, number: val } }); }}
+                            className={`wizard-input ${showRequiredHints && missingFields.number ? 'wizard-field-required' : ''}`} />
+                        <input type="text" placeholder={formatRequiredPlaceholder('City', missingFields.city)}
+                            value={data.address.city}
+                            onChange={(e) => { const val = e.target.value; updateData({ address: { ...data.address, city: val } }); }}
+                            className={`wizard-input ${showRequiredHints && missingFields.city ? 'wizard-field-required' : ''}`} />
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="wizard-actions" style={{ paddingBottom: '4px' }}>
+                    {prevStep && <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">Back</button>}
+                    <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
+                        {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
                     </button>
-                )}
-                <button type="button" onClick={handleContinue} className="wizard-btn wizard-btn--full">
-                    {usesEnterpriseModel ? 'Continue to Enterprise model' : `Continue to Step ${stepNumber + 1}`}
-                </button>
+                </div>
+
             </div>
         </div>
     );
