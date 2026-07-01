@@ -371,7 +371,7 @@ const FilterMenu = ({
 
   // ── FIX 2: Dynamic title based on mode and selection ──
   const getPanelTitle = () => {
-    if (!isRoommatesView) return t('filterMenu.title');
+    if (!isRoommatesView) return listingType === 'for-sale' ? 'All Filters — For Sale' : 'All Filters — For Rent';
     return isHebrew ? 'מצא חדר' : 'Looking for a Room';
   };
 
@@ -382,13 +382,13 @@ const FilterMenu = ({
           {/* ── FIX 2: Dynamic title ── */}
           <h2 className="filter-menu__title">{getPanelTitle()}</h2>
           <button type="button" className="filter-menu__cancel" onClick={handleClearAll}>
-            {t('filterMenu.clearAll')}
+            {isHebrew ? 'נקה הכל' : 'Clear All Filters'}
           </button>
         </div>
 
         {!isRoommatesView && (
           <section className="filter-menu__section filter-menu__listing-type-section">
-            <h3 className="filter-menu__section-title">{t('filterMenu.listingType')}</h3>
+            <h3 className="filter-menu__section-title">Listing type</h3>
             <div className="filter-menu__type-row filter-menu__listing-type-row">
               {LISTING_TYPE_OPTIONS.map((typeOption) => (
                 <button
@@ -455,13 +455,13 @@ const FilterMenu = ({
           {/* ── Filter sections on soft teal background ── */}
           <div style={{ padding: '12px 12px 0' }}>
           <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
-            <h3 className="filter-menu__section-title">{t('filterMenu.location') || 'Location'}</h3>
+            <h3 className="filter-menu__section-title">Location</h3>
             {typeof renderRoommateLocationInput === 'function'
               ? renderRoommateLocationInput({
                   id: 'all-filters-location',
                   value: roommateLocation,
                   onChange: onRoommateLocationChange,
-                  placeholder: t('filterMenu.locationPlaceholder') || 'City or neighborhood…',
+                  placeholder: 'City or neighborhood…',
                 })
               : (
                 <input
@@ -469,21 +469,21 @@ const FilterMenu = ({
                   type="text"
                   value={roommateLocation || ''}
                   onChange={(e) => onRoommateLocationChange(e.target.value)}
-                  placeholder={t('filterMenu.locationPlaceholder') || 'City or neighborhood…'}
+                  placeholder="City or neighborhood…"
                   className="roommate-text-input"
                   style={{ width: '100%', boxSizing: 'border-box' }}
                 />
               )}
           </section>
           <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
-            <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
+            <h3 className="filter-menu__section-title">Property type</h3>
             <div className="filter-menu__type-row">
-              <button type="button" className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('apartments')}>{t('filterMenu.apartments')}</button>
-              <button type="button" className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('houses')}>{t('filterMenu.houses')}</button>
+              <button type="button" className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('apartments')}>Apartments</button>
+              <button type="button" className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('houses')}>Houses</button>
             </div>
           </section>
           <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
-            <h3 className="filter-menu__section-title">{t('filterMenu.bedrooms')}</h3>
+            <h3 className="filter-menu__section-title">Bedrooms</h3>
             <div className="filter-menu__option-grid">
               {roomOptions.map((option) => (
                 <button key={option.value || 'any-rooms'} type="button" className={`filter-menu__chip ${rooms === option.value ? 'is-selected' : ''}`} onClick={() => onRoomsChange(option.value)}>{option.label}</button>
@@ -491,7 +491,7 @@ const FilterMenu = ({
             </div>
           </section>
           <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
-            <h3 className="filter-menu__section-title">{t('filterMenu.bathrooms')}</h3>
+            <h3 className="filter-menu__section-title">Bathrooms</h3>
             <div className="filter-menu__option-grid">
               {bathOptions.map((option) => (
                 <button key={option.value || 'any-baths'} type="button" className={`filter-menu__chip ${baths === option.value ? 'is-selected' : ''}`} onClick={() => onBathsChange(option.value)}>{option.label}</button>
@@ -499,12 +499,12 @@ const FilterMenu = ({
             </div>
           </section>
           <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
-            <h3 className="filter-menu__section-title">{t('filterMenu.propertyCharacteristics')}</h3>
+            <h3 className="filter-menu__section-title">Property features</h3>
             <button type="button" className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`} onClick={() => onToggleFeature('mamad')}>
               <span className="filter-menu__mamad-icon" aria-hidden="true"><CharacteristicIcon name="shield" /></span>
               <div className="filter-menu__mamad-copy">
-                <span>{t('filterMenu.mamad')}</span>
-                <span>({t('filterMenu.securityRoom')})</span>
+                <span>Mamad</span>
+                <span>(Security room)</span>
               </div>
             </button>
             <div className="filter-menu__features-grid">
