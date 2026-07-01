@@ -523,6 +523,7 @@ const FilterMenu = ({
           </section>
           </div>{/* end padding wrapper */}
         </div>
+      )}
     </div>
   );
 };
