@@ -819,6 +819,8 @@ const PropertyList = () => {
     return () => window.removeEventListener('homekey:save-current-search', handleSave);
   }, [citySearch, circleCityHints, circleSelection.active, circleSelection.center, circleSelection.radiusMeters, favoritesOnly, featureSearch, filter, maxPrice, minPrice, propertyCategorySearch, roomsSearch, bathsSearch, locale, t]);
 
+  const isRoommatesView = filter === 'roommates';
+
   const mobileListingHeaderTitle = isRoommatesView
     ? (t('propertyList.roommates') || 'Roommates')
     : (loading
@@ -832,15 +834,18 @@ const PropertyList = () => {
   const mobileFilterBtnLabel = isRoommatesView
     ? 'Find / Post Room'
     : t('propertyList.filters');
+
   const isMapPanelVisible = !isMobileViewport || mobileDiscoveryView === 'map';
-  const isRoommatesView = filter === 'roommates';
 
   useEffect(() => {
     if (isRoommatesView && isMobileViewport) {
       setMobileDiscoveryView('list');
     }
   }, [isRoommatesView, isMobileViewport]);
+
   const openMobileFilters = () => {
+    window.dispatchEvent(new CustomEvent('homekey:open-mobile-filters'));
+  };
 
   const handleCircleSelectionChange = useCallback((selection) => {
     const next = (!selection || typeof selection !== 'object')
