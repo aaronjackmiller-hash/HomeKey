@@ -33,7 +33,6 @@ const PROPERTY_CATEGORY_OPTIONS = ['apartments', 'houses'];
 const FEATURE_FILTER_OPTIONS = [
   'elevator', 'parking', 'pets', 'disabled-access', 'renovated', 'furnished',
   'mamad', 'oven', 'balcony', 'stovetop', 'laundry-facilities', 'in-unit-washer-dryer',
-  'dishwasher',
 ];
 const AI_LISTING_TYPE_KEYWORDS = {
   roommates: ['roommate', 'roommates', 'shared apartment', 'shared flat'],
@@ -57,7 +56,6 @@ const AI_FEATURE_KEYWORDS = {
   stovetop: ['stovetop', 'cooktop', 'hob'],
   'laundry-facilities': ['laundry', 'laundry facilities', 'laundry room'],
   'in-unit-washer-dryer': ['in-unit washer', 'in unit washer', 'washer dryer', 'washer & dryer', 'washer and dryer'],
-  dishwasher: ['dishwasher'],
 };
 const getSpeechRecognitionConstructor = () => {
   if (typeof window === 'undefined') return null;
@@ -187,7 +185,7 @@ const parseAiPriceRange = (rawInput = '') => {
 const extractAiCityCandidate = (rawInput = '') => {
   const strippedText = String(rawInput || '')
     .replace(/[$₪]/g, ' ')
-    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|roommate|roommates|shared apartment|shared flat|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|oven|balcony|terrace|mirpeset|stovetop|cooktop|hob|laundry|laundry facilities|laundry room|in-unit washer|in unit washer|washer dryer|washer\s*(?:&|and)\s*dryer|dishwasher|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
+    .replace(/\b(\d+[.,]?\d*k?|studio|bed(?:room)?s?|br|bath(?:room)?s?|ba|rent|rental|lease|roommate|roommates|shared apartment|shared flat|buy|sale|purchase|house|home|apartment|flat|condo|villa|duplex|townhouse|parking|garage|carport|elevator|lift|pet(?:s)?|dog|cat|accessible|wheelchair|disabled|renovated|refurbished|furnished|mamad|safe room|security room|oven|balcony|terrace|mirpeset|stovetop|cooktop|hob|laundry|laundry facilities|laundry room|in-unit washer|in unit washer|washer dryer|washer\s*(?:&|and)\s*dryer|under|below|max(?:imum)?|up to|less than|over|above|min(?:imum)?|starting at|at least|between|from|to|and|with|in|near|around|at)\b/gi, ' ')
     .replace(/[^a-zA-Z\s-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -770,20 +768,7 @@ const Navbar = () => {
   const handleToggleFeatureFilter = (featureId) => {
     const normalizedFeature = String(featureId || '').trim().toLowerCase();
     if (!FEATURE_FILTER_OPTIONS.includes(normalizedFeature)) return;
-    const currentFeatureFilters = typeof window !== 'undefined'
-      ? parseSearchFromLocation(window.location.search).featureFilters
-      : featureFilters;
-    const nextFeatureFilters = currentFeatureFilters.includes(normalizedFeature)
-      ? currentFeatureFilters.filter((value) => value !== normalizedFeature)
-      : [...currentFeatureFilters, normalizedFeature];
-    setFeatureFilters(nextFeatureFilters);
-    applyFilterMenuSearch({ nextFeatureFilters });
-  };
-
-  const handleSetFeatureFilters = (nextFeatures = []) => {
-    const nextFeatureFilters = (Array.isArray(nextFeatures) ? nextFeatures : [])
-      .map((value) => String(value || '').trim().toLowerCase())
-      .filter((value, index, values) => FEATURE_FILTER_OPTIONS.includes(value) && values.indexOf(value) === index);
+    const nextFeatureFilters = featureFilters.includes(normalizedFeature) ? featureFilters.filter((value) => value !== normalizedFeature) : [...featureFilters, normalizedFeature];
     setFeatureFilters(nextFeatureFilters);
     applyFilterMenuSearch({ nextFeatureFilters });
   };
@@ -896,8 +881,9 @@ const Navbar = () => {
   // Property type segment label — shows selected category (Apartments/Houses) or
   // a neutral "Property type" placeholder. Does NOT echo the listing type (Rent/Sale)
   // since the mode switcher already communicates that clearly.
+  const propertyCategoryLabels = { apartments: 'Apartments', houses: 'Houses' };
   const propertyTypeSummary = propertyCategory
-    ? t(`filterMenu.${propertyCategory}`)
+    ? (propertyCategoryLabels[propertyCategory] || propertyCategory)
     : t('navbar.propertyType');
 
   const handleCityChange = useCallback((val) => setCity(val), []);
@@ -947,7 +933,7 @@ const Navbar = () => {
                 className={`premium-header__mode-btn ${listingType === 'rental' || listingType === 'all' ? 'is-active' : ''}`}
                 onClick={() => { setListingType('rental'); applySearch({ nextListingType: 'rental' }); }}
               >
-                {t('filterMenu.rental') || 'Rent'}
+                {isHebrew ? 'שכירות' : 'Rent'}
               </button>
               <button
                 type="button"
@@ -956,7 +942,7 @@ const Navbar = () => {
                 className={`premium-header__mode-btn ${listingType === 'sale' ? 'is-active' : ''}`}
                 onClick={() => { setListingType('sale'); applySearch({ nextListingType: 'sale' }); }}
               >
-                {t('filterMenu.sale') || 'Sale'}
+                {isHebrew ? 'מכירה' : 'Sale'}
               </button>
               <button
                 type="button"
@@ -966,7 +952,7 @@ const Navbar = () => {
                 onClick={handleRoommatesNavClick}
               >
                 <HeaderIcon name="roommates" />
-                {t('filterMenu.roommates') || 'Roommates'}
+                {isHebrew ? 'שותפים' : 'Roommates'}
               </button>
             </div>
           </div>
@@ -1014,7 +1000,7 @@ const Navbar = () => {
                   aria-live="polite" aria-expanded={priceExpanded} aria-controls="header-price-slider-panel"
                   onClick={() => { setRoomsBathsExpanded(false); setPropertyTypeExpanded(false); setFiltersExpanded(false); setPriceExpanded((isExpanded) => !isExpanded); }}>
                   <HeaderIcon name="price" />
-                  <span>{t('filterMenu.priceRange')}</span>
+                  <span>Price range</span>
                 </button>
                 <div id="header-price-slider-panel" className={`premium-header__price-panel ${priceExpanded ? 'is-open' : ''}`}>
                   <div className="premium-header__price-values" aria-hidden="true">
@@ -1124,13 +1110,13 @@ const Navbar = () => {
                   </button>
                   <div id="header-property-type-panel" className={`premium-header__property-type-panel ${propertyTypeExpanded ? 'is-open' : ''}`}>
                     <div className="premium-header__property-type-section">
-                      <p className="premium-header__rooms-section-title">{t('filterMenu.propertyTypes')}</p>
+                      <p className="premium-header__rooms-section-title">Property type</p>
                       <div className="premium-header__rooms-options-grid">
                         {PROPERTY_CATEGORY_OPTIONS.map((categoryOption) => (
                           <button key={categoryOption} type="button"
                             className={`premium-header__chip-btn ${propertyCategory === categoryOption ? 'is-selected' : ''}`}
                             onClick={() => handleTogglePropertyCategory(categoryOption)}>
-                            {t(`filterMenu.${categoryOption}`)}
+                            {propertyCategoryLabels[categoryOption] || categoryOption}
                           </button>
                         ))}
                       </div>
@@ -1172,7 +1158,6 @@ const Navbar = () => {
                       onMaxPriceChange={handleFilterMenuMaxPriceChange}
                       onTogglePropertyCategory={handleTogglePropertyCategory}
                       onToggleFeature={handleToggleFeatureFilter}
-                      onSetFeatures={handleSetFeatureFilters}
                       onApplyFilters={handleApplyFilterMenu}
                       onSaveFilters={handleSaveFilterMenu}
                       roommateLocation={roommateLocationDraft}
