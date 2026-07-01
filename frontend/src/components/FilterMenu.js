@@ -373,7 +373,6 @@ const FilterMenu = ({
   const getPanelTitle = () => {
     if (!isRoommatesView) return t('filterMenu.title');
     return isHebrew ? 'מצא חדר' : 'Looking for a Room';
-    return isHebrew ? 'פרסם את החדר שלך' : 'List Your Room';
   };
 
   return (
@@ -420,8 +419,42 @@ const FilterMenu = ({
           isHebrew={isHebrew}
         />
       ) : (
-        <>
-          <section className="filter-menu__section">
+        <div style={{ background: '#e8f4f0', minHeight: '100%' }}>
+          {/* ── Teal decorative header for Rent/Sale ── */}
+          <div style={{ background: '#2d6b5e', padding: '20px 16px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ flexShrink: 0 }}>
+                <svg viewBox="0 0 72 72" width="64" height="64" focusable="false" aria-hidden="true">
+                  <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44"/>
+                  <polygon points="36,8 6,30 66,30" fill="#4a9b85"/>
+                  <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0"/>
+                  <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                  <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                  <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                  <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
+                  <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85"/>
+                  <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44"/>
+                  <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0"/>
+                  <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6"/>
+                  <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8"/>
+                </svg>
+              </div>
+              <div>
+                <p style={{ color: '#fff', fontWeight: 600, fontSize: '15px', margin: '0 0 4px' }}>
+                  {listingType === 'for-sale'
+                    ? (isHebrew ? 'מצא דירה לקנייה' : 'Find a Home to Buy')
+                    : (isHebrew ? 'מצא דירה להשכרה' : 'Find a Home to Rent')}
+                </p>
+                <p style={{ color: '#a8d5c8', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>
+                  {isHebrew ? 'סנן לפי הצרכים שלך — עדכן בזמן אמת' : 'Filter by your needs — results update instantly'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Filter sections on soft teal background ── */}
+          <div style={{ padding: '12px 12px 0' }}>
+          <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <h3 className="filter-menu__section-title">{t('filterMenu.location') || 'Location'}</h3>
             {typeof renderRoommateLocationInput === 'function'
               ? renderRoommateLocationInput({
@@ -442,14 +475,14 @@ const FilterMenu = ({
                 />
               )}
           </section>
-          <section className="filter-menu__section">
+          <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <h3 className="filter-menu__section-title">{t('filterMenu.propertyTypes')}</h3>
             <div className="filter-menu__type-row">
               <button type="button" className={`filter-menu__chip ${propertyCategory === 'apartments' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('apartments')}>{t('filterMenu.apartments')}</button>
               <button type="button" className={`filter-menu__chip ${propertyCategory === 'houses' ? 'is-selected' : ''}`} onClick={() => onTogglePropertyCategory('houses')}>{t('filterMenu.houses')}</button>
             </div>
           </section>
-          <section className="filter-menu__section">
+          <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <h3 className="filter-menu__section-title">{t('filterMenu.bedrooms')}</h3>
             <div className="filter-menu__option-grid">
               {roomOptions.map((option) => (
@@ -457,7 +490,7 @@ const FilterMenu = ({
               ))}
             </div>
           </section>
-          <section className="filter-menu__section">
+          <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <h3 className="filter-menu__section-title">{t('filterMenu.bathrooms')}</h3>
             <div className="filter-menu__option-grid">
               {bathOptions.map((option) => (
@@ -465,7 +498,7 @@ const FilterMenu = ({
               ))}
             </div>
           </section>
-          <section className="filter-menu__section">
+          <section className="filter-menu__section" style={{ background: '#fff', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <h3 className="filter-menu__section-title">{t('filterMenu.propertyCharacteristics')}</h3>
             <button type="button" className={`filter-menu__mamad-btn ${selectedFeatureSet.has('mamad') ? 'is-selected' : ''}`} onClick={() => onToggleFeature('mamad')}>
               <span className="filter-menu__mamad-icon" aria-hidden="true"><CharacteristicIcon name="shield" /></span>
@@ -488,8 +521,8 @@ const FilterMenu = ({
               ))}
             </div>
           </section>
-        </>
-      )}
+          </div>{/* end padding wrapper */}
+        </div>
     </div>
   );
 };
@@ -618,11 +651,11 @@ const RoommateFilters = ({
       {/* ── Seeker form — white cards on teal background ── */}
       <div style={{ padding: '12px 12px 0' }}>
 
-      {/* ── Phone number ── */}
-                <rect x="8" y="6" width="104" height="74" rx="2" fill="none" stroke="#5a7a5a" strokeWidth="3"/>
-                <line x1="58" y1="6" x2="58" y2="52" stroke="#5a7a5a" strokeWidth="2.5"/>
-      {/* ── Phone number ── */}
-          <PhoneField phone={phone} setPhone={setPhone} phoneSaved={phoneSaved} setPhoneSaved={setPhoneSaved} isHebrew={isHebrew} />
+          <section className="filter-menu__section roommate-filters__section">
+            <h3 className="roommate-filters__title">Location</h3>
+            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{display:'block', marginBottom:'6px'}}>Where are you looking?</label>
+            {renderLocationInput('seeker-location')}
+          </section>
 
           <section className="filter-menu__section roommate-filters__section">
             <h3 className="roommate-filters__title">Budget & availability</h3>
@@ -647,8 +680,6 @@ const RoommateFilters = ({
             <h3 className="roommate-filters__title">Apartment details <span style={{fontSize:'12px',fontWeight:400,color:'#8a8070'}}>(entire unit)</span></h3>
             <p className="roommate-filters__sub-label">I'm open to sharing with up to:</p>
             <SegmentedButtonGroup options={SHARING_OPTIONS} selectedValue={sharingWith} onChange={setSharingWith} ariaLabel="Sharing preference" />
-            <label className="roommate-filters__sub-label" htmlFor="seeker-location" style={{marginTop:'10px',display:'block'}}>Location preference:</label>
-            {renderLocationInput('seeker-location')}
           </section>
 
           <section className="filter-menu__section roommate-filters__section">
@@ -688,6 +719,11 @@ const RoommateFilters = ({
             </div>
           </section>
       </div>{/* end padding wrapper */}
+
+      {/* ── Phone number — LAST, just before publish ── */}
+      <div style={{ padding: '0 12px' }}>
+        <PhoneField phone={phone} setPhone={setPhone} phoneSaved={phoneSaved} setPhoneSaved={setPhoneSaved} isHebrew={isHebrew} />
+      </div>
 
       {/* ── Action buttons ── */}
       {seekerSubmitStatus === 'success' ? (
