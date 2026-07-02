@@ -106,6 +106,17 @@ const RealtorIllustration = () => (
     </svg>
 );
 
+const HeaderGlyph = () => (
+    <svg viewBox="0 0 72 72" width="60" height="60" focusable="false" aria-hidden="true" style={{ flexShrink: 0 }}>
+        <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44" />
+        <polygon points="36,8 6,30 66,30" fill="#4a9b85" />
+        <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0" />
+        <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85" />
+        <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0" />
+        <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8" />
+    </svg>
+);
+
 export const Step0ProfileType = ({ profileType, onSelectProfileType, onContinue, totalSteps = 6 }) => {
     const [showRequired, setShowRequired] = React.useState(false);
 
@@ -141,44 +152,61 @@ export const Step0ProfileType = ({ profileType, onSelectProfileType, onContinue,
 
     return (
         <div className="wizard-step-card">
-            <div className="wizard-progress-rail">
-                <div className="wizard-progress-fill" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="wizard-step-header">
-                <h2>Step 1: Welcome!<br />Choose your profile type</h2>
-                <span className="wizard-step-counter">{`Step 1 of ${totalSteps}`}</span>
-            </div>
-
-            <div className="wizard-profile-type-grid">
-                {profiles.map((profile) => (
-                    <button
-                        key={profile.id}
-                        type="button"
-                        onClick={() => handleSelect(profile.id)}
-                        className={`wizard-profile-type-card${profileType === profile.id ? ' is-selected' : ''}`}
-                    >
-                        <div className="wizard-profile-type-illustration">
-                            {profile.illustration}
+            {/* ── Teal header ── */}
+            <div className="wizard-teal-header">
+                <div className="wizard-teal-header__inner">
+                    <HeaderGlyph />
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+                            <p className="wizard-teal-header__title">Choose your profile type</p>
+                            <span className="wizard-teal-header__counter">{`Step 1 of ${totalSteps}`}</span>
                         </div>
-                        <strong className="wizard-profile-type-label">{profile.label}</strong>
-                        <span className="wizard-profile-type-desc">{profile.description}</span>
-                    </button>
-                ))}
+                        <p className="wizard-teal-header__subtitle">Tell us who's listing so we can tailor the next steps</p>
+                    </div>
+                </div>
+                <div className="wizard-teal-header__progress">
+                    <div className="wizard-teal-header__progress-fill" style={{ width: `${progressPercent}%` }} />
+                </div>
             </div>
 
-            {showRequired ? (
-                <p className="wizard-profile-type-required">
-                    Please select a profile type above to continue.
-                </p>
-            ) : null}
+            {/* ── Body ── */}
+            <div className="wizard-body">
+                <div className="wizard-section-card">
+                    <p className="wizard-section-label">I am a…</p>
+                    <div className="wizard-profile-type-grid">
+                        {profiles.map((profile) => (
+                            <button
+                                key={profile.id}
+                                type="button"
+                                onClick={() => handleSelect(profile.id)}
+                                className={`wizard-profile-type-card${profileType === profile.id ? ' is-selected' : ''}`}
+                            >
+                                <div className="wizard-profile-type-illustration">
+                                    {profile.illustration}
+                                </div>
+                                <strong className="wizard-profile-type-label">{profile.label}</strong>
+                                <span className="wizard-profile-type-desc">{profile.description}</span>
+                            </button>
+                        ))}
+                    </div>
 
-            <button
-                type="button"
-                onClick={handleContinue}
-                className="wizard-btn wizard-btn--full"
-            >
-                Continue to Profile Details
-            </button>
+                    {showRequired ? (
+                        <p className="wizard-profile-type-required">
+                            Please select a profile type above to continue.
+                        </p>
+                    ) : null}
+                </div>
+
+                <div className="wizard-actions" style={{ paddingBottom: '4px' }}>
+                    <button
+                        type="button"
+                        onClick={handleContinue}
+                        className="wizard-btn wizard-btn--full"
+                    >
+                        Continue to Profile Details
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
