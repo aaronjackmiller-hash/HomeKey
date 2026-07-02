@@ -87,6 +87,7 @@ const initialEnterpriseListings = [
 const AddListing = () => {
     const history = useHistory();
     const location = useLocation();
+    const { isAuthenticated } = useAuth();
 
     const preselectedProfileType = location?.state?.preselectedProfileType || '';
     const initialStep = preselectedProfileType ? 1 : 0;
@@ -134,6 +135,26 @@ const AddListing = () => {
 
     const nextStep = () => setStep((prev) => Math.min(prev + 1, totalSteps));
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 0));
+
+    // ── Consistent exit: one ✕ (rendered below) leaves the wizard from any step.
+    //    Prompts to discard first if the listing has any entered data.
+    const handleExit = () => {
+        const hasProgress = Boolean(
+            data.propertyType
+            || data.listingType
+            || (data.address && (data.address.street || data.address.number || data.address.city))
+            || data.price
+            || data.description
+            || data.relation
+            || (data.amenities && data.amenities.length)
+            || (data.mediaFiles && data.mediaFiles.length)
+        );
+        if (hasProgress && typeof window !== 'undefined') {
+            const ok = window.confirm("Discard this listing? Your progress won't be saved.");
+            if (!ok) return;
+        }
+        history.push('/');
+    };
 
     const handleEnterpriseAgentChange = (listingId, agentId) => {
         setEnterpriseListings((prev) => prev.map((item) => (
@@ -320,36 +341,49 @@ const AddListing = () => {
             {error ? <p className="listing-wizard-status listing-wizard-status--error">{error}</p> : null}
             {loading ? <p className="listing-wizard-status listing-wizard-status--loading">Publishing listing...</p> : null}
 
-            {step === 0 ? (
-                <Step0ProfileType
-                    profileType={data.profileType}
-                    onSelectProfileType={(pt) => updateData({ profileType: pt })}
-                    onContinue={nextStep}
-                    totalSteps={totalSteps}
-                />
-            ) : null}
-            {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={2} totalSteps={totalSteps} /> : null}
-            {usesEnterpriseModel && step === 2 ? (
-                <Step2EnterpriseModel data={data} updateData={updateData} onContinue={handleEnterpriseContinue} prevStep={prevStep} totalSteps={totalSteps} />
-            ) : null}
-            {usesSyncPortfolioFlow && step === feedConnectStep ? (
-                <Step3EnterpriseFeedConnect feedUrl={enterpriseFeedUrl} onFeedUrlChange={setEnterpriseFeedUrl} syncedCount={syncedPortfolioCount} onSyncComplete={setSyncedPortfolioCount} prevStep={prevStep} nextStep={nextStep} stepNumber={feedConnectStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(feedConnectStep + 1)} />
-            ) : null}
-            {(!usesEnterpriseModel && step === createListingStep) || (usesManualEnterpriseFlow && step === createListingStep) ? (
-                <Step2CreateListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={createListingStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(createListingStep + 1)} />
-            ) : null}
-            {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === amenitiesStep ? (
-                <Step3Amenities data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={amenitiesStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(amenitiesStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
-            ) : null}
-            {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === mediaStep ? (
-                <Step4Media data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={mediaStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(mediaStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
-            ) : null}
-            {!usesEnterpriseModel && step === publishStep ? (
-                <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} stepNumber={publishStep + 1} totalSteps={totalSteps} />
-            ) : null}
-            {usesEnterpriseModel && step === publishStep ? (
-                <Step6EnterpriseRouting agents={initialEnterpriseAgents} listings={enterpriseListings} syncedPortfolioCount={syncedPortfolioCount} onboardingMethod={effectiveOnboardingMethod} onAgentChange={handleEnterpriseAgentChange} onToggleBooster={handleEnterpriseBoosterToggle} prevStep={prevStep} onLaunch={handleEnterpriseLaunch} stepNumber={publishStep + 1} totalSteps={totalSteps} />
-            ) : null}
+            {/* ── Wizard card wrapper — hosts a single persistent ✕ exit for every step ── */}
+            <div className="wizard-shell-card">
+                <button
+                    type="button"
+                    className="wizard-exit-btn"
+                    onClick={handleExit}
+                    aria-label="Close and exit"
+                    title="Close"
+                >
+                    ×
+                </button>
+
+                {step === 0 ? (
+                    <Step0ProfileType
+                        profileType={data.profileType}
+                        onSelectProfileType={(pt) => updateData({ profileType: pt })}
+                        onContinue={nextStep}
+                        totalSteps={totalSteps}
+                    />
+                ) : null}
+                {step === 1 ? <Step1AddListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={2} totalSteps={totalSteps} /> : null}
+                {usesEnterpriseModel && step === 2 ? (
+                    <Step2EnterpriseModel data={data} updateData={updateData} onContinue={handleEnterpriseContinue} prevStep={prevStep} totalSteps={totalSteps} />
+                ) : null}
+                {usesSyncPortfolioFlow && step === feedConnectStep ? (
+                    <Step3EnterpriseFeedConnect feedUrl={enterpriseFeedUrl} onFeedUrlChange={setEnterpriseFeedUrl} syncedCount={syncedPortfolioCount} onSyncComplete={setSyncedPortfolioCount} prevStep={prevStep} nextStep={nextStep} stepNumber={feedConnectStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(feedConnectStep + 1)} />
+                ) : null}
+                {(!usesEnterpriseModel && step === createListingStep) || (usesManualEnterpriseFlow && step === createListingStep) ? (
+                    <Step2CreateListing data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={createListingStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(createListingStep + 1)} />
+                ) : null}
+                {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === amenitiesStep ? (
+                    <Step3Amenities data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={amenitiesStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(amenitiesStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
+                ) : null}
+                {(usesManualEnterpriseFlow || usesSyncPortfolioFlow || !usesEnterpriseModel) && step === mediaStep ? (
+                    <Step4Media data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={mediaStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(mediaStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
+                ) : null}
+                {!usesEnterpriseModel && step === publishStep ? (
+                    <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} stepNumber={publishStep + 1} totalSteps={totalSteps} />
+                ) : null}
+                {usesEnterpriseModel && step === publishStep ? (
+                    <Step6EnterpriseRouting agents={initialEnterpriseAgents} listings={enterpriseListings} syncedPortfolioCount={syncedPortfolioCount} onboardingMethod={effectiveOnboardingMethod} onAgentChange={handleEnterpriseAgentChange} onToggleBooster={handleEnterpriseBoosterToggle} prevStep={prevStep} onLaunch={handleEnterpriseLaunch} stepNumber={publishStep + 1} totalSteps={totalSteps} />
+                ) : null}
+            </div>
         </div>
     );
 };
