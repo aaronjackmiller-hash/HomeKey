@@ -8,8 +8,12 @@
  * Step 4 — Contact        (phone, email — collected last, right before preview)
  * Step 5 — Preview        (full card preview → Go Live!)
  *
- * Contact info moved to Step 4 (just before publish) so users commit to the
- * process first before being asked for personal details.
+ * VISUAL STYLE: every step now matches the "Looking for a Room" seeker panel —
+ * teal decorative header, soft #e8f4f0 background, dark title-case section
+ * headings, NO white section cards. The locked emoji amenity grid is unchanged.
+ *
+ * EXIT: a persistent ✕ close button sits in the top-right of every step's teal
+ * header. It calls onClose, prompting to discard first if the form has data.
  */
 
 import React, { useState, useCallback, useRef } from 'react';
@@ -85,7 +89,7 @@ const LEASE_OPTIONS = [
   { value: '24', label: '24 months' },
 ];
 
-// ── Amenity icons — emoji, colorful, 3-column horizontal layout ──────────
+// ── Amenity icons — emoji, colorful, 3-column horizontal layout (LOCKED) ──────
 const AMENITY_OPTIONS = [
   { value: 'mamad',                label: 'Mamad',        icon: '🛡️' },
   { value: 'elevator',             label: 'Elevator',     icon: '🛗' },
@@ -100,7 +104,6 @@ const AMENITY_OPTIONS = [
   { value: 'in-unit-washer-dryer', label: 'Washer/Dryer', icon: '🌀' },
   { value: 'dishwasher',           label: 'Dishwasher',   icon: '🍽️' },
 ];
-
 
 const UTILITY_ITEMS = [
   { key: 'utilityElectricity', label: 'Electricity' },
@@ -189,27 +192,80 @@ const createInitialData = () => ({
   preferredMethod: 'whatsapp',
 });
 
-// ── Shared sub-components ─────────────────────────────────────────────────────
+// ── Shared presentational components ──────────────────────────────────────────
 
-const ProgressBar = ({ step }) => (
-  <div className="rw-progress-rail">
-    <div className="rw-progress-fill" style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }} />
+// House glyph used in every step header.
+const HeaderGlyph = () => (
+  <svg viewBox="0 0 72 72" width="58" height="58" focusable="false" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44" />
+    <polygon points="36,8 6,30 66,30" fill="#4a9b85" />
+    <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0" />
+    <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e" />
+    <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e" />
+    <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e" />
+    <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e" />
+    <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85" />
+    <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44" />
+    <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0" />
+    <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6" />
+    <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8" />
+  </svg>
+);
+
+// Teal header shared across all steps, including the persistent ✕ close button.
+const WizardHeader = ({ step, title, subtitle, onClose }) => (
+  <div style={{ background: '#2d6b5e', padding: '18px 18px 16px', position: 'relative' }}>
+    {onClose && (
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close and exit"
+        title="Close"
+        style={{
+          position: 'absolute', top: 12, right: 12,
+          width: 32, height: 32, borderRadius: '50%', border: 'none',
+          background: 'rgba(255,255,255,0.18)', color: '#fff',
+          fontSize: 20, lineHeight: 1, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        ×
+      </button>
+    )}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingRight: onClose ? 34 : 0 }}>
+      <HeaderGlyph />
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '0 0 4px' }}>{title}</p>
+          <span style={{ color: '#a8d5c8', fontSize: 11, whiteSpace: 'nowrap' }}>Step {step} of {TOTAL_STEPS}</span>
+        </div>
+        <p style={{ color: '#a8d5c8', fontSize: 12, margin: 0, lineHeight: 1.4 }}>{subtitle}</p>
+      </div>
+    </div>
+    <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 99, marginTop: 14, overflow: 'hidden' }}>
+      <div style={{ height: '100%', background: '#fff', borderRadius: 99, width: `${Math.round((step / TOTAL_STEPS) * 100)}%`, transition: 'width 0.35s ease' }} />
+    </div>
   </div>
 );
 
-const StepHeader = ({ step, title }) => (
-  <div className="rw-step-header">
-    <h2 className="rw-step-title">{title}</h2>
-    <span className="rw-step-counter">Step {step} of {TOTAL_STEPS}</span>
-  </div>
+// Dark, title-case section heading — matches the "Looking for a Room" panel.
+const SectionTitle = ({ children, hint }) => (
+  <>
+    <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2a1a', margin: '18px 0 8px', letterSpacing: '-0.01em' }}>
+      {children}
+    </h3>
+    {hint && <p style={{ fontSize: 13, color: '#5a6a50', margin: '0 0 10px', lineHeight: 1.4 }}>{hint}</p>}
+  </>
 );
 
 const Field = ({ label, required, hint, error, children }) => (
   <div className={`rw-field ${error ? 'rw-field--error' : ''}`}>
-    <label className="rw-label">
-      {label}
-      {required && <span className="rw-label-required" aria-hidden="true"> *</span>}
-    </label>
+    {label ? (
+      <label className="rw-label">
+        {label}
+        {required && <span className="rw-label-required" aria-hidden="true"> *</span>}
+      </label>
+    ) : null}
     {hint && <p className="rw-hint">{hint}</p>}
     {children}
     {error && <p className="rw-field-error">{error}</p>}
@@ -239,7 +295,17 @@ const WizardActions = ({ onBack, onNext, nextLabel = 'Continue', backLabel = 'Ba
   </div>
 );
 
-// ── Step 1: Apartment Details (moved from Step 2) ─────────────────────────────
+// Shared step shell: soft background card + teal header + padded body.
+const StepShell = ({ step, title, subtitle, onClose, children }) => (
+  <div className="rw-step-card" style={{ background: '#e8f4f0', padding: 0, gap: 0, overflow: 'hidden' }}>
+    <WizardHeader step={step} title={title} subtitle={subtitle} onClose={onClose} />
+    <div style={{ padding: '4px 14px 14px', display: 'flex', flexDirection: 'column' }}>
+      {children}
+    </div>
+  </div>
+);
+
+// ── Step 1: Apartment Details ─────────────────────────────────────────────────
 
 const Step1Apartment = ({ data, onChange, onNext, onClose }) => {
   const [errors, setErrors] = useState({});
@@ -299,224 +365,176 @@ const Step1Apartment = ({ data, onChange, onNext, onClose }) => {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="rw-step-card" style={{ background: '#e8f4f0', padding: 0, gap: 0, overflow: 'hidden' }}>
-
-      {/* ── Teal decorative header ── */}
-      <div style={{ background: '#2d6b5e', padding: '20px 20px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ flexShrink: 0 }}>
-            <svg viewBox="0 0 72 72" width="60" height="60" focusable="false" aria-hidden="true">
-              <rect x="4" y="28" width="64" height="36" rx="4" fill="#1f4f44"/>
-              <polygon points="36,8 6,30 66,30" fill="#4a9b85"/>
-              <rect x="14" y="36" width="14" height="14" rx="2" fill="#b8d8d0"/>
-              <rect x="16" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
-              <rect x="23" y="38" width="5" height="5" rx="1" fill="#2d6b5e"/>
-              <rect x="16" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
-              <rect x="23" y="45" width="5" height="5" rx="1" fill="#2d6b5e"/>
-              <rect x="30" y="42" width="12" height="22" rx="2" fill="#4a9b85"/>
-              <rect x="33" y="48" width="3" height="3" rx="1" fill="#1f4f44"/>
-              <rect x="44" y="36" width="14" height="10" rx="2" fill="#b8d8d0"/>
-              <rect x="46" y="38" width="10" height="6" rx="1" fill="#2d6b5e" opacity="0.6"/>
-              <circle cx="58" cy="20" r="6" fill="#f0c040" opacity="0.8"/>
-            </svg>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: '16px', margin: '0 0 4px' }}>
-                Tell us about your apartment
-              </p>
-              <span style={{ color: '#a8d5c8', fontSize: '11px', whiteSpace: 'nowrap' }}>Step 1 of {TOTAL_STEPS}</span>
-            </div>
-            <p style={{ color: '#a8d5c8', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>
-              Help roommates find and contact you — we'll never share your details publicly
-            </p>
-          </div>
-        </div>
-        {/* Teal progress bar inside header */}
-        <div style={{ height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '99px', marginTop: '14px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: '#fff', borderRadius: '99px', width: `${Math.round((1 / TOTAL_STEPS) * 100)}%`, transition: 'width 0.35s ease' }} />
-        </div>
+    <StepShell
+      step={1}
+      title="Tell us about your apartment"
+      subtitle="Help roommates find and contact you — we'll never share your details publicly"
+      onClose={onClose}
+    >
+      {/* Location */}
+      <SectionTitle>Location</SectionTitle>
+      <Field label="City" required error={errors.city}>
+        <input type="text" className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
+          placeholder="Tel Aviv-Yafo" value={data.city}
+          onChange={(e) => handleCityChange(e.target.value)} autoFocus />
+      </Field>
+      <div className="rw-field-row" style={{ marginTop: '10px' }}>
+        <Field label="Street" required error={errors.street}>
+          <input type="text" className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
+            placeholder="Rothschild Blvd" value={data.street}
+            onChange={(e) => handleFieldChange('street', e.target.value)}
+            onBlur={() => { if (!data.streetNumber.trim()) tryAutoFillCoordinates(); }} />
+        </Field>
+        <Field label="Number">
+          <input type="text" className="rw-input rw-input--short" placeholder="42"
+            value={data.streetNumber} onChange={(e) => onChange('streetNumber', e.target.value)}
+            onBlur={tryAutoFillCoordinates} />
+        </Field>
+      </div>
+      <div style={{ marginTop: '10px' }}>
+        <Field label="Neighborhood" required error={errors.neighborhood}
+          hint={cityEntry ? 'Select the neighborhood that best matches your address' : 'Type your neighborhood'}>
+          {cityEntry ? (
+            <select className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
+              value={data.neighborhood} onChange={(e) => handleFieldChange('neighborhood', e.target.value)}>
+              <option value="">Select a neighborhood…</option>
+              {cityEntry.neighborhoods.map((n) => (
+                <option key={n.en} value={n.en}>{n.en}</option>
+              ))}
+            </select>
+          ) : (
+            <input type="text" className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
+              placeholder="Florentin" value={data.neighborhood}
+              onChange={(e) => handleFieldChange('neighborhood', e.target.value)} />
+          )}
+        </Field>
       </div>
 
-      {/* ── Form sections — white cards on teal background ── */}
-      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-        {/* Location */}
-        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Location</p>
-          <Field label="City" required error={errors.city}>
-            <input type="text" className={`rw-input ${errors.city ? 'rw-input--error' : ''}`}
-              placeholder="Tel Aviv-Yafo" value={data.city}
-              onChange={(e) => handleCityChange(e.target.value)} autoFocus />
-          </Field>
-          <div className="rw-field-row" style={{ marginTop: '10px' }}>
-            <Field label="Street" required error={errors.street}>
-              <input type="text" className={`rw-input ${errors.street ? 'rw-input--error' : ''}`}
-                placeholder="Rothschild Blvd" value={data.street}
-                onChange={(e) => handleFieldChange('street', e.target.value)}
-                onBlur={() => { if (!data.streetNumber.trim()) tryAutoFillCoordinates(); }} />
-            </Field>
-            <Field label="Number">
-              <input type="text" className="rw-input rw-input--short" placeholder="42"
-                value={data.streetNumber} onChange={(e) => onChange('streetNumber', e.target.value)}
-                onBlur={tryAutoFillCoordinates} />
-            </Field>
-          </div>
-          <div style={{ marginTop: '10px' }}>
-            <Field label="Neighborhood" required error={errors.neighborhood}
-              hint={cityEntry ? 'Select the neighborhood that best matches your address' : 'Type your neighborhood'}>
-              {cityEntry ? (
-                <select className={`rw-select ${errors.neighborhood ? 'rw-input--error' : ''}`}
-                  value={data.neighborhood} onChange={(e) => handleFieldChange('neighborhood', e.target.value)}>
-                  <option value="">Select a neighborhood…</option>
-                  {cityEntry.neighborhoods.map((n) => (
-                    <option key={n.en} value={n.en}>{n.en}</option>
-                  ))}
-                </select>
-              ) : (
-                <input type="text" className={`rw-input ${errors.neighborhood ? 'rw-input--error' : ''}`}
-                  placeholder="Florentin" value={data.neighborhood}
-                  onChange={(e) => handleFieldChange('neighborhood', e.target.value)} />
-              )}
-            </Field>
-          </div>
-        </div>
-
-        {/* Rent & costs */}
-        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Rent & costs</p>
-          <Field label="Monthly rent share (₪)" required error={errors.rentShare}
-            hint="What the incoming roommate will pay per month">
-            <input type="number" className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
-              placeholder="3500" min="0" value={data.rentShare}
-              onChange={(e) => handleFieldChange('rentShare', e.target.value)} />
-          </Field>
-          <div style={{ marginTop: '10px' }}>
-            <Field label="Estimated Additional Monthly Expenses (₪)"
-              hint="Electricity, water, internet, VAAD. Leave any blank if not yet known.">
-              <div className="rw-utilities-grid">
-                {UTILITY_ITEMS.map((item) => (
-                  <div key={item.key} className="rw-utility-item">
-                    <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
-                    <input id={`rw-${item.key}`} type="number" className="rw-input" placeholder="0" min="0"
-                      value={data[item.key]} onChange={(e) => onChange(item.key, e.target.value)} />
-                  </div>
-                ))}
+      {/* Rent & costs */}
+      <SectionTitle>Rent &amp; costs</SectionTitle>
+      <Field label="Monthly rent share (₪)" required error={errors.rentShare}
+        hint="What the incoming roommate will pay per month">
+        <input type="number" className={`rw-input ${errors.rentShare ? 'rw-input--error' : ''}`}
+          placeholder="3500" min="0" value={data.rentShare}
+          onChange={(e) => handleFieldChange('rentShare', e.target.value)} />
+      </Field>
+      <div style={{ marginTop: '10px' }}>
+        <Field label="Estimated Additional Monthly Expenses (₪)"
+          hint="Electricity, water, internet, VAAD. Leave any blank if not yet known.">
+          <div className="rw-utilities-grid">
+            {UTILITY_ITEMS.map((item) => (
+              <div key={item.key} className="rw-utility-item">
+                <label className="rw-utility-label" htmlFor={`rw-${item.key}`}>{item.label}</label>
+                <input id={`rw-${item.key}`} type="number" className="rw-input" placeholder="0" min="0"
+                  value={data[item.key]} onChange={(e) => onChange(item.key, e.target.value)} />
               </div>
-              <p className="rw-utilities-total">Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month</p>
-            </Field>
+            ))}
           </div>
-        </div>
-
-        {/* Apartment details */}
-        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Apartment details</p>
-          <div className="rw-field-row">
-            <Field label="Total bedrooms" required error={errors.totalBedrooms}>
-              <select className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
-                value={data.totalBedrooms} onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}>
-                {[1,2,3,4].map((n) => (
-                  <option key={n} value={String(n)}>{n === 4 ? '4+' : n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Total bathrooms">
-              <select className="rw-select" value={data.totalBathrooms}
-                onChange={(e) => onChange('totalBathrooms', e.target.value)}>
-                {[1,2,3].map((n) => (
-                  <option key={n} value={String(n)}>{n === 3 ? '3+' : n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="rw-field-row" style={{ marginTop: '10px' }}>
-            <Field label="Apartment size (sqm)">
-              <input type="number" className="rw-input" placeholder="75" min="0"
-                value={data.sizeSqm} onChange={(e) => onChange('sizeSqm', e.target.value)} />
-            </Field>
-            <Field label="Available from" required error={errors.dateAvailable}>
-              <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
-                min={today} value={data.dateAvailable}
-                onChange={(e) => handleFieldChange('dateAvailable', e.target.value)} />
-            </Field>
-          </div>
-          <div style={{ marginTop: '10px' }}>
-            <Field label="Minimum lease">
-              <select className="rw-select" value={data.minLeaseMonths}
-                onChange={(e) => onChange('minLeaseMonths', e.target.value)}>
-                {LEASE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-        </div>
-
-        {/* Amenities */}
-        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>Apartment amenities</p>
-          <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 10px' }}>Select everything that applies — optional but helps you get better matches</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-            {AMENITY_OPTIONS.map((amenity) => {
-              const isSelected = data.amenities.includes(amenity.value);
-              return (
-                <button key={amenity.value} type="button" onClick={() => {
-                  const next = isSelected
-                    ? data.amenities.filter((v) => v !== amenity.value)
-                    : [...data.amenities, amenity.value];
-                  onChange('amenities', next);
-                }} aria-pressed={isSelected}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '8px 12px',
-                    border: `1.5px solid ${isSelected ? '#2d6b5e' : '#e5e7eb'}`,
-                    borderRadius: '10px',
-                    background: isSelected ? '#2d6b5e' : '#fff',
-                    color: isSelected ? '#fff' : '#6b7280',
-                    fontSize: '13px', fontWeight: '600',
-                    cursor: 'pointer', textAlign: 'left', width: '100%',
-                    transition: 'all 0.15s ease',
-                  }}>
-                  <span aria-hidden="true" style={{ fontSize: '17px', lineHeight: 1, flexShrink: 0 }}>{amenity.icon}</span>
-                  <span>{amenity.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div style={{ background: '#fff', borderRadius: '10px', padding: '14px 16px' }}>
-          <p style={{ fontSize: '12px', fontWeight: 600, color: '#2d6b5e', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>About the apartment</p>
-          <Field label="" required error={errors.description}
-            hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc.">
-            <textarea className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
-              placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
-              rows={4} maxLength={300} value={data.description}
-              onChange={(e) => handleFieldChange('description', e.target.value)} />
-            <p className="rw-char-count">
-              {data.description.length}/300
-              {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
-                <span> — minimum {MIN_DESCRIPTION_LENGTH} characters</span>
-              )}
-            </p>
-          </Field>
-        </div>
-
-        {/* Actions */}
-        <div style={{ padding: '4px 0 8px' }}>
-          <WizardActions onNext={() => { if (validate()) onNext(); }} nextLabel="Continue to photos →" />
-          <button type="button" className="rw-cancel-link" onClick={onClose}>Cancel</button>
-        </div>
-
+          <p className="rw-utilities-total">Total: <strong>₪{sumUtilities(data).toLocaleString()}</strong>/month</p>
+        </Field>
       </div>
-    </div>
+
+      {/* Apartment details */}
+      <SectionTitle>Apartment details</SectionTitle>
+      <div className="rw-field-row">
+        <Field label="Total bedrooms" required error={errors.totalBedrooms}>
+          <select className={`rw-select ${errors.totalBedrooms ? 'rw-input--error' : ''}`}
+            value={data.totalBedrooms} onChange={(e) => handleFieldChange('totalBedrooms', e.target.value)}>
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={String(n)}>{n === 4 ? '4+' : n} {n === 1 ? 'bedroom' : 'bedrooms'}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Total bathrooms">
+          <select className="rw-select" value={data.totalBathrooms}
+            onChange={(e) => onChange('totalBathrooms', e.target.value)}>
+            {[1, 2, 3].map((n) => (
+              <option key={n} value={String(n)}>{n === 3 ? '3+' : n} {n === 1 ? 'bathroom' : 'bathrooms'}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="rw-field-row" style={{ marginTop: '10px' }}>
+        <Field label="Apartment size (sqm)">
+          <input type="number" className="rw-input" placeholder="75" min="0"
+            value={data.sizeSqm} onChange={(e) => onChange('sizeSqm', e.target.value)} />
+        </Field>
+        <Field label="Available from" required error={errors.dateAvailable}>
+          <input type="date" className={`rw-input ${errors.dateAvailable ? 'rw-input--error' : ''}`}
+            min={today} value={data.dateAvailable}
+            onChange={(e) => handleFieldChange('dateAvailable', e.target.value)} />
+        </Field>
+      </div>
+      <div style={{ marginTop: '10px' }}>
+        <Field label="Minimum lease">
+          <select className="rw-select" value={data.minLeaseMonths}
+            onChange={(e) => onChange('minLeaseMonths', e.target.value)}>
+            {LEASE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      {/* Amenities — LOCKED emoji grid */}
+      <SectionTitle hint="Select everything that applies — optional but helps you get better matches">
+        Apartment amenities
+      </SectionTitle>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+        {AMENITY_OPTIONS.map((amenity) => {
+          const isSelected = data.amenities.includes(amenity.value);
+          return (
+            <button key={amenity.value} type="button" onClick={() => {
+              const next = isSelected
+                ? data.amenities.filter((v) => v !== amenity.value)
+                : [...data.amenities, amenity.value];
+              onChange('amenities', next);
+            }} aria-pressed={isSelected}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 12px',
+                border: `1.5px solid ${isSelected ? '#2d6b5e' : '#e5e7eb'}`,
+                borderRadius: '10px',
+                background: isSelected ? '#2d6b5e' : '#fff',
+                color: isSelected ? '#fff' : '#6b7280',
+                fontSize: '13px', fontWeight: '600',
+                cursor: 'pointer', textAlign: 'left', width: '100%',
+                transition: 'all 0.15s ease',
+              }}>
+              <span aria-hidden="true" style={{ fontSize: '17px', lineHeight: 1, flexShrink: 0 }}>{amenity.icon}</span>
+              <span>{amenity.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Description */}
+      <SectionTitle hint="Describe the vibe — student apartment, WFH-friendly, Shabbat observant, quiet building, etc.">
+        About the apartment
+      </SectionTitle>
+      <Field required error={errors.description}>
+        <textarea className={`rw-textarea ${errors.description ? 'rw-input--error' : ''}`}
+          placeholder="We're a young professional couple looking for a third roommate. The apartment is bright, has a big balcony, and is 5 minutes from the beach..."
+          rows={4} maxLength={300} value={data.description}
+          onChange={(e) => handleFieldChange('description', e.target.value)} />
+        <p className="rw-char-count">
+          {data.description.length}/300
+          {data.description.trim().length < MIN_DESCRIPTION_LENGTH && (
+            <span> — minimum {MIN_DESCRIPTION_LENGTH} characters</span>
+          )}
+        </p>
+      </Field>
+
+      <div style={{ marginTop: '4px' }}>
+        <WizardActions onNext={() => { if (validate()) onNext(); }} nextLabel="Continue to photos →" />
+      </div>
+    </StepShell>
   );
 };
 
-// ── Step 2: Photos (moved from Step 3) ───────────────────────────────────────
+// ── Step 2: Photos ────────────────────────────────────────────────────────────
 
-const Step2Photos = ({ data, onChange, onNext, onBack }) => {
+const Step2Photos = ({ data, onChange, onNext, onBack, onClose }) => {
   const fileInputRef = useRef(null);
   const MAX_PHOTOS = 3;
 
@@ -539,13 +557,13 @@ const Step2Photos = ({ data, onChange, onNext, onBack }) => {
   const canAddMore = data.photoFiles.length < MAX_PHOTOS;
 
   return (
-    <div className="rw-step-card">
-      <ProgressBar step={2} />
-      <StepHeader step={2} title="Add up to 3 photos" />
-      <p className="rw-step-intro">
-        Show the apartment and common areas — living room, kitchen, balcony. Good photos get 3× more enquiries.
-      </p>
-
+    <StepShell
+      step={2}
+      title="Add up to 3 photos"
+      subtitle="Show the apartment and common areas — good photos get 3× more enquiries"
+      onClose={onClose}
+    >
+      <SectionTitle>Photos</SectionTitle>
       <div className="rw-photo-grid">
         {data.photoPreviewUrls.map((url, index) => (
           <div key={index} className="rw-photo-thumb">
@@ -574,37 +592,50 @@ const Step2Photos = ({ data, onChange, onNext, onBack }) => {
           : `${MAX_PHOTOS - data.photoFiles.length} photo slot${MAX_PHOTOS - data.photoFiles.length === 1 ? '' : 's'} remaining.`}
       </p>
 
-      <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to preferences →" />
-    </div>
+      <div style={{ marginTop: '4px' }}>
+        <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to preferences →" />
+      </div>
+    </StepShell>
   );
 };
 
-// ── Step 3: Preferences (moved from Step 4) ───────────────────────────────────
+// ── Step 3: Preferences ─────────────────────────────────────────────────────
 
-const Step3Preferences = ({ data, onChange, onNext, onBack }) => (
-  <div className="rw-step-card">
-    <ProgressBar step={3} />
-    <StepHeader step={3} title="What kind of roommate are you looking for?" />
-    <p className="rw-step-intro">Be honest — it leads to better matches for everyone.</p>
-
+const Step3Preferences = ({ data, onChange, onNext, onBack, onClose }) => (
+  <StepShell
+    step={3}
+    title="What kind of roommate are you looking for?"
+    subtitle="Be honest — it leads to better matches for everyone"
+    onClose={onClose}
+  >
+    <SectionTitle>Comfort preferences</SectionTitle>
     <Field label="I'm most comfortable living with">
       <ToggleGroup options={GENDER_OPTIONS} value={data.genderPreference}
         onChange={(val) => onChange('genderPreference', val)} />
     </Field>
-    <Field label="Smoking in the apartment">
-      <ToggleGroup options={SMOKING_OPTIONS} value={data.smoking}
-        onChange={(val) => onChange('smoking', val)} />
-    </Field>
-    <Field label="Pets">
-      <ToggleGroup options={PETS_OPTIONS} value={data.pets}
-        onChange={(val) => onChange('pets', val)} />
-    </Field>
-    <Field label="Kosher kitchen">
-      <ToggleGroup options={KOSHER_OPTIONS} value={data.kosherKitchen}
-        onChange={(val) => onChange('kosherKitchen', val)} />
-    </Field>
-    <Field label="Anything else? (optional)"
-      hint="Work from home, religious observance, quiet hours, guests policy...">
+    <div style={{ marginTop: '10px' }}>
+      <Field label="Smoking in the apartment">
+        <ToggleGroup options={SMOKING_OPTIONS} value={data.smoking}
+          onChange={(val) => onChange('smoking', val)} />
+      </Field>
+    </div>
+    <div style={{ marginTop: '10px' }}>
+      <Field label="Pets">
+        <ToggleGroup options={PETS_OPTIONS} value={data.pets}
+          onChange={(val) => onChange('pets', val)} />
+      </Field>
+    </div>
+    <div style={{ marginTop: '10px' }}>
+      <Field label="Kosher kitchen">
+        <ToggleGroup options={KOSHER_OPTIONS} value={data.kosherKitchen}
+          onChange={(val) => onChange('kosherKitchen', val)} />
+      </Field>
+    </div>
+
+    <SectionTitle hint="Work from home, religious observance, quiet hours, guests policy...">
+      Anything else? (optional)
+    </SectionTitle>
+    <Field>
       <textarea className="rw-textarea"
         placeholder="We work from home and keep quiet hours after 10pm."
         rows={3} maxLength={300} value={data.vibe}
@@ -612,13 +643,15 @@ const Step3Preferences = ({ data, onChange, onNext, onBack }) => (
       <p className="rw-char-count">{data.vibe.length}/300</p>
     </Field>
 
-    <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to contact details →" />
-  </div>
+    <div style={{ marginTop: '4px' }}>
+      <WizardActions onBack={onBack} onNext={onNext} nextLabel="Continue to contact details →" />
+    </div>
+  </StepShell>
 );
 
-// ── Step 4: Contact (moved from Step 1 — collected last) ──────────────────────
+// ── Step 4: Contact ───────────────────────────────────────────────────────────
 
-const Step4Contact = ({ data, onChange, onNext, onBack }) => {
+const Step4Contact = ({ data, onChange, onNext, onBack, onClose }) => {
   const [errors, setErrors] = useState({});
 
   const selectedCountry = COUNTRY_CODES.find(
@@ -644,13 +677,13 @@ const Step4Contact = ({ data, onChange, onNext, onBack }) => {
   const fullPhone = `${data.countryCode}${data.phone.trim().replace(/^0/, '')}`;
 
   return (
-    <div className="rw-step-card">
-      <ProgressBar step={4} />
-      <StepHeader step={4} title="How can renters reach you?" />
-      <p className="rw-step-intro">
-        Your contact details are only shown to people seriously interested in your room. We never share them publicly.
-      </p>
-
+    <StepShell
+      step={4}
+      title="How can renters reach you?"
+      subtitle="Your contact details are only shown to seriously interested renters — never public"
+      onClose={onClose}
+    >
+      <SectionTitle>Contact details</SectionTitle>
       <Field label="Phone number" required error={errors.phone}>
         <div className="rw-phone-row">
           <div className="rw-country-select-wrap">
@@ -682,29 +715,33 @@ const Step4Contact = ({ data, onChange, onNext, onBack }) => {
         )}
       </Field>
 
-      <Field label="Email"
-        required={data.preferredMethod === 'email'}
-        hint={data.preferredMethod === 'email'
-          ? 'Required since you selected Email as your preferred contact method'
-          : 'Optional — add if you prefer email contact'}
-        error={errors.email}>
-        <input type="email" className={`rw-input ${errors.email ? 'rw-input--error' : ''}`}
-          placeholder="you@example.com" value={data.email}
-          onChange={(e) => {
-            onChange('email', e.target.value);
-            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-          }} />
-      </Field>
+      <div style={{ marginTop: '10px' }}>
+        <Field label="Email"
+          required={data.preferredMethod === 'email'}
+          hint={data.preferredMethod === 'email'
+            ? 'Required since you selected Email as your preferred contact method'
+            : 'Optional — add if you prefer email contact'}
+          error={errors.email}>
+          <input type="email" className={`rw-input ${errors.email ? 'rw-input--error' : ''}`}
+            placeholder="you@example.com" value={data.email}
+            onChange={(e) => {
+              onChange('email', e.target.value);
+              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            }} />
+        </Field>
+      </div>
 
-      <Field label="Preferred contact method">
-        <ToggleGroup options={CONTACT_METHODS} value={data.preferredMethod}
-          onChange={(val) => {
-            onChange('preferredMethod', val);
-            if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-          }} />
-      </Field>
+      <div style={{ marginTop: '10px' }}>
+        <Field label="Preferred contact method">
+          <ToggleGroup options={CONTACT_METHODS} value={data.preferredMethod}
+            onChange={(val) => {
+              onChange('preferredMethod', val);
+              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+            }} />
+        </Field>
+      </div>
 
-      <div className="rw-anon-nudge">
+      <div className="rw-anon-nudge" style={{ marginTop: '14px' }}>
         <span aria-hidden="true">💡</span>
         <p>
           Want to edit your listing later?{' '}
@@ -713,15 +750,17 @@ const Step4Contact = ({ data, onChange, onNext, onBack }) => {
         </p>
       </div>
 
-      <WizardActions onBack={onBack} onNext={() => { if (validate()) onNext(); }}
-        nextLabel="Preview my listing →" />
-    </div>
+      <div style={{ marginTop: '10px' }}>
+        <WizardActions onBack={onBack} onNext={() => { if (validate()) onNext(); }}
+          nextLabel="Preview my listing →" />
+      </div>
+    </StepShell>
   );
 };
 
 // ── Step 5: Preview ───────────────────────────────────────────────────────────
 
-const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, publishStage, error }) => {
+const Step5Preview = ({ data, onBack, onPublish, onClose, isLoading, uploadingPhotos, publishStage, error }) => {
   const formatPrice = (value) => {
     const n = Number(value);
     return Number.isFinite(n) && n > 0 ? `₪${n.toLocaleString()}` : '—';
@@ -748,12 +787,13 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
   const kosherLabel = KOSHER_OPTIONS.find((o) => o.value === data.kosherKitchen)?.label || '—';
 
   return (
-    <div className="rw-step-card">
-      <ProgressBar step={5} />
-      <StepHeader step={5} title="Here's what renters will see" />
-      <p className="rw-step-intro">Review your listing before it goes live. You can go back to make changes.</p>
-
-      <div className="rw-preview-card">
+    <StepShell
+      step={5}
+      title="Here's what renters will see"
+      subtitle="Review your listing before it goes live — you can go back to make changes"
+      onClose={onClose}
+    >
+      <div className="rw-preview-card" style={{ marginTop: '12px' }}>
         <div className="rw-preview-photo">
           {data.photoPreviewUrls.length > 0 ? (
             <div className="rw-preview-photo-grid">
@@ -815,16 +855,18 @@ const Step5Preview = ({ data, onBack, onPublish, isLoading, uploadingPhotos, pub
         </div>
       </div>
 
-      {error && <p className="rw-publish-error">{error}</p>}
+      {error && <p className="rw-publish-error" style={{ marginTop: '10px' }}>{error}</p>}
 
-      <WizardActions onBack={onBack} onNext={onPublish} nextLabel="🚀 Go Live!" backLabel="Edit listing"
-        isLoading={isLoading}
-        loadingLabel={publishStage || (uploadingPhotos ? 'Uploading photos...' : 'Publishing...')} />
+      <div style={{ marginTop: '10px' }}>
+        <WizardActions onBack={onBack} onNext={onPublish} nextLabel="🚀 Go Live!" backLabel="Edit listing"
+          isLoading={isLoading}
+          loadingLabel={publishStage || (uploadingPhotos ? 'Uploading photos...' : 'Publishing...')} />
+      </div>
 
       <p className="rw-publish-note">
         Your listing will be visible immediately. It expires automatically after 60 days.
       </p>
-    </div>
+    </StepShell>
   );
 };
 
@@ -845,6 +887,21 @@ const RoommateWizard = ({ onClose }) => {
 
   const nextStep = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS)), []);
   const prevStep = useCallback(() => setStep((s) => Math.max(s - 1, 1)), []);
+
+  // Persistent ✕ exit: confirm before discarding an in-progress listing.
+  const handleRequestClose = useCallback(() => {
+    const hasProgress = Boolean(
+      data.city || data.street || data.streetNumber || data.neighborhood
+      || data.rentShare || data.description || data.vibe || data.phone || data.email
+      || (data.photoFiles && data.photoFiles.length)
+      || (data.amenities && data.amenities.length)
+    );
+    if (hasProgress && typeof window !== 'undefined') {
+      const ok = window.confirm("Discard this listing? Your progress won't be saved.");
+      if (!ok) return;
+    }
+    onClose?.();
+  }, [data, onClose]);
 
   const retryWithBackoff = async (fn, { retries = 2, delayMs = 2000 } = {}) => {
     let lastError;
@@ -945,12 +1002,12 @@ const RoommateWizard = ({ onClose }) => {
   return (
     <div className="rw-overlay" role="dialog" aria-modal="true" aria-label="List your room">
       <div className="rw-container">
-        {step === 1 && <Step1Apartment data={data} onChange={onChange} onNext={nextStep} onClose={onClose} />}
-        {step === 2 && <Step2Photos data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
-        {step === 3 && <Step3Preferences data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
-        {step === 4 && <Step4Contact data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} />}
+        {step === 1 && <Step1Apartment data={data} onChange={onChange} onNext={nextStep} onClose={handleRequestClose} />}
+        {step === 2 && <Step2Photos data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} onClose={handleRequestClose} />}
+        {step === 3 && <Step3Preferences data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} onClose={handleRequestClose} />}
+        {step === 4 && <Step4Contact data={data} onChange={onChange} onNext={nextStep} onBack={prevStep} onClose={handleRequestClose} />}
         {step === 5 && (
-          <Step5Preview data={data} onBack={prevStep} onPublish={handlePublish}
+          <Step5Preview data={data} onBack={prevStep} onPublish={handlePublish} onClose={handleRequestClose}
             isLoading={isLoading} uploadingPhotos={uploadingPhotos}
             publishStage={publishStage} error={publishError} />
         )}
