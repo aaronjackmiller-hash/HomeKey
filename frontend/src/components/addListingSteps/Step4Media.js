@@ -23,14 +23,20 @@ export const Step4Media = ({
 }) => {
     const nextStepLabel = Math.min(stepNumber + 1, totalSteps);
     const [previews, setPreviews] = useState([]);
+    const mediaCount = (data.mediaFiles || []).length;
+    const hasMedia = mediaCount > 0;
+
     const headerTitle = isEnterpriseTrack ? 'Brand identity assets' : 'Add your media';
     const headerSubtitle = isEnterpriseTrack
         ? 'Upload corporate logo or brand assets to apply a verified identity layer'
         : 'Add photos or videos — the first file becomes the primary image';
-    const uploadTitle = isEnterpriseTrack ? 'Upload Corporate Branding Assets' : 'Add Photos and Videos';
+
+    const uploadTitle = isEnterpriseTrack
+        ? 'Upload Corporate Branding Assets'
+        : (hasMedia ? 'Add more photos or videos' : 'Add Photos and Videos');
     const uploadCopy = isEnterpriseTrack
         ? 'Click to upload logo files... (SVG, PNG, JPEG)'
-        : 'Click to upload, or drag files here... (GIF, PNG, JPEG)';
+        : 'Click to upload, or drag files here — you can select several at once (GIF, PNG, JPEG)';
 
     useEffect(() => {
         const mediaPreviews = (data.mediaFiles || []).map((file) => URL.createObjectURL(file));
@@ -48,6 +54,10 @@ export const Step4Media = ({
         const filesArray = Array.from(e.target.files);
         updateData({ mediaFiles: [...(data.mediaFiles || []), ...filesArray] });
         e.target.value = '';
+    };
+
+    const handleRemove = (index) => {
+        updateData({ mediaFiles: (data.mediaFiles || []).filter((_, i) => i !== index) });
     };
 
     return (
@@ -73,6 +83,8 @@ export const Step4Media = ({
             <div className="wizard-body">
                 <div className="wizard-section-card">
                     <p className="wizard-section-label">{isEnterpriseTrack ? 'Brand assets' : 'Photos & videos'}</p>
+
+                    {/* Upload box stays available after every add — select several at once or add one at a time */}
                     <div className="wizard-upload-box">
                         <input
                             type="file"
@@ -86,18 +98,38 @@ export const Step4Media = ({
                     </div>
 
                     {previews.length > 0 && (
-                        <div className="wizard-preview-grid">
-                            {previews.map((src, idx) => (
-                                <div key={src} className="wizard-preview-cell">
-                                    <img src={src} alt="Preview" />
-                                    {idx === 0 && (
-                                        <span className="wizard-primary-badge">
-                                            Primary
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        <>
+                            <div className="wizard-preview-grid">
+                                {previews.map((src, idx) => (
+                                    <div key={src} className="wizard-preview-cell">
+                                        <img src={src} alt="Preview" />
+                                        {idx === 0 && (
+                                            <span className="wizard-primary-badge">
+                                                Primary
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemove(idx)}
+                                            aria-label={`Remove file ${idx + 1}`}
+                                            title="Remove"
+                                            style={{
+                                                position: 'absolute', top: 4, right: 4,
+                                                width: 22, height: 22, borderRadius: '50%',
+                                                border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff',
+                                                fontSize: 15, lineHeight: 1, cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="wizard-upload-copy" style={{ marginTop: '8px' }}>
+                                {mediaCount} file{mediaCount === 1 ? '' : 's'} added — the first is your primary image.
+                            </p>
+                        </>
                     )}
                 </div>
 
