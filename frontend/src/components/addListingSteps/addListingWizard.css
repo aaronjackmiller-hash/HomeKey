@@ -1,6 +1,8 @@
 /* ==========================================================================
    addListingWizard.css
-   For Rent / For Sale listing wizard — teal accent matching seeker form style.
+   For Rent / For Sale listing wizard — teal accent matching the
+   "Looking for a Room" seeker panel: card-less sections on a soft teal
+   background with dark, title-case section headings.
    ========================================================================== */
 
 .listing-wizard-shell {
@@ -33,6 +35,53 @@
   background: #e8f4f0;
   color: #1f4f44;
   border-color: #b8d8d0;
+}
+
+/* ── Wizard card wrapper + persistent ✕ exit ─────────────────────────────── */
+/* Wraps whatever step is on screen so a single close button floats over the
+   card's top-right corner on every step. fit-content lets the wrapper track
+   the step card's own width (520px normally, 860px for the enterprise final
+   step) so the ✕ always lands on the card edge. */
+
+.wizard-shell-card {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.wizard-exit-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1f4f44;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.22);
+  transition: background 0.15s ease;
+}
+
+.wizard-exit-btn:hover {
+  background: #ffffff;
+}
+
+/* Keep step titles / counters clear of the floating ✕ */
+.wizard-shell-card .wizard-teal-header {
+  padding-right: 54px;
+}
+
+.wizard-shell-card .wizard-step-header {
+  padding-right: 40px;
 }
 
 /* ── Step card — teal background matching FilterMenu seeker panel ──────── */
@@ -97,7 +146,8 @@
   transition: width 0.35s ease;
 }
 
-/* ── Section card — white card on teal background ─────────────────────── */
+/* ── Section — card-less, sits directly on the soft teal body ─────────── */
+/* (Was a white card; now transparent to match "Looking for a Room".) */
 
 .wizard-body {
   padding: 12px 14px;
@@ -107,18 +157,19 @@
 }
 
 .wizard-section-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 14px 16px;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
 }
 
+/* Dark, title-case section heading (matches .roommate-filters__title) */
 .wizard-section-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #2d6b5e;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2a1a;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  margin: 4px 0 10px;
 }
 
 /* ── Step header (legacy — kept for non-teal steps) ──────────────────── */
