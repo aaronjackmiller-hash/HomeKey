@@ -378,7 +378,7 @@ const AddListing = () => {
                     <Step4Media data={data} updateData={updateData} nextStep={nextStep} prevStep={prevStep} stepNumber={mediaStep + 1} totalSteps={totalSteps} progressPercent={progressForStep(mediaStep + 1)} isEnterpriseTrack={usesEnterpriseModel} />
                 ) : null}
                 {!usesEnterpriseModel && step === publishStep ? (
-                    <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} stepNumber={publishStep + 1} totalSteps={totalSteps} />
+                    <Step5PublishListing data={data} prevStep={prevStep} onPublishFinished={onPublishFinished} stepNumber={publishStep + 1} totalSteps={totalSteps} loading={loading} error={error} />
                 ) : null}
                 {usesEnterpriseModel && step === publishStep ? (
                     <Step6EnterpriseRouting agents={initialEnterpriseAgents} listings={enterpriseListings} syncedPortfolioCount={syncedPortfolioCount} onboardingMethod={effectiveOnboardingMethod} onAgentChange={handleEnterpriseAgentChange} onToggleBooster={handleEnterpriseBoosterToggle} prevStep={prevStep} onLaunch={handleEnterpriseLaunch} stepNumber={publishStep + 1} totalSteps={totalSteps} />
