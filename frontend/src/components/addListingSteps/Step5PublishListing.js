@@ -5,6 +5,9 @@
  * Always shows inline contact fields — no auth gating.
  * Pre-filled from auth account or localStorage.
  * Includes country code prefix pill matching RoommateWizard.
+ *
+ * Publish feedback (loading + error) is passed in from AddListing and shown
+ * right at the button, so it's visible instead of off-screen at the page top.
  */
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -45,6 +48,8 @@ export const Step5PublishListing = ({
     onPublishFinished,
     stepNumber = 5,
     totalSteps = 5,
+    loading = false,
+    error = '',
 }) => {
     const { isAuthenticated, user } = useAuth();
     const history = useHistory();
@@ -83,7 +88,7 @@ export const Step5PublishListing = ({
     const consolidatedTitle = `${propertyType} for ${transactionType} — ${city}`;
 
     const fullPhone = `${countryCode}${localPhone.trim().replace(/^0/, '')}`;
-    const canPublish = Boolean(localPhone.trim());
+    const canPublish = Boolean(localPhone.trim()) && !loading;
 
     const handlePublish = () => {
         const phone = fullPhone;
@@ -238,8 +243,16 @@ export const Step5PublishListing = ({
                 </label>
             </div>
 
+            {/* Publish feedback shown here, right at the button */}
+            {error ? (
+                <p className="listing-wizard-status listing-wizard-status--error" style={{ marginTop: 0 }}>{error}</p>
+            ) : null}
+            {!error && !localPhone.trim() ? (
+                <p className="wizard-required-copy">Add a contact number above to publish.</p>
+            ) : null}
+
             <div className="wizard-actions">
-                <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost">
+                <button type="button" onClick={prevStep} className="wizard-btn wizard-btn--ghost" disabled={loading}>
                     Back
                 </button>
                 <button
@@ -249,10 +262,12 @@ export const Step5PublishListing = ({
                     disabled={!canPublish}
                     style={{ opacity: canPublish ? 1 : 0.45 }}
                 >
-                    Go Live! Publish Listing
+                    {loading ? 'Publishing…' : 'Go Live! Publish Listing'}
                 </button>
             </div>
-            <p className="wizard-footer-note">Your listing will be live in 15 minutes.</p>
+            <p className="wizard-footer-note">
+                {loading ? 'Contacting the server — this can take a few seconds.' : 'Your listing will be live in 15 minutes.'}
+            </p>
             </div>{/* end wizard-body */}
         </div>
     );
